@@ -1,20 +1,23 @@
 {
   "name": "@r3e/neo-n3-mcp",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "MCP server for Neo N3 blockchain integration",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "dev": "tsc --watch",
     "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts",
     "test": "jest",
     "test:simple": "node tests/simple-test.js",
+    "test:network": "node tests/network-test.js",
+    "example": "node examples/run-example.js",
     "add-to-mcp": "node scripts/add-to-mcp-settings.js",
     "postinstall": "mkdir -p wallets",
     "prepublishOnly": "npm run build",
-    "publish:npm": "node scripts/publish-npm.js",
-    "publish:docker": "scripts/publish-docker.sh",
+    "publish:npm": "npm publish --access public",
+    "publish:docker": "docker build -t r3e/neo-n3-mcp:latest .",
+    "publish:docker:local": "node scripts/build-local-image.js",
     "publish:all": "npm run publish:npm && npm run publish:docker"
   },
   "bin": {
@@ -27,7 +30,9 @@
     "API.md",
     "TESTING.md",
     "DEPLOYMENT.md",
-    "ARCHITECTURE.md"
+    "ARCHITECTURE.md",
+    "NETWORKS.md",
+    "CHANGELOG.md"
   ],
   "keywords": [
     "neo",

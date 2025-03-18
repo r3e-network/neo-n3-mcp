@@ -1,0 +1,32 @@
+# This is a local Dockerfile that doesn't require pulling any external images.
+# It simply copies the pre-built files from the host into a minimal container.
+
+# Start with an empty container
+FROM scratch
+
+# Copy all pre-built files
+COPY ./dist /app/dist
+COPY ./package.json /app/package.json
+COPY ./package-lock.json /app/package-lock.json
+COPY ./node_modules /app/node_modules
+
+# Labels
+LABEL org.opencontainers.image.title="Neo N3 MCP Server"
+LABEL org.opencontainers.image.description="MCP server for Neo N3 blockchain integration"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.vendor="R3E Network"
+LABEL org.opencontainers.image.source="https://github.com/R3E-Network/neo-n3-mcp"
+LABEL org.opencontainers.image.documentation="https://github.com/R3E-Network/neo-n3-mcp#readme"
+
+WORKDIR /app
+
+# Create wallet directory
+VOLUME /app/wallets
+
+# Environment variables
+ENV NODE_ENV=production
+ENV NEO_RPC_URL=http://neo-node:10332
+ENV WALLET_PATH=/app/wallets
+
+# Entry point
+ENTRYPOINT ["node", "dist/index.js"] 

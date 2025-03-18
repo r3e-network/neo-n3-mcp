@@ -10,14 +10,15 @@ import {
   ErrorCode,
   McpError
 } from '@modelcontextprotocol/sdk/types.js';
-import { NeoService } from './services/neo-service.js';
+import { NeoService, NeoNetwork } from './services/neo-service.js';
 import { config } from './config.js';
 import { 
   validateAddress, 
   validateHash, 
   validateAmount, 
   validatePassword,
-  validateScriptHash
+  validateScriptHash,
+  validateNetwork
 } from './utils/validation.js';
 import { 
   handleError, 
@@ -31,7 +32,7 @@ import {
  */
 class NeoMcpServer {
   private server: Server;
-  private neoService: NeoService;
+  private neoServices: Map<NeoNetwork, NeoService>;
 
   constructor() {
     this.server = new Server(
@@ -47,12 +48,45 @@ class NeoMcpServer {
       }
     );
 
-    this.neoService = new NeoService(config.neoRpcUrl);
+    // Initialize Neo services for both networks
+    this.neoServices = new Map();
+    
+    // Initialize mainnet service
+    this.neoServices.set(
+      NeoNetwork.MAINNET, 
+      new NeoService(config.mainnetRpcUrl, NeoNetwork.MAINNET)
+    );
+    
+    // Initialize testnet service
+    this.neoServices.set(
+      NeoNetwork.TESTNET, 
+      new NeoService(config.testnetRpcUrl, NeoNetwork.TESTNET)
+    );
     
     this.setupToolHandlers();
     this.setupResourceHandlers();
     
     this.server.onerror = (error) => console.error('[MCP Error]', error);
+  }
+
+  /**
+   * Get the appropriate Neo service for the requested network
+   * @param networkParam Optional network parameter
+   * @returns Neo service for the requested network
+   */
+  private getNeoService(networkParam?: string): NeoService {
+    if (!networkParam) {
+      return this.neoServices.get(NeoNetwork.MAINNET)!;
+    }
+    
+    const network = validateNetwork(networkParam);
+    const service = this.neoServices.get(network);
+    
+    if (!service) {
+      throw new McpError(ErrorCode.InvalidParams, `Unsupported network: ${network}`);
+    }
+    
+    return service;
   }
 
   /**
@@ -66,7 +100,13 @@ class NeoMcpServer {
           description: 'Get general Neo N3 blockchain information',
           inputSchema: {
             type: 'object',
-            properties: {},
+            properties: {
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+            },
             required: [],
           },
         },
@@ -83,6 +123,11 @@ class NeoMcpServer {
                 ],
                 description: 'Block hash or height',
               },
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
             },
             required: ['hashOrHeight'],
           },
@@ -97,6 +142,11 @@ class NeoMcpServer {
                 type: 'string',
                 description: 'Transaction hash',
               },
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
             },
             required: ['txid'],
           },
@@ -110,6 +160,11 @@ class NeoMcpServer {
               address: {
                 type: 'string',
                 description: 'Neo N3 address',
+              },
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
               },
             },
             required: ['address'],
@@ -144,6 +199,11 @@ class NeoMcpServer {
                 type: 'boolean',
                 description: 'Confirmation flag to prevent accidental transfers',
               },
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
             },
             required: ['fromWIF', 'toAddress', 'asset', 'amount', 'confirm'],
           },
@@ -177,6 +237,11 @@ class NeoMcpServer {
                 type: 'boolean',
                 description: 'Confirmation flag to prevent accidental invocations',
               },
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
             },
             required: ['fromWIF', 'scriptHash', 'operation', 'confirm'],
           },
@@ -190,6 +255,11 @@ class NeoMcpServer {
               password: {
                 type: 'string',
                 description: 'Password for encrypting the wallet',
+              },
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
               },
             },
             required: ['password'],
@@ -209,6 +279,11 @@ class NeoMcpServer {
                 type: 'string',
                 description: 'Password for decrypting the key (if encrypted)',
               },
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
             },
             required: ['key'],
           },
@@ -220,7 +295,7 @@ class NeoMcpServer {
       try {
         switch (request.params.name) {
           case 'get_blockchain_info':
-            return await this.handleGetBlockchainInfo();
+            return await this.handleGetBlockchainInfo(request.params.arguments);
           case 'get_block':
             return await this.handleGetBlock(request.params.arguments);
           case 'get_transaction':
@@ -258,12 +333,36 @@ class NeoMcpServer {
           description: 'Get the current status of the Neo N3 network',
         },
         {
+          name: 'neo://mainnet/status',
+          description: 'Get the current status of the Neo N3 mainnet',
+        },
+        {
+          name: 'neo://testnet/status',
+          description: 'Get the current status of the Neo N3 testnet',
+        },
+        {
           name: 'neo://block/{height}',
           description: 'Get a block by height',
         },
         {
+          name: 'neo://mainnet/block/{height}',
+          description: 'Get a block by height from mainnet',
+        },
+        {
+          name: 'neo://testnet/block/{height}',
+          description: 'Get a block by height from testnet',
+        },
+        {
           name: 'neo://address/{address}/balance',
           description: 'Get the balance of a Neo N3 address',
+        },
+        {
+          name: 'neo://mainnet/address/{address}/balance',
+          description: 'Get the balance of a Neo N3 address on mainnet',
+        },
+        {
+          name: 'neo://testnet/address/{address}/balance',
+          description: 'Get the balance of a Neo N3 address on testnet',
         },
       ],
     }));
@@ -272,11 +371,39 @@ class NeoMcpServer {
       resourceTemplates: [
         {
           template: 'neo://network/status',
-          description: 'Get the current status of the Neo N3 network',
+          description: 'Get the current status of the Neo N3 network (defaults to mainnet)',
+        },
+        {
+          template: 'neo://mainnet/status',
+          description: 'Get the current status of the Neo N3 mainnet',
+        },
+        {
+          template: 'neo://testnet/status',
+          description: 'Get the current status of the Neo N3 testnet',
         },
         {
           template: 'neo://block/{height}',
-          description: 'Get a block by height',
+          description: 'Get a block by height (defaults to mainnet)',
+          parameters: [
+            {
+              name: 'height',
+              description: 'The height of the block',
+            },
+          ],
+        },
+        {
+          template: 'neo://mainnet/block/{height}',
+          description: 'Get a block by height from mainnet',
+          parameters: [
+            {
+              name: 'height',
+              description: 'The height of the block',
+            },
+          ],
+        },
+        {
+          template: 'neo://testnet/block/{height}',
+          description: 'Get a block by height from testnet',
           parameters: [
             {
               name: 'height',
@@ -286,7 +413,27 @@ class NeoMcpServer {
         },
         {
           template: 'neo://address/{address}/balance',
-          description: 'Get the balance of a Neo N3 address',
+          description: 'Get the balance of a Neo N3 address (defaults to mainnet)',
+          parameters: [
+            {
+              name: 'address',
+              description: 'The Neo N3 address',
+            },
+          ],
+        },
+        {
+          template: 'neo://mainnet/address/{address}/balance',
+          description: 'Get the balance of a Neo N3 address on mainnet',
+          parameters: [
+            {
+              name: 'address',
+              description: 'The Neo N3 address',
+            },
+          ],
+        },
+        {
+          template: 'neo://testnet/address/{address}/balance',
+          description: 'Get the balance of a Neo N3 address on testnet',
           parameters: [
             {
               name: 'address',
@@ -299,44 +446,55 @@ class NeoMcpServer {
 
     this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
       try {
-        const resource = request.params.resource as string;
-        
-        if (resource === 'neo://network/status') {
-          const blockchainInfo = await this.neoService.getBlockchainInfo();
-          return createSuccessResponse(blockchainInfo);
+        if (typeof request.params.name !== 'string') {
+          throw new McpError(ErrorCode.InvalidParams, 'Resource name must be a string');
         }
         
-        const blockMatch = resource.match(/^neo:\/\/block\/(\d+)$/);
-        if (blockMatch) {
-          const height = parseInt(blockMatch[1], 10);
-          const block = await this.neoService.getBlock(height);
+        const url = new URL(request.params.name);
+        const pathParts = url.pathname.split('/').filter(Boolean);
+        
+        // Check if the first part is a network specifier
+        let network = NeoNetwork.MAINNET;
+        let startIndex = 0;
+        
+        if (pathParts[0] === 'mainnet') {
+          network = NeoNetwork.MAINNET;
+          startIndex = 1;
+        } else if (pathParts[0] === 'testnet') {
+          network = NeoNetwork.TESTNET;
+          startIndex = 1;
+        }
+        
+        const neoService = this.getNeoService(network);
+        
+        // Handle resources
+        if (pathParts[startIndex] === 'network' && pathParts[startIndex + 1] === 'status') {
+          const info = await neoService.getBlockchainInfo();
+          return createSuccessResponse(info);
+        }
+        
+        if (pathParts[startIndex] === 'block' && pathParts[startIndex + 1]) {
+          const height = parseInt(pathParts[startIndex + 1], 10);
+          if (isNaN(height)) {
+            throw new McpError(ErrorCode.InvalidParams, 'Invalid block height');
+          }
+          const block = await neoService.getBlock(height);
           return createSuccessResponse(block);
         }
         
-        const balanceMatch = resource.match(/^neo:\/\/address\/([A-Za-z0-9]+)\/balance$/);
-        if (balanceMatch) {
-          const address = balanceMatch[1];
+        if (pathParts[startIndex] === 'address' && pathParts[startIndex + 2] === 'balance') {
+          const address = pathParts[startIndex + 1];
           validateAddress(address);
-          const balance = await this.neoService.getBalance(address);
+          const balance = await neoService.getBalance(address);
           return createSuccessResponse(balance);
         }
         
         throw new McpError(
-          ErrorCode.InvalidRequest,
-          `Resource not found: ${resource}`
+          ErrorCode.InvalidParams,
+          `Resource not found: ${request.params.name}`
         );
       } catch (error) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: error instanceof McpError 
-                ? error.message 
-                : `Error reading resource: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            },
-          ],
-          isError: true,
-        };
+        return handleError(error);
       }
     });
   }
@@ -344,9 +502,10 @@ class NeoMcpServer {
   /**
    * Handle get_blockchain_info tool
    */
-  private async handleGetBlockchainInfo() {
+  private async handleGetBlockchainInfo(args: any) {
     try {
-      const info = await this.neoService.getBlockchainInfo();
+      const neoService = this.getNeoService(args?.network);
+      const info = await neoService.getBlockchainInfo();
       return createSuccessResponse(info);
     } catch (error) {
       return handleError(error);
@@ -364,7 +523,8 @@ class NeoMcpServer {
         throw new McpError(ErrorCode.InvalidParams, 'hashOrHeight must be a string or number');
       }
 
-      const block = await this.neoService.getBlock(args.hashOrHeight);
+      const neoService = this.getNeoService(args?.network);
+      const block = await neoService.getBlock(args.hashOrHeight);
       return createSuccessResponse(block);
     } catch (error) {
       return handleError(error);
@@ -377,7 +537,8 @@ class NeoMcpServer {
   private async handleGetTransaction(args: any) {
     try {
       const txid = validateHash(args.txid);
-      const tx = await this.neoService.getTransaction(txid);
+      const neoService = this.getNeoService(args?.network);
+      const tx = await neoService.getTransaction(txid);
       return createSuccessResponse(tx);
     } catch (error) {
       return handleError(error);
@@ -390,7 +551,8 @@ class NeoMcpServer {
   private async handleGetBalance(args: any) {
     try {
       const address = validateAddress(args.address);
-      const balance = await this.neoService.getBalance(address);
+      const neoService = this.getNeoService(args?.network);
+      const balance = await neoService.getBalance(address);
       return createSuccessResponse(balance);
     } catch (error) {
       return handleError(error);
@@ -420,8 +582,11 @@ class NeoMcpServer {
       // Import the wallet from WIF
       const account = new (await import('@cityofzion/neon-js')).wallet.Account(args.fromWIF);
       
+      // Get the right service for the requested network
+      const neoService = this.getNeoService(args?.network);
+      
       // Transfer assets
-      const result = await this.neoService.transferAssets(
+      const result = await neoService.transferAssets(
         account,
         toAddress,
         args.asset,
@@ -431,6 +596,7 @@ class NeoMcpServer {
       return createSuccessResponse({
         txid: result.txid,
         message: 'Transfer successful',
+        network: neoService.getNetwork()
       });
     } catch (error) {
       return handleError(error);
@@ -457,26 +623,23 @@ class NeoMcpServer {
       }
 
       // Import the wallet from WIF
-      const neonJs = await import('@cityofzion/neon-js');
-      const account = new neonJs.wallet.Account(args.fromWIF);
-      
-      // Convert arguments to contract parameters
-      const contractArgs = Array.isArray(args.args) ? args.args.map((arg: any) => {
-        // This is a simplified version - in a real implementation, you would need to handle different parameter types
-        return neonJs.sc.ContractParam.any(arg);
-      }) : [];
+      const account = new (await import('@cityofzion/neon-js')).wallet.Account(args.fromWIF);
 
+      // Get the right service for the requested network
+      const neoService = this.getNeoService(args?.network);
+      
       // Invoke contract
-      const result = await this.neoService.invokeContract(
+      const result = await neoService.invokeContract(
         account,
         scriptHash,
         args.operation,
-        contractArgs
+        args.args || []
       );
 
       return createSuccessResponse({
         txid: result.txid,
         message: 'Contract invocation successful',
+        network: neoService.getNetwork()
       });
     } catch (error) {
       return handleError(error);
@@ -489,16 +652,16 @@ class NeoMcpServer {
   private async handleCreateWallet(args: any) {
     try {
       const password = validatePassword(args.password);
-      const wallet = this.neoService.createWallet(password);
       
-      // Don't include the WIF in the response for security
-      const safeResponse = {
-        address: wallet.address,
-        publicKey: wallet.publicKey,
-        encryptedPrivateKey: wallet.encryptedPrivateKey,
-      };
-
-      return createSuccessResponse(safeResponse);
+      // Network doesn't actually matter for wallet creation, 
+      // but we'll include it in the response
+      const neoService = this.getNeoService(args?.network);
+      
+      const wallet = neoService.createWallet(password);
+      return createSuccessResponse({
+        ...wallet,
+        network: neoService.getNetwork()
+      });
     } catch (error) {
       return handleError(error);
     }
@@ -518,8 +681,15 @@ class NeoMcpServer {
         password = validatePassword(args.password);
       }
 
-      const wallet = this.neoService.importWallet(args.key, password);
-      return createSuccessResponse(wallet);
+      // Network doesn't actually matter for wallet import, 
+      // but we'll include it in the response
+      const neoService = this.getNeoService(args?.network);
+      
+      const wallet = neoService.importWallet(args.key, password);
+      return createSuccessResponse({
+        ...wallet,
+        network: neoService.getNetwork()
+      });
     } catch (error) {
       return handleError(error);
     }

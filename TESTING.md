@@ -200,3 +200,129 @@ When adding new functionality, follow these guidelines for adding tests:
 3. Ensure the tests cover all essential functionality
 4. Check for edge cases and error conditions
 5. Add both successful and failure test cases 
+
+## Network Testing
+
+The Neo N3 MCP server supports both mainnet and testnet networks. We have a dedicated test script to verify this dual-network functionality works correctly.
+
+### Running Network Tests
+
+To run the network tests:
+
+```bash
+npm run test:network
+```
+
+This will execute unit tests that verify:
+
+1. Service creation for both mainnet and testnet
+2. Correct handling of network parameters
+3. Default behavior (using mainnet when no network is specified)
+4. Error handling for invalid network specifications
+
+### Expected Output
+
+A successful network test should produce output similar to:
+
+```
+Running Neo N3 MCP Server Dual-Network Tests
+===========================================
+MockNeoService created with network: mainnet, URL: http://mainnet.example.com:10332
+✅ PASSED: Mainnet service has correct network
+✅ PASSED: Mainnet service has correct URL
+MockNeoService created with network: testnet, URL: http://testnet.example.com:10332
+✅ PASSED: Testnet service has correct network
+✅ PASSED: Testnet service has correct URL
+✅ PASSED: Services map has two entries
+✅ PASSED: Services map has mainnet entry
+✅ PASSED: Services map has testnet entry
+✅ PASSED: Default service is mainnet
+✅ PASSED: Explicit mainnet returns correct service
+✅ PASSED: Testnet parameter returns testnet service
+✅ PASSED: Blockchain info shows correct mainnet network
+✅ PASSED: Blockchain info shows correct testnet network
+✅ PASSED: Throws error for invalid network
+===========================================
+✅ All tests passed
+```
+
+### Manually Testing Network Support
+
+You can manually test network support by using different network parameters in your API calls:
+
+1. **Mainnet**: 
+   ```json
+   {
+     "name": "get_blockchain_info",
+     "arguments": {
+       "network": "mainnet"
+     }
+   }
+   ```
+
+2. **Testnet**:
+   ```json
+   {
+     "name": "get_blockchain_info",
+     "arguments": {
+       "network": "testnet"
+     }
+   }
+   ```
+
+3. **Default to Mainnet** (no network specified):
+   ```json
+   {
+     "name": "get_blockchain_info",
+     "arguments": {}
+   }
+   ```
+
+4. **Error Handling** (invalid network):
+   ```json
+   {
+     "name": "get_blockchain_info",
+     "arguments": {
+       "network": "invalid"
+     }
+   }
+   ```
+
+## Integration Testing with Real Networks
+
+For full integration testing with real Neo N3 networks:
+
+1. Configure your server with valid RPC URLs for both networks:
+   ```
+   NEO_MAINNET_RPC_URL=http://seed1.neo.org:10332
+   NEO_TESTNET_RPC_URL=https://testnet1.neo.coz.io:443
+   ```
+
+2. Run tests that query both networks:
+   ```bash
+   # For mainnet
+   curl -X POST http://localhost:3000/mcp -H "Content-Type: application/json" -d '{
+     "jsonrpc": "2.0",
+     "id": 1,
+     "method": "callTool",
+     "params": {
+       "toolName": "get_blockchain_info",
+       "arguments": {
+         "network": "mainnet"
+       }
+     }
+   }'
+   
+   # For testnet
+   curl -X POST http://localhost:3000/mcp -H "Content-Type: application/json" -d '{
+     "jsonrpc": "2.0",
+     "id": 1,
+     "method": "callTool",
+     "params": {
+       "toolName": "get_blockchain_info",
+       "arguments": {
+         "network": "testnet"
+       }
+     }
+   }'
+   ``` 

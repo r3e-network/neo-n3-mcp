@@ -121,6 +121,20 @@ docker run -p 3000:3000 \
   r3e/neo-n3-mcp:latest
 ```
 
+#### Configuring Dual Network Support
+
+To configure both mainnet and testnet:
+
+```bash
+docker run -p 3000:3000 \
+  -e NEO_MAINNET_RPC_URL=http://seed1.neo.org:10332 \
+  -e NEO_TESTNET_RPC_URL=https://testnet1.neo.coz.io:443 \
+  -v $(pwd)/wallets:/app/wallets \
+  r3e/neo-n3-mcp:latest
+```
+
+The server will now accept requests for both networks, with the network specified via the `network` parameter in API calls.
+
 ### Docker Compose
 
 For more complex setups, you can use Docker Compose:
@@ -133,8 +147,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEO_RPC_URL=http://seed1.neo.org:10332
-      - NEO_NETWORK=mainnet
+      - NEO_MAINNET_RPC_URL=http://seed1.neo.org:10332
+      - NEO_TESTNET_RPC_URL=https://testnet1.neo.coz.io:443
     volumes:
       - ./wallets:/app/wallets
     restart: unless-stopped
@@ -202,8 +216,10 @@ npm start
 
 | Environment Variable | Command-line Argument | Description | Default |
 |----------------------|----------------------|-------------|---------|
-| `NEO_RPC_URL` | `--rpc-url` | URL of the Neo N3 RPC node | `http://localhost:10332` |
-| `NEO_NETWORK` | `--network` | Network type (mainnet, testnet, private) | `mainnet` |
+| `NEO_RPC_URL` | `--rpc-url` | Default URL of the Neo N3 RPC node | `http://localhost:10332` |
+| `NEO_MAINNET_RPC_URL` | `--mainnet-rpc-url` | URL of the Neo N3 mainnet RPC node | Same as `NEO_RPC_URL` or `http://seed1.neo.org:10332` |
+| `NEO_TESTNET_RPC_URL` | `--testnet-rpc-url` | URL of the Neo N3 testnet RPC node | `https://testnet1.neo.coz.io:443` |
+| `NEO_NETWORK` | `--network` | Default network type (mainnet, testnet) | `mainnet` |
 
 ### Server Configuration
 

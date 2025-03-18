@@ -2,6 +2,16 @@
 
 This document provides a comprehensive reference for the Neo N3 MCP server API, including tools, resources, and configuration options.
 
+## Network Support
+
+The Neo N3 MCP server now supports both mainnet and testnet networks. You can specify which network to use for each request by including the `network` parameter.
+
+- `network`: The Neo N3 network to use
+  - `mainnet`: The Neo N3 mainnet (default)
+  - `testnet`: The Neo N3 testnet
+
+If no network is specified, the server will default to using the mainnet.
+
 ## MCP Tools
 
 The Neo N3 MCP server exposes the following tools through the MCP protocol:
@@ -11,7 +21,7 @@ The Neo N3 MCP server exposes the following tools through the MCP protocol:
 Get general information about the Neo N3 blockchain.
 
 **Parameters:**
-- None
+- `network` (optional): Network to use (`mainnet` or `testnet`)
 
 **Returns:**
 ```json
@@ -28,7 +38,8 @@ Get general information about the Neo N3 blockchain.
       "votes": "200",
       "active": true
     }
-  ]
+  ],
+  "network": "mainnet"
 }
 ```
 
@@ -36,7 +47,9 @@ Get general information about the Neo N3 blockchain.
 ```json
 {
   "name": "get_blockchain_info",
-  "arguments": {}
+  "arguments": {
+    "network": "testnet"
+  }
 }
 ```
 
@@ -46,6 +59,7 @@ Get block details by height or hash.
 
 **Parameters:**
 - `hashOrHeight` (string | number): Block hash or height
+- `network` (optional): Network to use (`mainnet` or `testnet`)
 
 **Returns:**
 ```json
@@ -72,7 +86,8 @@ Get block details by height or hash.
 {
   "name": "get_block",
   "arguments": {
-    "hashOrHeight": 12345
+    "hashOrHeight": 12345,
+    "network": "mainnet"
   }
 }
 ```
@@ -83,6 +98,7 @@ Get transaction details by hash.
 
 **Parameters:**
 - `txid` (string): Transaction hash
+- `network` (optional): Network to use (`mainnet` or `testnet`)
 
 **Returns:**
 ```json
@@ -107,7 +123,8 @@ Get transaction details by hash.
 {
   "name": "get_transaction",
   "arguments": {
-    "txid": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+    "txid": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+    "network": "testnet"
   }
 }
 ```
@@ -118,6 +135,7 @@ Get account balance for a specific address.
 
 **Parameters:**
 - `address` (string): Neo N3 address
+- `network` (optional): Network to use (`mainnet` or `testnet`)
 
 **Returns:**
 ```json
@@ -140,7 +158,8 @@ Get account balance for a specific address.
 {
   "name": "get_balance",
   "arguments": {
-    "address": "NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ"
+    "address": "NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ",
+    "network": "mainnet"
   }
 }
 ```
@@ -155,12 +174,14 @@ Transfer assets between addresses.
 - `asset` (string): Asset hash or symbol (e.g., "NEO", "GAS")
 - `amount` (string | number): Amount to transfer
 - `confirm` (boolean): Confirmation flag to prevent accidental transfers
+- `network` (optional): Network to use (`mainnet` or `testnet`)
 
 **Returns:**
 ```json
 {
   "txid": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
-  "tx": {}
+  "message": "Transfer successful",
+  "network": "mainnet"
 }
 ```
 
@@ -173,7 +194,8 @@ Transfer assets between addresses.
     "toAddress": "NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ",
     "asset": "NEO",
     "amount": "1",
-    "confirm": true
+    "confirm": true,
+    "network": "testnet"
   }
 }
 ```
@@ -188,12 +210,14 @@ Invoke a smart contract method.
 - `operation` (string): Method name
 - `args` (array, optional): Method arguments
 - `confirm` (boolean): Confirmation flag to prevent accidental invocations
+- `network` (optional): Network to use (`mainnet` or `testnet`)
 
 **Returns:**
 ```json
 {
   "txid": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
-  "tx": {}
+  "message": "Contract invocation successful",
+  "network": "mainnet"
 }
 ```
 
@@ -223,7 +247,8 @@ Invoke a smart contract method.
         "value": null
       }
     ],
-    "confirm": true
+    "confirm": true,
+    "network": "testnet"
   }
 }
 ```
@@ -234,6 +259,7 @@ Create a new wallet.
 
 **Parameters:**
 - `password` (string): Password for encrypting the wallet
+- `network` (optional): Network to use (`mainnet` or `testnet`)
 
 **Returns:**
 ```json
@@ -241,7 +267,8 @@ Create a new wallet.
   "address": "NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ",
   "publicKey": "publicKey",
   "encryptedPrivateKey": "encryptedKey",
-  "WIF": "WIF"
+  "WIF": "WIF",
+  "network": "mainnet"
 }
 ```
 
@@ -250,7 +277,8 @@ Create a new wallet.
 {
   "name": "create_wallet",
   "arguments": {
-    "password": "your-secure-password"
+    "password": "your-secure-password",
+    "network": "testnet"
   }
 }
 ```
@@ -262,12 +290,14 @@ Import an existing wallet from WIF or encrypted key.
 **Parameters:**
 - `key` (string): WIF or encrypted private key
 - `password` (string, optional): Password for decrypting the key (if encrypted)
+- `network` (optional): Network to use (`mainnet` or `testnet`)
 
 **Returns:**
 ```json
 {
   "address": "NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ",
-  "publicKey": "publicKey"
+  "publicKey": "publicKey",
+  "network": "mainnet"
 }
 ```
 
@@ -277,7 +307,8 @@ Import an existing wallet from WIF or encrypted key.
   "name": "import_wallet",
   "arguments": {
     "key": "KwDZGCUXYAB1cUNmZKQ5RFUBAYPjwXvpavQQHvpeH1qM5pJ3zurn",
-    "password": "your-secure-password"
+    "password": "your-secure-password",
+    "network": "testnet"
   }
 }
 ```
@@ -288,7 +319,7 @@ The Neo N3 MCP server exposes the following resources through the MCP protocol:
 
 ### neo://network/status
 
-Get the current status of the Neo N3 network.
+Get the current status of the Neo N3 network (defaults to mainnet).
 
 **Parameters:**
 - None
@@ -308,13 +339,68 @@ Get the current status of the Neo N3 network.
       "votes": "200",
       "active": true
     }
-  ]
+  ],
+  "network": "mainnet"
+}
+```
+
+### neo://mainnet/status
+
+Get the current status of the Neo N3 mainnet.
+
+**Parameters:**
+- None
+
+**Returns:**
+```json
+{
+  "height": 12345,
+  "validators": [
+    {
+      "publickey": "key1",
+      "votes": "100",
+      "active": true
+    },
+    {
+      "publickey": "key2",
+      "votes": "200",
+      "active": true
+    }
+  ],
+  "network": "mainnet"
+}
+```
+
+### neo://testnet/status
+
+Get the current status of the Neo N3 testnet.
+
+**Parameters:**
+- None
+
+**Returns:**
+```json
+{
+  "height": 12345,
+  "validators": [
+    {
+      "publickey": "key1",
+      "votes": "100",
+      "active": true
+    },
+    {
+      "publickey": "key2",
+      "votes": "200",
+      "active": true
+    }
+  ],
+  "network": "testnet"
 }
 ```
 
 ### neo://block/{height}
 
-Get a block by height.
+Get a block by height (defaults to mainnet).
 
 **Parameters:**
 - `height` (number): The height of the block
@@ -339,9 +425,29 @@ Get a block by height.
 }
 ```
 
+### neo://mainnet/block/{height}
+
+Get a block by height from mainnet.
+
+**Parameters:**
+- `height` (number): The height of the block
+
+**Returns:**
+Same as `neo://block/{height}`
+
+### neo://testnet/block/{height}
+
+Get a block by height from testnet.
+
+**Parameters:**
+- `height` (number): The height of the block
+
+**Returns:**
+Same as `neo://block/{height}`
+
 ### neo://address/{address}/balance
 
-Get the balance of a Neo N3 address.
+Get the balance of a Neo N3 address (defaults to mainnet).
 
 **Parameters:**
 - `address` (string): The Neo N3 address
@@ -361,6 +467,26 @@ Get the balance of a Neo N3 address.
   ]
 }
 ```
+
+### neo://mainnet/address/{address}/balance
+
+Get the balance of a Neo N3 address on mainnet.
+
+**Parameters:**
+- `address` (string): The Neo N3 address
+
+**Returns:**
+Same as `neo://address/{address}/balance`
+
+### neo://testnet/address/{address}/balance
+
+Get the balance of a Neo N3 address on testnet.
+
+**Parameters:**
+- `address` (string): The Neo N3 address
+
+**Returns:**
+Same as `neo://address/{address}/balance`
 
 ## Error Handling
 
@@ -384,10 +510,12 @@ The Neo N3 MCP server uses standardized error responses to provide clear informa
    - Malformed addresses
    - Invalid hashes
    - Missing required parameters
+   - Invalid network parameter
 
 2. **Network Errors**
    - Connection failures to Neo N3 node
    - Timeout errors
+   - Network-specific failures
 
 3. **Blockchain Errors**
    - Insufficient funds
@@ -400,12 +528,20 @@ The Neo N3 MCP server can be configured using environment variables. Here's a de
 
 ### Neo N3 Node Configuration
 
-- `NEO_RPC_URL`: URL of the Neo N3 RPC node
+- `NEO_RPC_URL`: Default URL of the Neo N3 RPC node
   - Default: `http://localhost:10332`
   - Example: `http://seed1.neo.org:10332`
 
-- `NEO_NETWORK`: Network type
-  - Values: `mainnet`, `testnet`, `private`
+- `NEO_MAINNET_RPC_URL`: URL of the Neo N3 mainnet RPC node
+  - Default: Same as `NEO_RPC_URL` or `http://seed1.neo.org:10332`
+  - Example: `http://seed1.neo.org:10332`
+
+- `NEO_TESTNET_RPC_URL`: URL of the Neo N3 testnet RPC node
+  - Default: `https://testnet1.neo.coz.io:443`
+  - Example: `https://testnet2.neo.coz.io:443`
+
+- `NEO_NETWORK`: Default network type
+  - Values: `mainnet`, `testnet`
   - Default: `mainnet`
 
 ### Wallet Configuration
@@ -450,6 +586,16 @@ The Neo N3 MCP server can be configured using environment variables. Here's a de
 - `GAS`: The Gas token
 - Custom tokens: Specified by their script hash
 
+#### Network-Specific Asset Hashes
+
+**Mainnet:**
+- NEO: `0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5`
+- GAS: `0xd2a4cff31913016155e38e474a2c06d08be276cf`
+
+**Testnet:**
+- NEO: `0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b`
+- GAS: `0xd2a4cff31913016155e38e474a2c06d08be276cf`
+
 ### Contract Parameter Types
 
 - `Hash160`: A 160-bit hash (e.g., addresses)
@@ -470,6 +616,7 @@ When using the API, keep the following security considerations in mind:
 3. **RPC URL**: Use secure connections (HTTPS) for remote RPC nodes
 4. **Rate Limiting**: Be aware of rate limits to prevent denial of service
 5. **Input Validation**: All inputs should be validated before passing to the API
+6. **Network Selection**: Be cautious about which network you're using (mainnet or testnet)
 
 ## Compatibility
 

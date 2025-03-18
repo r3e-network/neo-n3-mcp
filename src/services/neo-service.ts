@@ -1,17 +1,28 @@
 import * as neonJs from '@cityofzion/neon-js';
 
 /**
+ * Supported Neo N3 networks
+ */
+export enum NeoNetwork {
+  MAINNET = 'mainnet',
+  TESTNET = 'testnet'
+}
+
+/**
  * Service for interacting with the Neo N3 blockchain
  */
 export class NeoService {
   private rpcClient: any;
+  private network: NeoNetwork;
 
   /**
    * Create a new Neo service
    * @param rpcUrl URL of the Neo N3 RPC node
+   * @param network Network type (mainnet or testnet)
    */
-  constructor(rpcUrl: string) {
+  constructor(rpcUrl: string, network: NeoNetwork = NeoNetwork.MAINNET) {
     this.rpcClient = new neonJs.rpc.RPCClient(rpcUrl);
+    this.network = network;
   }
 
   /**
@@ -21,7 +32,7 @@ export class NeoService {
   async getBlockchainInfo() {
     const height = await this.rpcClient.getBlockCount();
     const validators = await this.rpcClient.getValidators();
-    return { height, validators };
+    return { height, validators, network: this.network };
   }
 
   /**
@@ -198,21 +209,38 @@ export class NeoService {
   }
 
   /**
-   * Get asset hash from symbol
+   * Get asset hash from symbol based on the current network
    * @param symbol Asset symbol (e.g., 'NEO', 'GAS')
    * @returns Asset hash
    */
   private getAssetHash(symbol: string): string {
-    // These are the mainnet asset hashes
-    const assets: Record<string, string> = {
-      NEO: '0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5',
-      GAS: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
+    // Asset hashes for different networks
+    const assets: Record<NeoNetwork, Record<string, string>> = {
+      [NeoNetwork.MAINNET]: {
+        NEO: '0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5',
+        GAS: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
+      },
+      [NeoNetwork.TESTNET]: {
+        NEO: '0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b',  // Testnet NEO hash
+        GAS: '0xd2a4cff31913016155e38e474a2c06d08be276cf',  // Testnet GAS hash
+      }
     };
 
-    if (!assets[symbol.toUpperCase()]) {
-      throw new Error(`Unknown asset: ${symbol}`);
+    const networkAssets = assets[this.network];
+    const symbolUpper = symbol.toUpperCase();
+    
+    if (!networkAssets[symbolUpper]) {
+      throw new Error(`Unknown asset: ${symbol} on network ${this.network}`);
     }
 
-    return assets[symbol.toUpperCase()];
+    return networkAssets[symbolUpper];
+  }
+  
+  /**
+   * Get the current network
+   * @returns The current network
+   */
+  getNetwork(): NeoNetwork {
+    return this.network;
   }
 }

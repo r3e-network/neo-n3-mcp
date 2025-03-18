@@ -2,8 +2,12 @@
  * Configuration for the Neo N3 MCP server
  */
 export const config = {
-  // Neo N3 RPC URL (default is localhost, can be overridden with environment variable)
-  neoRpcUrl: process.env.NEO_RPC_URL || 'http://localhost:10332',
+  // Neo N3 RPC URLs for different networks
+  neoRpcUrl: process.env.NEO_RPC_URL || 'http://localhost:10332', // Default/Legacy config
+  
+  // Network-specific RPC URLs
+  mainnetRpcUrl: process.env.NEO_MAINNET_RPC_URL || process.env.NEO_RPC_URL || 'http://seed1.neo.org:10332',
+  testnetRpcUrl: process.env.NEO_TESTNET_RPC_URL || 'https://testnet1.neo.coz.io:443',
   
   // Path to wallet files
   walletPath: process.env.WALLET_PATH || './wallets',

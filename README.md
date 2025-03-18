@@ -17,19 +17,12 @@ An MCP server that provides seamless integration with the Neo N3 blockchain, all
 - [Deployment Guide](DEPLOYMENT.md) - Comprehensive deployment options and configuration
 - [Testing Guide](TESTING.md) - Testing approach and instructions for verifying functionality
 - [Architecture](ARCHITECTURE.md) - Detailed system architecture and design decisions
+- [Network Architecture](NETWORKS.md) - Dual-network support and configuration details
 
 ## 🚀 Features
 
-- **Blockchain Information**PS C:\Users\liaoj\git\neo-mcp\neo-n3-mcp> npm run bublish:npm
-npm error Missing script: "bublish:npm"
-npm error
-npm error Did you mean one of these?
-npm error   npm run publish:npm # run the "publish:npm" package script
-npm error   npm run publish:all # run the "publish:all" package script
-npm error
-npm error To see a list of scripts, run:
-npm error   npm run
-npm error A complete log of this run can be found in: C:\Users\liaoj\AppData\Local\npm-cache\_logs\2025-03-18T01_04_49_633Z-debug-0.log: Query blockchain height, validators, and network status
+- **Dual Network Support**: Interact with both Neo N3 mainnet and testnet networks in a single server
+- **Blockchain Information**: Query blockchain height, validators, and network status
 - **Block & Transaction Data**: Get detailed information about blocks and transactions
 - **Account Management**: Check balances, create and import wallets securely
 - **Asset Operations**: Transfer NEO, GAS, and other tokens between addresses
@@ -136,9 +129,11 @@ This will automatically add the Neo N3 MCP server to your Claude MCP settings fi
 
 The server can be configured using environment variables:
 
-- `NEO_RPC_URL`: URL of the Neo N3 RPC node (default: http://localhost:10332)
+- `NEO_RPC_URL`: Default URL of the Neo N3 RPC node (default: http://localhost:10332)
+- `NEO_MAINNET_RPC_URL`: URL of the Neo N3 mainnet RPC node (default: same as NEO_RPC_URL or http://seed1.neo.org:10332)
+- `NEO_TESTNET_RPC_URL`: URL of the Neo N3 testnet RPC node (default: https://testnet1.neo.coz.io:443)
+- `NEO_NETWORK`: Default network type: 'mainnet' or 'testnet' (default: mainnet)
 - `WALLET_PATH`: Path to the wallet files (default: ./wallets)
-- `NEO_NETWORK`: Network type: 'mainnet', 'testnet', or 'private' (default: mainnet)
 - `LOG_LEVEL`: Log level: 'debug', 'info', 'warn', 'error' (default: info)
 - `LOG_CONSOLE`: Whether to log to console (default: true)
 - `LOG_FILE`: Whether to log to file (default: false)
@@ -150,6 +145,8 @@ The server can be configured using environment variables:
 
 ### Tools
 
+All tools now support an optional `network` parameter to specify which network to use ('mainnet' or 'testnet').
+
 #### get_blockchain_info
 
 Get general information about the Neo N3 blockchain.
@@ -157,7 +154,9 @@ Get general information about the Neo N3 blockchain.
 ```json
 {
   "name": "get_blockchain_info",
-  "arguments": {}
+  "arguments": {
+    "network": "testnet"
+  }
 }
 ```
 
@@ -169,7 +168,8 @@ Get block details by height or hash.
 {
   "name": "get_block",
   "arguments": {
-    "hashOrHeight": 12345
+    "hashOrHeight": 12345,
+    "network": "mainnet"
   }
 }
 ```
@@ -182,7 +182,8 @@ Get transaction details by hash.
 {
   "name": "get_transaction",
   "arguments": {
-    "txid": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+    "txid": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+    "network": "testnet"
   }
 }
 ```
@@ -195,7 +196,8 @@ Get account balance for a specific address.
 {
   "name": "get_balance",
   "arguments": {
-    "address": "NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ"
+    "address": "NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ",
+    "network": "mainnet"
   }
 }
 ```
@@ -212,7 +214,8 @@ Transfer assets between addresses.
     "toAddress": "NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ",
     "asset": "NEO",
     "amount": "1",
-    "confirm": true
+    "confirm": true,
+    "network": "testnet"
   }
 }
 ```
@@ -226,7 +229,7 @@ Invoke a smart contract method.
   "name": "invoke_contract",
   "arguments": {
     "fromWIF": "KwDZGCUXYAB1cUNmZKQ5RFUBAYPjwXvpavQQHvpeH1qM5pJ3zurn",
-    "scriptHash": "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5",
+    "scriptHash": "0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b",
     "operation": "transfer",
     "args": [
       {
@@ -246,7 +249,8 @@ Invoke a smart contract method.
         "value": null
       }
     ],
-    "confirm": true
+    "confirm": true,
+    "network": "testnet"
   }
 }
 ```
@@ -259,7 +263,8 @@ Create a new wallet.
 {
   "name": "create_wallet",
   "arguments": {
-    "password": "your-secure-password"
+    "password": "your-secure-password",
+    "network": "mainnet"
   }
 }
 ```
@@ -273,7 +278,8 @@ Import an existing wallet from WIF or encrypted key.
   "name": "import_wallet",
   "arguments": {
     "key": "KwDZGCUXYAB1cUNmZKQ5RFUBAYPjwXvpavQQHvpeH1qM5pJ3zurn",
-    "password": "your-secure-password"
+    "password": "your-secure-password",
+    "network": "testnet"
   }
 }
 ```
@@ -282,20 +288,41 @@ Import an existing wallet from WIF or encrypted key.
 
 #### Neo N3 Network Status
 
+Default network (based on configuration):
 ```
 neo://network/status
 ```
 
+Specific networks:
+```
+neo://mainnet/status
+neo://testnet/status
+```
+
 #### Neo N3 Block by Height
 
+Default network:
 ```
 neo://block/{height}
 ```
 
+Specific networks:
+```
+neo://mainnet/block/{height}
+neo://testnet/block/{height}
+```
+
 #### Neo N3 Address Balance
 
+Default network:
 ```
 neo://address/{address}/balance
+```
+
+Specific networks:
+```
+neo://mainnet/address/{address}/balance
+neo://testnet/address/{address}/balance
 ```
 
 ## Testing

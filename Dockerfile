@@ -1,5 +1,14 @@
 # Build stage
-FROM node:18-alpine AS build
+FROM debian:stable-slim AS build
+
+# Install Node.js
+RUN apt-get update && apt-get install -y \
+    curl \
+    gnupg \
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -13,7 +22,16 @@ COPY src ./src
 RUN npm run build
 
 # Runtime stage
-FROM node:18-alpine
+FROM debian:stable-slim
+
+# Install Node.js
+RUN apt-get update && apt-get install -y \
+    curl \
+    gnupg \
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 LABEL org.opencontainers.image.title="Neo N3 MCP Server"
 LABEL org.opencontainers.image.description="MCP server for Neo N3 blockchain integration"

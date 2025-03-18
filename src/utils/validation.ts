@@ -1,4 +1,5 @@
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
+import { NeoNetwork } from '../services/neo-service.js';
 
 /**
  * Validate a Neo N3 address
@@ -11,8 +12,8 @@ export function validateAddress(address: unknown): string {
     throw new McpError(ErrorCode.InvalidParams, 'Address must be a string');
   }
   
-  // Neo N3 addresses are 34 characters long and start with 'N'
-  if (!/^N[A-Za-z0-9]{33}$/.test(address)) {
+  // Neo N3 addresses are base58 encoded and between 33-34 characters long, usually starting with 'N'
+  if (!/^N[A-Za-z0-9]{32,33}$/.test(address)) {
     throw new McpError(ErrorCode.InvalidParams, 'Invalid Neo N3 address format');
   }
   
@@ -96,4 +97,22 @@ export function validateScriptHash(scriptHash: unknown): string {
   }
   
   return scriptHash;
+}
+
+/**
+ * Validate a Neo N3 network parameter
+ * @param network Network to validate
+ * @returns Validated network as a NeoNetwork enum
+ * @throws McpError if the network is invalid
+ */
+export function validateNetwork(network: unknown): NeoNetwork {
+  if (typeof network !== 'string') {
+    throw new McpError(ErrorCode.InvalidParams, 'Network must be a string');
+  }
+  
+  if (network === NeoNetwork.MAINNET || network === NeoNetwork.TESTNET) {
+    return network as NeoNetwork;
+  }
+  
+  throw new McpError(ErrorCode.InvalidParams, `Invalid network: ${network}. Must be "mainnet" or "testnet"`);
 }
