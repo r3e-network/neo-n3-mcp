@@ -15,6 +15,14 @@ All notable changes to the Neo N3 MCP server will be documented in this file.
 - Updated example files to better demonstrate network parameter usage
 - Improved documentation formatting and clarity
 - Added additional resource URL examples
+- Updated dependency from @r3e/sdk to @modelcontextprotocol/sdk
+
+### Fixed
+- GitHub Actions workflows to handle missing lock files
+- Added conditional steps for npm installation in CI/CD pipelines
+- Made test steps more resilient in CI pipelines
+- Fixed dependency specifications for better compatibility
+- Fixed postinstall script to be cross-platform compatible
 
 ## [1.0.2] - 2025-03-18
 

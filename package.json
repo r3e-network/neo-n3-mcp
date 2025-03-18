@@ -13,7 +13,7 @@
     "test:network": "node tests/network-test.js",
     "example": "node examples/run-example.js",
     "add-to-mcp": "node scripts/add-to-mcp-settings.js",
-    "postinstall": "mkdir -p wallets",
+    "postinstall": "node -e \"try { require('fs').mkdirSync('wallets', { recursive: true }); } catch (e) { if (e.code !== 'EEXIST') throw e; }\"",
     "prepublishOnly": "npm run build",
     "publish:npm": "npm publish --access public",
     "publish:docker": "docker build -t r3e/neo-n3-mcp:latest .",
@@ -53,7 +53,7 @@
   },
   "dependencies": {
     "@cityofzion/neon-js": "^5.3.0",
-    "@r3e/sdk": "^0.1.0"
+    "@modelcontextprotocol/sdk": "*"
   },
   "publishConfig": {
     "access": "public"
