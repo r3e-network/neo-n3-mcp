@@ -1,102 +1,118 @@
 import { jest } from '@jest/globals';
-import { NeoService } from '../src/services/neo-service';
+import { NeoService, NeoNetwork } from '../src/services/neo-service';
+
+// Utility function to create typed mocks
+function createMock<T>(value: T) {
+  return jest.fn<() => Promise<T>>().mockResolvedValue(value);
+}
+
+// Define mock data
+const mockBlockCount = 12345;
+const mockValidators = [
+  { publickey: 'key1', votes: '100', active: true },
+  { publickey: 'key2', votes: '200', active: true },
+];
+const mockBlock = {
+  hash: '0x1234567890abcdef',
+  size: 1000,
+  version: 0,
+  previousblockhash: '0x0987654321fedcba',
+  merkleroot: '0xabcdef1234567890',
+  time: 1600000000,
+  index: 12344,
+  nonce: '0',
+  nextconsensus: 'address',
+  script: { invocation: '', verification: '' },
+  tx: [],
+};
+const mockTransaction = {
+  hash: '0xabcdef1234567890',
+  size: 500,
+  version: 0,
+  nonce: 0,
+  sender: 'address1',
+  sysfee: '0.1',
+  netfee: '0.05',
+  validuntilblock: 12400,
+  signers: [],
+  attributes: [],
+  script: '',
+  witnesses: [],
+};
+const mockBalance = {
+  balance: [
+    { asset: 'NEO', amount: '100' },
+    { asset: 'GAS', amount: '50.5' },
+  ],
+};
+const mockTransactionId = 'txhash123';
 
 // Mock the neon-js library
-jest.mock('@cityofzion/neon-js', () => ({
-  rpc: {
-    RPCClient: jest.fn().mockImplementation(() => ({
-      getBlockCount: jest.fn().mockResolvedValue(12345),
-      getValidators: jest.fn().mockResolvedValue([
-        { publickey: 'key1', votes: '100', active: true },
-        { publickey: 'key2', votes: '200', active: true },
-      ]),
-      getBlock: jest.fn().mockResolvedValue({
-        hash: '0x1234567890abcdef',
-        size: 1000,
-        version: 0,
-        previousblockhash: '0x0987654321fedcba',
-        merkleroot: '0xabcdef1234567890',
-        time: 1600000000,
-        index: 12344,
-        nonce: '0',
-        nextconsensus: 'address',
-        script: { invocation: '', verification: '' },
-        tx: [],
-      }),
-      getTransaction: jest.fn().mockResolvedValue({
-        hash: '0xabcdef1234567890',
-        size: 500,
-        version: 0,
-        nonce: 0,
-        sender: 'address1',
-        sysfee: '0.1',
-        netfee: '0.05',
-        validuntilblock: 12400,
-        signers: [],
-        attributes: [],
-        script: '',
-        witnesses: [],
-      }),
-      getBalance: jest.fn().mockResolvedValue({
-        balance: [
-          { asset: 'NEO', amount: '100' },
-          { asset: 'GAS', amount: '50.5' },
-        ],
-      }),
-      invokeScript: jest.fn().mockResolvedValue({}),
-      sendRawTransaction: jest.fn().mockResolvedValue('txhash123'),
-    })),
-  },
-  wallet: {
-    Account: jest.fn().mockImplementation(() => ({
-      address: 'NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ',
-      publicKey: 'publicKey',
-      WIF: 'WIF',
-      encrypt: jest.fn().mockReturnValue('encryptedKey'),
-      decrypt: jest.fn(),
-    })),
-    getScriptHashFromAddress: jest.fn().mockReturnValue('scriptHash'),
-    signTransaction: jest.fn().mockImplementation((tx) => tx),
-  },
-  sc: {
-    createScript: jest.fn().mockReturnValue('script'),
-    ContractParam: {
-      hash160: jest.fn().mockReturnValue('hash160Param'),
-      integer: jest.fn().mockReturnValue('integerParam'),
-      any: jest.fn().mockReturnValue('anyParam'),
+jest.mock('@cityofzion/neon-js', () => {
+  return {
+    rpc: {
+      RPCClient: jest.fn().mockImplementation(() => ({
+        getBlockCount: jest.fn().mockReturnValue(Promise.resolve(mockBlockCount)),
+        getValidators: jest.fn().mockReturnValue(Promise.resolve(mockValidators)),
+        getBlock: jest.fn().mockReturnValue(Promise.resolve(mockBlock)),
+        getTransaction: jest.fn().mockReturnValue(Promise.resolve(mockTransaction)),
+        getBalance: jest.fn().mockReturnValue(Promise.resolve(mockBalance)),
+        invokeScript: jest.fn().mockReturnValue(Promise.resolve({})),
+        sendRawTransaction: jest.fn().mockReturnValue(Promise.resolve(mockTransactionId)),
+      })),
     },
-  },
-  u: {
-    HexString: {
-      fromHex: jest.fn().mockReturnValue('hexString'),
+    wallet: {
+      Account: jest.fn().mockImplementation(() => ({
+        address: 'NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ',
+        publicKey: 'publicKey',
+        WIF: 'WIF',
+        encrypt: jest.fn().mockReturnValue('encryptedKey'),
+        decrypt: jest.fn(),
+      })),
+      getScriptHashFromAddress: jest.fn().mockReturnValue('scriptHash'),
+      signTransaction: jest.fn().mockImplementation((tx) => tx),
     },
-  },
-}));
+    sc: {
+      createScript: jest.fn().mockReturnValue('script'),
+      ContractParam: {
+        hash160: jest.fn().mockReturnValue('hash160Param'),
+        integer: jest.fn().mockReturnValue('integerParam'),
+        any: jest.fn().mockReturnValue('anyParam'),
+      },
+    },
+    u: {
+      HexString: {
+        fromHex: jest.fn().mockReturnValue('hexString'),
+      },
+    },
+  };
+});
 
 describe('NeoService', () => {
   let neoService: NeoService;
 
   beforeEach(() => {
-    neoService = new NeoService('http://localhost:10332');
+    neoService = new NeoService('http://localhost:10332', NeoNetwork.MAINNET);
   });
 
   test('getBlockchainInfo returns height and validators', async () => {
     const info = await neoService.getBlockchainInfo();
-    expect(info).toHaveProperty('height', 12345);
+    expect(info).toHaveProperty('height', mockBlockCount);
     expect(info).toHaveProperty('validators');
     expect(info.validators).toHaveLength(2);
+    expect(info).toHaveProperty('network', NeoNetwork.MAINNET);
   });
 
   test('getBlock returns block details', async () => {
     const block = await neoService.getBlock(12344);
-    expect(block).toHaveProperty('hash', '0x1234567890abcdef');
-    expect(block).toHaveProperty('index', 12344);
+    expect(block).toHaveProperty('hash', mockBlock.hash);
+    expect(block).toHaveProperty('index', mockBlock.index);
   });
 
   test('getTransaction returns transaction details', async () => {
     const tx = await neoService.getTransaction('0xabcdef1234567890');
-    expect(tx).toHaveProperty('hash', '0xabcdef1234567890');
-    expect(tx).toHaveProperty('sysfee', '0.1');
+    expect(tx).toHaveProperty('hash', mockTransaction.hash);
+    expect(tx).toHaveProperty('sysfee', mockTransaction.sysfee);
   });
 
   test('getBalance returns balance for address', async () => {
@@ -115,7 +131,7 @@ describe('NeoService', () => {
       'NEO',
       '1'
     );
-    expect(result).toHaveProperty('txid', 'txhash123');
+    expect(result).toHaveProperty('txid', mockTransactionId);
   });
   
   test('invokeContract calls the right methods', async () => {
@@ -126,7 +142,7 @@ describe('NeoService', () => {
       'transfer',
       []
     );
-    expect(result).toHaveProperty('txid', 'txhash123');
+    expect(result).toHaveProperty('txid', mockTransactionId);
   });
 
   test('createWallet returns wallet information', () => {
@@ -141,5 +157,12 @@ describe('NeoService', () => {
     const wallet = neoService.importWallet('WIF');
     expect(wallet).toHaveProperty('address', 'NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ');
     expect(wallet).toHaveProperty('publicKey', 'publicKey');
+  });
+  
+  test('getNetwork returns the current network', () => {
+    expect(neoService.getNetwork()).toBe(NeoNetwork.MAINNET);
+    
+    const testnetService = new NeoService('http://localhost:10332', NeoNetwork.TESTNET);
+    expect(testnetService.getNetwork()).toBe(NeoNetwork.TESTNET);
   });
 });

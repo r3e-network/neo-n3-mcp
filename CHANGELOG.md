@@ -2,6 +2,21 @@
 
 All notable changes to the Neo N3 MCP server will be documented in this file.
 
+## [1.0.4] - 2025-03-18
+
+### Added
+- New test case for network selection functionality
+- Comprehensive test coverage for dual-network implementation
+
+### Changed
+- Improved TypeScript typing in tests
+- Better error handling in Jest test mocks
+- Enhanced test structure for better maintainability
+
+### Fixed
+- Resolved remaining TypeScript type errors in tests
+- Fixed utility typing helper for Jest mock functions
+
 ## [1.0.3] - 2025-03-18
 
 ### Added
@@ -23,6 +38,8 @@ All notable changes to the Neo N3 MCP server will be documented in this file.
 - Made test steps more resilient in CI pipelines
 - Fixed dependency specifications for better compatibility
 - Fixed postinstall script to be cross-platform compatible
+- Updated Jest configuration for compatibility with ES modules
+- Fixed TypeScript type errors in Jest tests
 
 ## [1.0.2] - 2025-03-18
 

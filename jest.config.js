@@ -1,5 +1,5 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
-module.exports = {
+const config = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   transform: {
@@ -13,3 +13,5 @@ module.exports = {
   },
   extensionsToTreatAsEsm: ['.ts'],
 };
+
+export default config;

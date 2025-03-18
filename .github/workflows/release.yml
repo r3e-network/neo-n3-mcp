@@ -71,6 +71,7 @@ jobs:
         id: version
         run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
       
+      # Will build and push r3e/neo-n3-mcp:latest and r3e/neo-n3-mcp:1.0.4
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
