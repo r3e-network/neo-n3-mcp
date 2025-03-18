@@ -1,6 +1,6 @@
 {
   "name": "@r3e/neo-n3-mcp",
-  "version": "1.0.4",
+  "version": "1.0.7",
   "description": "MCP server for Neo N3 blockchain integration",
   "main": "dist/index.js",
   "type": "module",
@@ -11,6 +11,7 @@
     "test": "jest",
     "test:simple": "node tests/simple-test.js",
     "test:network": "node tests/network-test.js",
+    "test:tx-status": "node tests/transaction-status-test.js",
     "example": "node examples/run-example.js",
     "add-to-mcp": "node scripts/add-to-mcp-settings.js",
     "postinstall": "node -e \"try { require('fs').mkdirSync('wallets', { recursive: true }); } catch (e) { if (e.code !== 'EEXIST') throw e; }\"",

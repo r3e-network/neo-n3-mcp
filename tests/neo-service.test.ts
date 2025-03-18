@@ -39,6 +39,12 @@ const mockTransaction = {
   script: '',
   witnesses: [],
 };
+const mockAccountState = {
+  balances: [
+    { asset: 'NEO', amount: '100' },
+    { asset: 'GAS', amount: '50.5' },
+  ],
+};
 const mockBalance = {
   balance: [
     { asset: 'NEO', amount: '100' },
@@ -57,8 +63,19 @@ jest.mock('@cityofzion/neon-js', () => {
         getBlock: jest.fn().mockReturnValue(Promise.resolve(mockBlock)),
         getTransaction: jest.fn().mockReturnValue(Promise.resolve(mockTransaction)),
         getBalance: jest.fn().mockReturnValue(Promise.resolve(mockBalance)),
+        getAccountState: jest.fn().mockReturnValue(Promise.resolve(mockAccountState)),
         invokeScript: jest.fn().mockReturnValue(Promise.resolve({})),
         sendRawTransaction: jest.fn().mockReturnValue(Promise.resolve(mockTransactionId)),
+        execute: jest.fn().mockImplementation((method, params) => {
+          if (method === 'getblockcount') return Promise.resolve(mockBlockCount);
+          if (method === 'getvalidators') return Promise.resolve(mockValidators);
+          if (method === 'getblock') return Promise.resolve(mockBlock);
+          if (method === 'getrawtransaction') return Promise.resolve(mockTransaction);
+          if (method === 'getaccountstate') return Promise.resolve(mockAccountState);
+          if (method === 'invokescript') return Promise.resolve({});
+          if (method === 'sendrawtransaction') return Promise.resolve(mockTransactionId);
+          return Promise.resolve(null);
+        })
       })),
     },
     wallet: {
@@ -70,7 +87,6 @@ jest.mock('@cityofzion/neon-js', () => {
         decrypt: jest.fn(),
       })),
       getScriptHashFromAddress: jest.fn().mockReturnValue('scriptHash'),
-      signTransaction: jest.fn().mockImplementation((tx) => tx),
     },
     sc: {
       createScript: jest.fn().mockReturnValue('script'),
@@ -85,6 +101,14 @@ jest.mock('@cityofzion/neon-js', () => {
         fromHex: jest.fn().mockReturnValue('hexString'),
       },
     },
+    tx: {
+      Transaction: jest.fn().mockImplementation(() => {
+        return {
+          sign: jest.fn().mockReturnValue(true),
+          serialize: jest.fn().mockReturnValue('serializedTransaction')
+        };
+      })
+    }
   };
 });
 

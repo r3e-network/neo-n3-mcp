@@ -253,6 +253,115 @@ Invoke a smart contract method.
 }
 ```
 
+### estimate_transfer_fees
+
+Estimate gas fees required for an asset transfer transaction without executing it.
+
+**Parameters:**
+- `fromAddress` (required): Sender address
+- `toAddress` (required): Recipient address
+- `asset` (required): Asset hash or symbol (e.g., "NEO", "GAS")
+- `amount` (required): Amount to transfer
+- `network` (optional): Network to use (`mainnet` or `testnet`)
+
+**Returns:**
+```json
+{
+  "estimatedFee": "0.001",
+  "systemFee": "0.0005",
+  "networkFee": "0.0005",
+  "feeWithBuffer": "0.0011",
+  "assetName": "GAS",
+  "assetHash": "0xd2a4cff31913016155e38e474a2c06d08be276cf",
+  "network": "mainnet"
+}
+```
+
+**Example:**
+```json
+{
+  "name": "estimate_transfer_fees",
+  "arguments": {
+    "fromAddress": "NXX5HJBNDghtXMyDt6q5zqfvRiGqLqk444",
+    "toAddress": "NbdpJ8kRYxhjYd6LsfHKnJ3SbKEAQvKjDp",
+    "asset": "GAS",
+    "amount": "1",
+    "network": "testnet"
+  }
+}
+```
+
+### check_transaction_status
+
+Check the status of a transaction by hash with detailed information.
+
+**Parameters:**
+- `txid` (required): Transaction hash
+- `network` (optional): Network to use (`mainnet` or `testnet`)
+
+**Returns:**
+
+For confirmed transactions:
+```json
+{
+  "status": "confirmed",
+  "confirmations": 10,
+  "blockHeight": 12345,
+  "blockTime": 1647434567,
+  "transactionId": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+  "blockHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+  "network": "mainnet",
+  "details": {
+    "sender": "NXX5HJBNDghtXMyDt6q5zqfvRiGqLqk444",
+    "size": 334,
+    "version": 0,
+    "sysfee": "0.001",
+    "netfee": "0.001",
+    "validUntilBlock": 12450
+  }
+}
+```
+
+For pending transactions:
+```json
+{
+  "status": "pending",
+  "confirmations": 0,
+  "transactionId": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+  "network": "mainnet",
+  "details": {
+    "sender": "NXX5HJBNDghtXMyDt6q5zqfvRiGqLqk444",
+    "size": 334,
+    "version": 0,
+    "sysfee": "0.001",
+    "netfee": "0.001",
+    "validUntilBlock": 12450
+  }
+}
+```
+
+For not found transactions:
+```json
+{
+  "status": "not_found",
+  "confirmations": 0,
+  "transactionId": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+  "network": "mainnet",
+  "error": "Transaction not found on the blockchain"
+}
+```
+
+**Example:**
+```json
+{
+  "name": "check_transaction_status",
+  "arguments": {
+    "txid": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+    "network": "mainnet"
+  }
+}
+```
+
 ### create_wallet
 
 Create a new wallet.

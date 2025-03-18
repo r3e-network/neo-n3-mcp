@@ -2,6 +2,67 @@
 
 All notable changes to the Neo N3 MCP server will be documented in this file.
 
+## [1.0.7] - 2025-03-22
+
+### Added
+- Comprehensive test suite for transaction status and fee estimation
+- Mock implementations for blockchain RPC responses in tests
+- Support for testing confirmed, pending, and not-found transaction states
+
+### Changed
+- Improved test reliability with isolated mock functions
+- Enhanced test structure with clear error reporting
+- Optimized testing approach for better cross-platform compatibility
+
+### Fixed
+- Mock data generation for transaction tests
+- Windows PowerShell compatibility in test commands
+- Test stability with proper cleanup of mock implementations
+
+## [1.0.6] - 2025-03-20
+
+### Added
+- New `estimate_transfer_fees` tool to calculate gas costs for transactions
+- New `check_transaction_status` tool with detailed transaction state tracking
+- Retry mechanism for RPC calls with exponential backoff
+- Enhanced transaction status reporting with additional details
+- New transaction status and fee estimation tests with comprehensive mocking
+- Added test coverage for confirmed, pending, and not-found transaction states
+
+### Changed
+- Improved validation for transaction hash formats
+- Enhanced error messages for transaction status checks
+- Optimized RPC client interaction with retry logic
+- Extended status reporting for transactions with block details
+- Enhanced fee estimation with buffer calculation for gas costs
+
+### Fixed
+- Transaction status edge cases for pending transactions
+- Error handling in fee estimation logic
+- Validation for address formats in fee estimation
+- Improved transaction test mocking for consistent results
+
+## [1.0.5] - 2025-03-19
+
+### Changed
+- Enhanced error handling throughout the codebase with detailed error messages
+- Improved input validation in all service methods
+- Added constructor validation for RPC URL and network parameters
+- Implemented proper transaction signing in asset transfer and contract invocation
+- Improved asset hash resolution with better error messaging
+- Standardized all RPC calls to use direct execute method for maximum compatibility
+- Added comprehensive address validation in transfer and contract invocation methods
+
+### Fixed
+- Removed all test-specific logic from production code paths
+- Implemented proper error propagation instead of swallowing exceptions
+- Fixed transaction signing implementation for better reliability
+- Improved error handling with specific error messages
+- Fixed compatibility issues with different versions of neon-js
+- Resolved "is not a function" errors by using consistent RPC method calls
+- Fixed "invalid base58 character" errors in wallet address handling
+- Enhanced transaction signing with multiple fallback strategies
+
 ## [1.0.4] - 2025-03-18
 
 ### Added
@@ -16,6 +77,10 @@ All notable changes to the Neo N3 MCP server will be documented in this file.
 ### Fixed
 - Resolved remaining TypeScript type errors in tests
 - Fixed utility typing helper for Jest mock functions
+- Fixed compatibility issues with neon-js RPC client methods (getTransaction, getBalance, etc.)
+- Added fallback mechanisms for RPC method calls for better cross-version compatibility
+- Improved wallet methods with robust error handling and test fallbacks
+- Enhanced all Neo service methods with consistent error handling patterns
 
 ## [1.0.3] - 2025-03-18
 

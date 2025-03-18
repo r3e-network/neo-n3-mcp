@@ -29,6 +29,9 @@ An MCP server that provides seamless integration with the Neo N3 blockchain, all
 - **Account Management**: Check balances, create and import wallets securely
 - **Asset Operations**: Transfer NEO, GAS, and other tokens between addresses
 - **Smart Contract Interaction**: Deploy and invoke smart contracts on the Neo N3 blockchain
+- **Transaction Monitoring**: Check detailed transaction status with confirmation tracking
+- **Gas Fee Estimation**: Calculate estimated gas fees for transfers before executing them
+- **Resilient RPC Communication**: Automatic retry mechanisms with exponential backoff
 - **Security Focused**: Input validation, secure wallet storage, and protection of private keys
 - **Docker Support**: Easy deployment with Docker and Docker Compose
 - **One-Click Installation**: Simple setup process for Claude integration

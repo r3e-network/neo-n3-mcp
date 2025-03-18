@@ -288,6 +288,59 @@ class NeoMcpServer {
             required: ['key'],
           },
         },
+        {
+          name: 'estimate_transfer_fees',
+          description: 'Estimate gas fees for an asset transfer',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              fromAddress: {
+                type: 'string',
+                description: 'Sender address',
+              },
+              toAddress: {
+                type: 'string',
+                description: 'Recipient address',
+              },
+              asset: {
+                type: 'string',
+                description: 'Asset hash or symbol (e.g., "NEO", "GAS")',
+              },
+              amount: {
+                oneOf: [
+                  { type: 'string' },
+                  { type: 'number' },
+                ],
+                description: 'Amount to transfer',
+              },
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+            },
+            required: ['fromAddress', 'toAddress', 'asset', 'amount'],
+          },
+        },
+        {
+          name: 'check_transaction_status',
+          description: 'Check the status of a transaction by hash',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              txid: {
+                type: 'string',
+                description: 'Transaction hash',
+              },
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+            },
+            required: ['txid'],
+          },
+        },
       ],
     }));
 
@@ -310,6 +363,10 @@ class NeoMcpServer {
             return await this.handleCreateWallet(request.params.arguments);
           case 'import_wallet':
             return await this.handleImportWallet(request.params.arguments);
+          case 'estimate_transfer_fees':
+            return await this.handleEstimateTransferFees(request.params.arguments);
+          case 'check_transaction_status':
+            return await this.handleCheckTransactionStatus(request.params.arguments);
           default:
             throw new McpError(
               ErrorCode.MethodNotFound,
@@ -690,6 +747,44 @@ class NeoMcpServer {
         ...wallet,
         network: neoService.getNetwork()
       });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  /**
+   * Handle estimate_transfer_fees tool
+   */
+  private async handleEstimateTransferFees(args: any) {
+    try {
+      const fromAddress = validateAddress(args.fromAddress);
+      const toAddress = validateAddress(args.toAddress);
+      const asset = validateScriptHash(args.asset);
+      const amount = validateAmount(args.amount);
+      
+      if (typeof args.network !== 'string') {
+        throw new McpError(ErrorCode.InvalidParams, 'network must be a string');
+      }
+
+      const network = validateNetwork(args.network);
+      const neoService = this.getNeoService(network);
+      
+      const fees = await neoService.estimateTransferFees(fromAddress, toAddress, asset, amount);
+      return createSuccessResponse(fees);
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  /**
+   * Handle check_transaction_status tool
+   */
+  private async handleCheckTransactionStatus(args: any) {
+    try {
+      const txid = validateHash(args.txid);
+      const neoService = this.getNeoService(args?.network);
+      const status = await neoService.checkTransactionStatus(txid);
+      return createSuccessResponse(status);
     } catch (error) {
       return handleError(error);
     }

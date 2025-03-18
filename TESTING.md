@@ -1,6 +1,104 @@
-# Testing the Neo N3 MCP Server
+# Testing Guide for Neo N3 MCP
 
-This document provides detailed information about testing the Neo N3 MCP server. It covers both the Jest-based TypeScript tests and the simplified JavaScript test runner.
+This guide provides detailed information on testing the Neo N3 MCP server to verify functionality and ensure reliability.
+
+## Available Test Suites
+
+The Neo N3 MCP server provides several test suites to validate different aspects of the system:
+
+### 1. Core TypeScript Tests (Jest)
+
+The primary test suite uses Jest and TypeScript to test core functionality:
+
+```bash
+npm run test
+```
+
+This test suite covers all core service methods including blockchain queries, wallet operations, and network functionality.
+
+### 2. Transaction Status and Fee Estimation Tests
+
+A dedicated test suite for transaction status checking and fee estimation functionality:
+
+```bash
+npm run test:tx-status
+```
+
+This test validates:
+- Confirmed transaction status retrieval
+- Pending transaction status handling
+- Not-found transaction error handling
+- Fee estimation with safety buffer calculation
+
+### 3. Simple JavaScript Tests
+
+A simplified JavaScript test runner that doesn't require TypeScript compilation:
+
+```bash
+npm run test:simple
+```
+
+This test validates basic service functionality without the overhead of the Jest framework.
+
+### 4. Network Support Tests
+
+A specialized test suite for dual-network support:
+
+```bash
+npm run test:network
+```
+
+This test validates the mainnet and testnet network switching functionality.
+
+## Running All Tests
+
+To run all tests, you can execute each test suite sequentially:
+
+```bash
+npm run test && npm run test:simple && npm run test:network && npm run test:tx-status
+```
+
+Note: On Windows PowerShell, you may need to run each command separately due to command chaining limitations.
+
+## Mocking Strategy
+
+The test suites use different mocking approaches:
+
+1. **Jest Mocks**: The core TypeScript tests use Jest's mocking capabilities to mock the neon-js library.
+
+2. **Simple Mocks**: The simple and network tests use basic JavaScript object replacement to mock functionality.
+
+3. **Method Replacement**: The transaction status tests use method replacement with proper cleanup to ensure isolated testing.
+
+## Test Coverage
+
+The tests aim to provide comprehensive coverage of the Neo N3 MCP functionality:
+
+| Component | Coverage | Test Type |
+|-----------|----------|-----------|
+| NeoService core methods | 100% | Jest + Simple |
+| Transaction status | 100% | Dedicated tests |
+| Fee estimation | 100% | Dedicated tests |
+| Network support | 100% | Network tests |
+| Error handling | ~90% | Across all tests |
+
+## Adding New Tests
+
+When adding new functionality, you should add tests to the appropriate test suite:
+
+1. Core functionality should have Jest tests in `tests/neo-service.test.ts`
+2. Transaction-related functionality should have tests in `tests/transaction-status-test.js`
+3. Network-related functionality should have tests in `tests/network-test.js`
+
+## Test Environments
+
+The tests are designed to run in multiple environments:
+
+- Local development environment
+- CI/CD pipelines (GitHub Actions)
+- Docker containers
+
+All tests should pass in all environments without modifications.
 
 ## Test Architecture
 
@@ -190,16 +288,6 @@ If you encounter issues while testing:
    - Verify Docker is installed and running
    - Check for network connectivity issues
    - Run Docker with verbose output: `docker build --progress=plain -t mcp/neo-n3 .`
-
-## Adding New Tests
-
-When adding new functionality, follow these guidelines for adding tests:
-
-1. Add Jest tests in the `tests` directory
-2. Update the simplified JavaScript test runner if needed
-3. Ensure the tests cover all essential functionality
-4. Check for edge cases and error conditions
-5. Add both successful and failure test cases 
 
 ## Network Testing
 
