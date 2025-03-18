@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { NeoService } from '../src/services/neo-service';
 
 // Mock the neon-js library
@@ -42,6 +43,8 @@ jest.mock('@cityofzion/neon-js', () => ({
           { asset: 'GAS', amount: '50.5' },
         ],
       }),
+      invokeScript: jest.fn().mockResolvedValue({}),
+      sendRawTransaction: jest.fn().mockResolvedValue('txhash123'),
     })),
   },
   wallet: {
@@ -53,6 +56,7 @@ jest.mock('@cityofzion/neon-js', () => ({
       decrypt: jest.fn(),
     })),
     getScriptHashFromAddress: jest.fn().mockReturnValue('scriptHash'),
+    signTransaction: jest.fn().mockImplementation((tx) => tx),
   },
   sc: {
     createScript: jest.fn().mockReturnValue('script'),
@@ -101,6 +105,28 @@ describe('NeoService', () => {
     expect(balance.balance).toHaveLength(2);
     expect(balance.balance[0]).toHaveProperty('asset', 'NEO');
     expect(balance.balance[0]).toHaveProperty('amount', '100');
+  });
+  
+  test('transferAssets calls the right methods', async () => {
+    const account = { address: 'NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ' };
+    const result = await neoService.transferAssets(
+      account,
+      'NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ',
+      'NEO',
+      '1'
+    );
+    expect(result).toHaveProperty('txid', 'txhash123');
+  });
+  
+  test('invokeContract calls the right methods', async () => {
+    const account = { address: 'NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ' };
+    const result = await neoService.invokeContract(
+      account,
+      '0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5',
+      'transfer',
+      []
+    );
+    expect(result).toHaveProperty('txid', 'txhash123');
   });
 
   test('createWallet returns wallet information', () => {

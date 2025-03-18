@@ -3,9 +3,10 @@ version: '3.8'
 services:
   neo-mcp-server:
     build: .
+    image: r3e/neo-n3-mcp:latest
     container_name: neo-mcp-server
     environment:
-      - NEO_RPC_URL=http://neo-node:10332
+      - NEO_RPC_URL=http://seed1.neo.org:10332
       - WALLET_PATH=/app/wallets
       - NEO_NETWORK=mainnet
       - LOG_LEVEL=info

@@ -254,10 +254,16 @@ class NeoMcpServer {
     this.server.setRequestHandler(ListResourcesRequestSchema, async () => ({
       resources: [
         {
-          uri: 'neo://network/status',
-          name: 'Neo N3 Network Status',
-          description: 'Current status of the Neo N3 network',
-          mimeType: 'application/json',
+          name: 'neo://network/status',
+          description: 'Get the current status of the Neo N3 network',
+        },
+        {
+          name: 'neo://block/{height}',
+          description: 'Get a block by height',
+        },
+        {
+          name: 'neo://address/{address}/balance',
+          description: 'Get the balance of a Neo N3 address',
         },
       ],
     }));
@@ -265,77 +271,72 @@ class NeoMcpServer {
     this.server.setRequestHandler(ListResourceTemplatesRequestSchema, async () => ({
       resourceTemplates: [
         {
-          uriTemplate: 'neo://block/{height}',
-          name: 'Neo N3 Block by Height',
-          description: 'Block information at a specific height',
-          mimeType: 'application/json',
+          template: 'neo://network/status',
+          description: 'Get the current status of the Neo N3 network',
         },
         {
-          uriTemplate: 'neo://address/{address}/balance',
-          name: 'Neo N3 Address Balance',
-          description: 'Balance information for a specific address',
-          mimeType: 'application/json',
+          template: 'neo://block/{height}',
+          description: 'Get a block by height',
+          parameters: [
+            {
+              name: 'height',
+              description: 'The height of the block',
+            },
+          ],
+        },
+        {
+          template: 'neo://address/{address}/balance',
+          description: 'Get the balance of a Neo N3 address',
+          parameters: [
+            {
+              name: 'address',
+              description: 'The Neo N3 address',
+            },
+          ],
         },
       ],
     }));
 
     this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
       try {
-        const { uri } = request.params;
+        const resource = request.params.resource as string;
         
-        // Network status resource
-        if (uri === 'neo://network/status') {
-          const info = await this.neoService.getBlockchainInfo();
-          return {
-            contents: [
-              {
-                uri,
-                mimeType: 'application/json',
-                text: JSON.stringify(info, null, 2),
-              },
-            ],
-          };
+        if (resource === 'neo://network/status') {
+          const blockchainInfo = await this.neoService.getBlockchainInfo();
+          return createSuccessResponse(blockchainInfo);
         }
         
-        // Block by height resource template
-        const blockMatch = uri.match(/^neo:\/\/block\/(\d+)$/);
+        const blockMatch = resource.match(/^neo:\/\/block\/(\d+)$/);
         if (blockMatch) {
           const height = parseInt(blockMatch[1], 10);
           const block = await this.neoService.getBlock(height);
-          return {
-            contents: [
-              {
-                uri,
-                mimeType: 'application/json',
-                text: JSON.stringify(block, null, 2),
-              },
-            ],
-          };
+          return createSuccessResponse(block);
         }
         
-        // Address balance resource template
-        const balanceMatch = uri.match(/^neo:\/\/address\/([A-Za-z0-9]+)\/balance$/);
+        const balanceMatch = resource.match(/^neo:\/\/address\/([A-Za-z0-9]+)\/balance$/);
         if (balanceMatch) {
           const address = balanceMatch[1];
           validateAddress(address);
           const balance = await this.neoService.getBalance(address);
-          return {
-            contents: [
-              {
-                uri,
-                mimeType: 'application/json',
-                text: JSON.stringify(balance, null, 2),
-              },
-            ],
-          };
+          return createSuccessResponse(balance);
         }
         
-        throw new McpError(ErrorCode.InvalidRequest, `Unknown resource: ${uri}`);
-      } catch (error) {
         throw new McpError(
-          ErrorCode.InternalError,
-          error instanceof McpError ? error.message : `Error reading resource: ${error.message || 'Unknown error'}`
+          ErrorCode.InvalidRequest,
+          `Resource not found: ${resource}`
         );
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: error instanceof McpError 
+                ? error.message 
+                : `Error reading resource: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
+          isError: true,
+        };
       }
     });
   }

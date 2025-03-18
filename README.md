@@ -1,16 +1,92 @@
 # Neo N3 MCP Server
 
-An MCP server for interacting with the Neo N3 blockchain.
+<p align="center">
+  <img src="logo/logo.png" alt="Neo N3 Logo" width="100"/>
+</p>
 
-## Features
+An MCP server that provides seamless integration with the Neo N3 blockchain, allowing Claude to interact with blockchain data, manage wallets, transfer assets, and invoke smart contracts.
 
-- Query blockchain information (height, validators)
-- Get block details by height or hash
-- Get transaction details by hash
-- Check account balances
-- Transfer assets between addresses
-- Deploy and invoke smart contracts
-- Create and import wallets
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D16-green.svg)](https://nodejs.org)
+[![Docker](https://img.shields.io/badge/docker-supported-blue.svg)](https://www.docker.com/)
+[![NPM](https://img.shields.io/badge/npm-package-red.svg)](https://www.npmjs.com/package/@r3e/neo-n3-mcp)
+
+## 📚 Documentation
+
+- [API Reference](API.md) - Detailed API documentation for all tools and resources
+- [Deployment Guide](DEPLOYMENT.md) - Comprehensive deployment options and configuration
+- [Testing Guide](TESTING.md) - Testing approach and instructions for verifying functionality
+- [Architecture](ARCHITECTURE.md) - Detailed system architecture and design decisions
+
+## 🚀 Features
+
+- **Blockchain Information**PS C:\Users\liaoj\git\neo-mcp\neo-n3-mcp> npm run bublish:npm
+npm error Missing script: "bublish:npm"
+npm error
+npm error Did you mean one of these?
+npm error   npm run publish:npm # run the "publish:npm" package script
+npm error   npm run publish:all # run the "publish:all" package script
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run
+npm error A complete log of this run can be found in: C:\Users\liaoj\AppData\Local\npm-cache\_logs\2025-03-18T01_04_49_633Z-debug-0.log: Query blockchain height, validators, and network status
+- **Block & Transaction Data**: Get detailed information about blocks and transactions
+- **Account Management**: Check balances, create and import wallets securely
+- **Asset Operations**: Transfer NEO, GAS, and other tokens between addresses
+- **Smart Contract Interaction**: Deploy and invoke smart contracts on the Neo N3 blockchain
+- **Security Focused**: Input validation, secure wallet storage, and protection of private keys
+- **Docker Support**: Easy deployment with Docker and Docker Compose
+- **One-Click Installation**: Simple setup process for Claude integration
+
+## Configuration with MCP
+
+You can easily add the Neo N3 MCP server to your Claude MCP configuration in different ways:
+
+### Using NPM (Recommended for Quick Start)
+
+Add this to your `claude_desktop_config.json` or MCP settings:
+
+```json
+{
+  "mcpServers": {
+    "neo-n3": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@r3e/neo-n3-mcp"
+      ]
+    }
+  }
+}
+```
+
+This will automatically download and run the Neo N3 MCP server without any local installation.
+
+### Using Docker
+
+Add this to your `claude_desktop_config.json` or MCP settings:
+
+```json
+{
+  "mcpServers": {
+    "neo-n3": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "r3e/neo-n3-mcp"
+      ]
+    }
+  }
+}
+```
+
+To build the Docker image locally:
+
+```bash
+docker build -t r3e/neo-n3-mcp .
+```
 
 ## Installation
 
@@ -222,6 +298,67 @@ neo://block/{height}
 neo://address/{address}/balance
 ```
 
+## Testing
+
+The Neo N3 MCP server includes comprehensive tests to ensure its functionality. There are two primary ways to run tests:
+
+### Using Jest (TypeScript Tests)
+
+Jest tests provide comprehensive testing with proper mocking:
+
+```bash
+# Install dependencies first
+npm install
+
+# Run Jest tests
+npm test
+```
+
+The test suite includes tests for:
+- Blockchain information retrieval
+- Block and transaction data access
+- Account balance queries
+- Wallet creation and import
+- Asset transfers
+- Smart contract invocation
+
+### Using Simple Test Runner (JavaScript)
+
+A simplified JavaScript test runner is also available for quick testing:
+
+```bash
+# Run the simplified test
+node tests/simple-test.js
+```
+
+This test covers the core API functionality without requiring TypeScript compilation.
+
+## Development and Contributing
+
+### Publishing
+
+To publish the package to NPM and/or Docker registries:
+
+```bash
+# Publish to NPM
+npm run publish:npm
+
+# Build and publish Docker image
+npm run publish:docker
+
+# Publish to both
+npm run publish:all
+```
+
+### Development Setup
+
+For development, use:
+
+```bash
+# Build with TypeScript watching
+npm run dev
+```
+
 ## Security Considerations
 
 - Private keys are never exposed in responses
@@ -229,6 +366,64 @@ neo://address/{address}/balance
 - Input validation is performed for all parameters
 - Error messages are designed to be informative without exposing sensitive information
 
+## Technical Details
+
+### Service Architecture
+
+The Neo N3 MCP server is structured around several key components:
+
+1. **MCP Interface**: Implemented in `src/index.ts` - Handles MCP protocol communication
+2. **Neo Service**: Implemented in `src/services/neo-service.ts` - Core Neo N3 blockchain interactions
+3. **Validation**: Implemented in `src/utils/validation.ts` - Parameter validation
+4. **Error Handling**: Implemented in `src/utils/error-handler.ts` - Standardized error responses
+
+### Error Handling
+
+Errors are standardized through the `handleError` function which:
+- Converts Neo N3 specific errors to user-friendly messages
+- Masks sensitive information
+- Provides clear actionable information to users
+
+### Networking
+
+The server automatically handles network retries and errors when connecting to the Neo N3 blockchain network. Connection parameters like timeouts and retry attempts can be configured through environment variables.
+
+## Project Structure
+
+The project is organized as follows:
+
+```
+neo-n3-mcp/
+├── src/
+│   ├── services/
+│   │   └── neo-service.ts       # Core Neo N3 blockchain interaction
+│   ├── utils/
+│   │   ├── validation.ts        # Input validation
+│   │   └── error-handler.ts     # Error handling and responses
+│   ├── config.ts                # Configuration settings
+│   └── index.ts                 # MCP server and tool definitions
+├── tests/
+│   ├── neo-service.test.ts      # Jest tests for NeoService
+│   └── simple-test.js           # Simple JavaScript test runner
+├── scripts/
+│   ├── add-to-mcp-settings.js   # Script to add to MCP settings
+│   ├── publish-npm.js           # Script to publish to NPM
+│   └── publish-docker.sh        # Script to build and publish Docker image
+├── wallets/                     # Wallet storage directory
+├── dist/                        # Compiled TypeScript output
+├── docker-compose.yml           # Docker Compose configuration
+├── Dockerfile                   # Docker container definition
+├── package.json                 # Node.js package definition
+└── tsconfig.json                # TypeScript configuration
+```
+
+## Acknowledgments
+
+This project would not be possible without the following:
+
+- [**@cityofzion/neon-js**](https://github.com/CityOfZion/neon-js) - The official JavaScript SDK for Neo N3 blockchain, providing the core functionality for interacting with the Neo N3 network. Special thanks to the City of Zion team for their ongoing development and maintenance of this essential library.
+- [**MCP Protocol**](https://github.com/modelcontextprotocol) - For providing the standardized protocol for AI systems to interact with external tools and resources.
+
 ## License
 
-MIT
+This MCP server is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

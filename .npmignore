@@ -1,0 +1,28 @@
+# Source files
+src/
+tests/
+examples/
+
+# Config files
+.git/
+.gitignore
+tsconfig.json
+jest.config.js
+
+# Docker files
+Dockerfile
+docker-compose.yml
+
+# Logo files
+logo/
+
+# Scripts
+scripts/
+
+# Data directories
+wallets/
+neo-data/
+
+# Documentation not needed in npm package
+MARKETPLACE-SUBMISSION.md
+llms-install.md 

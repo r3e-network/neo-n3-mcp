@@ -1,7 +1,7 @@
 {
-  "name": "neo-n3-mcp",
-  "version": "0.1.0",
-  "description": "MCP server for Neo N3 blockchain",
+  "name": "@r3e/neo-n3-mcp",
+  "version": "1.0.1",
+  "description": "MCP server for Neo N3 blockchain integration",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
@@ -9,14 +9,32 @@
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "test": "jest",
+    "test:simple": "node tests/simple-test.js",
     "add-to-mcp": "node scripts/add-to-mcp-settings.js",
-    "postinstall": "mkdir -p wallets"
+    "postinstall": "mkdir -p wallets",
+    "prepublishOnly": "npm run build",
+    "publish:npm": "node scripts/publish-npm.js",
+    "publish:docker": "scripts/publish-docker.sh",
+    "publish:all": "npm run publish:npm && npm run publish:docker"
   },
+  "bin": {
+    "neo-n3-mcp": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "API.md",
+    "TESTING.md",
+    "DEPLOYMENT.md",
+    "ARCHITECTURE.md"
+  ],
   "keywords": [
     "neo",
     "blockchain",
     "mcp",
-    "n3"
+    "n3",
+    "modelcontextprotocol"
   ],
   "author": "",
   "license": "MIT",
@@ -30,6 +48,9 @@
   },
   "dependencies": {
     "@cityofzion/neon-js": "^5.3.0",
-    "@modelcontextprotocol/sdk": "^0.1.0"
+    "@r3e/sdk": "^0.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

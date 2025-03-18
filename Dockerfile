@@ -15,6 +15,13 @@ RUN npm run build
 # Runtime stage
 FROM node:18-alpine
 
+LABEL org.opencontainers.image.title="Neo N3 MCP Server"
+LABEL org.opencontainers.image.description="MCP server for Neo N3 blockchain integration"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.vendor="R3E Network"
+LABEL org.opencontainers.image.source="https://github.com/R3E-Network/neo-n3-mcp"
+LABEL org.opencontainers.image.documentation="https://github.com/R3E-Network/neo-n3-mcp#readme"
+
 WORKDIR /app
 
 # Copy package files and install production dependencies only
@@ -35,5 +42,5 @@ ENV NODE_ENV=production
 ENV NEO_RPC_URL=http://neo-node:10332
 ENV WALLET_PATH=/app/wallets
 
-# Run the server
-CMD ["node", "dist/index.js"]
+# Run the server in stdio mode for MCP compatibility
+ENTRYPOINT ["node", "dist/index.js"]
