@@ -10,6 +10,8 @@ An MCP server that provides seamless integration with the Neo N3 blockchain, all
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D16-green.svg)](https://nodejs.org)
 [![Docker](https://img.shields.io/badge/docker-supported-blue.svg)](https://www.docker.com/)
 [![NPM](https://img.shields.io/badge/npm-package-red.svg)](https://www.npmjs.com/package/@r3e/neo-n3-mcp)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/R3E-Network/neo-n3-mcp/actions)
+[![Test Status](https://img.shields.io/badge/tests-passing-brightgreen.svg)](https://github.com/R3E-Network/neo-n3-mcp/actions)
 
 ## 📚 Documentation
 

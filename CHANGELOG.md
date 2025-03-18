@@ -4,6 +4,13 @@ All notable changes to the Neo N3 MCP server will be documented in this file.
 
 ## [1.0.3] - 2025-03-18
 
+### Added
+- Build and test status badges to README.md
+- GitHub Actions workflows:
+  - CI workflow for build and test verification
+  - Release workflow for npm and Docker publishing
+  - Badge update workflow for automatic README updates
+
 ### Changed
 - Updated example files to better demonstrate network parameter usage
 - Improved documentation formatting and clarity
