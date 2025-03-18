@@ -2,6 +2,13 @@
 
 All notable changes to the Neo N3 MCP server will be documented in this file.
 
+## [1.0.3] - 2025-03-18
+
+### Changed
+- Updated example files to better demonstrate network parameter usage
+- Improved documentation formatting and clarity
+- Added additional resource URL examples
+
 ## [1.0.2] - 2025-03-18
 
 ### Added

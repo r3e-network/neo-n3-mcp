@@ -1,6 +1,6 @@
 {
   "name": "@r3e/neo-n3-mcp",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "MCP server for Neo N3 blockchain integration",
   "main": "dist/index.js",
   "type": "module",
