@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integration Guide | Neo N3 MCP Server</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="integration-page">
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1>Neo N3 MCP Server</h1>
+                <span class="powered-by">Powered by R3E Network</span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="documentation.html">Documentation</a></li>
+                    <li><a href="user-guide.html">User Guide</a></li>
+                    <li><a href="integration.html" class="active">Integration</a></li>
+                    <li><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank" class="github-link">GitHub</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="documentation-container">
+        <aside class="doc-sidebar">
+            <div class="sidebar-content">
+                <h3>Integration Guide</h3>
+                <ul>
+                    <li><a href="#introduction">Introduction</a></li>
+                    <li><a href="#understanding-mcp">Understanding MCP</a></li>
+                    <li><a href="#setting-up">Setting up Neo N3 MCP Server</a>
+                        <ul>
+                            <li><a href="#installation">Installation</a></li>
+                            <li><a href="#configuration">Configuration</a></li>
+                            <li><a href="#running">Running the Server</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#integrating-with-ai">Integrating with AI Systems</a>
+                        <ul>
+                            <li><a href="#langchain">LangChain Integration</a></li>
+                            <li><a href="#llamaindex">LlamaIndex Integration</a></li>
+                            <li><a href="#custom-integration">Custom Integration</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#integration-examples">Integration Examples</a>
+                        <ul>
+                            <li><a href="#chatbot-example">Blockchain Chatbot</a></li>
+                            <li><a href="#nft-assistant">NFT Creation Assistant</a></li>
+                            <li><a href="#defi-advisor">DeFi Advisor</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#deployment">Deployment Strategies</a>
+                        <ul>
+                            <li><a href="#local-deployment">Local Deployment</a></li>
+                            <li><a href="#cloud-deployment">Cloud Deployment</a></li>
+                            <li><a href="#containerization">Containerization</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#security-considerations">Security Considerations</a></li>
+                    <li><a href="#troubleshooting">Troubleshooting</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="doc-content">
+            <section id="introduction">
+                <h1>Neo N3 MCP Server Integration Guide</h1>
+                <p>This guide will help you integrate the Neo N3 MCP Server with your AI systems, enabling them to interact with the Neo N3 blockchain and its famous contracts through the Model Context Protocol (MCP).</p>
+                
+                <p>By integrating the Neo N3 MCP Server, your AI systems will gain the ability to:</p>
+                <ul>
+                    <li>Query the Neo N3 blockchain for information</li>
+                    <li>Manage Neo N3 wallets and accounts</li>
+                    <li>Transfer assets between addresses</li>
+                    <li>Interact with famous Neo N3 contracts like NeoFS, NeoBurger, Flamingo, and more</li>
+                </ul>
+            </section>
+
+            <section id="understanding-mcp">
+                <h2>Understanding MCP</h2>
+                <p>The Model Context Protocol (MCP) is a standardized protocol for AI systems to interact with external tools and resources. It provides a consistent interface for AI models to access capabilities outside of their training data.</p>
+                
+                <p>Key concepts of MCP:</p>
+                <ul>
+                    <li><strong>Tools</strong>: Functions that an AI system can call to perform actions</li>
+                    <li><strong>Resources</strong>: Data sources that an AI system can access</li>
+                    <li><strong>Server</strong>: A provider of tools and resources</li>
+                    <li><strong>Client</strong>: A consumer of tools and resources</li>
+                </ul>
+                
+                <p>The Neo N3 MCP Server implements the MCP protocol to provide tools and resources for interacting with the Neo N3 blockchain. AI systems that support MCP can use these tools and resources to perform blockchain operations without requiring direct knowledge of blockchain APIs.</p>
+                
+                <h3>MCP Architecture</h3>
+                <div class="image-container">
+                    <img src="img/mcp-architecture.png" alt="MCP Architecture" class="large-image">
+                </div>
+                
+                <p>In this architecture:</p>
+                <ul>
+                    <li>The <strong>AI System</strong> is your application or model that needs blockchain functionality</li>
+                    <li>The <strong>MCP Client</strong> is responsible for communication with the MCP Server</li>
+                    <li>The <strong>Neo N3 MCP Server</strong> provides tools and resources for interacting with the Neo N3 blockchain</li>
+                    <li>The <strong>Neo N3 Blockchain</strong> is the underlying blockchain platform</li>
+                </ul>
+            </section>
+
+            <section id="setting-up">
+                <h2>Setting up Neo N3 MCP Server</h2>
+                <p>This section covers how to set up the Neo N3 MCP Server.</p>
+                
+                <section id="installation">
+                    <h3>Installation</h3>
+                    <p>You can install the Neo N3 MCP Server using npm:</p>
+                    <pre><code>npm install @r3e/neo-n3-mcp</code></pre>
+                    
+                    <p>For global installation:</p>
+                    <pre><code>npm install -g @r3e/neo-n3-mcp</code></pre>
+                    
+                    <h4>Requirements</h4>
+                    <ul>
+                        <li>Node.js v14 or later</li>
+                        <li>npm v6 or later</li>
+                    </ul>
+                </section>
+                
+                <section id="configuration">
+                    <h3>Configuration</h3>
+                    <p>The Neo N3 MCP Server can be configured through environment variables or a configuration file.</p>
+                    
+                    <h4>Environment Variables</h4>
+                    <table class="config-table">
+                        <thead>
+                            <tr>
+                                <th>Variable</th>
+                                <th>Description</th>
+                                <th>Default</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>NEO_MAINNET_RPC_URL</td>
+                                <td>URL for Neo N3 mainnet</td>
+                                <td>https://mainnet1.neo.coz.io:443</td>
+                            </tr>
+                            <tr>
+                                <td>NEO_TESTNET_RPC_URL</td>
+                                <td>URL for Neo N3 testnet</td>
+                                <td>https://testnet1.neo.coz.io:443</td>
+                            </tr>
+                            <tr>
+                                <td>NEO_MCP_PORT</td>
+                                <td>Port number for the MCP server</td>
+                                <td>8080</td>
+                            </tr>
+                            <tr>
+                                <td>NEO_MCP_LOG_LEVEL</td>
+                                <td>Logging level (debug, info, warn, error)</td>
+                                <td>info</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h4>Configuration File</h4>
+                    <p>You can also provide a configuration file at <code>~/.neo-n3-mcp/config.json</code>:</p>
+                    <pre><code>{
+  "port": 3000,
+  "network": "mainnet",
+  "mainnetRpcUrl": "https://mainnet1.neo.coz.io:443",
+  "testnetRpcUrl": "https://testnet1.neo.coz.io:443",
+  "walletPath": "./wallets"
+}</code></pre>
+                </section>
+                
+                <section id="running">
+                    <h3>Running the Server</h3>
+                    <p>Start the server using the following command:</p>
+                    <pre><code>npx neo-n3-mcp</code></pre>
+                    
+                    <p>By default, the server will run on port 8080. You can customize this by setting the <code>NEO_MCP_PORT</code> environment variable:</p>
+                    <pre><code>NEO_MCP_PORT=3000 npx neo-n3-mcp</code></pre>
+                    
+                    <p>You should see output similar to:</p>
+                    <pre><code>Neo N3 MCP Server started on port 8080
+Mainnet RPC: https://mainnet1.neo.coz.io:443
+Testnet RPC: https://testnet1.neo.coz.io:443
+Log level: info</code></pre>
+                </section>
+            </section>
+
+            <section id="integrating-with-ai">
+                <h2>Integrating with AI Systems</h2>
+                <p>This section covers how to integrate the Neo N3 MCP Server with various AI systems.</p>
+                
+                <section id="langchain">
+                    <h3>LangChain Integration</h3>
+                    <p><a href="https://js.langchain.com/" target="_blank">LangChain</a> is a framework for developing applications powered by language models. You can integrate the Neo N3 MCP Server with LangChain to create AI applications that can interact with the Neo N3 blockchain.</p>
+                    
+                    <h4>Installation</h4>
+                    <pre><code>npm install langchain @modelcontextprotocol/sdk @r3e/neo-n3-mcp</code></pre>
+                    
+                    <h4>Basic Integration</h4>
+                    <pre><code>import { ChatOpenAI } from 'langchain/chat_models/openai';
+import { Client } from '@modelcontextprotocol/sdk/client';
+import { createMcpAgent } from '@langchain/mcp';
+
+// Initialize the LLM
+const llm = new ChatOpenAI({
+  modelName: 'gpt-4',
+  temperature: 0
+});
+
+// Initialize the MCP client
+const mcpClient = new Client({
+  url: 'http://localhost:8080'
+});
+
+// Create an agent with MCP tools
+const agent = createMcpAgent({
+  llm,
+  mcpClient,
+  tools: ['get_blockchain_info', 'get_balance', 'list_famous_contracts']
+});
+
+// Run the agent
+const result = await agent.invoke({
+  input: 'What is the current block height of the Neo N3 mainnet?'
+});
+
+console.log(result.output);</code></pre>
+                    
+                    <h4>Advanced Integration</h4>
+                    <p>For more advanced integration, you can create custom tools that combine multiple MCP tools:</p>
+                    <pre><code>import { ChatOpenAI } from 'langchain/chat_models/openai';
+import { Client } from '@modelcontextprotocol/sdk/client';
+import { createMcpAgent } from '@langchain/mcp';
+import { DynamicTool } from 'langchain/tools';
+
+// Initialize the LLM
+const llm = new ChatOpenAI({
+  modelName: 'gpt-4',
+  temperature: 0
+});
+
+// Initialize the MCP client
+const mcpClient = new Client({
+  url: 'http://localhost:8080'
+});
+
+// Create a custom tool that combines multiple MCP tools
+const getAccountInfoTool = new DynamicTool({
+  name: 'get_account_info',
+  description: 'Get detailed information about a Neo N3 account, including balances for NEO, GAS, and bNEO',
+  func: async (address) => {
+    // Get NEO balance
+    const neoBalance = await mcpClient.callTool('get_balance', {
+      address,
+      asset: 'NEO',
+      network: 'mainnet'
+    });
+    
+    // Get GAS balance
+    const gasBalance = await mcpClient.callTool('get_balance', {
+      address,
+      asset: 'GAS',
+      network: 'mainnet'
+    });
+    
+    // Get bNEO balance
+    const bNeoBalance = await mcpClient.callTool('neoburger_get_balance', {
+      address,
+      network: 'mainnet'
+    });
+    
+    return JSON.stringify({
+      address,
+      balances: {
+        neo: neoBalance.amount,
+        gas: gasBalance.amount,
+        bNeo: bNeoBalance.amount
+      }
+    });
+  }
+});
+
+// Create an agent with MCP tools and custom tools
+const agent = createMcpAgent({
+  llm,
+  mcpClient,
+  tools: ['get_blockchain_info', 'list_famous_contracts'],
+  additionalTools: [getAccountInfoTool]
+});
+
+// Run the agent
+const result = await agent.invoke({
+  input: 'What are the balances for the account NXV7ZhHaLY2GNjp6R1AYBV9FqrVnGLfQcz?'
+});
+
+console.log(result.output);</code></pre>
+                </section>
+                
+                <section id="llamaindex">
+                    <h3>LlamaIndex Integration</h3>
+                    <p><a href="https://www.llamaindex.ai/" target="_blank">LlamaIndex</a> is a data framework for LLM applications. You can integrate the Neo N3 MCP Server with LlamaIndex to create AI applications that can retrieve and process blockchain data.</p>
+                    
+                    <h4>Installation</h4>
+                    <pre><code>npm install llamaindex openai @modelcontextprotocol/sdk @r3e/neo-n3-mcp</code></pre>
+                    
+                    <h4>Basic Integration</h4>
+                    <pre><code>import { VectorStoreIndex, SimpleDirectoryReader } from 'llamaindex';
+import { OpenAI } from 'llamaindex/llms/openai';
+import { Client } from '@modelcontextprotocol/sdk/client';
+
+// Initialize the LLM
+const llm = new OpenAI({
+  model: 'gpt-4',
+  temperature: 0
+});
+
+// Initialize the MCP client
+const mcpClient = new Client({
+  url: 'http://localhost:8080'
+});
+
+// Create custom Neo N3 tools
+const neoTools = {
+  getBlockchainInfo: async () => {
+    return await mcpClient.callTool('get_blockchain_info', {
+      network: 'mainnet'
+    });
+  },
+  
+  getBalance: async (address, asset = 'NEO') => {
+    return await mcpClient.callTool('get_balance', {
+      address,
+      asset,
+      network: 'mainnet'
+    });
+  }
+};
+
+// Create a query engine with our tools
+const queryEngine = await VectorStoreIndex.fromDocuments(
+  await new SimpleDirectoryReader().loadData('./docs'),
+  { llm }
+);
+
+// Augment the query engine with Neo N3 tools
+const augmentedQueryEngine = queryEngine.asQueryEngine({
+  tools: [
+    {
+      name: 'neo_get_blockchain_info',
+      description: 'Get blockchain information from Neo N3',
+      func: neoTools.getBlockchainInfo
+    },
+    {
+      name: 'neo_get_balance',
+      description: 'Get asset balance for a Neo N3 address',
+      func: neoTools.getBalance
+    }
+  ]
+});
+
+// Query the engine
+const response = await augmentedQueryEngine.query(
+  'What is the current block height of Neo N3 and the NEO balance of address NXV7ZhHaLY2GNjp6R1AYBV9FqrVnGLfQcz?'
+);
+
+console.log(response.toString());</code></pre>
+                </section>
+                
+                <section id="custom-integration">
+                    <h3>Custom Integration</h3>
+                    <p>You can also integrate the Neo N3 MCP Server directly into your custom AI systems using the MCP SDK.</p>
+                    
+                    <h4>Installation</h4>
+                    <pre><code>npm install @modelcontextprotocol/sdk @r3e/neo-n3-mcp</code></pre>
+                    
+                    <h4>Basic Integration</h4>
+                    <pre><code>import { Client } from '@modelcontextprotocol/sdk/client';
+
+// Initialize the MCP client
+const mcpClient = new Client({
+  url: 'http://localhost:8080'
+});
+
+// List available tools
+const tools = await mcpClient.listTools();
+console.log('Available tools:', tools);
+
+// Call a tool
+async function callNeoTool(toolName, params) {
+  try {
+    const result = await mcpClient.callTool(toolName, params);
+    return result;
+  } catch (error) {
+    console.error(`Error calling tool ${toolName}:`, error);
+    throw error;
+  }
+}
+
+// Example: Get blockchain info
+const blockchainInfo = await callNeoTool('get_blockchain_info', {
+  network: 'mainnet'
+});
+console.log('Blockchain info:', blockchainInfo);
+
+// Example: Get balance
+const balance = await callNeoTool('get_balance', {
+  address: 'NXV7ZhHaLY2GNjp6R1AYBV9FqrVnGLfQcz',
+  asset: 'NEO',
+  network: 'mainnet'
+});
+console.log('Balance:', balance);</code></pre>
+                    
+                    <h4>Integrating into a Custom AI System</h4>
+                    <p>Here's an example of integrating the Neo N3 MCP Server into a custom AI system:</p>
+                    <pre><code>import { Client } from '@modelcontextprotocol/sdk/client';
+import { OpenAI } from 'openai';
+
+// Initialize the OpenAI API
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
+// Initialize the MCP client
+const mcpClient = new Client({
+  url: 'http://localhost:8080'
+});
+
+// Function to handle blockchain queries
+async function handleBlockchainQuery(query) {
+  // Use the LLM to identify the intent
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [
+      {
+        role: 'system',
+        content: 'You are a helpful assistant that answers questions about the Neo N3 blockchain.'
+      },
+      {
+        role: 'user',
+        content: `Identify the intent and parameters from this blockchain query: "${query}"`
+      }
+    ],
+    response_format: { type: 'json_object' }
+  });
+  
+  const intent = JSON.parse(response.choices[0].message.content);
+  
+  // Based on the intent, call the appropriate MCP tool
+  switch (intent.action) {
+    case 'get_blockchain_info':
+      return await mcpClient.callTool('get_blockchain_info', {
+        network: intent.network || 'mainnet'
+      });
+      
+    case 'get_balance':
+      return await mcpClient.callTool('get_balance', {
+        address: intent.address,
+        asset: intent.asset || 'NEO',
+        network: intent.network || 'mainnet'
+      });
+      
+    case 'get_contract_info':
+      return await mcpClient.callTool('get_contract_info', {
+        contractName: intent.contractName,
+        network: intent.network || 'mainnet'
+      });
+      
+    default:
+      throw new Error(`Unknown intent: ${intent.action}`);
+  }
+}
+
+// Example usage
+const query = 'What is the current block height of Neo N3 mainnet?';
+const result = await handleBlockchainQuery(query);
+console.log(result);</code></pre>
+                </section>
+            </section>
+
+            <section id="integration-examples">
+                <h2>Integration Examples</h2>
+                <p>This section provides examples of how to integrate the Neo N3 MCP Server into various AI applications.</p>
+                
+                <section id="chatbot-example">
+                    <h3>Blockchain Chatbot</h3>
+                    <p>Create a chatbot that can answer questions about the Neo N3 blockchain.</p>
+                    
+                    <pre><code>import { ChatOpenAI } from 'langchain/chat_models/openai';
+import { Client } from '@modelcontextprotocol/sdk/client';
+import { createMcpAgent } from '@langchain/mcp';
+
+// Initialize the LLM
+const llm = new ChatOpenAI({
+  modelName: 'gpt-4',
+  temperature: 0
+});
+
+// Initialize the MCP client
+const mcpClient = new Client({
+  url: 'http://localhost:8080'
+});
+
+// Create an agent with MCP tools
+const agent = createMcpAgent({
+  llm,
+  mcpClient,
+  tools: [
+    'get_blockchain_info',
+    'get_block',
+    'get_transaction',
+    'get_balance',
+    'list_famous_contracts',
+    'get_contract_info'
+  ]
+});
+
+// Create a chatbot interface
+async function handleChatMessage(message) {
+  try {
+    const result = await agent.invoke({
+      input: message
+    });
+    
+    return result.output;
+  } catch (error) {
+    console.error('Error handling chat message:', error);
+    return 'Sorry, I encountered an error while processing your request.';
+  }
+}
+
+// Example usage
+const response = await handleChatMessage(
+  'What is the current block height and when was the last block mined?'
+);
+console.log(response);</code></pre>
+                </section>
+                
+                <section id="nft-assistant">
+                    <h3>NFT Creation Assistant</h3>
+                    <p>Create an assistant that helps users create and list NFTs on GhostMarket.</p>
+                    
+                    <pre><code>import { ChatOpenAI } from 'langchain/chat_models/openai';
+import { Client } from '@modelcontextprotocol/sdk/client';
+import { createMcpAgent } from '@langchain/mcp';
+
+// Initialize the LLM
+const llm = new ChatOpenAI({
+  modelName: 'gpt-4',
+  temperature: 0
+});
+
+// Initialize the MCP client
+const mcpClient = new Client({
+  url: 'http://localhost:8080'
+});
+
+// Create an agent with MCP tools
+const agent = createMcpAgent({
+  llm,
+  mcpClient,
+  tools: [
+    'ghostmarket_create_nft',
+    'ghostmarket_list_nft',
+    'ghostmarket_get_token_info'
+  ]
+});
+
+// Create a function to handle NFT creation
+async function createAndListNFT(walletPath, walletPassword, tokenURI, properties, price, paymentToken) {
+  try {
+    // Create the NFT
+    const nftResult = await mcpClient.callTool('ghostmarket_create_nft', {
+      walletPath,
+      walletPassword,
+      tokenURI,
+      properties,
+      network: 'mainnet'
+    });
+    
+    const tokenId = nftResult.tokenId;
+    
+    // List the NFT for sale
+    const listingResult = await mcpClient.callTool('ghostmarket_list_nft', {
+      walletPath,
+      walletPassword,
+      tokenId,
+      price,
+      paymentToken,
+      network: 'mainnet'
+    });
+    
+    return {
+      nft: nftResult,
+      listing: listingResult
+    };
+  } catch (error) {
+    console.error('Error creating and listing NFT:', error);
+    throw error;
+  }
+}
+
+// Example usage
+const result = await createAndListNFT(
+  '/path/to/wallet.json',
+  'your-password',
+  'https://example.com/nft/metadata.json',
+  [
+    { key: 'artist', value: 'ExampleArtist' },
+    { key: 'edition', value: '1/1' }
+  ],
+  '100',
+  '0xd2a4cff31913016155e38e474a2c06d08be276cf'
+);
+console.log(result);</code></pre>
+                </section>
+                
+                <section id="defi-advisor">
+                    <h3>DeFi Advisor</h3>
+                    <p>Create an advisor that helps users optimize their DeFi investments on Neo N3.</p>
+                    
+                    <pre><code>import { ChatOpenAI } from 'langchain/chat_models/openai';
+import { Client } from '@modelcontextprotocol/sdk/client';
+import { createMcpAgent } from '@langchain/mcp';
+
+// Initialize the LLM
+const llm = new ChatOpenAI({
+  modelName: 'gpt-4',
+  temperature: 0
+});
+
+// Initialize the MCP client
+const mcpClient = new Client({
+  url: 'http://localhost:8080'
+});
+
+// Create an agent with MCP tools
+const agent = createMcpAgent({
+  llm,
+  mcpClient,
+  tools: [
+    'get_balance',
+    'neoburger_get_balance',
+    'flamingo_get_balance',
+    'neocompound_get_balance'
+  ]
+});
+
+// Create a function to get a user's portfolio
+async function getUserPortfolio(address) {
+  try {
+    // Get NEO balance
+    const neoBalance = await mcpClient.callTool('get_balance', {
+      address,
+      asset: 'NEO',
+      network: 'mainnet'
+    });
+    
+    // Get GAS balance
+    const gasBalance = await mcpClient.callTool('get_balance', {
+      address,
+      asset: 'GAS',
+      network: 'mainnet'
+    });
+    
+    // Get bNEO balance
+    const bNeoBalance = await mcpClient.callTool('neoburger_get_balance', {
+      address,
+      network: 'mainnet'
+    });
+    
+    // Get FLM balance
+    const flmBalance = await mcpClient.callTool('flamingo_get_balance', {
+      address,
+      network: 'mainnet'
+    });
+    
+    return {
+      address,
+      balances: {
+        neo: neoBalance.amount,
+        gas: gasBalance.amount,
+        bNeo: bNeoBalance.amount,
+        flm: flmBalance.amount
+      }
+    };
+  } catch (error) {
+    console.error('Error getting user portfolio:', error);
+    throw error;
+  }
+}
+
+// Create a function to recommend DeFi strategies
+async function recommendDeFiStrategies(address) {
+  const portfolio = await getUserPortfolio(address);
+  
+  // Use the LLM to generate recommendations
+  const response = await llm.invoke([
+    {
+      role: 'system',
+      content: 'You are a DeFi advisor for Neo N3. Generate investment recommendations based on the user\'s portfolio.'
+    },
+    {
+      role: 'user',
+      content: `Here is the user's portfolio: ${JSON.stringify(portfolio, null, 2)}\n\nWhat DeFi strategies would you recommend?`
+    }
+  ]);
+  
+  return response.content;
+}
+
+// Example usage
+const recommendations = await recommendDeFiStrategies('NXV7ZhHaLY2GNjp6R1AYBV9FqrVnGLfQcz');
+console.log(recommendations);</code></pre>
+                </section>
+            </section>
+
+            <section id="deployment">
+                <h2>Deployment Strategies</h2>
+                <p>This section covers various strategies for deploying the Neo N3 MCP Server.</p>
+                
+                <section id="local-deployment">
+                    <h3>Local Deployment</h3>
+                    <p>The simplest deployment option is to run the Neo N3 MCP Server locally.</p>
+                    
+                    <h4>Running as a Background Process</h4>
+                    <p>You can use tools like <a href="https://pm2.keymetrics.io/" target="_blank">PM2</a> to run the server as a background process:</p>
+                    <pre><code># Install PM2
+npm install -g pm2
+
+# Start the server
+pm2 start "npx neo-n3-mcp" --name neo-n3-mcp
+
+# Check status
+pm2 status
+
+# View logs
+pm2 logs neo-n3-mcp
+
+# Stop the server
+pm2 stop neo-n3-mcp</code></pre>
+                </section>
+                
+                <section id="cloud-deployment">
+                    <h3>Cloud Deployment</h3>
+                    <p>You can deploy the Neo N3 MCP Server to cloud platforms like AWS, Azure, or GCP.</p>
+                    
+                    <h4>AWS Deployment</h4>
+                    <p>Here's an example of deploying to AWS EC2:</p>
+                    <ol>
+                        <li>Launch an EC2 instance with Node.js installed</li>
+                        <li>Clone your Neo N3 MCP Server repository</li>
+                        <li>Install dependencies: <code>npm install</code></li>
+                        <li>Start the server: <code>npm start</code></li>
+                    </ol>
+                    
+                    <h4>Heroku Deployment</h4>
+                    <p>Here's an example of deploying to Heroku:</p>
+                    <ol>
+                        <li>Create a <code>Procfile</code> with the content: <code>web: npm start</code></li>
+                        <li>Create a Heroku app: <code>heroku create</code></li>
+                        <li>Set environment variables: <code>heroku config:set NEO_MAINNET_RPC_URL=https://mainnet1.neo.coz.io:443</code></li>
+                        <li>Deploy to Heroku: <code>git push heroku main</code></li>
+                    </ol>
+                </section>
+                
+                <section id="containerization">
+                    <h3>Containerization</h3>
+                    <p>You can containerize the Neo N3 MCP Server using Docker.</p>
+                    
+                    <h4>Dockerfile</h4>
+                    <pre><code>FROM node:16-alpine
+
+WORKDIR /app
+
+# Copy package.json and package-lock.json
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source code
+COPY . .
+
+# Set environment variables
+ENV NEO_MAINNET_RPC_URL=https://mainnet1.neo.coz.io:443
+ENV NEO_TESTNET_RPC_URL=https://testnet1.neo.coz.io:443
+ENV NEO_MCP_PORT=8080
+
+# Expose port
+EXPOSE 8080
+
+# Start the server
+CMD ["npm", "start"]</code></pre>
+                    
+                    <h4>Docker Compose</h4>
+                    <pre><code>version: '3'
+
+services:
+  neo-n3-mcp:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - NEO_MAINNET_RPC_URL=https://mainnet1.neo.coz.io:443
+      - NEO_TESTNET_RPC_URL=https://testnet1.neo.coz.io:443
+      - NEO_MCP_PORT=8080
+    volumes:
+      - ./wallets:/app/wallets</code></pre>
+                </section>
+            </section>
+
+            <section id="security-considerations">
+                <h2>Security Considerations</h2>
+                <p>When integrating the Neo N3 MCP Server with AI systems, it's important to consider security implications.</p>
+                
+                <h3>Wallet Security</h3>
+                <ul>
+                    <li>Never hardcode wallet passwords in your code</li>
+                    <li>Use environment variables or a secure configuration manager for sensitive information</li>
+                    <li>Implement proper access controls for wallet operations</li>
+                    <li>Regularly back up wallet files</li>
+                </ul>
+                
+                <h3>Network Security</h3>
+                <ul>
+                    <li>Use HTTPS when exposing the MCP server publicly</li>
+                    <li>Implement rate limiting to prevent abuse</li>
+                    <li>Consider implementing authentication for MCP server access</li>
+                    <li>Restrict MCP server access to trusted networks when possible</li>
+                </ul>
+                
+                <h3>Operational Security</h3>
+                <ul>
+                    <li>Implement logging and monitoring for suspicious activities</li>
+                    <li>Regularly update the Neo N3 MCP Server and its dependencies</li>
+                    <li>Test on testnet before deploying to mainnet</li>
+                    <li>Implement safeguards for high-value transactions</li>
+                </ul>
+            </section>
+
+            <section id="troubleshooting">
+                <h2>Troubleshooting</h2>
+                <p>This section covers common issues and their solutions.</p>
+                
+                <h3>Connection Issues</h3>
+                <details>
+                    <summary><strong>MCP server is running, but client can't connect</strong></summary>
+                    <p>Possible solutions:</p>
+                    <ul>
+                        <li>Verify that the server URL is correct</li>
+                        <li>Check if there's a firewall blocking the connection</li>
+                        <li>Verify that the server is listening on the expected port</li>
+                    </ul>
+                </details>
+                
+                <details>
+                    <summary><strong>Server can't connect to Neo N3 RPC</strong></summary>
+                    <p>Possible solutions:</p>
+                    <ul>
+                        <li>Verify that the RPC URL is correct</li>
+                        <li>Check if the RPC server is running</li>
+                        <li>Check your network connection</li>
+                        <li>Try a different RPC provider</li>
+                    </ul>
+                </details>
+                
+                <h3>Tool Execution Issues</h3>
+                <details>
+                    <summary><strong>Tool returns an error</strong></summary>
+                    <p>Possible solutions:</p>
+                    <ul>
+                        <li>Check the error message for specific information</li>
+                        <li>Verify that the tool parameters are correct</li>
+                        <li>Check if the operation requires signing and if you've provided the correct wallet information</li>
+                    </ul>
+                </details>
+                
+                <details>
+                    <summary><strong>Transaction fails</strong></summary>
+                    <p>Possible solutions:</p>
+                    <ul>
+                        <li>Verify that you have sufficient balance</li>
+                        <li>Check if the transaction requires GAS and if you have enough</li>
+                        <li>Verify that the contract is available on the selected network</li>
+                    </ul>
+                </details>
+                
+                <h3>AI Integration Issues</h3>
+                <details>
+                    <summary><strong>AI system doesn't recognize MCP tools</strong></summary>
+                    <p>Possible solutions:</p>
+                    <ul>
+                        <li>Verify that you've registered the tools with the AI system</li>
+                        <li>Check if the tool descriptions are clear and informative</li>
+                        <li>Ensure that the AI system understands how to use the tools</li>
+                    </ul>
+                </details>
+                
+                <details>
+                    <summary><strong>AI system uses tools incorrectly</strong></summary>
+                    <p>Possible solutions:</p>
+                    <ul>
+                        <li>Improve the tool descriptions</li>
+                        <li>Provide examples of correct tool usage</li>
+                        <li>Implement parameter validation to catch incorrect usage</li>
+                    </ul>
+                </details>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <h2>Neo N3 MCP Server</h2>
+                    <p>Powered by R3E Network</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-links-column">
+                        <h3>Documentation</h3>
+                        <ul>
+                            <li><a href="documentation.html#overview">Overview</a></li>
+                            <li><a href="documentation.html#installation">Installation</a></li>
+                            <li><a href="documentation.html#configuration">Configuration</a></li>
+                            <li><a href="documentation.html#api-reference">API Reference</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-links-column">
+                        <h3>Resources</h3>
+                        <ul>
+                            <li><a href="user-guide.html">User Guide</a></li>
+                            <li><a href="integration.html">Integration Guide</a></li>
+                            <li><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank">GitHub</a></li>
+                            <li><a href="https://docs.neo.org/" target="_blank">Neo Documentation</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-links-column">
+                        <h3>Community</h3>
+                        <ul>
+                            <li><a href="https://discord.gg/R3E-Network" target="_blank">Discord</a></li>
+                            <li><a href="https://twitter.com/R3E-Network" target="_blank">Twitter</a></li>
+                            <li><a href="https://medium.com/@R3E-Network" target="_blank">Medium</a></li>
+                            <li><a href="https://t.me/R3E-Network" target="_blank">Telegram</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 R3E Network. All rights reserved.</p>
+                <div class="footer-bottom-links">
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Privacy Policy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html> 

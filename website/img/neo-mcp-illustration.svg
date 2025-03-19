@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" fill="none">
+  <rect width="800" height="600" fill="#f5f7fa"/>
+  <circle cx="400" cy="300" r="150" fill="#edf8ff" opacity="0.5"/>
+  <path d="M250 150L400 225V450L250 525L100 450V225L250 150Z" stroke="#00e599" stroke-width="4" fill="#00e59910"/>
+  <path d="M550 150L700 225V450L550 525L400 450V225L550 150Z" stroke="#5a70b2" stroke-width="4" fill="#5a70b210"/>
+  <path d="M250 150V525" stroke="#00e599" stroke-width="4" stroke-dasharray="8 8"/>
+  <path d="M400 225L550 150" stroke="#5a70b2" stroke-width="4"/>
+  <path d="M400 450L550 525" stroke="#5a70b2" stroke-width="4"/>
+  <circle cx="250" cy="150" r="15" fill="#00e599"/>
+  <circle cx="400" cy="225" r="15" fill="#00e599"/>
+  <circle cx="400" cy="450" r="15" fill="#00e599"/>
+  <circle cx="250" cy="525" r="15" fill="#00e599"/>
+  <circle cx="100" cy="450" r="15" fill="#00e599"/>
+  <circle cx="100" cy="225" r="15" fill="#00e599"/>
+  <circle cx="550" cy="150" r="15" fill="#5a70b2"/>
+  <circle cx="700" cy="225" r="15" fill="#5a70b2"/>
+  <circle cx="700" cy="450" r="15" fill="#5a70b2"/>
+  <circle cx="550" cy="525" r="15" fill="#5a70b2"/>
+  <text x="400" y="560" text-anchor="middle" font-size="24" font-family="Arial" fill="#222">Neo N3 MCP Server</text>
+  <text x="400" y="590" text-anchor="middle" font-size="16" font-family="Arial" fill="#555">Blockchain Access Through MCP Protocol</text>
+</svg> 

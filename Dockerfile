@@ -57,7 +57,9 @@ RUN chmod +x ./dist/index.js
 
 # Set environment variables
 ENV NODE_ENV=production
-ENV NEO_RPC_URL=http://neo-node:10332
+ENV NEO_RPC_URL=https://mainnet1.neo.coz.io:443
+ENV NEO_MAINNET_RPC_URL=https://mainnet1.neo.coz.io:443
+ENV NEO_TESTNET_RPC_URL=https://testnet1.neo.coz.io:443
 ENV WALLET_PATH=/app/wallets
 
 # Run the server in stdio mode for MCP compatibility

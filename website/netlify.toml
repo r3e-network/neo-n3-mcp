@@ -1,0 +1,12 @@
+[build]
+  publish = "./"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[dev]
+  command = "npx serve"
+  port = 8888
+  publish = "./" 

@@ -12,9 +12,11 @@ An MCP server that provides seamless integration with the Neo N3 blockchain, all
 [![NPM](https://img.shields.io/badge/npm-package-red.svg)](https://www.npmjs.com/package/@r3e/neo-n3-mcp)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/R3E-Network/neo-n3-mcp/actions)
 [![Test Status](https://img.shields.io/badge/tests-passing-brightgreen.svg)](https://github.com/R3E-Network/neo-n3-mcp/actions)
+[![Version](https://img.shields.io/badge/version-1.0.8-blue.svg)](https://github.com/R3E-Network/neo-n3-mcp/releases)
 
 ## 📚 Documentation
 
+- [Website](https://neo-n3-mcp.netlify.app) - Comprehensive website with documentation, user guides and examples
 - [API Reference](API.md) - Detailed API documentation for all tools and resources
 - [Deployment Guide](DEPLOYMENT.md) - Comprehensive deployment options and configuration
 - [Testing Guide](TESTING.md) - Testing approach and instructions for verifying functionality
@@ -29,12 +31,22 @@ An MCP server that provides seamless integration with the Neo N3 blockchain, all
 - **Account Management**: Check balances, create and import wallets securely
 - **Asset Operations**: Transfer NEO, GAS, and other tokens between addresses
 - **Smart Contract Interaction**: Deploy and invoke smart contracts on the Neo N3 blockchain
+- **Famous Contracts Support**: Interact with NeoFS, NeoBurger, Flamingo, NeoCompound, GrandShare, and GhostMarket
 - **Transaction Monitoring**: Check detailed transaction status with confirmation tracking
 - **Gas Fee Estimation**: Calculate estimated gas fees for transfers before executing them
 - **Resilient RPC Communication**: Automatic retry mechanisms with exponential backoff
 - **Security Focused**: Input validation, secure wallet storage, and protection of private keys
 - **Docker Support**: Easy deployment with Docker and Docker Compose
 - **One-Click Installation**: Simple setup process for Claude integration
+
+## 🔄 What's New in v1.0.8
+
+- **Enhanced RPC Reliability**: Using secure HTTPS endpoints for both networks:
+  - Mainnet: `https://mainnet1.neo.coz.io:443`
+  - Testnet: `https://testnet1.neo.coz.io:443`
+- **Comprehensive Website**: New website with detailed documentation, user guides, and integration examples
+- **Improved Development Tools**: Added rebuild scripts and dark mode support
+- **Better Documentation**: Enhanced documentation organization and readability
 
 ## Configuration with MCP
 
@@ -134,8 +146,8 @@ This will automatically add the Neo N3 MCP server to your Claude MCP settings fi
 
 The server can be configured using environment variables:
 
-- `NEO_RPC_URL`: Default URL of the Neo N3 RPC node (default: http://localhost:10332)
-- `NEO_MAINNET_RPC_URL`: URL of the Neo N3 mainnet RPC node (default: same as NEO_RPC_URL or http://seed1.neo.org:10332)
+- `NEO_RPC_URL`: Default URL of the Neo N3 RPC node (default: https://mainnet1.neo.coz.io:443)
+- `NEO_MAINNET_RPC_URL`: URL of the Neo N3 mainnet RPC node (default: same as NEO_RPC_URL or https://mainnet1.neo.coz.io:443)
 - `NEO_TESTNET_RPC_URL`: URL of the Neo N3 testnet RPC node (default: https://testnet1.neo.coz.io:443)
 - `NEO_NETWORK`: Default network type: 'mainnet' or 'testnet' (default: mainnet)
 - `WALLET_PATH`: Path to the wallet files (default: ./wallets)
@@ -459,3 +471,134 @@ This project would not be possible without the following:
 ## License
 
 This MCP server is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Famous Neo N3 Contracts Support
+
+The Neo N3 MCP Server now includes support for interacting with famous Neo N3 contracts like:
+
+- **NeoFS**: Decentralized storage system on Neo N3 blockchain
+- **NeoBurger**: Neo N3 staking service
+- **Flamingo (FLM)**: Neo N3 DeFi platform
+- **NeoCompound**: Automatic yield farming protocol on Neo N3
+- **GrandShare**: Profit sharing protocol on Neo N3
+- **GhostMarket**: NFT marketplace on Neo N3
+
+### Contract Tools
+
+#### Listing and Information
+
+- `list_famous_contracts`: List all supported famous Neo N3 contracts
+- `get_contract_info`: Get details about a specific famous contract
+
+#### NeoFS Tools
+
+- `neofs_create_container`: Create a storage container in NeoFS
+- `neofs_get_containers`: Get containers owned by an address
+
+#### NeoBurger Tools
+
+- `neoburger_deposit`: Deposit NEO to NeoBurger to receive bNEO tokens
+- `neoburger_withdraw`: Withdraw NEO from NeoBurger by returning bNEO tokens
+- `neoburger_get_balance`: Get bNEO balance of an account
+- `neoburger_claim_gas`: Claim accumulated GAS rewards from NeoBurger
+
+#### Flamingo Tools
+
+- `flamingo_stake`: Stake FLM tokens on Flamingo
+- `flamingo_unstake`: Unstake FLM tokens from Flamingo
+- `flamingo_get_balance`: Get FLM token balance
+
+#### NeoCompound Tools
+
+- `neocompound_deposit`: Deposit assets into NeoCompound
+- `neocompound_withdraw`: Withdraw assets from NeoCompound
+- `neocompound_get_balance`: Get balance of deposited assets in NeoCompound
+
+#### GrandShare Tools
+
+- `grandshare_deposit`: Deposit assets into GrandShare pool
+- `grandshare_withdraw`: Withdraw assets from GrandShare pool
+- `grandshare_get_pool_details`: Get details about a GrandShare pool
+
+#### GhostMarket Tools
+
+- `ghostmarket_create_nft`: Create a new NFT on GhostMarket
+- `ghostmarket_list_nft`: List an NFT for sale on GhostMarket
+- `ghostmarket_buy_nft`: Buy a listed NFT on GhostMarket
+- `ghostmarket_get_token_info`: Get information about an NFT on GhostMarket
+
+### Examples
+
+#### Getting a List of Famous Contracts
+
+```javascript
+const result = await callTool('list_famous_contracts', {
+  network: 'mainnet'
+});
+```
+
+#### Getting Contract Information
+
+```javascript
+const result = await callTool('get_contract_info', {
+  contractName: 'flamingo',
+  network: 'mainnet'
+});
+```
+
+#### Depositing to NeoBurger
+
+```javascript
+const result = await callTool('neoburger_deposit', {
+  fromWIF: 'your-private-key-wif-format',
+  confirm: true,
+  network: 'mainnet'
+});
+```
+
+#### Staking on Flamingo
+
+```javascript
+const result = await callTool('flamingo_stake', {
+  fromWIF: 'your-private-key-wif-format',
+  amount: '100',
+  confirm: true,
+  network: 'mainnet'
+});
+```
+
+#### Depositing to NeoCompound
+
+```javascript
+const result = await callTool('neocompound_deposit', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'your-password',
+  assetId: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
+  amount: '100',
+  network: 'mainnet'
+});
+```
+
+#### Creating an NFT on GhostMarket
+
+```javascript
+const result = await callTool('ghostmarket_create_nft', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'your-password',
+  tokenURI: 'https://example.com/nft/metadata.json',
+  properties: [
+    { key: "artist", value: "ExampleArtist" },
+    { key: "edition", value: "1/1" }
+  ],
+  network: 'mainnet'
+});
+```
+
+#### Getting GrandShare Pool Details
+
+```javascript
+const result = await callTool('grandshare_get_pool_details', {
+  poolId: 1,
+  network: 'mainnet'
+});
+```

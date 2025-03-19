@@ -382,7 +382,7 @@ For full integration testing with real Neo N3 networks:
 
 1. Configure your server with valid RPC URLs for both networks:
    ```
-   NEO_MAINNET_RPC_URL=http://seed1.neo.org:10332
+   NEO_MAINNET_RPC_URL=https://mainnet1.neo.coz.io:443
    NEO_TESTNET_RPC_URL=https://testnet1.neo.coz.io:443
    ```
 
@@ -413,4 +413,11 @@ For full integration testing with real Neo N3 networks:
        }
      }
    }'
-   ``` 
+   ```
+
+### Sample .env file for testing
+
+```env
+NEO_MAINNET_RPC_URL=https://mainnet1.neo.coz.io:443
+NEO_TESTNET_RPC_URL=https://testnet1.neo.coz.io:443
+``` 

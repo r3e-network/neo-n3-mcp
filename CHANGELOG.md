@@ -2,6 +2,26 @@
 
 All notable changes to the Neo N3 MCP server will be documented in this file.
 
+## [1.0.8] - 2025-03-23
+
+### Added
+- Comprehensive website with detailed documentation, user guides, and integration examples
+- Rebuild script for website assets with automatic SVG generation
+- Dark mode support in website UI
+
+### Changed
+- Updated RPC URLs to use reliable HTTPS endpoints:
+  - Mainnet: https://mainnet1.neo.coz.io:443
+  - Testnet: https://testnet1.neo.coz.io:443
+- Enhanced website design with modern UI elements and animations
+- Improved documentation organization and readability
+- Enhanced scripts for local development and testing
+
+### Fixed
+- Fixed SVG image rendering issues in documentation
+- Corrected environment variable naming in examples
+- Standardized configuration examples across documentation
+
 ## [1.0.7] - 2025-03-22
 
 ### Added

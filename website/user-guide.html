@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Guide | Neo N3 MCP Server</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="user-guide-page">
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1>Neo N3 MCP Server</h1>
+                <span class="powered-by">Powered by R3E Network</span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="documentation.html">Documentation</a></li>
+                    <li><a href="user-guide.html" class="active">User Guide</a></li>
+                    <li><a href="integration.html">Integration</a></li>
+                    <li><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank" class="github-link">GitHub</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="documentation-container">
+        <aside class="doc-sidebar">
+            <div class="sidebar-content">
+                <h3>User Guide</h3>
+                <ul>
+                    <li><a href="#getting-started">Getting Started</a></li>
+                    <li><a href="#blockchain-interaction">Blockchain Interaction</a>
+                        <ul>
+                            <li><a href="#querying-blockchain">Querying the Blockchain</a></li>
+                            <li><a href="#managing-wallets">Managing Wallets</a></li>
+                            <li><a href="#transferring-assets">Transferring Assets</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#contract-interaction">Contract Interaction</a>
+                        <ul>
+                            <li><a href="#neofs-usage">Using NeoFS</a></li>
+                            <li><a href="#neoburger-usage">Using NeoBurger</a></li>
+                            <li><a href="#flamingo-usage">Using Flamingo</a></li>
+                            <li><a href="#neocompound-usage">Using NeoCompound</a></li>
+                            <li><a href="#grandshare-usage">Using GrandShare</a></li>
+                            <li><a href="#ghostmarket-usage">Using GhostMarket</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#advanced-usage">Advanced Usage</a>
+                        <ul>
+                            <li><a href="#batch-operations">Batch Operations</a></li>
+                            <li><a href="#custom-rpc">Custom RPC Providers</a></li>
+                            <li><a href="#error-handling">Error Handling</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#common-patterns">Common Patterns</a></li>
+                    <li><a href="#best-practices">Best Practices</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="doc-content">
+            <section id="getting-started">
+                <h1>Neo N3 MCP Server User Guide</h1>
+                <p>This guide will help you get started with using the Neo N3 MCP Server to interact with the Neo N3 blockchain and its famous contracts.</p>
+                
+                <h2>Installation</h2>
+                <p>To get started, install the Neo N3 MCP Server using npm:</p>
+                <pre><code>npm install @r3e/neo-n3-mcp</code></pre>
+                
+                <h2>Starting the Server</h2>
+                <p>Start the server using the following command:</p>
+                <pre><code>npx neo-n3-mcp</code></pre>
+                
+                <p>By default, the server will run on port 8080. You can customize this by setting the <code>NEO_MCP_PORT</code> environment variable:</p>
+                <pre><code>NEO_MCP_PORT=3000 npx neo-n3-mcp</code></pre>
+                
+                <h2>Connecting to the Server</h2>
+                <p>Once the server is running, you can connect to it using the MCP protocol. Here's an example using the MCP JavaScript SDK:</p>
+                <pre><code>import { Client } from '@modelcontextprotocol/sdk/client';
+
+const client = new Client({
+  url: 'http://localhost:8080'
+});
+
+// List available tools
+const tools = await client.listTools();
+console.log(tools);
+
+// Call a tool
+const blockchainInfo = await client.callTool('get_blockchain_info', {
+  network: 'mainnet'
+});
+console.log(blockchainInfo);</code></pre>
+            </section>
+
+            <section id="blockchain-interaction">
+                <h2>Blockchain Interaction</h2>
+                <p>The Neo N3 MCP Server provides various tools for interacting with the Neo N3 blockchain.</p>
+                
+                <section id="querying-blockchain">
+                    <h3>Querying the Blockchain</h3>
+                    <p>You can query the blockchain for various information, such as block details, transaction details, and asset balances.</p>
+                    
+                    <h4>Getting Blockchain Information</h4>
+                    <pre><code>const blockchainInfo = await client.callTool('get_blockchain_info', {
+  network: 'mainnet'
+});
+console.log(blockchainInfo);</code></pre>
+                    
+                    <h4>Getting Block Details</h4>
+                    <pre><code>// Get block by height
+const blockByHeight = await client.callTool('get_block', {
+  height: 12345,
+  network: 'mainnet'
+});
+console.log(blockByHeight);
+
+// Get block by hash
+const blockByHash = await client.callTool('get_block', {
+  hash: '0xa4e5a35ed65e7a77d6d9af5321c159a23c384bf1a4045e411b03d6bd34dfdf12',
+  network: 'mainnet'
+});
+console.log(blockByHash);</code></pre>
+                    
+                    <h4>Getting Transaction Details</h4>
+                    <pre><code>const transaction = await client.callTool('get_transaction', {
+  hash: '0x7e94b3a69ca6c227a4f6d4012bab999acb11ee504883cb9abf976dcd8b5f2adc',
+  network: 'mainnet'
+});
+console.log(transaction);</code></pre>
+                    
+                    <h4>Getting Asset Balance</h4>
+                    <pre><code>const balance = await client.callTool('get_balance', {
+  address: 'NXV7ZhHaLY2GNjp6R1AYBV9FqrVnGLfQcz',
+  asset: 'NEO',  // Can be 'NEO', 'GAS', or a script hash
+  network: 'mainnet'
+});
+console.log(balance);</code></pre>
+                </section>
+                
+                <section id="managing-wallets">
+                    <h3>Managing Wallets</h3>
+                    <p>The Neo N3 MCP Server provides tools for managing Neo N3 wallets.</p>
+                    
+                    <h4>Creating a Wallet</h4>
+                    <pre><code>const wallet = await client.callTool('create_wallet', {
+  password: 'your-password',
+  path: '/path/to/save/wallet.json',  // Optional, if not provided, a temporary path will be used
+  name: 'My Wallet'  // Optional
+});
+console.log(wallet);</code></pre>
+                    
+                    <h4>Importing a Wallet</h4>
+                    <pre><code>// Import from WIF
+const walletFromWif = await client.callTool('import_wallet', {
+  wif: 'KxDgvEKzgSBPPfuVfw67oPQBSjidEiqTHURKSDL1R7yGaGYAeYnr',
+  password: 'your-password',
+  path: '/path/to/save/wallet.json',  // Optional
+  name: 'My Imported Wallet'  // Optional
+});
+console.log(walletFromWif);
+
+// Import from NEP-6 wallet file
+const walletFromFile = await client.callTool('import_wallet', {
+  path: '/path/to/existing/wallet.json',
+  password: 'your-password'
+});
+console.log(walletFromFile);</code></pre>
+                    
+                    <h4>Exporting a Wallet</h4>
+                    <pre><code>// Export to WIF
+const wif = await client.callTool('export_wallet', {
+  path: '/path/to/wallet.json',
+  password: 'your-password',
+  format: 'wif'
+});
+console.log(wif);
+
+// Export to NEP-6
+const nep6 = await client.callTool('export_wallet', {
+  path: '/path/to/wallet.json',
+  password: 'your-password',
+  format: 'nep6',
+  outputPath: '/path/to/output/wallet.json'  // Optional
+});
+console.log(nep6);</code></pre>
+                    
+                    <h4>Getting Wallet Information</h4>
+                    <pre><code>const walletInfo = await client.callTool('get_wallet_info', {
+  path: '/path/to/wallet.json',
+  password: 'your-password'
+});
+console.log(walletInfo);</code></pre>
+                </section>
+                
+                <section id="transferring-assets">
+                    <h3>Transferring Assets</h3>
+                    <p>You can transfer assets between addresses using the <code>transfer_assets</code> tool.</p>
+                    
+                    <pre><code>const transfer = await client.callTool('transfer_assets', {
+  fromPath: '/path/to/wallet.json',
+  fromPassword: 'your-password',
+  to: 'NXV7ZhHaLY2GNjp6R1AYBV9FqrVnGLfQcz',
+  asset: 'NEO',  // Can be 'NEO', 'GAS', or a script hash
+  amount: '1',
+  network: 'mainnet',
+  confirm: true  // Set to true to confirm the transaction
+});
+console.log(transfer);</code></pre>
+                </section>
+            </section>
+
+            <section id="contract-interaction">
+                <h2>Contract Interaction</h2>
+                <p>The Neo N3 MCP Server provides tools for interacting with famous Neo N3 contracts.</p>
+                
+                <h3>Listing Famous Contracts</h3>
+                <pre><code>const contracts = await client.callTool('list_famous_contracts', {
+  network: 'mainnet'
+});
+console.log(contracts);</code></pre>
+                
+                <h3>Getting Contract Information</h3>
+                <pre><code>const contractInfo = await client.callTool('get_contract_info', {
+  contractName: 'neoburger',
+  network: 'mainnet'
+});
+console.log(contractInfo);</code></pre>
+                
+                <section id="neofs-usage">
+                    <h3>Using NeoFS</h3>
+                    <p>NeoFS is a decentralized storage system on the Neo N3 blockchain.</p>
+                    
+                    <h4>Creating a Container</h4>
+                    <pre><code>const container = await client.callTool('neofs_create_container', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'your-password',
+  ownerId: 'your-owner-id',
+  rules: [
+    { key: 'Placement/REP', value: '3' },
+    { key: 'Placement/CBF', value: '3' }
+  ],
+  network: 'mainnet'
+});
+console.log(container);</code></pre>
+                    
+                    <h4>Getting Containers</h4>
+                    <pre><code>const containers = await client.callTool('neofs_get_containers', {
+  ownerId: 'your-owner-id',
+  network: 'mainnet'
+});
+console.log(containers);</code></pre>
+                </section>
+                
+                <section id="neoburger-usage">
+                    <h3>Using NeoBurger</h3>
+                    <p>NeoBurger is a Neo N3 staking service.</p>
+                    
+                    <h4>Depositing NEO</h4>
+                    <pre><code>const deposit = await client.callTool('neoburger_deposit', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'your-password',
+  network: 'mainnet'
+});
+console.log(deposit);</code></pre>
+                    
+                    <h4>Withdrawing NEO</h4>
+                    <pre><code>const withdraw = await client.callTool('neoburger_withdraw', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'your-password',
+  amount: '1',
+  network: 'mainnet'
+});
+console.log(withdraw);</code></pre>
+                    
+                    <h4>Getting Balance</h4>
+                    <pre><code>const balance = await client.callTool('neoburger_get_balance', {
+  address: 'NXV7ZhHaLY2GNjp6R1AYBV9FqrVnGLfQcz',
+  network: 'mainnet'
+});
+console.log(balance);</code></pre>
+                    
+                    <h4>Claiming GAS</h4>
+                    <pre><code>const claim = await client.callTool('neoburger_claim_gas', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'your-password',
+  network: 'mainnet'
+});
+console.log(claim);</code></pre>
+                </section>
+                
+                <section id="flamingo-usage">
+                    <h3>Using Flamingo</h3>
+                    <p>Flamingo is a Neo N3 DeFi platform.</p>
+                    
+                    <h4>Staking FLM</h4>
+                    <pre><code>const stake = await client.callTool('flamingo_stake', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'your-password',
+  amount: '100',
+  network: 'mainnet'
+});
+console.log(stake);</code></pre>
+                    
+                    <h4>Unstaking FLM</h4>
+                    <pre><code>const unstake = await client.callTool('flamingo_unstake', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'your-password',
+  amount: '100',
+  network: 'mainnet'
+});
+console.log(unstake);</code></pre>
+                    
+                    <h4>Getting FLM Balance</h4>
+                    <pre><code>const balance = await client.callTool('flamingo_get_balance', {
+  address: 'NXV7ZhHaLY2GNjp6R1AYBV9FqrVnGLfQcz',
+  network: 'mainnet'
+});
+console.log(balance);</code></pre>
+                </section>
+                
+                <section id="neocompound-usage">
+                    <h3>Using NeoCompound</h3>
+                    <p>NeoCompound is an automatic yield farming protocol on Neo N3.</p>
+                    
+                    <h4>Depositing Assets</h4>
+                    <pre><code>const deposit = await client.callTool('neocompound_deposit', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'your-password',
+  assetId: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
+  amount: '100',
+  network: 'mainnet'
+});
+console.log(deposit);</code></pre>
+                    
+                    <h4>Withdrawing Assets</h4>
+                    <pre><code>const withdraw = await client.callTool('neocompound_withdraw', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'your-password',
+  assetId: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
+  amount: '100',
+  network: 'mainnet'
+});
+console.log(withdraw);</code></pre>
+                    
+                    <h4>Getting Balance</h4>
+                    <pre><code>const balance = await client.callTool('neocompound_get_balance', {
+  address: 'NXV7ZhHaLY2GNjp6R1AYBV9FqrVnGLfQcz',
+  assetId: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
+  network: 'mainnet'
+});
+console.log(balance);</code></pre>
+                </section>
+                
+                <section id="grandshare-usage">
+                    <h3>Using GrandShare</h3>
+                    <p>GrandShare is a profit sharing protocol on Neo N3.</p>
+                    
+                    <h4>Depositing Assets</h4>
+                    <pre><code>const deposit = await client.callTool('grandshare_deposit', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'your-password',
+  poolId: 1,
+  amount: '100',
+  network: 'mainnet'
+});
+console.log(deposit);</code></pre>
+                    
+                    <h4>Withdrawing Assets</h4>
+                    <pre><code>const withdraw = await client.callTool('grandshare_withdraw', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'your-password',
+  poolId: 1,
+  amount: '100',
+  network: 'mainnet'
+});
+console.log(withdraw);</code></pre>
+                    
+                    <h4>Getting Pool Details</h4>
+                    <pre><code>const poolDetails = await client.callTool('grandshare_get_pool_details', {
+  poolId: 1,
+  network: 'mainnet'
+});
+console.log(poolDetails);</code></pre>
+                </section>
+                
+                <section id="ghostmarket-usage">
+                    <h3>Using GhostMarket</h3>
+                    <p>GhostMarket is an NFT marketplace on Neo N3.</p>
+                    
+                    <h4>Creating an NFT</h4>
+                    <pre><code>const nft = await client.callTool('ghostmarket_create_nft', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'your-password',
+  tokenURI: 'https://example.com/nft/metadata.json',
+  properties: [
+    { key: "artist", value: "ExampleArtist" },
+    { key: "edition", value: "1/1" }
+  ],
+  network: 'mainnet'
+});
+console.log(nft);</code></pre>
+                    
+                    <h4>Listing an NFT for Sale</h4>
+                    <pre><code>const listing = await client.callTool('ghostmarket_list_nft', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'your-password',
+  tokenId: 1,
+  price: '100',
+  paymentToken: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
+  network: 'mainnet'
+});
+console.log(listing);</code></pre>
+                    
+                    <h4>Buying an NFT</h4>
+                    <pre><code>const purchase = await client.callTool('ghostmarket_buy_nft', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'your-password',
+  tokenId: 1,
+  network: 'mainnet'
+});
+console.log(purchase);</code></pre>
+                    
+                    <h4>Getting Token Information</h4>
+                    <pre><code>const tokenInfo = await client.callTool('ghostmarket_get_token_info', {
+  tokenId: 1,
+  network: 'mainnet'
+});
+console.log(tokenInfo);</code></pre>
+                </section>
+            </section>
+
+            <section id="advanced-usage">
+                <h2>Advanced Usage</h2>
+                <p>This section covers advanced usage patterns for the Neo N3 MCP Server.</p>
+                
+                <section id="batch-operations">
+                    <h3>Batch Operations</h3>
+                    <p>You can perform multiple operations in sequence to achieve more complex workflows. Here's an example of a batch operation that creates a wallet, gets the balance, and transfers assets:</p>
+                    
+                    <pre><code>// Create a wallet
+const wallet = await client.callTool('create_wallet', {
+  password: 'your-password',
+  path: '/path/to/save/wallet.json'
+});
+
+// Get the balance
+const balance = await client.callTool('get_balance', {
+  address: wallet.address,
+  asset: 'NEO',
+  network: 'mainnet'
+});
+
+// Transfer assets if balance is sufficient
+if (parseFloat(balance.amount) > 1) {
+  const transfer = await client.callTool('transfer_assets', {
+    fromPath: '/path/to/save/wallet.json',
+    fromPassword: 'your-password',
+    to: 'NXV7ZhHaLY2GNjp6R1AYBV9FqrVnGLfQcz',
+    asset: 'NEO',
+    amount: '1',
+    network: 'mainnet',
+    confirm: true
+  });
+  console.log(transfer);
+}</code></pre>
+                </section>
+                
+                <section id="custom-rpc">
+                    <h3>Custom RPC Providers</h3>
+                    <p>You can use custom RPC providers for the Neo N3 blockchain. This is useful if you're running your own Neo N3 node or want to use a specific RPC provider.</p>
+                    
+                    <p>For configuration via environment variables:</p>
+                    <pre><code>NEO_MAINNET_RPC_URL=https://mainnet1.neo.coz.io:443 NEO_TESTNET_RPC_URL=https://testnet1.neo.coz.io:443 npx neo-n3-mcp</code></pre>
+                    
+                    <p>For configuration via config file:</p>
+                    <pre><code>// ~/.neo-n3-mcp/config.json
+{
+  "port": 3000,
+  "network": "mainnet",
+  "mainnetRpcUrl": "https://mainnet1.neo.coz.io:443",
+  "testnetRpcUrl": "https://testnet1.neo.coz.io:443",
+  "walletPath": "./wallets"
+}</code></pre>
+                </section>
+                
+                <section id="error-handling">
+                    <h3>Error Handling</h3>
+                    <p>The Neo N3 MCP Server provides detailed error messages that can help you troubleshoot issues. Here's an example of error handling:</p>
+                    
+                    <pre><code>try {
+  const result = await client.callTool('get_blockchain_info', {
+    network: 'invalid-network'  // This will cause an error
+  });
+  console.log(result);
+} catch (error) {
+  console.error(`Error: ${error.message}`);
+  
+  // The error object may contain additional information
+  if (error.data) {
+    console.error(`Error code: ${error.data.code}`);
+    console.error(`Error details: ${error.data.details}`);
+  }
+}</code></pre>
+                </section>
+            </section>
+
+            <section id="common-patterns">
+                <h2>Common Patterns</h2>
+                <p>This section covers common patterns for using the Neo N3 MCP Server.</p>
+                
+                <h3>Getting Asset Balance and Transferring</h3>
+                <pre><code>// Get balance
+const balance = await client.callTool('get_balance', {
+  address: 'NXV7ZhHaLY2GNjp6R1AYBV9FqrVnGLfQcz',
+  asset: 'GAS',
+  network: 'mainnet'
+});
+
+// Transfer assets if balance is sufficient
+if (parseFloat(balance.amount) > 10) {
+  const transfer = await client.callTool('transfer_assets', {
+    fromPath: '/path/to/wallet.json',
+    fromPassword: 'your-password',
+    to: 'NXV7ZhHaLY2GNjp6R1AYBV9FqrVnGLfQcz',
+    asset: 'GAS',
+    amount: '10',
+    network: 'mainnet',
+    confirm: true
+  });
+  console.log(transfer);
+}</code></pre>
+                
+                <h3>Staking and Claiming Rewards</h3>
+                <pre><code>// Stake FLM tokens
+const stake = await client.callTool('flamingo_stake', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'your-password',
+  amount: '100',
+  network: 'mainnet'
+});
+
+// Wait for some time for rewards to accumulate
+// ...
+
+// Claim GAS rewards from NeoBurger
+const claim = await client.callTool('neoburger_claim_gas', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'your-password',
+  network: 'mainnet'
+});</code></pre>
+                
+                <h3>Creating and Selling an NFT</h3>
+                <pre><code>// Create an NFT
+const nft = await client.callTool('ghostmarket_create_nft', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'your-password',
+  tokenURI: 'https://example.com/nft/metadata.json',
+  properties: [
+    { key: "artist", value: "ExampleArtist" },
+    { key: "edition", value: "1/1" }
+  ],
+  network: 'mainnet'
+});
+
+// Get the token ID from the result
+const tokenId = nft.tokenId;
+
+// List the NFT for sale
+const listing = await client.callTool('ghostmarket_list_nft', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'your-password',
+  tokenId: tokenId,
+  price: '100',
+  paymentToken: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
+  network: 'mainnet'
+});</code></pre>
+            </section>
+
+            <section id="best-practices">
+                <h2>Best Practices</h2>
+                <p>Here are some best practices for using the Neo N3 MCP Server:</p>
+                
+                <h3>Security</h3>
+                <ul>
+                    <li>Never hardcode wallet passwords in your code</li>
+                    <li>Use environment variables or a secure configuration manager for sensitive information</li>
+                    <li>Always verify transaction details before confirming</li>
+                    <li>Back up your wallet files regularly</li>
+                </ul>
+                
+                <h3>Performance</h3>
+                <ul>
+                    <li>Batch operations where possible to reduce the number of API calls</li>
+                    <li>Use caching for frequently accessed data</li>
+                    <li>Implement retry logic for operations that might fail due to network issues</li>
+                </ul>
+                
+                <h3>Error Handling</h3>
+                <ul>
+                    <li>Always wrap API calls in try-catch blocks</li>
+                    <li>Log detailed error information for debugging</li>
+                    <li>Implement graceful fallbacks for failed operations</li>
+                </ul>
+                
+                <h3>Testing</h3>
+                <ul>
+                    <li>Test your integration on the testnet before deploying to mainnet</li>
+                    <li>Use small amounts for initial transactions to verify functionality</li>
+                    <li>Create a comprehensive test suite covering all your use cases</li>
+                </ul>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <h2>Neo N3 MCP Server</h2>
+                    <p>Powered by R3E Network</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-links-column">
+                        <h3>Documentation</h3>
+                        <ul>
+                            <li><a href="documentation.html#overview">Overview</a></li>
+                            <li><a href="documentation.html#installation">Installation</a></li>
+                            <li><a href="documentation.html#configuration">Configuration</a></li>
+                            <li><a href="documentation.html#api-reference">API Reference</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-links-column">
+                        <h3>Resources</h3>
+                        <ul>
+                            <li><a href="user-guide.html">User Guide</a></li>
+                            <li><a href="integration.html">Integration Guide</a></li>
+                            <li><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank">GitHub</a></li>
+                            <li><a href="https://docs.neo.org/" target="_blank">Neo Documentation</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-links-column">
+                        <h3>Community</h3>
+                        <ul>
+                            <li><a href="https://discord.gg/R3E-Network" target="_blank">Discord</a></li>
+                            <li><a href="https://twitter.com/R3E-Network" target="_blank">Twitter</a></li>
+                            <li><a href="https://medium.com/@R3E-Network" target="_blank">Medium</a></li>
+                            <li><a href="https://t.me/R3E-Network" target="_blank">Telegram</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 R3E Network. All rights reserved.</p>
+                <div class="footer-bottom-links">
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Privacy Policy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html> 

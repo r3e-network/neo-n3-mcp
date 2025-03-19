@@ -638,16 +638,16 @@ The Neo N3 MCP server can be configured using environment variables. Here's a de
 ### Neo N3 Node Configuration
 
 - `NEO_RPC_URL`: Default URL of the Neo N3 RPC node
-  - Default: `http://localhost:10332`
-  - Example: `http://seed1.neo.org:10332`
+- Default: `https://mainnet1.neo.coz.io:443`
+- Example: `https://mainnet1.neo.coz.io:443`
 
 - `NEO_MAINNET_RPC_URL`: URL of the Neo N3 mainnet RPC node
-  - Default: Same as `NEO_RPC_URL` or `http://seed1.neo.org:10332`
-  - Example: `http://seed1.neo.org:10332`
+- Default: Same as `NEO_RPC_URL` or `https://mainnet1.neo.coz.io:443`
+- Example: `https://mainnet1.neo.coz.io:443`
 
 - `NEO_TESTNET_RPC_URL`: URL of the Neo N3 testnet RPC node
-  - Default: `https://testnet1.neo.coz.io:443`
-  - Example: `https://testnet2.neo.coz.io:443`
+- Default: `https://testnet1.neo.coz.io:443`
+- Example: `https://testnet1.neo.coz.io:443`
 
 - `NEO_NETWORK`: Default network type
   - Values: `mainnet`, `testnet`

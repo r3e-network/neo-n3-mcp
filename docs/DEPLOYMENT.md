@@ -37,7 +37,7 @@ neo-n3-mcp
 Or with custom configuration:
 
 ```bash
-neo-n3-mcp --rpc-url=http://seed1.neo.org:10332 --network=mainnet
+neo-n3-mcp --rpc-url=https://mainnet1.neo.coz.io:443 --network=mainnet
 ```
 
 ### Configuration
@@ -51,7 +51,7 @@ When using as an NPM package, you can configure the server using:
 #### Command-line Arguments
 
 ```bash
-neo-n3-mcp --rpc-url=http://seed1.neo.org:10332 --network=mainnet --port=3000
+neo-n3-mcp --rpc-url=https://mainnet1.neo.coz.io:443 --network=mainnet --port=3000
 ```
 
 Available arguments:
@@ -64,7 +64,9 @@ Available arguments:
 #### Environment Variables
 
 ```bash
-export NEO_RPC_URL=http://seed1.neo.org:10332
+export NEO_RPC_URL=https://mainnet1.neo.coz.io:443
+export NEO_MAINNET_RPC_URL=https://mainnet1.neo.coz.io:443
+export NEO_TESTNET_RPC_URL=https://testnet1.neo.coz.io:443
 export NEO_NETWORK=mainnet
 export PORT=3000
 export WALLET_PATH=./wallets
@@ -77,9 +79,10 @@ Create a `.neo-n3-mcp.json` file in your project root:
 
 ```json
 {
-  "rpcUrl": "http://seed1.neo.org:10332",
-  "network": "mainnet",
   "port": 3000,
+  "network": "mainnet",
+  "mainnetRpcUrl": "https://mainnet1.neo.coz.io:443",
+  "testnetRpcUrl": "https://testnet1.neo.coz.io:443",
   "walletPath": "./wallets"
 }
 ```
@@ -115,7 +118,7 @@ With custom configuration:
 
 ```bash
 docker run -p 3000:3000 \
-  -e NEO_RPC_URL=http://seed1.neo.org:10332 \
+  -e NEO_RPC_URL=https://mainnet1.neo.coz.io:443 \
   -e NEO_NETWORK=mainnet \
   -v $(pwd)/wallets:/app/wallets \
   r3e/neo-n3-mcp:latest
@@ -127,7 +130,7 @@ To configure both mainnet and testnet:
 
 ```bash
 docker run -p 3000:3000 \
-  -e NEO_MAINNET_RPC_URL=http://seed1.neo.org:10332 \
+  -e NEO_MAINNET_RPC_URL=https://mainnet1.neo.coz.io:443 \
   -e NEO_TESTNET_RPC_URL=https://testnet1.neo.coz.io:443 \
   -v $(pwd)/wallets:/app/wallets \
   r3e/neo-n3-mcp:latest
@@ -147,7 +150,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEO_MAINNET_RPC_URL=http://seed1.neo.org:10332
+      - NEO_MAINNET_RPC_URL=https://mainnet1.neo.coz.io:443
       - NEO_TESTNET_RPC_URL=https://testnet1.neo.coz.io:443
     volumes:
       - ./wallets:/app/wallets
@@ -216,8 +219,8 @@ npm start
 
 | Environment Variable | Command-line Argument | Description | Default |
 |----------------------|----------------------|-------------|---------|
-| `NEO_RPC_URL` | `--rpc-url` | Default URL of the Neo N3 RPC node | `http://localhost:10332` |
-| `NEO_MAINNET_RPC_URL` | `--mainnet-rpc-url` | URL of the Neo N3 mainnet RPC node | Same as `NEO_RPC_URL` or `http://seed1.neo.org:10332` |
+| `NEO_RPC_URL` | `--rpc-url` | Default URL of the Neo N3 RPC node | `https://mainnet1.neo.coz.io:443` |
+| `NEO_MAINNET_RPC_URL` | `--mainnet-rpc-url` | URL of the Neo N3 mainnet RPC node | Same as `NEO_RPC_URL` or `https://mainnet1.neo.coz.io:443` |
 | `NEO_TESTNET_RPC_URL` | `--testnet-rpc-url` | URL of the Neo N3 testnet RPC node | `https://testnet1.neo.coz.io:443` |
 | `NEO_NETWORK` | `--network` | Default network type (mainnet, testnet) | `mainnet` |
 

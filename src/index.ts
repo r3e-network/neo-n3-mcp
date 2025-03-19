@@ -11,6 +11,8 @@ import {
   McpError
 } from '@modelcontextprotocol/sdk/types.js';
 import { NeoService, NeoNetwork } from './services/neo-service.js';
+import { ContractService } from './contracts/contract-service.js';
+import { FAMOUS_CONTRACTS } from './contracts/contracts.js';
 import { config } from './config.js';
 import { 
   validateAddress, 
@@ -33,6 +35,7 @@ import {
 class NeoMcpServer {
   private server: Server;
   private neoServices: Map<NeoNetwork, NeoService>;
+  private contractServices: Map<NeoNetwork, ContractService>;
 
   constructor() {
     this.server = new Server(
@@ -50,6 +53,7 @@ class NeoMcpServer {
 
     // Initialize Neo services for both networks
     this.neoServices = new Map();
+    this.contractServices = new Map();
     
     // Initialize mainnet service
     this.neoServices.set(
@@ -57,10 +61,22 @@ class NeoMcpServer {
       new NeoService(config.mainnetRpcUrl, NeoNetwork.MAINNET)
     );
     
+    // Initialize mainnet contract service
+    this.contractServices.set(
+      NeoNetwork.MAINNET,
+      new ContractService(config.mainnetRpcUrl, NeoNetwork.MAINNET)
+    );
+    
     // Initialize testnet service
     this.neoServices.set(
       NeoNetwork.TESTNET, 
       new NeoService(config.testnetRpcUrl, NeoNetwork.TESTNET)
+    );
+    
+    // Initialize testnet contract service
+    this.contractServices.set(
+      NeoNetwork.TESTNET,
+      new ContractService(config.testnetRpcUrl, NeoNetwork.TESTNET)
     );
     
     this.setupToolHandlers();
@@ -81,6 +97,26 @@ class NeoMcpServer {
     
     const network = validateNetwork(networkParam);
     const service = this.neoServices.get(network);
+    
+    if (!service) {
+      throw new McpError(ErrorCode.InvalidParams, `Unsupported network: ${network}`);
+    }
+    
+    return service;
+  }
+
+  /**
+   * Get the appropriate Contract service for the requested network
+   * @param networkParam Optional network parameter
+   * @returns Contract service for the requested network
+   */
+  private getContractService(networkParam?: string): ContractService {
+    if (!networkParam) {
+      return this.contractServices.get(NeoNetwork.MAINNET)!;
+    }
+    
+    const network = validateNetwork(networkParam);
+    const service = this.contractServices.get(network);
     
     if (!service) {
       throw new McpError(ErrorCode.InvalidParams, `Unsupported network: ${network}`);
@@ -248,18 +284,13 @@ class NeoMcpServer {
         },
         {
           name: 'create_wallet',
-          description: 'Create a new wallet',
+          description: 'Create a new Neo N3 wallet',
           inputSchema: {
             type: 'object',
             properties: {
               password: {
                 type: 'string',
-                description: 'Password for encrypting the wallet',
-              },
-              network: {
-                type: 'string',
-                description: 'Network to use: "mainnet" or "testnet"',
-                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+                description: 'Password to encrypt the wallet',
               },
             },
             required: ['password'],
@@ -267,22 +298,17 @@ class NeoMcpServer {
         },
         {
           name: 'import_wallet',
-          description: 'Import an existing wallet from WIF or encrypted key',
+          description: 'Import a Neo N3 wallet from private key or WIF',
           inputSchema: {
             type: 'object',
             properties: {
               key: {
                 type: 'string',
-                description: 'WIF or encrypted private key',
+                description: 'Private key or WIF',
               },
               password: {
                 type: 'string',
-                description: 'Password for decrypting the key (if encrypted)',
-              },
-              network: {
-                type: 'string',
-                description: 'Network to use: "mainnet" or "testnet"',
-                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+                description: 'Password to encrypt the wallet',
               },
             },
             required: ['key'],
@@ -290,7 +316,7 @@ class NeoMcpServer {
         },
         {
           name: 'estimate_transfer_fees',
-          description: 'Estimate gas fees for an asset transfer',
+          description: 'Estimate fees for a transfer transaction',
           inputSchema: {
             type: 'object',
             properties: {
@@ -324,7 +350,7 @@ class NeoMcpServer {
         },
         {
           name: 'check_transaction_status',
-          description: 'Check the status of a transaction by hash',
+          description: 'Check the status of a transaction',
           inputSchema: {
             type: 'object',
             properties: {
@@ -341,37 +367,638 @@ class NeoMcpServer {
             required: ['txid'],
           },
         },
+        {
+          name: 'list_famous_contracts',
+          description: 'List famous Neo N3 contracts supported by the server',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+            },
+            required: [],
+          },
+        },
+        {
+          name: 'get_contract_info',
+          description: 'Get details about a famous Neo N3 contract',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              contractName: {
+                type: 'string',
+                description: 'Contract name',
+              },
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+            },
+            required: ['contractName'],
+          },
+        },
+        // NeoFS specific tools
+        {
+          name: 'neofs_create_container',
+          description: 'Create a NeoFS storage container',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              fromWIF: {
+                type: 'string',
+                description: 'WIF of the account to sign the transaction',
+              },
+              ownerId: {
+                type: 'string',
+                description: 'Owner ID of the container',
+              },
+              rules: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                },
+                description: 'Container rules',
+              },
+              confirm: {
+                type: 'boolean',
+                description: 'Confirmation flag to prevent accidental invocations',
+              },
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+            },
+            required: ['fromWIF', 'ownerId', 'confirm'],
+          },
+        },
+        {
+          name: 'neofs_get_containers',
+          description: 'Get containers owned by an address in NeoFS',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              ownerId: {
+                type: 'string',
+                description: 'Owner ID to query containers for',
+              },
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+            },
+            required: ['ownerId'],
+          },
+        },
+        // NeoBurger specific tools
+        {
+          name: 'neoburger_deposit',
+          description: 'Deposit NEO to NeoBurger to receive bNEO tokens',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              fromWIF: {
+                type: 'string',
+                description: 'WIF of the account to sign the transaction',
+              },
+              confirm: {
+                type: 'boolean',
+                description: 'Confirmation flag to prevent accidental invocations',
+              },
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+            },
+            required: ['fromWIF', 'confirm'],
+          },
+        },
+        {
+          name: 'neoburger_withdraw',
+          description: 'Withdraw NEO from NeoBurger by returning bNEO tokens',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              fromWIF: {
+                type: 'string',
+                description: 'WIF of the account to sign the transaction',
+              },
+              amount: {
+                oneOf: [
+                  { type: 'string' },
+                  { type: 'number' },
+                ],
+                description: 'Amount of bNEO to exchange',
+              },
+              confirm: {
+                type: 'boolean',
+                description: 'Confirmation flag to prevent accidental invocations',
+              },
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+            },
+            required: ['fromWIF', 'amount', 'confirm'],
+          },
+        },
+        {
+          name: 'neoburger_get_balance',
+          description: 'Get bNEO balance of an account',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              address: {
+                type: 'string',
+                description: 'Neo N3 address',
+              },
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+            },
+            required: ['address'],
+          },
+        },
+        {
+          name: 'neoburger_claim_gas',
+          description: 'Claim accumulated GAS rewards from NeoBurger',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              fromWIF: {
+                type: 'string',
+                description: 'WIF of the account to sign the transaction',
+              },
+              confirm: {
+                type: 'boolean',
+                description: 'Confirmation flag to prevent accidental invocations',
+              },
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+            },
+            required: ['fromWIF', 'confirm'],
+          },
+        },
+        // Flamingo specific tools
+        {
+          name: 'flamingo_stake',
+          description: 'Stake FLM tokens on Flamingo',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              fromWIF: {
+                type: 'string',
+                description: 'WIF of the account to sign the transaction',
+              },
+              amount: {
+                oneOf: [
+                  { type: 'string' },
+                  { type: 'number' },
+                ],
+                description: 'Amount to stake',
+              },
+              confirm: {
+                type: 'boolean',
+                description: 'Confirmation flag to prevent accidental invocations',
+              },
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+            },
+            required: ['fromWIF', 'amount', 'confirm'],
+          },
+        },
+        {
+          name: 'flamingo_unstake',
+          description: 'Unstake FLM tokens from Flamingo',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              fromWIF: {
+                type: 'string',
+                description: 'WIF of the account to sign the transaction',
+              },
+              amount: {
+                oneOf: [
+                  { type: 'string' },
+                  { type: 'number' },
+                ],
+                description: 'Amount to unstake',
+              },
+              confirm: {
+                type: 'boolean',
+                description: 'Confirmation flag to prevent accidental invocations',
+              },
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+            },
+            required: ['fromWIF', 'amount', 'confirm'],
+          },
+        },
+        {
+          name: 'flamingo_get_balance',
+          description: 'Get FLM token balance',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              address: {
+                type: 'string',
+                description: 'Neo N3 address',
+              },
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+            },
+            required: ['address'],
+          },
+        },
+        // NeoCompound tools
+        {
+          name: 'neocompound_deposit',
+          description: 'Deposit assets into NeoCompound',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+              walletPath: {
+                type: 'string',
+                description: 'Path to the wallet file',
+              },
+              walletPassword: {
+                type: 'string',
+                description: 'Password for the wallet',
+              },
+              assetId: {
+                type: 'string',
+                description: 'Script hash of the asset to deposit',
+              },
+              amount: {
+                type: ['string', 'number'],
+                description: 'Amount to deposit',
+              },
+            },
+            required: ['walletPath', 'walletPassword', 'assetId', 'amount'],
+          },
+        },
+        {
+          name: 'neocompound_withdraw',
+          description: 'Withdraw assets from NeoCompound',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+              walletPath: {
+                type: 'string',
+                description: 'Path to the wallet file',
+              },
+              walletPassword: {
+                type: 'string',
+                description: 'Password for the wallet',
+              },
+              assetId: {
+                type: 'string',
+                description: 'Script hash of the asset to withdraw',
+              },
+              amount: {
+                type: ['string', 'number'],
+                description: 'Amount to withdraw',
+              },
+            },
+            required: ['walletPath', 'walletPassword', 'assetId', 'amount'],
+          },
+        },
+        {
+          name: 'neocompound_get_balance',
+          description: 'Get balance of deposited assets in NeoCompound',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+              address: {
+                type: 'string',
+                description: 'Address to check balance for',
+              },
+              assetId: {
+                type: 'string',
+                description: 'Script hash of the asset to check balance for',
+              },
+            },
+            required: ['address', 'assetId'],
+          },
+        },
+        // GrandShare tools
+        {
+          name: 'grandshare_deposit',
+          description: 'Deposit assets into GrandShare pool',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+              walletPath: {
+                type: 'string',
+                description: 'Path to the wallet file',
+              },
+              walletPassword: {
+                type: 'string',
+                description: 'Password for the wallet',
+              },
+              poolId: {
+                type: 'number',
+                description: 'ID of the pool to deposit into',
+              },
+              amount: {
+                type: ['string', 'number'],
+                description: 'Amount to deposit',
+              },
+            },
+            required: ['walletPath', 'walletPassword', 'poolId', 'amount'],
+          },
+        },
+        {
+          name: 'grandshare_withdraw',
+          description: 'Withdraw assets from GrandShare pool',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+              walletPath: {
+                type: 'string',
+                description: 'Path to the wallet file',
+              },
+              walletPassword: {
+                type: 'string',
+                description: 'Password for the wallet',
+              },
+              poolId: {
+                type: 'number',
+                description: 'ID of the pool to withdraw from',
+              },
+              amount: {
+                type: ['string', 'number'],
+                description: 'Amount to withdraw',
+              },
+            },
+            required: ['walletPath', 'walletPassword', 'poolId', 'amount'],
+          },
+        },
+        {
+          name: 'grandshare_get_pool_details',
+          description: 'Get details about a GrandShare pool',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+              poolId: {
+                type: 'number',
+                description: 'ID of the pool to query',
+              },
+            },
+            required: ['poolId'],
+          },
+        },
+        // GhostMarket tools
+        {
+          name: 'ghostmarket_create_nft',
+          description: 'Create a new NFT on GhostMarket',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+              walletPath: {
+                type: 'string',
+                description: 'Path to the wallet file',
+              },
+              walletPassword: {
+                type: 'string',
+                description: 'Password for the wallet',
+              },
+              tokenURI: {
+                type: 'string',
+                description: 'URI for token metadata',
+              },
+              properties: {
+                type: 'array',
+                description: 'Array of property objects for the NFT',
+                items: {
+                  type: 'object',
+                  properties: {
+                    key: { type: 'string' },
+                    value: { type: 'string' }
+                  }
+                }
+              },
+            },
+            required: ['walletPath', 'walletPassword', 'tokenURI'],
+          },
+        },
+        {
+          name: 'ghostmarket_list_nft',
+          description: 'List an NFT for sale on GhostMarket',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+              walletPath: {
+                type: 'string',
+                description: 'Path to the wallet file',
+              },
+              walletPassword: {
+                type: 'string',
+                description: 'Password for the wallet',
+              },
+              tokenId: {
+                type: 'number',
+                description: 'ID of the token to list',
+              },
+              price: {
+                type: ['string', 'number'],
+                description: 'Price of the token',
+              },
+              paymentToken: {
+                type: 'string',
+                description: 'Script hash of token accepted as payment',
+              },
+            },
+            required: ['walletPath', 'walletPassword', 'tokenId', 'price', 'paymentToken'],
+          },
+        },
+        {
+          name: 'ghostmarket_buy_nft',
+          description: 'Buy a listed NFT on GhostMarket',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+              walletPath: {
+                type: 'string',
+                description: 'Path to the wallet file',
+              },
+              walletPassword: {
+                type: 'string',
+                description: 'Password for the wallet',
+              },
+              tokenId: {
+                type: 'number',
+                description: 'ID of the token to buy',
+              },
+            },
+            required: ['walletPath', 'walletPassword', 'tokenId'],
+          },
+        },
+        {
+          name: 'ghostmarket_get_token_info',
+          description: 'Get information about an NFT on GhostMarket',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+              tokenId: {
+                type: 'number',
+                description: 'ID of the token to query',
+              },
+            },
+            required: ['tokenId'],
+          },
+        },
       ],
     }));
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       try {
-        switch (request.params.name) {
+        const name = request.params.name;
+        const input = request.params.arguments || {};
+        
+        switch (name) {
           case 'get_blockchain_info':
-            return await this.handleGetBlockchainInfo(request.params.arguments);
+            return await this.handleGetBlockchainInfo(input);
           case 'get_block':
-            return await this.handleGetBlock(request.params.arguments);
+            return await this.handleGetBlock(input);
           case 'get_transaction':
-            return await this.handleGetTransaction(request.params.arguments);
+            return await this.handleGetTransaction(input);
           case 'get_balance':
-            return await this.handleGetBalance(request.params.arguments);
+            return await this.handleGetBalance(input);
           case 'transfer_assets':
-            return await this.handleTransferAssets(request.params.arguments);
+            return await this.handleTransferAssets(input);
           case 'invoke_contract':
-            return await this.handleInvokeContract(request.params.arguments);
+            return await this.handleInvokeContract(input);
           case 'create_wallet':
-            return await this.handleCreateWallet(request.params.arguments);
+            return await this.handleCreateWallet(input);
           case 'import_wallet':
-            return await this.handleImportWallet(request.params.arguments);
+            return await this.handleImportWallet(input);
           case 'estimate_transfer_fees':
-            return await this.handleEstimateTransferFees(request.params.arguments);
+            return await this.handleEstimateTransferFees(input);
           case 'check_transaction_status':
-            return await this.handleCheckTransactionStatus(request.params.arguments);
+            return await this.handleCheckTransactionStatus(input);
+          // New famous contract handlers
+          case 'list_famous_contracts':
+            return await this.handleListFamousContracts(input);
+          case 'get_contract_info':
+            return await this.handleGetContractInfo(input);
+          // NeoFS handlers
+          case 'neofs_create_container':
+            return await this.handleNeoFSCreateContainer(input);
+          case 'neofs_get_containers':
+            return await this.handleNeoFSGetContainers(input);
+          // NeoBurger handlers
+          case 'neoburger_deposit':
+            return await this.handleNeoBurgerDeposit(input);
+          case 'neoburger_withdraw':
+            return await this.handleNeoBurgerWithdraw(input);
+          case 'neoburger_get_balance':
+            return await this.handleNeoBurgerGetBalance(input);
+          case 'neoburger_claim_gas':
+            return await this.handleNeoBurgerClaimGas(input);
+          // Flamingo handlers
+          case 'flamingo_stake':
+            return await this.handleFlamingoStake(input);
+          case 'flamingo_unstake':
+            return await this.handleFlamingoUnstake(input);
+          case 'flamingo_get_balance':
+            return await this.handleFlamingoGetBalance(input);
+          // NeoCompound handlers
+          case 'neocompound_deposit':
+            return await this.handleNeoCompoundDeposit(input);
+          case 'neocompound_withdraw':
+            return await this.handleNeoCompoundWithdraw(input);
+          case 'neocompound_get_balance':
+            return await this.handleNeoCompoundGetBalance(input);
+          // GrandShare handlers
+          case 'grandshare_deposit':
+            return await this.handleGrandShareDeposit(input);
+          case 'grandshare_withdraw':
+            return await this.handleGrandShareWithdraw(input);
+          case 'grandshare_get_pool_details':
+            return await this.handleGrandShareGetPoolDetails(input);
+          // GhostMarket handlers
+          case 'ghostmarket_create_nft':
+            return await this.handleGhostMarketCreateNFT(input);
+          case 'ghostmarket_list_nft':
+            return await this.handleGhostMarketListNFT(input);
+          case 'ghostmarket_buy_nft':
+            return await this.handleGhostMarketBuyNFT(input);
+          case 'ghostmarket_get_token_info':
+            return await this.handleGhostMarketGetTokenInfo(input);
           default:
-            throw new McpError(
-              ErrorCode.MethodNotFound,
-              `Unknown tool: ${request.params.name}`
-            );
+            throw new McpError(ErrorCode.InvalidParams, `Tool ${name} not found`);
         }
       } catch (error) {
         return handleError(error);
@@ -791,15 +1418,736 @@ class NeoMcpServer {
   }
 
   /**
+   * List all famous Neo N3 contracts
+   * @param args Input arguments
+   * @returns List of contracts with descriptions
+   */
+  private async handleListFamousContracts(args: any) {
+    try {
+      const { network } = args;
+      const contractService = this.getContractService(network);
+      
+      const contracts = contractService.listSupportedContracts();
+      const availableContracts = contracts.filter(contract => {
+        return contractService.isContractAvailable(contract.name);
+      });
+      
+      return createSuccessResponse({
+        contracts: availableContracts,
+        network: contractService.getNetwork()
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  /**
+   * Get details about a famous Neo N3 contract
+   * @param args Input arguments
+   * @returns Contract details
+   */
+  private async handleGetContractInfo(args: any) {
+    try {
+      const { contractName, network } = args;
+      
+      if (!contractName) {
+        throw new McpError(ErrorCode.InvalidParams, 'Contract name is required');
+      }
+      
+      const contractService = this.getContractService(network);
+      
+      try {
+        const contract = contractService.getContract(contractName);
+        const operations = contractService.getContractOperations(contractName);
+        const scriptHash = contractService.getContractScriptHash(contractName);
+        
+        return createSuccessResponse({
+          name: contract.name,
+          description: contract.description,
+          scriptHash,
+          operations,
+          network: contractService.getNetwork()
+        });
+      } catch (error) {
+        throw new McpError(ErrorCode.InvalidParams, `Contract ${contractName} not found or not available on this network`);
+      }
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  /**
+   * Create a NeoFS storage container
+   * @param args Input arguments
+   * @returns Transaction hash
+   */
+  private async handleNeoFSCreateContainer(args: any) {
+    try {
+      const { fromWIF, ownerId, rules, confirm, network } = args;
+      
+      if (!fromWIF) {
+        throw new McpError(ErrorCode.InvalidParams, 'WIF is required');
+      }
+      
+      if (!ownerId) {
+        throw new McpError(ErrorCode.InvalidParams, 'Owner ID is required');
+      }
+      
+      if (!confirm) {
+        throw new McpError(ErrorCode.InvalidParams, 'Confirmation is required');
+      }
+      
+      const contractService = this.getContractService(network);
+      const neoService = this.getNeoService(network);
+      
+      // Import wallet
+      const account = neoService.importWallet(fromWIF);
+      
+      // Create container
+      const txid = await contractService.createNeoFSContainer(
+        account,
+        ownerId,
+        rules || []
+      );
+      
+      return createSuccessResponse({
+        txid,
+        message: 'NeoFS container creation transaction sent'
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  /**
+   * Get NeoFS containers owned by an address
+   * @param args Input arguments
+   * @returns Containers information
+   */
+  private async handleNeoFSGetContainers(args: any) {
+    try {
+      const { ownerId, network } = args;
+      
+      if (!ownerId) {
+        throw new McpError(ErrorCode.InvalidParams, 'Owner ID is required');
+      }
+      
+      const contractService = this.getContractService(network);
+      
+      const result = await contractService.getNeoFSContainers(ownerId);
+      
+      return createSuccessResponse({
+        result,
+        network: contractService.getNetwork()
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  /**
+   * Deposit NEO to NeoBurger
+   * @param args Input arguments
+   * @returns Transaction hash
+   */
+  private async handleNeoBurgerDeposit(args: any) {
+    try {
+      const { fromWIF, confirm, network } = args;
+      
+      if (!fromWIF) {
+        throw new McpError(ErrorCode.InvalidParams, 'WIF is required');
+      }
+      
+      if (!confirm) {
+        throw new McpError(ErrorCode.InvalidParams, 'Confirmation is required');
+      }
+      
+      const contractService = this.getContractService(network);
+      const neoService = this.getNeoService(network);
+      
+      // Import wallet
+      const account = neoService.importWallet(fromWIF);
+      
+      // Deposit to NeoBurger
+      const txid = await contractService.depositNeoToNeoBurger(account);
+      
+      return createSuccessResponse({
+        txid,
+        message: 'NEO deposit to NeoBurger transaction sent'
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  /**
+   * Withdraw NEO from NeoBurger
+   * @param args Input arguments
+   * @returns Transaction hash
+   */
+  private async handleNeoBurgerWithdraw(args: any) {
+    try {
+      const { fromWIF, amount, confirm, network } = args;
+      
+      if (!fromWIF) {
+        throw new McpError(ErrorCode.InvalidParams, 'WIF is required');
+      }
+      
+      if (!amount) {
+        throw new McpError(ErrorCode.InvalidParams, 'Amount is required');
+      }
+      
+      if (!confirm) {
+        throw new McpError(ErrorCode.InvalidParams, 'Confirmation is required');
+      }
+      
+      const contractService = this.getContractService(network);
+      const neoService = this.getNeoService(network);
+      
+      // Validate amount
+      validateAmount(amount);
+      
+      // Import wallet
+      const account = neoService.importWallet(fromWIF);
+      
+      // Withdraw from NeoBurger
+      const txid = await contractService.withdrawNeoFromNeoBurger(account, amount);
+      
+      return createSuccessResponse({
+        txid,
+        message: 'NEO withdrawal from NeoBurger transaction sent'
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  /**
+   * Get bNEO balance from NeoBurger
+   * @param args Input arguments
+   * @returns Balance information
+   */
+  private async handleNeoBurgerGetBalance(args: any) {
+    try {
+      const { address, network } = args;
+      
+      if (!address) {
+        throw new McpError(ErrorCode.InvalidParams, 'Address is required');
+      }
+      
+      // Validate address
+      validateAddress(address);
+      
+      const contractService = this.getContractService(network);
+      
+      const result = await contractService.getNeoBurgerBalance(address);
+      
+      return createSuccessResponse({
+        result,
+        network: contractService.getNetwork()
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  /**
+   * Claim GAS rewards from NeoBurger
+   * @param args Input arguments
+   * @returns Transaction hash
+   */
+  private async handleNeoBurgerClaimGas(args: any) {
+    try {
+      const { fromWIF, confirm, network } = args;
+      
+      if (!fromWIF) {
+        throw new McpError(ErrorCode.InvalidParams, 'WIF is required');
+      }
+      
+      if (!confirm) {
+        throw new McpError(ErrorCode.InvalidParams, 'Confirmation is required');
+      }
+      
+      const contractService = this.getContractService(network);
+      const neoService = this.getNeoService(network);
+      
+      // Import wallet
+      const account = neoService.importWallet(fromWIF);
+      
+      // Claim GAS from NeoBurger
+      const txid = await contractService.claimNeoBurgerGas(account);
+      
+      return createSuccessResponse({
+        txid,
+        message: 'GAS claim from NeoBurger transaction sent'
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  /**
+   * Stake FLM tokens on Flamingo
+   * @param args Input arguments
+   * @returns Transaction hash
+   */
+  private async handleFlamingoStake(args: any) {
+    try {
+      const { fromWIF, amount, confirm, network } = args;
+      
+      if (!fromWIF) {
+        throw new McpError(ErrorCode.InvalidParams, 'WIF is required');
+      }
+      
+      if (!amount) {
+        throw new McpError(ErrorCode.InvalidParams, 'Amount is required');
+      }
+      
+      if (!confirm) {
+        throw new McpError(ErrorCode.InvalidParams, 'Confirmation is required');
+      }
+      
+      const contractService = this.getContractService(network);
+      const neoService = this.getNeoService(network);
+      
+      // Validate amount
+      validateAmount(amount);
+      
+      // Import wallet
+      const account = neoService.importWallet(fromWIF);
+      
+      // Stake on Flamingo
+      const txid = await contractService.stakeFlamingo(account, amount);
+      
+      return createSuccessResponse({
+        txid,
+        message: 'FLM staking transaction sent'
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  /**
+   * Unstake FLM tokens from Flamingo
+   * @param args Input arguments
+   * @returns Transaction hash
+   */
+  private async handleFlamingoUnstake(args: any) {
+    try {
+      const { fromWIF, amount, confirm, network } = args;
+      
+      if (!fromWIF) {
+        throw new McpError(ErrorCode.InvalidParams, 'WIF is required');
+      }
+      
+      if (!amount) {
+        throw new McpError(ErrorCode.InvalidParams, 'Amount is required');
+      }
+      
+      if (!confirm) {
+        throw new McpError(ErrorCode.InvalidParams, 'Confirmation is required');
+      }
+      
+      const contractService = this.getContractService(network);
+      const neoService = this.getNeoService(network);
+      
+      // Validate amount
+      validateAmount(amount);
+      
+      // Import wallet
+      const account = neoService.importWallet(fromWIF);
+      
+      // Unstake from Flamingo
+      const txid = await contractService.unstakeFlamingo(account, amount);
+      
+      return createSuccessResponse({
+        txid,
+        message: 'FLM unstaking transaction sent'
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  /**
+   * Get FLM token balance
+   * @param args Input arguments
+   * @returns Balance information
+   */
+  private async handleFlamingoGetBalance(args: any) {
+    try {
+      const { address, network } = args;
+      
+      if (!address) {
+        throw new McpError(ErrorCode.InvalidParams, 'Address is required');
+      }
+      
+      // Validate address
+      validateAddress(address);
+      
+      const contractService = this.getContractService(network);
+      
+      const result = await contractService.getFlamingoBalance(address);
+      
+      return createSuccessResponse({
+        result,
+        network: contractService.getNetwork()
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  private async handleNeoCompoundDeposit(args: any) {
+    try {
+      const { 
+        network, 
+        walletPath, 
+        walletPassword, 
+        assetId,
+        amount 
+      } = args;
+      
+      // Validate asset ID
+      const validAssetId = validateScriptHash(assetId);
+      
+      // Validate amount
+      const validAmount = validateAmount(amount);
+      
+      // Get the appropriate services
+      const neoService = this.getNeoService(network);
+      const contractService = this.getContractService(network);
+      
+      // Import the wallet
+      const account = await neoService.importWallet(walletPath, walletPassword);
+      
+      // Deposit assets to NeoCompound
+      const txid = await contractService.depositToNeoCompound(account, validAssetId, validAmount);
+      
+      return createSuccessResponse({
+        txid,
+        address: account.address,
+        network: contractService.getNetwork()
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  private async handleNeoCompoundWithdraw(args: any) {
+    try {
+      const { 
+        network, 
+        walletPath, 
+        walletPassword, 
+        assetId,
+        amount 
+      } = args;
+      
+      // Validate asset ID
+      const validAssetId = validateScriptHash(assetId);
+      
+      // Validate amount
+      const validAmount = validateAmount(amount);
+      
+      // Get the appropriate services
+      const neoService = this.getNeoService(network);
+      const contractService = this.getContractService(network);
+      
+      // Import the wallet
+      const account = await neoService.importWallet(walletPath, walletPassword);
+      
+      // Withdraw assets from NeoCompound
+      const txid = await contractService.withdrawFromNeoCompound(account, validAssetId, validAmount);
+      
+      return createSuccessResponse({
+        txid,
+        address: account.address,
+        network: contractService.getNetwork()
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  private async handleNeoCompoundGetBalance(args: any) {
+    try {
+      const { network, address, assetId } = args;
+      
+      // Validate address
+      const validAddress = validateAddress(address);
+      
+      // Validate asset ID
+      const validAssetId = validateScriptHash(assetId);
+      
+      // Get the appropriate contract service
+      const contractService = this.getContractService(network);
+      
+      // Get balance from NeoCompound
+      const result = await contractService.getNeoCompoundBalance(validAddress, validAssetId);
+      
+      return createSuccessResponse({
+        balance: result,
+        address: validAddress,
+        assetId: validAssetId,
+        network: contractService.getNetwork()
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  private async handleGrandShareDeposit(args: any) {
+    try {
+      const { 
+        network, 
+        walletPath, 
+        walletPassword, 
+        poolId,
+        amount 
+      } = args;
+      
+      // Validate pool ID and amount
+      if (typeof poolId !== 'number' || poolId < 0) {
+        throw new Error('Invalid pool ID');
+      }
+      
+      const validAmount = validateAmount(amount);
+      
+      // Get the appropriate services
+      const neoService = this.getNeoService(network);
+      const contractService = this.getContractService(network);
+      
+      // Import the wallet
+      const account = await neoService.importWallet(walletPath, walletPassword);
+      
+      // Deposit assets to GrandShare
+      const txid = await contractService.depositToGrandShare(account, poolId, validAmount);
+      
+      return createSuccessResponse({
+        txid,
+        address: account.address,
+        poolId,
+        network: contractService.getNetwork()
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  private async handleGrandShareWithdraw(args: any) {
+    try {
+      const { 
+        network, 
+        walletPath, 
+        walletPassword, 
+        poolId,
+        amount 
+      } = args;
+      
+      // Validate pool ID and amount
+      if (typeof poolId !== 'number' || poolId < 0) {
+        throw new Error('Invalid pool ID');
+      }
+      
+      const validAmount = validateAmount(amount);
+      
+      // Get the appropriate services
+      const neoService = this.getNeoService(network);
+      const contractService = this.getContractService(network);
+      
+      // Import the wallet
+      const account = await neoService.importWallet(walletPath, walletPassword);
+      
+      // Withdraw assets from GrandShare
+      const txid = await contractService.withdrawFromGrandShare(account, poolId, validAmount);
+      
+      return createSuccessResponse({
+        txid,
+        address: account.address,
+        poolId,
+        network: contractService.getNetwork()
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  private async handleGrandShareGetPoolDetails(args: any) {
+    try {
+      const { network, poolId } = args;
+      
+      // Validate pool ID
+      if (typeof poolId !== 'number' || poolId < 0) {
+        throw new Error('Invalid pool ID');
+      }
+      
+      // Get the appropriate contract service
+      const contractService = this.getContractService(network);
+      
+      // Get pool details from GrandShare
+      const result = await contractService.getGrandSharePoolDetails(poolId);
+      
+      return createSuccessResponse({
+        poolDetails: result,
+        poolId,
+        network: contractService.getNetwork()
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  private async handleGhostMarketCreateNFT(args: any) {
+    try {
+      const { 
+        network, 
+        walletPath, 
+        walletPassword, 
+        tokenURI,
+        properties = [] 
+      } = args;
+      
+      // Get the appropriate services
+      const neoService = this.getNeoService(network);
+      const contractService = this.getContractService(network);
+      
+      // Import the wallet
+      const account = await neoService.importWallet(walletPath, walletPassword);
+      
+      // Create NFT on GhostMarket
+      const txid = await contractService.createGhostMarketNFT(account, tokenURI, properties);
+      
+      return createSuccessResponse({
+        txid,
+        address: account.address,
+        tokenURI,
+        network: contractService.getNetwork()
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  private async handleGhostMarketListNFT(args: any) {
+    try {
+      const { 
+        network, 
+        walletPath, 
+        walletPassword, 
+        tokenId,
+        price,
+        paymentToken
+      } = args;
+      
+      // Validate token ID
+      if (typeof tokenId !== 'number' || tokenId < 0) {
+        throw new Error('Invalid token ID');
+      }
+      
+      // Validate price and payment token
+      const validPrice = validateAmount(price);
+      const validPaymentToken = validateScriptHash(paymentToken);
+      
+      // Get the appropriate services
+      const neoService = this.getNeoService(network);
+      const contractService = this.getContractService(network);
+      
+      // Import the wallet
+      const account = await neoService.importWallet(walletPath, walletPassword);
+      
+      // List NFT on GhostMarket
+      const txid = await contractService.listGhostMarketNFT(account, tokenId, validPrice, validPaymentToken);
+      
+      return createSuccessResponse({
+        txid,
+        address: account.address,
+        tokenId,
+        price: validPrice,
+        paymentToken: validPaymentToken,
+        network: contractService.getNetwork()
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  private async handleGhostMarketBuyNFT(args: any) {
+    try {
+      const { 
+        network, 
+        walletPath, 
+        walletPassword, 
+        tokenId
+      } = args;
+      
+      // Validate token ID
+      if (typeof tokenId !== 'number' || tokenId < 0) {
+        throw new Error('Invalid token ID');
+      }
+      
+      // Get the appropriate services
+      const neoService = this.getNeoService(network);
+      const contractService = this.getContractService(network);
+      
+      // Import the wallet
+      const account = await neoService.importWallet(walletPath, walletPassword);
+      
+      // Buy NFT on GhostMarket
+      const txid = await contractService.buyGhostMarketNFT(account, tokenId);
+      
+      return createSuccessResponse({
+        txid,
+        address: account.address,
+        tokenId,
+        network: contractService.getNetwork()
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  private async handleGhostMarketGetTokenInfo(args: any) {
+    try {
+      const { network, tokenId } = args;
+      
+      // Validate token ID
+      if (typeof tokenId !== 'number' || tokenId < 0) {
+        throw new Error('Invalid token ID');
+      }
+      
+      // Get the appropriate contract service
+      const contractService = this.getContractService(network);
+      
+      // Get token info from GhostMarket
+      const result = await contractService.getGhostMarketTokenInfo(tokenId);
+      
+      return createSuccessResponse({
+        tokenInfo: result,
+        tokenId,
+        network: contractService.getNetwork()
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  /**
    * Run the server
    */
   async run() {
-    const transport = new StdioServerTransport();
-    await this.server.connect(transport);
-    console.error('Neo N3 MCP server running on stdio');
+    try {
+      const transport = new StdioServerTransport();
+      await this.server.connect(transport);
+      console.log('Neo N3 MCP Server started');
+    } catch (error) {
+      console.error('Failed to start server:', error);
+      process.exit(1);
+    }
   }
 }
 
-// Create and run the server
+// Start the server
 const server = new NeoMcpServer();
 server.run().catch(console.error);

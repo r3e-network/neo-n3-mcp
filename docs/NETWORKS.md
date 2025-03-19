@@ -24,8 +24,8 @@ The Neo N3 MCP server provides seamless integration with multiple Neo N3 network
 
 3. **Configuration System**:
    - Environment variables for configuring network endpoints:
-     - `NEO_MAINNET_RPC_URL`: URL for mainnet RPC node
-     - `NEO_TESTNET_RPC_URL`: URL for testnet RPC node
+     - `NEO_MAINNET_RPC_URL`: URL for mainnet RPC node (default: `https://mainnet1.neo.coz.io:443`)
+     - `NEO_TESTNET_RPC_URL`: URL for testnet RPC node (default: `https://testnet1.neo.coz.io:443`)
    - Command-line arguments for overriding defaults
 
 4. **Network Validation**:
@@ -57,17 +57,47 @@ Asset hashes and contract addresses differ between mainnet and testnet. The serv
 
 ```typescript
 // Example of network-specific asset mappings
-const assets: Record<NeoNetwork, Record<string, string>> = {
-  [NeoNetwork.MAINNET]: {
+const assetMappings = {
+  mainnet: {
     NEO: '0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5',
-    GAS: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
+    GAS: '0xd2a4cff31913016155e38e474a2c06d08be276cf'
   },
-  [NeoNetwork.TESTNET]: {
+  testnet: {
     NEO: '0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b',
-    GAS: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
+    GAS: '0xd2a4cff31913016155e38e474a2c06d08be276cf'
   }
 };
 ```
+
+## RPC Endpoints
+
+The server uses the following RPC endpoints by default:
+
+### Mainnet
+- URL: `https://mainnet1.neo.coz.io:443`
+- Provider: City of Zion (CoZ)
+- Protocol: HTTPS
+
+### Testnet
+- URL: `https://testnet1.neo.coz.io:443`
+- Provider: City of Zion (CoZ)
+- Protocol: HTTPS
+
+You can override these defaults using the environment variables mentioned above or through the configuration file.
+
+## Best Practices
+
+1. **Development and Testing**:
+   - Use testnet for development and testing to avoid using real assets
+   - Always specify the network parameter explicitly in development code for clarity
+
+2. **Production Use**:
+   - For production applications, explicitly specify `network: 'mainnet'` for clarity
+   - Consider using environment variables to switch networks between environments
+
+3. **Network Security**:
+   - Always use HTTPS endpoints for production use
+   - Consider using private RPC nodes for high-volume applications
 
 ## Recommended Usage
 

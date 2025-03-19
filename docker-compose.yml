@@ -6,7 +6,9 @@ services:
     image: r3e/neo-n3-mcp:latest
     container_name: neo-mcp-server
     environment:
-      - NEO_RPC_URL=http://seed1.neo.org:10332
+      - NEO_RPC_URL=https://mainnet1.neo.coz.io:443
+      - NEO_MAINNET_RPC_URL=https://mainnet1.neo.coz.io:443
+      - NEO_TESTNET_RPC_URL=https://testnet1.neo.coz.io:443
       - WALLET_PATH=/app/wallets
       - NEO_NETWORK=mainnet
       - LOG_LEVEL=info

@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500" fill="none">
+  <rect width="800" height="500" fill="#f5f7fa"/>
+  <rect x="60" y="100" width="160" height="100" rx="10" fill="white" stroke="#5a70b2" stroke-width="3"/>
+  <text x="140" y="150" text-anchor="middle" font-size="18" font-family="Arial" font-weight="bold" fill="#5a70b2">AI System</text>
+  <text x="140" y="175" text-anchor="middle" font-size="14" font-family="Arial" fill="#666">LangChain, LlamaIndex, etc.</text>
+  <rect x="320" y="100" width="160" height="100" rx="10" fill="white" stroke="#5a70b2" stroke-width="3"/>
+  <text x="400" y="150" text-anchor="middle" font-size="18" font-family="Arial" font-weight="bold" fill="#5a70b2">MCP Client</text>
+  <text x="400" y="175" text-anchor="middle" font-size="14" font-family="Arial" fill="#666">Protocol Handler</text>
+  <rect x="580" y="100" width="160" height="100" rx="10" fill="white" stroke="#00e599" stroke-width="3"/>
+  <text x="660" y="150" text-anchor="middle" font-size="18" font-family="Arial" font-weight="bold" fill="#00e599">Neo N3 MCP</text>
+  <text x="660" y="175" text-anchor="middle" font-size="14" font-family="Arial" fill="#666">Server</text>
+  <rect x="320" y="300" width="160" height="100" rx="10" fill="white" stroke="#00e599" stroke-width="3"/>
+  <text x="400" y="350" text-anchor="middle" font-size="18" font-family="Arial" font-weight="bold" fill="#00e599">Neo N3</text>
+  <text x="400" y="375" text-anchor="middle" font-size="14" font-family="Arial" fill="#666">Blockchain</text>
+  
+  <!-- Arrows using path instead of arrow element -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#5a70b2"/>
+    </marker>
+    <marker id="greenarrow" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#00e599"/>
+    </marker>
+  </defs>
+  
+  <path d="M220 150 L320 150" stroke="#5a70b2" stroke-width="3" marker-end="url(#arrowhead)"/>
+  <path d="M480 150 L580 150" stroke="#5a70b2" stroke-width="3" marker-end="url(#arrowhead)"/>
+  <path d="M660 200 L660 275 L480 300" stroke="#00e599" stroke-width="3" marker-end="url(#greenarrow)"/>
+  <path d="M400 200 L400 300" stroke="#00e599" stroke-width="3" marker-end="url(#greenarrow)"/>
+  
+  <!-- Text labels -->
+  <text x="270" y="130" text-anchor="middle" font-size="12" font-family="Arial" fill="#666">Requests</text>
+  <text x="530" y="130" text-anchor="middle" font-size="12" font-family="Arial" fill="#666">MCS PX</text>
+  <text x="700" y="240" text-anchor="middle" font-size="12" font-family="Arial" fill="#666">RPC Calls</text>
+  <text x="420" y="240" text-anchor="middle" font-size="12" font-family="Arial" fill="#666">Transactions</text>
+  <text x="400" y="450" text-anchor="middle" font-size="24" font-family="Arial" font-weight="bold" fill="#333">MCP Architecture</text>
+  <text x="400" y="475" text-anchor="middle" font-size="14" font-family="Arial" fill="#666">Powered by R3E Network</text>
+</svg> 

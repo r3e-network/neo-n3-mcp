@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation | Neo N3 MCP Server</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="documentation-page">
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1>Neo N3 MCP Server</h1>
+                <span class="powered-by">Powered by R3E Network</span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="documentation.html" class="active">Documentation</a></li>
+                    <li><a href="user-guide.html">User Guide</a></li>
+                    <li><a href="integration.html">Integration</a></li>
+                    <li><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank" class="github-link">GitHub</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="documentation-container">
+        <aside class="doc-sidebar">
+            <div class="sidebar-content">
+                <h3>Contents</h3>
+                <ul>
+                    <li><a href="#overview">Overview</a></li>
+                    <li><a href="#installation">Installation</a></li>
+                    <li><a href="#configuration">Configuration</a></li>
+                    <li><a href="#mcp-tools">MCP Tools</a>
+                        <ul>
+                            <li><a href="#blockchain-tools">Blockchain Tools</a></li>
+                            <li><a href="#contract-tools">Contract Tools</a></li>
+                            <li><a href="#wallet-tools">Wallet Tools</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#api-reference">API Reference</a></li>
+                    <li><a href="#contract-reference">Contract Reference</a>
+                        <ul>
+                            <li><a href="#neofs">NeoFS</a></li>
+                            <li><a href="#neoburger">NeoBurger</a></li>
+                            <li><a href="#flamingo">Flamingo</a></li>
+                            <li><a href="#neocompound">NeoCompound</a></li>
+                            <li><a href="#grandshare">GrandShare</a></li>
+                            <li><a href="#ghostmarket">GhostMarket</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#troubleshooting">Troubleshooting</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="doc-content">
+            <section id="overview">
+                <h1>Neo N3 MCP Server Documentation</h1>
+                <p>The Neo N3 MCP Server is an implementation of the Model Context Protocol (MCP) that provides standardized access to Neo N3 blockchain features and famous smart contracts. This server allows AI systems to interact with the Neo N3 blockchain through a consistent interface, enabling a wide range of blockchain operations without requiring deep blockchain knowledge.</p>
+                
+                <h2>What is MCP?</h2>
+                <p>The Model Context Protocol (MCP) is a standardized protocol for AI systems to interact with external tools and resources. It provides a consistent interface for AI models to access capabilities outside of their training data, including blockchain operations, file systems, and more.</p>
+                
+                <h2>Key Features</h2>
+                <ul>
+                    <li><strong>Neo N3 Blockchain Access:</strong> Direct access to Neo N3 blockchain features, including block queries, transaction creation, and more.</li>
+                    <li><strong>Famous Contracts Support:</strong> Interact with well-known Neo N3 contracts like NeoFS, NeoBurger, Flamingo, and more.</li>
+                    <li><strong>Dual Network Support:</strong> Seamlessly switch between Neo N3 mainnet and testnet.</li>
+                    <li><strong>MCP Protocol Integration:</strong> Standardized interface for AI systems to interact with Neo N3 blockchain.</li>
+                    <li><strong>Advanced Wallet Management:</strong> Secure management of Neo N3 wallets and accounts.</li>
+                </ul>
+            </section>
+
+            <section id="installation">
+                <h2>Installation</h2>
+                <p>You can install the Neo N3 MCP Server using npm:</p>
+                <pre><code>npm install @r3e/neo-n3-mcp</code></pre>
+                
+                <h3>Requirements</h3>
+                <ul>
+                    <li>Node.js v14 or later</li>
+                    <li>npm v6 or later</li>
+                </ul>
+                
+                <h3>Global Installation</h3>
+                <p>For global installation, which allows running the server from any directory:</p>
+                <pre><code>npm install -g @r3e/neo-n3-mcp</code></pre>
+            </section>
+
+            <section id="configuration">
+                <h2>Configuration</h2>
+                <p>The Neo N3 MCP Server can be configured through environment variables or a configuration file.</p>
+                
+                <h3>Environment Variables</h3>
+                <table class="config-table">
+                    <thead>
+                        <tr>
+                            <th>Variable</th>
+                            <th>Description</th>
+                            <th>Default</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>NEO_MAINNET_RPC_URL</td>
+                            <td>URL for Neo N3 mainnet</td>
+                            <td>https://mainnet1.neo.coz.io:443</td>
+                        </tr>
+                        <tr>
+                            <td>NEO_TESTNET_RPC_URL</td>
+                            <td>URL for Neo N3 testnet</td>
+                            <td>https://testnet1.neo.coz.io:443</td>
+                        </tr>
+                        <tr>
+                            <td>NEO_MCP_PORT</td>
+                            <td>Port number for the MCP server</td>
+                            <td>8080</td>
+                        </tr>
+                        <tr>
+                            <td>NEO_MCP_LOG_LEVEL</td>
+                            <td>Logging level (debug, info, warn, error)</td>
+                            <td>info</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h3>Configuration File</h3>
+                <p>You can also provide a configuration file at <code>~/.neo-n3-mcp/config.json</code>:</p>
+                <pre><code>{
+  "port": 3000,
+  "network": "mainnet",
+  "mainnetRpcUrl": "https://mainnet1.neo.coz.io:443",
+  "testnetRpcUrl": "https://testnet1.neo.coz.io:443",
+  "walletPath": "./wallets"
+}</code></pre>
+            </section>
+
+            <section id="mcp-tools">
+                <h2>MCP Tools</h2>
+                <p>The Neo N3 MCP Server provides a variety of tools for interacting with the Neo N3 blockchain.</p>
+                
+                <section id="blockchain-tools">
+                    <h3>Blockchain Tools</h3>
+                    <table class="tool-table">
+                        <thead>
+                            <tr>
+                                <th>Tool Name</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>get_blockchain_info</td>
+                                <td>Get general Neo N3 blockchain information</td>
+                            </tr>
+                            <tr>
+                                <td>get_block</td>
+                                <td>Get block details by height or hash</td>
+                            </tr>
+                            <tr>
+                                <td>get_transaction</td>
+                                <td>Get transaction details by hash</td>
+                            </tr>
+                            <tr>
+                                <td>get_balance</td>
+                                <td>Get asset balance for an address</td>
+                            </tr>
+                            <tr>
+                                <td>transfer_assets</td>
+                                <td>Transfer assets between addresses</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+                
+                <section id="contract-tools">
+                    <h3>Contract Tools</h3>
+                    <table class="tool-table">
+                        <thead>
+                            <tr>
+                                <th>Tool Name</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>list_famous_contracts</td>
+                                <td>List all supported famous Neo N3 contracts</td>
+                            </tr>
+                            <tr>
+                                <td>get_contract_info</td>
+                                <td>Get details about a specific contract</td>
+                            </tr>
+                            <tr>
+                                <td>invoke_contract_read</td>
+                                <td>Call a read-only contract method</td>
+                            </tr>
+                            <tr>
+                                <td>invoke_contract_write</td>
+                                <td>Call a contract method that modifies state</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h4>Famous Contract Specific Tools</h4>
+                    <p>For each famous contract, specific tools are available:</p>
+                    
+                    <details>
+                        <summary><strong>NeoFS Tools</strong></summary>
+                        <table class="tool-table">
+                            <tbody>
+                                <tr>
+                                    <td>neofs_create_container</td>
+                                    <td>Create a storage container in NeoFS</td>
+                                </tr>
+                                <tr>
+                                    <td>neofs_get_containers</td>
+                                    <td>Get containers owned by an address</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </details>
+                    
+                    <details>
+                        <summary><strong>NeoBurger Tools</strong></summary>
+                        <table class="tool-table">
+                            <tbody>
+                                <tr>
+                                    <td>neoburger_deposit</td>
+                                    <td>Deposit NEO to NeoBurger to receive bNEO tokens</td>
+                                </tr>
+                                <tr>
+                                    <td>neoburger_withdraw</td>
+                                    <td>Withdraw NEO from NeoBurger by returning bNEO tokens</td>
+                                </tr>
+                                <tr>
+                                    <td>neoburger_get_balance</td>
+                                    <td>Get bNEO balance of an account</td>
+                                </tr>
+                                <tr>
+                                    <td>neoburger_claim_gas</td>
+                                    <td>Claim accumulated GAS rewards from NeoBurger</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </details>
+                    
+                    <details>
+                        <summary><strong>Flamingo Tools</strong></summary>
+                        <table class="tool-table">
+                            <tbody>
+                                <tr>
+                                    <td>flamingo_stake</td>
+                                    <td>Stake FLM tokens on Flamingo</td>
+                                </tr>
+                                <tr>
+                                    <td>flamingo_unstake</td>
+                                    <td>Unstake FLM tokens from Flamingo</td>
+                                </tr>
+                                <tr>
+                                    <td>flamingo_get_balance</td>
+                                    <td>Get FLM token balance</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </details>
+                    
+                    <details>
+                        <summary><strong>NeoCompound Tools</strong></summary>
+                        <table class="tool-table">
+                            <tbody>
+                                <tr>
+                                    <td>neocompound_deposit</td>
+                                    <td>Deposit assets into NeoCompound</td>
+                                </tr>
+                                <tr>
+                                    <td>neocompound_withdraw</td>
+                                    <td>Withdraw assets from NeoCompound</td>
+                                </tr>
+                                <tr>
+                                    <td>neocompound_get_balance</td>
+                                    <td>Get balance of deposited assets in NeoCompound</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </details>
+                    
+                    <details>
+                        <summary><strong>GrandShare Tools</strong></summary>
+                        <table class="tool-table">
+                            <tbody>
+                                <tr>
+                                    <td>grandshare_deposit</td>
+                                    <td>Deposit assets into GrandShare pool</td>
+                                </tr>
+                                <tr>
+                                    <td>grandshare_withdraw</td>
+                                    <td>Withdraw assets from GrandShare pool</td>
+                                </tr>
+                                <tr>
+                                    <td>grandshare_get_pool_details</td>
+                                    <td>Get details about a GrandShare pool</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </details>
+                    
+                    <details>
+                        <summary><strong>GhostMarket Tools</strong></summary>
+                        <table class="tool-table">
+                            <tbody>
+                                <tr>
+                                    <td>ghostmarket_create_nft</td>
+                                    <td>Create a new NFT on GhostMarket</td>
+                                </tr>
+                                <tr>
+                                    <td>ghostmarket_list_nft</td>
+                                    <td>List an NFT for sale on GhostMarket</td>
+                                </tr>
+                                <tr>
+                                    <td>ghostmarket_buy_nft</td>
+                                    <td>Buy a listed NFT on GhostMarket</td>
+                                </tr>
+                                <tr>
+                                    <td>ghostmarket_get_token_info</td>
+                                    <td>Get information about an NFT on GhostMarket</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </details>
+                </section>
+                
+                <section id="wallet-tools">
+                    <h3>Wallet Tools</h3>
+                    <table class="tool-table">
+                        <thead>
+                            <tr>
+                                <th>Tool Name</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>create_wallet</td>
+                                <td>Create a new Neo N3 wallet</td>
+                            </tr>
+                            <tr>
+                                <td>import_wallet</td>
+                                <td>Import a wallet from WIF, private key, or NEP-6 format</td>
+                            </tr>
+                            <tr>
+                                <td>export_wallet</td>
+                                <td>Export a wallet to WIF or NEP-6 format</td>
+                            </tr>
+                            <tr>
+                                <td>get_wallet_info</td>
+                                <td>Get detailed information about a wallet</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+            </section>
+
+            <section id="api-reference">
+                <h2>API Reference</h2>
+                <p>The Neo N3 MCP Server follows the MCP protocol for API endpoints. Here are the main endpoints:</p>
+                
+                <h3>Tool Management</h3>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Endpoint</th>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>/mcp/v1/tools/list</td>
+                            <td>POST</td>
+                            <td>List all available tools</td>
+                        </tr>
+                        <tr>
+                            <td>/mcp/v1/tools/call</td>
+                            <td>POST</td>
+                            <td>Call a specific tool</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h3>Resource Management</h3>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Endpoint</th>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>/mcp/v1/resources/list</td>
+                            <td>POST</td>
+                            <td>List all available resources</td>
+                        </tr>
+                        <tr>
+                            <td>/mcp/v1/resources/read</td>
+                            <td>POST</td>
+                            <td>Read a specific resource</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h3>Request and Response Format</h3>
+                <p>All API endpoints use JSON for request and response bodies. Here's an example of calling a tool:</p>
+                
+                <h4>Request</h4>
+                <pre><code>{
+  "jsonrpc": "2.0",
+  "method": "call_tool",
+  "params": {
+    "name": "get_blockchain_info",
+    "input": {
+      "network": "mainnet"
+    }
+  },
+  "id": 1
+}</code></pre>
+                
+                <h4>Response</h4>
+                <pre><code>{
+  "jsonrpc": "2.0",
+  "result": {
+    "blockHeight": 12345678,
+    "blockTime": "2023-07-15T12:34:56Z",
+    "network": "mainnet",
+    "version": "3.0.0"
+  },
+  "id": 1
+}</code></pre>
+            </section>
+
+            <section id="contract-reference">
+                <h2>Contract Reference</h2>
+                <p>The Neo N3 MCP Server supports various famous Neo N3 contracts. Here's a reference for each contract:</p>
+                
+                <section id="neofs">
+                    <h3>NeoFS</h3>
+                    <p>NeoFS is a decentralized storage system on the Neo N3 blockchain.</p>
+                    
+                    <h4>Contract Information</h4>
+                    <table class="contract-table">
+                        <tbody>
+                            <tr>
+                                <th>Name</th>
+                                <td>NeoFS</td>
+                            </tr>
+                            <tr>
+                                <th>Mainnet Script Hash</th>
+                                <td>0x50ac1c37690cc2cfc594472833cf57505d5f46de</td>
+                            </tr>
+                            <tr>
+                                <th>Testnet Script Hash</th>
+                                <td>0xccca29443855a1c455d72a3318cf605debb9e384</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h4>Operations</h4>
+                    <table class="operation-table">
+                        <thead>
+                            <tr>
+                                <th>Operation</th>
+                                <th>Description</th>
+                                <th>Parameters</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>createContainer</td>
+                                <td>Create a storage container</td>
+                                <td>
+                                    <ul>
+                                        <li><strong>ownerId</strong> (string): Owner ID of the container</li>
+                                        <li><strong>rules</strong> (array): Container rules</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>deleteContainer</td>
+                                <td>Delete a storage container</td>
+                                <td>
+                                    <ul>
+                                        <li><strong>containerId</strong> (string): Container ID to delete</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>getContainers</td>
+                                <td>Get containers owned by an address</td>
+                                <td>
+                                    <ul>
+                                        <li><strong>ownerId</strong> (string): Owner ID to query containers for</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- Repeat similar sections for other contracts -->
+                <section id="neoburger">
+                    <h3>NeoBurger</h3>
+                    <p>NeoBurger is a Neo N3 staking service.</p>
+                    
+                    <h4>Contract Information</h4>
+                    <table class="contract-table">
+                        <tbody>
+                            <tr>
+                                <th>Name</th>
+                                <td>NeoBurger</td>
+                            </tr>
+                            <tr>
+                                <th>Mainnet Script Hash</th>
+                                <td>0x48c40d4666f93408be1bef038b6722404d9a4c2a</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h4>Operations</h4>
+                    <table class="operation-table">
+                        <thead>
+                            <tr>
+                                <th>Operation</th>
+                                <th>Description</th>
+                                <th>Parameters</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>depositNeo</td>
+                                <td>Deposit NEO to receive bNEO tokens</td>
+                                <td>
+                                    <ul>
+                                        <li><strong>account</strong> (hash160): Account receiving bNEO</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>withdrawNeo</td>
+                                <td>Withdraw NEO by returning bNEO tokens</td>
+                                <td>
+                                    <ul>
+                                        <li><strong>account</strong> (hash160): Account receiving NEO</li>
+                                        <li><strong>amount</strong> (integer): Amount of bNEO to exchange</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>balanceOf</td>
+                                <td>Get bNEO balance of an account</td>
+                                <td>
+                                    <ul>
+                                        <li><strong>account</strong> (hash160): Account to check balance for</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>claimGas</td>
+                                <td>Claim accumulated GAS rewards</td>
+                                <td>
+                                    <ul>
+                                        <li><strong>account</strong> (hash160): Account claiming rewards</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+            </section>
+
+            <section id="troubleshooting">
+                <h2>Troubleshooting</h2>
+                <p>Common issues and their solutions:</p>
+                
+                <details>
+                    <summary><strong>Connection Issues</strong></summary>
+                    <p>If you're experiencing connection issues to the Neo N3 blockchain:</p>
+                    <ul>
+                        <li>Verify that the RPC URL is correct and accessible</li>
+                        <li>Check your network connection</li>
+                        <li>Try a different RPC provider</li>
+                    </ul>
+                </details>
+                
+                <details>
+                    <summary><strong>Wallet Access Issues</strong></summary>
+                    <p>If you're having trouble accessing wallets:</p>
+                    <ul>
+                        <li>Verify that the wallet file exists and is not corrupted</li>
+                        <li>Check that the password is correct</li>
+                        <li>Ensure the wallet format is supported (NEP-6, WIF)</li>
+                    </ul>
+                </details>
+                
+                <details>
+                    <summary><strong>Contract Interaction Issues</strong></summary>
+                    <p>If contract interactions are failing:</p>
+                    <ul>
+                        <li>Verify that the contract is available on the selected network</li>
+                        <li>Check that the operation parameters are correct</li>
+                        <li>Ensure you have sufficient GAS for the transaction</li>
+                    </ul>
+                </details>
+                
+                <h3>Common Error Codes</h3>
+                <table class="error-table">
+                    <thead>
+                        <tr>
+                            <th>Error Code</th>
+                            <th>Description</th>
+                            <th>Solution</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>INVALID_PARAMS</td>
+                            <td>Invalid parameters provided</td>
+                            <td>Check the parameters according to the documentation</td>
+                        </tr>
+                        <tr>
+                            <td>WALLET_ERROR</td>
+                            <td>Error accessing wallet</td>
+                            <td>Verify wallet path and password</td>
+                        </tr>
+                        <tr>
+                            <td>RPC_ERROR</td>
+                            <td>Error communicating with Neo RPC</td>
+                            <td>Check RPC URL and network connection</td>
+                        </tr>
+                        <tr>
+                            <td>CONTRACT_ERROR</td>
+                            <td>Error interacting with contract</td>
+                            <td>Verify contract availability and parameters</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h3>Getting Support</h3>
+                <p>If you need additional help, you can:</p>
+                <ul>
+                    <li>Check the <a href="https://github.com/R3E-Network/neo-n3-mcp/issues">GitHub issues</a> for similar problems</li>
+                    <li>Join the <a href="https://discord.gg/R3E-Network">R3E Network Discord</a> for community support</li>
+                    <li>Contact the developers at <a href="mailto:support@R3E-Network.io">support@R3E-Network.io</a></li>
+                </ul>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <h2>Neo N3 MCP Server</h2>
+                    <p>Powered by R3E Network</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-links-column">
+                        <h3>Documentation</h3>
+                        <ul>
+                            <li><a href="documentation.html#overview">Overview</a></li>
+                            <li><a href="documentation.html#installation">Installation</a></li>
+                            <li><a href="documentation.html#configuration">Configuration</a></li>
+                            <li><a href="documentation.html#api-reference">API Reference</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-links-column">
+                        <h3>Resources</h3>
+                        <ul>
+                            <li><a href="user-guide.html">User Guide</a></li>
+                            <li><a href="integration.html">Integration Guide</a></li>
+                            <li><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank">GitHub</a></li>
+                            <li><a href="https://docs.neo.org/" target="_blank">Neo Documentation</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-links-column">
+                        <h3>Community</h3>
+                        <ul>
+                            <li><a href="https://discord.gg/R3E-Network" target="_blank">Discord</a></li>
+                            <li><a href="https://twitter.com/R3E-Network" target="_blank">Twitter</a></li>
+                            <li><a href="https://medium.com/@R3E-Network" target="_blank">Medium</a></li>
+                            <li><a href="https://t.me/R3E-Network" target="_blank">Telegram</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 R3E Network. All rights reserved.</p>
+                <div class="footer-bottom-links">
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Privacy Policy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html> 
