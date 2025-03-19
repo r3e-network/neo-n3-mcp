@@ -765,4 +765,21 @@ export class NeoService {
       throw new Error(`Failed to estimate transfer fees: ${errorMessage}`);
     }
   }
+
+  /**
+   * Get current block height
+   * @returns Block count information
+   */
+  async getBlockCount() {
+    try {
+      const blockCount = await this.executeWithRetry('getblockcount', []);
+      return {
+        count: blockCount,
+        network: this.network
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to get block count: ${errorMessage}`);
+    }
+  }
 }

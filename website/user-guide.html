@@ -36,6 +36,21 @@
                 <h3>User Guide</h3>
                 <ul>
                     <li><a href="#getting-started">Getting Started</a></li>
+                    <li><a href="#ai-integration">AI Integration</a>
+                        <ul>
+                            <li><a href="#claude-integration">Claude Integration</a></li>
+                            <li><a href="#cursor-integration">Cursor Integration</a></li>
+                            <li><a href="#windsurf-integration">Windsurf Integration</a></li>
+                            <li><a href="#custom-ai-integration">Custom AI Setup</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#ai-chat-examples">AI Chat Examples</a>
+                        <ul>
+                            <li><a href="#blockchain-queries">Blockchain Queries</a></li>
+                            <li><a href="#wallet-operations">Wallet Operations</a></li>
+                            <li><a href="#contract-interactions">Contract Interactions</a></li>
+                        </ul>
+                    </li>
                     <li><a href="#blockchain-interaction">Blockchain Interaction</a>
                         <ul>
                             <li><a href="#querying-blockchain">Querying the Blockchain</a></li>
@@ -49,80 +64,233 @@
                             <li><a href="#neoburger-usage">Using NeoBurger</a></li>
                             <li><a href="#flamingo-usage">Using Flamingo</a></li>
                             <li><a href="#neocompound-usage">Using NeoCompound</a></li>
-                            <li><a href="#grandshare-usage">Using GrandShare</a></li>
-                            <li><a href="#ghostmarket-usage">Using GhostMarket</a></li>
                         </ul>
                     </li>
-                    <li><a href="#advanced-usage">Advanced Usage</a>
-                        <ul>
-                            <li><a href="#batch-operations">Batch Operations</a></li>
-                            <li><a href="#custom-rpc">Custom RPC Providers</a></li>
-                            <li><a href="#error-handling">Error Handling</a></li>
-                        </ul>
-                    </li>
-                    <li><a href="#common-patterns">Common Patterns</a></li>
-                    <li><a href="#best-practices">Best Practices</a></li>
-                    <li><a href="#interactive-tools">Interactive Tools</a>
-                        <ul>
-                            <li><a href="#block-explorer">Block Explorer</a></li>
-                            <li><a href="#api-playground">API Playground</a></li>
-                            <li><a href="#ai-chat">AI Chat</a></li>
-                        </ul>
-                    </li>
+                    <li><a href="#troubleshooting">Troubleshooting</a></li>
                 </ul>
             </div>
         </aside>
 
         <main class="doc-content">
             <section id="getting-started">
-                <h1>Neo N3 MCP Server User Guide</h1>
-                <p>This guide will help you get started with using the Neo N3 MCP Server to interact with the Neo N3 blockchain and its famous contracts.</p>
+                <h1>Getting Started</h1>
+                <p>Welcome to the Neo N3 MCP Server user guide. This guide will help you get started with using the Neo N3 Model Context Protocol (MCP) server to integrate Neo N3 blockchain capabilities into your AI assistants.</p>
                 
-                <h2>Installation</h2>
-                <p>To get started, install the Neo N3 MCP Server using npm:</p>
-                <pre><code>npm install @r3e/neo-n3-mcp</code></pre>
+                <h3>Installation</h3>
+                <p>To install the Neo N3 MCP server, you need Node.js (version 14 or higher). Run the following command:</p>
+                <pre><code>npm install -g @r3e/neo-n3-mcp</code></pre>
                 
-                <h2>Starting the Server</h2>
-                <p>Start the server using the following command:</p>
-                <pre><code>npx neo-n3-mcp</code></pre>
+                <h3>Starting the Server</h3>
+                <p>You can start the server manually using:</p>
+                <pre><code>npx @r3e/neo-n3-mcp</code></pre>
+                <p>However, for AI integration, you will typically configure the AI platform to start the server automatically, as described in the AI Integration section below.</p>
+            </section>
+            
+            <section id="ai-integration">
+                <h1>AI Integration</h1>
+                <p>This section explains how to integrate the Neo N3 MCP server with various AI assistants and platforms, allowing them to interact with the Neo N3 blockchain.</p>
                 
-                <p>By default, the server will run on port 8080. You can customize this by setting the <code>NEO_MCP_PORT</code> environment variable:</p>
-                <pre><code>NEO_MCP_PORT=3000 npx neo-n3-mcp</code></pre>
+                <div class="info-box">
+                    <h4>What is the Model Context Protocol (MCP)?</h4>
+                    <p>The Model Context Protocol (MCP) is a standardized way for AI assistants to interact with external tools and services. By implementing MCP, our server allows AI models to directly access Neo N3 blockchain functionality.</p>
+                </div>
                 
-                <h2>Connecting to the Server</h2>
-                <p>Once the server is running, you can connect to it using the MCP protocol. Here's an example using the MCP JavaScript SDK:</p>
-                <pre><code>import { Client } from '@modelcontextprotocol/sdk/client';
+                <section id="claude-integration">
+                    <h3>Claude Integration</h3>
+                    <p>To integrate with Claude, you need to configure the Claude Desktop app or API to use the Neo N3 MCP server:</p>
+                    
+                    <h4>Claude Desktop Setup</h4>
+                    <p>Add the following to your <code>claude_desktop_config.json</code> file:</p>
+                    <pre><code>{
+  "mcpServers": {
+    "neo-n3": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@r3e/neo-n3-mcp"
+      ]
+    }
+  }
+}</code></pre>
+                    
+                    <h4>Claude API Setup</h4>
+                    <p>When making API calls to Claude, include the Neo N3 MCP tool configuration in your request:</p>
+                    <pre><code>{
+  "model": "claude-3-opus-20240229",
+  "messages": [
+    {"role": "user", "content": "Check the Neo N3 blockchain status"}
+  ],
+  "tools": [
+    {
+      "name": "neo-n3",
+      "description": "Neo N3 blockchain access through MCP protocol",
+      "serverUrl": "http://localhost:8080"
+    }
+  ]
+}</code></pre>
+                </section>
+                
+                <section id="cursor-integration">
+                    <h3>Cursor Integration</h3>
+                    <p>Cursor is an AI-powered code editor that supports MCP. To integrate the Neo N3 MCP server with Cursor:</p>
+                    
+                    <h4>Steps to Configure</h4>
+                    <ol>
+                        <li>Open Cursor preferences</li>
+                        <li>Navigate to the AI Tools or Integrations section</li>
+                        <li>Add a new custom tool with the following configuration:</li>
+                    </ol>
+                    
+                    <pre><code>{
+  "name": "neo-n3",
+  "command": "npx",
+  "args": ["-y", "@r3e/neo-n3-mcp"],
+  "description": "Neo N3 blockchain access through MCP protocol"
+}</code></pre>
+                    
+                    <p>After configuration, you can ask Cursor AI to interact with the Neo N3 blockchain directly in your coding workflow.</p>
+                </section>
+                
+                <section id="windsurf-integration">
+                    <h3>Windsurf Integration</h3>
+                    <p>Windsurf browser provides AI assistance with tool use capabilities. To integrate the Neo N3 MCP server:</p>
+                    
+                    <h4>Configuration Steps</h4>
+                    <ol>
+                        <li>Open Windsurf Settings</li>
+                        <li>Go to AI & Tools section</li>
+                        <li>Add a new custom tool with the following details:</li>
+                    </ol>
+                    
+                    <pre><code>{
+  "toolName": "neo-n3",
+  "executionCommand": "npx -y @r3e/neo-n3-mcp",
+  "description": "Provides access to Neo N3 blockchain information and operations"
+}</code></pre>
+                    
+                    <p>Once configured, you can ask Windsurf's AI assistant questions about Neo N3 blockchain or request operations.</p>
+                </section>
+                
+                <section id="custom-ai-integration">
+                    <h3>Custom AI Setup</h3>
+                    <p>For other AI platforms that support the Model Context Protocol, you can use the following general integration pattern:</p>
+                    
+                    <h4>1. Start the MCP Server</h4>
+                    <p>Ensure the Neo N3 MCP server is running on your system:</p>
+                    <pre><code>npx @r3e/neo-n3-mcp</code></pre>
+                    
+                    <h4>2. Configure the AI Platform</h4>
+                    <p>Most MCP-compatible platforms need the following information:</p>
+                    <ul>
+                        <li><strong>Server URL:</strong> http://localhost:8080 (default)</li>
+                        <li><strong>Tool Name:</strong> neo-n3</li>
+                        <li><strong>Description:</strong> Neo N3 blockchain access through MCP protocol</li>
+                    </ul>
+                    
+                    <h4>3. Test the Integration</h4>
+                    <p>Test the integration by asking your AI about Neo N3 blockchain information:</p>
+                    <pre><code>"What is the current block height on Neo N3 mainnet?"</code></pre>
+                </section>
+            </section>
+            
+            <section id="ai-chat-examples">
+                <h1>AI Chat Examples</h1>
+                <p>This section provides examples of how to interact with the Neo N3 blockchain through AI chat interfaces after you've integrated the MCP server.</p>
+                
+                <section id="blockchain-queries">
+                    <h3>Blockchain Queries</h3>
+                    <div class="chat-example">
+                        <div class="user-message">What is the current height of the Neo N3 mainnet blockchain?</div>
+                        <div class="ai-message">I'll check the current height of the Neo N3 mainnet blockchain for you.
 
-const client = new Client({
-  url: 'http://localhost:8080'
-});
+I'll execute that query using the Neo N3 MCP server: {{mcp:get_block_count:{"network":"mainnet"}}}
 
-// List available tools
-const tools = await client.listTools();
-console.log(tools);
+The current block height of Neo N3 mainnet is 3,567,892.
 
-// Call a tool
-const blockchainInfo = await client.callTool('get_blockchain_info', {
-  network: 'mainnet'
-});
-console.log(blockchainInfo);</code></pre>
+This represents the number of blocks that have been confirmed and added to the blockchain since its inception. Each block contains a batch of transactions that have been verified by the network consensus mechanism.</div>
+                    </div>
+                    
+                    <div class="note">
+                        <p><strong>Note:</strong> The example above uses the <code>get_block_count</code> operation which calls the Neo N3 RPC command <code>getblockcount</code> to retrieve the current block height.</p>
+                    </div>
+                    
+                    <div class="chat-example">
+                        <div class="user-message">Show me information about block 1000000 on Neo N3</div>
+                        <div class="ai-message">I'll fetch the information about block 1,000,000 on the Neo N3 blockchain for you.
+
+Here's the detailed information for block 1,000,000:
+
+- Hash: 0x8b11f83b699b8d0a08aba7c83eca69eb54d539bf1db76cad7060edb1139c6a16
+- Time: 2022-01-15T08:42:19Z
+- Index: 1,000,000
+- Next Consensus: NiUuizj5Vm3zQJj511hBfGt2jCxuqB45zr
+- Size: 6,582 bytes
+- Version: 0
+- Merkle Root: 0x6c9c6588efd0a6a2475816c28fddd422605277219c4b2fa8fd91bad68858a9f4
+- Transaction Count: 3
+
+This block was mined on January 15, 2022, and contains 3 transactions. It's a significant milestone in the Neo N3 blockchain history as it marks the millionth block.</div>
+                    </div>
+                </section>
+                
+                <section id="wallet-operations">
+                    <h3>Wallet Operations</h3>
+                    <div class="chat-example">
+                        <div class="user-message">Check the balance of Neo wallet address NVpjBXA2k5PSUuRCdrfNY9uNJwG16B8p5q</div>
+                        <div class="ai-message">I'll check the balance of the Neo wallet address NVpjBXA2k5PSUuRCdrfNY9uNJwG16B8p5q for you.
+
+The wallet has the following balances:
+
+- NEO: 10.0
+- GAS: 3.8542
+- Flamingo (FLM): 250.0
+- Nash Exchange Token (NEX): 75.0
+
+The wallet appears to hold a moderate amount of NEO and GAS (the native tokens of the Neo blockchain) along with some NEP-17 tokens from popular Neo ecosystem projects.</div>
+                    </div>
+                </section>
+                
+                <section id="contract-interactions">
+                    <h3>Contract Interactions</h3>
+                    <div class="chat-example">
+                        <div class="user-message">How can I check information about the Flamingo contract on Neo N3?</div>
+                        <div class="ai-message">To check information about the Flamingo contract on Neo N3, you can use the following command:
+
+"Show me information about the Flamingo contract on Neo N3"
+
+This will query the contract information using the Neo N3 MCP server. 
+
+If you want to check a specific function or property of the Flamingo contract, you can be more specific in your question, such as:
+
+"What is the total supply of FLM tokens on Neo N3?"
+"Check the current liquidity pools on Flamingo"
+
+The MCP server will translate these natural language queries into the appropriate blockchain calls and return the information.</div>
+                    </div>
+                </section>
             </section>
 
             <section id="blockchain-interaction">
-                <h2>Blockchain Interaction</h2>
+                <h1>Blockchain Interaction</h1>
                 <p>The Neo N3 MCP Server provides various tools for interacting with the Neo N3 blockchain.</p>
                 
                 <section id="querying-blockchain">
-                    <h3>Querying the Blockchain</h3>
+                    <h2>Querying the Blockchain</h2>
                     <p>You can query the blockchain for various information, such as block details, transaction details, and asset balances.</p>
                     
-                    <h4>Getting Blockchain Information</h4>
+                    <h3>Getting Blockchain Information</h3>
                     <pre><code>const blockchainInfo = await client.callTool('get_blockchain_info', {
   network: 'mainnet'
 });
 console.log(blockchainInfo);</code></pre>
                     
-                    <h4>Getting Block Details</h4>
+                    <h3>Getting Block Height</h3>
+                    <pre><code>const blockCount = await client.callTool('get_block_count', {
+  network: 'mainnet'
+});
+console.log(`Current block height: ${blockCount.count}`);</code></pre>
+                    
+                    <h3>Getting Block Details</h3>
                     <pre><code>// Get block by height
 const blockByHeight = await client.callTool('get_block', {
   height: 12345,
@@ -137,14 +305,14 @@ const blockByHash = await client.callTool('get_block', {
 });
 console.log(blockByHash);</code></pre>
                     
-                    <h4>Getting Transaction Details</h4>
+                    <h3>Getting Transaction Details</h3>
                     <pre><code>const transaction = await client.callTool('get_transaction', {
   hash: '0x7e94b3a69ca6c227a4f6d4012bab999acb11ee504883cb9abf976dcd8b5f2adc',
   network: 'mainnet'
 });
 console.log(transaction);</code></pre>
                     
-                    <h4>Getting Asset Balance</h4>
+                    <h3>Getting Asset Balance</h3>
                     <pre><code>const balance = await client.callTool('get_balance', {
   address: 'NXV7ZhHaLY2GNjp6R1AYBV9FqrVnGLfQcz',
   asset: 'NEO',  // Can be 'NEO', 'GAS', or a script hash
@@ -154,10 +322,10 @@ console.log(balance);</code></pre>
                 </section>
                 
                 <section id="managing-wallets">
-                    <h3>Managing Wallets</h3>
+                    <h2>Managing Wallets</h2>
                     <p>The Neo N3 MCP Server provides tools for managing Neo N3 wallets.</p>
                     
-                    <h4>Creating a Wallet</h4>
+                    <h3>Creating a Wallet</h3>
                     <pre><code>const wallet = await client.callTool('create_wallet', {
   password: 'your-password',
   path: '/path/to/save/wallet.json',  // Optional, if not provided, a temporary path will be used
@@ -165,7 +333,7 @@ console.log(balance);</code></pre>
 });
 console.log(wallet);</code></pre>
                     
-                    <h4>Importing a Wallet</h4>
+                    <h3>Importing a Wallet</h3>
                     <pre><code>// Import from WIF
 const walletFromWif = await client.callTool('import_wallet', {
   wif: 'KxDgvEKzgSBPPfuVfw67oPQBSjidEiqTHURKSDL1R7yGaGYAeYnr',
@@ -182,7 +350,7 @@ const walletFromFile = await client.callTool('import_wallet', {
 });
 console.log(walletFromFile);</code></pre>
                     
-                    <h4>Exporting a Wallet</h4>
+                    <h3>Exporting a Wallet</h3>
                     <pre><code>// Export to WIF
 const wif = await client.callTool('export_wallet', {
   path: '/path/to/wallet.json',
@@ -200,7 +368,7 @@ const nep6 = await client.callTool('export_wallet', {
 });
 console.log(nep6);</code></pre>
                     
-                    <h4>Getting Wallet Information</h4>
+                    <h3>Getting Wallet Information</h3>
                     <pre><code>const walletInfo = await client.callTool('get_wallet_info', {
   path: '/path/to/wallet.json',
   password: 'your-password'
@@ -209,7 +377,7 @@ console.log(walletInfo);</code></pre>
                 </section>
                 
                 <section id="transferring-assets">
-                    <h3>Transferring Assets</h3>
+                    <h2>Transferring Assets</h2>
                     <p>You can transfer assets between addresses using the <code>transfer_assets</code> tool.</p>
                     
                     <pre><code>const transfer = await client.callTool('transfer_assets', {
@@ -226,16 +394,16 @@ console.log(transfer);</code></pre>
             </section>
 
             <section id="contract-interaction">
-                <h2>Contract Interaction</h2>
+                <h1>Contract Interaction</h1>
                 <p>The Neo N3 MCP Server provides tools for interacting with famous Neo N3 contracts.</p>
                 
-                <h3>Listing Famous Contracts</h3>
+                <h2>Listing Famous Contracts</h2>
                 <pre><code>const contracts = await client.callTool('list_famous_contracts', {
   network: 'mainnet'
 });
 console.log(contracts);</code></pre>
                 
-                <h3>Getting Contract Information</h3>
+                <h2>Getting Contract Information</h2>
                 <pre><code>const contractInfo = await client.callTool('get_contract_info', {
   contractName: 'neoburger',
   network: 'mainnet'
@@ -446,11 +614,11 @@ console.log(tokenInfo);</code></pre>
             </section>
 
             <section id="advanced-usage">
-                <h2>Advanced Usage</h2>
+                <h1>Advanced Usage</h1>
                 <p>This section covers advanced usage patterns for the Neo N3 MCP Server.</p>
                 
                 <section id="batch-operations">
-                    <h3>Batch Operations</h3>
+                    <h2>Batch Operations</h2>
                     <p>You can perform multiple operations in sequence to achieve more complex workflows. Here's an example of a batch operation that creates a wallet, gets the balance, and transfers assets:</p>
                     
                     <pre><code>// Create a wallet
@@ -482,7 +650,7 @@ if (parseFloat(balance.amount) > 1) {
                 </section>
                 
                 <section id="custom-rpc">
-                    <h3>Custom RPC Providers</h3>
+                    <h2>Custom RPC Providers</h2>
                     <p>You can use custom RPC providers for the Neo N3 blockchain. This is useful if you're running your own Neo N3 node or want to use a specific RPC provider.</p>
                     
                     <p>For configuration via environment variables:</p>
@@ -500,7 +668,7 @@ if (parseFloat(balance.amount) > 1) {
                 </section>
                 
                 <section id="error-handling">
-                    <h3>Error Handling</h3>
+                    <h2>Error Handling</h2>
                     <p>The Neo N3 MCP Server provides detailed error messages that can help you troubleshoot issues. Here's an example of error handling:</p>
                     
                     <pre><code>try {
@@ -521,10 +689,10 @@ if (parseFloat(balance.amount) > 1) {
             </section>
 
             <section id="common-patterns">
-                <h2>Common Patterns</h2>
+                <h1>Common Patterns</h1>
                 <p>This section covers common patterns for using the Neo N3 MCP Server.</p>
                 
-                <h3>Getting Asset Balance and Transferring</h3>
+                <h2>Getting Asset Balance and Transferring</h2>
                 <pre><code>// Get balance
 const balance = await client.callTool('get_balance', {
   address: 'NXV7ZhHaLY2GNjp6R1AYBV9FqrVnGLfQcz',
@@ -546,7 +714,7 @@ if (parseFloat(balance.amount) > 10) {
   console.log(transfer);
 }</code></pre>
                 
-                <h3>Staking and Claiming Rewards</h3>
+                <h2>Staking and Claiming Rewards</h2>
                 <pre><code>// Stake FLM tokens
 const stake = await client.callTool('flamingo_stake', {
   walletPath: '/path/to/wallet.json',
@@ -565,7 +733,7 @@ const claim = await client.callTool('neoburger_claim_gas', {
   network: 'mainnet'
 });</code></pre>
                 
-                <h3>Creating and Selling an NFT</h3>
+                <h2>Creating and Selling an NFT</h2>
                 <pre><code>// Create an NFT
 const nft = await client.callTool('ghostmarket_create_nft', {
   walletPath: '/path/to/wallet.json',
@@ -593,10 +761,10 @@ const listing = await client.callTool('ghostmarket_list_nft', {
             </section>
 
             <section id="best-practices">
-                <h2>Best Practices</h2>
+                <h1>Best Practices</h1>
                 <p>Here are some best practices for using the Neo N3 MCP Server:</p>
                 
-                <h3>Security</h3>
+                <h2>Security</h2>
                 <ul>
                     <li>Never hardcode wallet passwords in your code</li>
                     <li>Use environment variables or a secure configuration manager for sensitive information</li>
@@ -604,21 +772,21 @@ const listing = await client.callTool('ghostmarket_list_nft', {
                     <li>Back up your wallet files regularly</li>
                 </ul>
                 
-                <h3>Performance</h3>
+                <h2>Performance</h2>
                 <ul>
                     <li>Batch operations where possible to reduce the number of API calls</li>
                     <li>Use caching for frequently accessed data</li>
                     <li>Implement retry logic for operations that might fail due to network issues</li>
                 </ul>
                 
-                <h3>Error Handling</h3>
+                <h2>Error Handling</h2>
                 <ul>
                     <li>Always wrap API calls in try-catch blocks</li>
                     <li>Log detailed error information for debugging</li>
                     <li>Implement graceful fallbacks for failed operations</li>
                 </ul>
                 
-                <h3>Testing</h3>
+                <h2>Testing</h2>
                 <ul>
                     <li>Test your integration on the testnet before deploying to mainnet</li>
                     <li>Use small amounts for initial transactions to verify functionality</li>
@@ -627,26 +795,26 @@ const listing = await client.callTool('ghostmarket_list_nft', {
             </section>
 
             <section id="interactive-tools">
-                <h2>Interactive Tools</h2>
+                <h1>Interactive Tools</h1>
                 <p>This section covers interactive tools for using the Neo N3 MCP Server.</p>
                 
                 <section id="block-explorer">
-                    <h3>Block Explorer</h3>
+                    <h2>Block Explorer</h2>
                     <p>The Block Explorer allows you to explore the Neo N3 blockchain and view transaction details.</p>
                     <!-- existing content continues... -->
                 </section>
 
                 <section id="api-playground">
-                    <h3>API Playground</h3>
+                    <h2>API Playground</h2>
                     <p>The API Playground allows you to experiment with Neo N3 MCP API calls directly from your browser.</p>
                     <!-- existing content continues... -->
                 </section>
 
                 <section id="ai-chat">
-                    <h3>AI Chat</h3>
+                    <h2>AI Chat</h2>
                     <p>The AI Chat feature allows you to chat with an AI assistant about Neo N3 blockchain and Model Context Protocol (MCP). The assistant can help you understand Neo N3 concepts, learn about MCP features, and provide guidance on how to interact with blockchain features.</p>
                     
-                    <h4>Getting Started with AI Chat</h4>
+                    <h3>Getting Started with AI Chat</h3>
                     <ol>
                         <li>Visit the <a href="chat.html">AI Chat page</a></li>
                         <li>Enter your OpenRoute API key in the sidebar</li>
@@ -658,7 +826,7 @@ const listing = await client.callTool('ghostmarket_list_nft', {
                         <p><strong>Note:</strong> You need an OpenRoute API key to use the chat feature. OpenRoute is a service that provides access to various AI models. You can <a href="https://openrouter.ai/" target="_blank">sign up for OpenRoute here</a>.</p>
                     </div>
                     
-                    <h4>Chat Features</h4>
+                    <h3>Chat Features</h3>
                     <ul>
                         <li><strong>Model Selection:</strong> Choose from a variety of AI models including OpenAI GPT-4/4o, Anthropic Claude 3, Google Gemini, Meta Llama 3, and Mistral</li>
                         <li><strong>Response Streaming:</strong> Experience real-time responses as the AI generates text word by word</li>
@@ -668,7 +836,7 @@ const listing = await client.callTool('ghostmarket_list_nft', {
                         <li><strong>Neo N3 MCP Integration:</strong> Execute real blockchain operations and view results directly in the chat</li>
                     </ul>
                     
-                    <h4>Neo N3 MCP Operations</h4>
+                    <h3>Neo N3 MCP Operations</h3>
                     <p>The AI Chat now features direct integration with Neo N3 MCP, allowing you to perform actual blockchain operations directly from your conversations. The following operations are supported:</p>
                     
                     <table class="mcp-operations-table">
@@ -686,6 +854,12 @@ const listing = await client.callTool('ghostmarket_list_nft', {
                                 <td>Get general information about the Neo N3 blockchain</td>
                                 <td>network (optional): "mainnet" or "testnet"</td>
                                 <td>"What's the current status of the Neo N3 blockchain?"</td>
+                            </tr>
+                            <tr>
+                                <td>get_block_count</td>
+                                <td>Get the current block height of the Neo N3 blockchain</td>
+                                <td>network (optional): "mainnet" or "testnet"</td>
+                                <td>"What's the current block height of Neo N3?"</td>
                             </tr>
                             <tr>
                                 <td>get_balance</td>
@@ -718,7 +892,7 @@ const listing = await client.callTool('ghostmarket_list_nft', {
                         <p><strong>Note:</strong> When you ask the AI to perform any of these operations, it will detect your intent and execute the appropriate MCP function. The results will be displayed directly in the chat interface.</p>
                     </div>
                     
-                    <h4>Example Questions</h4>
+                    <h3>Example Questions</h3>
                     <p>Here are some examples of questions you can ask the AI assistant:</p>
                     <ul>
                         <li>What is Neo N3 blockchain and how does it differ from Neo Legacy?</li>
@@ -730,7 +904,7 @@ const listing = await client.callTool('ghostmarket_list_nft', {
                         <li>How can I interact with the NeoBurger contract through MCP?</li>
                     </ul>
                     
-                    <h4>Privacy Considerations</h4>
+                    <h3>Privacy Considerations</h3>
                     <p>When using the AI Chat feature, keep the following privacy considerations in mind:</p>
                     <ul>
                         <li>Your conversations are sent directly from your browser to OpenRoute's API</li>
@@ -739,6 +913,89 @@ const listing = await client.callTool('ghostmarket_list_nft', {
                         <li>Don't share sensitive information like private keys or wallet passwords in the chat</li>
                     </ul>
                 </section>
+            </section>
+
+            <section id="troubleshooting">
+                <h1>Troubleshooting</h1>
+                <p>This section covers common issues and their solutions when integrating the Neo N3 MCP server with AI platforms.</p>
+                
+                <h2>Common AI Integration Issues</h2>
+                
+                <h3>AI Assistant Reports "Operation XXX is not a function"</h3>
+                <p>This error indicates that the MCP server is running but the AI can't find the specified operation.</p>
+                <div class="solution-box">
+                    <h4>Solution:</h4>
+                    <ol>
+                        <li>Check that you're using the correct operation name. Ask the AI to run <code>list_operations</code> to see available operations.</li>
+                        <li>Make sure you're using the latest version of the Neo N3 MCP server. Update with <code>npm update -g @r3e/neo-n3-mcp</code></li>
+                        <li>Restart the MCP server, as it may be in an inconsistent state.</li>
+                    </ol>
+                </div>
+                
+                <h3>Connection Refused Error</h3>
+                <p>If the AI reports a connection error, the MCP server may not be running or is running on a different port.</p>
+                <div class="solution-box">
+                    <h4>Solution:</h4>
+                    <ol>
+                        <li>Make sure the MCP server is running. Start it manually with <code>npx @r3e/neo-n3-mcp</code></li>
+                        <li>Check that the port configuration matches in both the server and the AI platform settings.</li>
+                        <li>If you're using a firewall, ensure that the MCP server port (default 8080) is allowed.</li>
+                    </ol>
+                </div>
+                
+                <h3>Network-related Errors</h3>
+                <p>Errors related to connecting to Neo N3 blockchain nodes indicate network connectivity issues.</p>
+                <div class="solution-box">
+                    <h4>Solution:</h4>
+                    <ol>
+                        <li>Check your internet connection.</li>
+                        <li>Verify that the Neo N3 public nodes are functioning by checking status at <a href="https://status.neo.org/" target="_blank">https://status.neo.org/</a></li>
+                        <li>Try specifying a different RPC URL in your MCP server configuration.</li>
+                    </ol>
+                </div>
+                
+                <h2>AI Platform-Specific Issues</h2>
+                
+                <h3>Claude Integration Issues</h3>
+                <div class="solution-box">
+                    <h4>Common issues and solutions:</h4>
+                    <ul>
+                        <li><strong>Problem:</strong> Claude ignores the MCP tool<br>
+                            <strong>Solution:</strong> Ensure your prompt clearly asks Claude to use the Neo N3 tool. Sometimes you need to be explicit, like "Please use the Neo N3 MCP tool to check blockchain information."</li>
+                        <li><strong>Problem:</strong> Claude Desktop doesn't start the MCP server<br>
+                            <strong>Solution:</strong> Check your <code>claude_desktop_config.json</code> configuration and ensure Node.js is in your system PATH.</li>
+                    </ul>
+                </div>
+                
+                <h3>Cursor Integration Issues</h3>
+                <div class="solution-box">
+                    <h4>Common issues and solutions:</h4>
+                    <ul>
+                        <li><strong>Problem:</strong> Cursor doesn't recognize the Neo N3 MCP tool<br>
+                            <strong>Solution:</strong> Make sure you've added the tool in the correct format and check Cursor's logs for any errors.</li>
+                        <li><strong>Problem:</strong> Tool starts but times out on operations<br>
+                            <strong>Solution:</strong> Cursor may have timeout limits. For long-running operations, consider updating the timeout settings if available.</li>
+                    </ul>
+                </div>
+                
+                <h3>General AI Model Behavior Issues</h3>
+                <div class="solution-box">
+                    <h4>Understanding and addressing AI limitations:</h4>
+                    <ul>
+                        <li><strong>Problem:</strong> AI incorrectly formats MCP operation parameters<br>
+                            <strong>Solution:</strong> Provide examples in your prompt and correct the AI when necessary. AI models may need guidance on the exact format.</li>
+                        <li><strong>Problem:</strong> AI claims to perform operations it can't actually do<br>
+                            <strong>Solution:</strong> AI models may hallucinate capabilities. Guide the AI to use <code>list_operations</code> first to understand what's possible.</li>
+                    </ul>
+                </div>
+                
+                <h2>Getting Help</h2>
+                <p>If you encounter issues not covered here:</p>
+                <ul>
+                    <li>Visit our <a href="https://github.com/R3E-Network/neo-n3-mcp/issues" target="_blank">GitHub Issues</a> page to report bugs or request features</li>
+                    <li>Join our <a href="https://discord.gg/R3E-Network" target="_blank">Discord community</a> for direct support</li>
+                    <li>Check the <a href="documentation.html">Documentation</a> for detailed technical information</li>
+                </ul>
             </section>
         </main>
     </div>

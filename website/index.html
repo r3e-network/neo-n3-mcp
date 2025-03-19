@@ -36,16 +36,16 @@
     <section class="hero">
         <div class="container">
             <div class="hero-content">
-                <h1>Talk with Neo N3 Blockchain <span>via MCP Protocol</span></h1>
-                <p>A Model Context Protocol server that provides standardized access to Neo N3 blockchain features and famous smart contracts</p>
+                <h1>Connect AI Tools to <span>Neo N3 Blockchain</span></h1>
+                <p>An MCP server that enables AI assistants like Claude, ChatGPT, and others to directly interact with Neo N3 blockchain</p>
                 <div class="hero-buttons">
-                    <a href="documentation.html" class="btn btn-primary">Documentation</a>
+                    <a href="user-guide.html#ai-integration" class="btn btn-primary">AI Integration Guide</a>
                     <a href="user-guide.html" class="btn btn-secondary">Get Started</a>
                 </div>
                 <div class="hero-stats">
                     <div class="stat-item">
                         <span class="stat-number">6+</span>
-                        <span class="stat-label">Famous Contracts</span>
+                        <span class="stat-label">AI Platforms</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-number">30+</span>
@@ -72,24 +72,24 @@
             <div class="feature-grid">
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <img src="img/icon-blockchain.svg" alt="Blockchain Icon">
+                        <img src="img/icon-ai.svg" alt="AI Integration Icon">
                     </div>
-                    <h3>Neo N3 Blockchain Access</h3>
-                    <p>Direct access to Neo N3 blockchain features including account management, transaction creation, and block queries.</p>
+                    <h3>AI Assistant Integration</h3>
+                    <p>Seamlessly connect Claude, ChatGPT, and other AI assistants to Neo N3 blockchain via the Model Context Protocol.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
-                        <img src="img/icon-contract.svg" alt="Contract Icon">
+                        <img src="img/icon-blockchain.svg" alt="Blockchain Icon">
                     </div>
-                    <h3>Famous Contracts Support</h3>
-                    <p>Interact with well-known Neo N3 contracts like NeoFS, NeoBurger, Flamingo, NeoCompound, GrandShare, and GhostMarket.</p>
+                    <h3>Neo N3 Blockchain Access</h3>
+                    <p>Allow AI tools to access Neo N3 blockchain features including account management, transactions, and smart contracts.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <img src="img/icon-network.svg" alt="Network Icon">
                     </div>
                     <h3>Dual Network Support</h3>
-                    <p>Seamlessly switch between Neo N3 mainnet and testnet with proper network abstraction.</p>
+                    <p>Configure your AI tools to interact with both Neo N3 mainnet and testnet environments.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
@@ -182,31 +182,35 @@
     <section class="quick-start">
         <div class="container">
             <div class="quick-start-content">
-                <h2>Quick Start</h2>
-                <p>Get started with Neo N3 MCP server in just a few steps:</p>
+                <h2>Quick Start: Add to Your AI Setup</h2>
+                <p>Integrate Neo N3 MCP server with your AI assistant in just a few steps:</p>
                 <pre><code>
 # Install the server
 npm install @r3e/neo-n3-mcp
 
-# Start the server
-npx neo-n3-mcp
-
-# Call an MCP tool
-const result = await callTool('get_blockchain_info', {
-  network: 'mainnet'
-});
-console.log(result);
+# Add this to your claude_desktop_config.json or MCP settings:
+{
+  "mcpServers": {
+    "neo-n3": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@r3e/neo-n3-mcp"
+      ]
+    }
+  }
+}
                 </code></pre>
-                <a href="user-guide.html" class="btn btn-primary">View Full Guide</a>
+                <a href="user-guide.html#ai-integration" class="btn btn-primary">View Full Integration Guide</a>
             </div>
         </div>
     </section>
 
     <section class="cta">
         <div class="container">
-            <h2>Ready to Integrate Neo N3 into Your AI System?</h2>
-            <p>Follow our integration guide to connect your AI system to the Neo N3 blockchain using the MCP protocol.</p>
-            <a href="integration.html" class="btn btn-primary">Integration Guide</a>
+            <h2>Ready to Give Your AI Access to Neo N3 Blockchain?</h2>
+            <p>Follow our integration guide to connect your AI assistant to the Neo N3 blockchain using the MCP protocol.</p>
+            <a href="user-guide.html#ai-integration" class="btn btn-primary">AI Integration Guide</a>
         </div>
     </section>
 

@@ -21,6 +21,12 @@ const RPC_TEMPLATES = {
     params: [],
     id: 1
   },
+  getBlockCount: {
+    jsonrpc: "2.0",
+    method: "getblockcount",
+    params: [],
+    id: 1
+  },
   getBlock: {
     jsonrpc: "2.0", 
     method: "getblock",

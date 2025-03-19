@@ -41,7 +41,7 @@ class NeoMcpServer {
     this.server = new Server(
       {
         name: 'neo-n3-mcp-server',
-        version: '0.1.0',
+        version: '1.1.0',
       },
       {
         capabilities: {
@@ -134,6 +134,21 @@ class NeoMcpServer {
         {
           name: 'get_blockchain_info',
           description: 'Get general Neo N3 blockchain information',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              network: {
+                type: 'string',
+                description: 'Network to use: "mainnet" or "testnet"',
+                enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+              },
+            },
+            required: [],
+          },
+        },
+        {
+          name: 'get_block_count',
+          description: 'Get the current block height of the Neo N3 blockchain',
           inputSchema: {
             type: 'object',
             properties: {
@@ -923,85 +938,82 @@ class NeoMcpServer {
     }));
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      try {
-        const name = request.params.name;
-        const input = request.params.arguments || {};
-        
-        switch (name) {
-          case 'get_blockchain_info':
-            return await this.handleGetBlockchainInfo(input);
-          case 'get_block':
-            return await this.handleGetBlock(input);
-          case 'get_transaction':
-            return await this.handleGetTransaction(input);
-          case 'get_balance':
-            return await this.handleGetBalance(input);
-          case 'transfer_assets':
-            return await this.handleTransferAssets(input);
-          case 'invoke_contract':
-            return await this.handleInvokeContract(input);
-          case 'create_wallet':
-            return await this.handleCreateWallet(input);
-          case 'import_wallet':
-            return await this.handleImportWallet(input);
-          case 'estimate_transfer_fees':
-            return await this.handleEstimateTransferFees(input);
-          case 'check_transaction_status':
-            return await this.handleCheckTransactionStatus(input);
-          // New famous contract handlers
-          case 'list_famous_contracts':
-            return await this.handleListFamousContracts(input);
-          case 'get_contract_info':
-            return await this.handleGetContractInfo(input);
-          // NeoFS handlers
-          case 'neofs_create_container':
-            return await this.handleNeoFSCreateContainer(input);
-          case 'neofs_get_containers':
-            return await this.handleNeoFSGetContainers(input);
-          // NeoBurger handlers
-          case 'neoburger_deposit':
-            return await this.handleNeoBurgerDeposit(input);
-          case 'neoburger_withdraw':
-            return await this.handleNeoBurgerWithdraw(input);
-          case 'neoburger_get_balance':
-            return await this.handleNeoBurgerGetBalance(input);
-          case 'neoburger_claim_gas':
-            return await this.handleNeoBurgerClaimGas(input);
-          // Flamingo handlers
-          case 'flamingo_stake':
-            return await this.handleFlamingoStake(input);
-          case 'flamingo_unstake':
-            return await this.handleFlamingoUnstake(input);
-          case 'flamingo_get_balance':
-            return await this.handleFlamingoGetBalance(input);
-          // NeoCompound handlers
-          case 'neocompound_deposit':
-            return await this.handleNeoCompoundDeposit(input);
-          case 'neocompound_withdraw':
-            return await this.handleNeoCompoundWithdraw(input);
-          case 'neocompound_get_balance':
-            return await this.handleNeoCompoundGetBalance(input);
-          // GrandShare handlers
-          case 'grandshare_deposit':
-            return await this.handleGrandShareDeposit(input);
-          case 'grandshare_withdraw':
-            return await this.handleGrandShareWithdraw(input);
-          case 'grandshare_get_pool_details':
-            return await this.handleGrandShareGetPoolDetails(input);
-          // GhostMarket handlers
-          case 'ghostmarket_create_nft':
-            return await this.handleGhostMarketCreateNFT(input);
-          case 'ghostmarket_list_nft':
-            return await this.handleGhostMarketListNFT(input);
-          case 'ghostmarket_buy_nft':
-            return await this.handleGhostMarketBuyNFT(input);
-          case 'ghostmarket_get_token_info':
-            return await this.handleGhostMarketGetTokenInfo(input);
-          default:
-            throw new McpError(ErrorCode.InvalidParams, `Tool ${name} not found`);
-        }
-      } catch (error) {
-        return handleError(error);
+      const { name, arguments: input = {} } = request.params;
+
+      switch (name) {
+        case 'get_blockchain_info':
+          return await this.handleGetBlockchainInfo(input);
+        case 'get_block_count':
+          return await this.handleGetBlockCount(input);
+        case 'get_block':
+          return await this.handleGetBlock(input);
+        case 'get_transaction':
+          return await this.handleGetTransaction(input);
+        case 'get_balance':
+          return await this.handleGetBalance(input);
+        case 'transfer_assets':
+          return await this.handleTransferAssets(input);
+        case 'invoke_contract':
+          return await this.handleInvokeContract(input);
+        case 'create_wallet':
+          return await this.handleCreateWallet(input);
+        case 'import_wallet':
+          return await this.handleImportWallet(input);
+        case 'estimate_transfer_fees':
+          return await this.handleEstimateTransferFees(input);
+        case 'check_transaction_status':
+          return await this.handleCheckTransactionStatus(input);
+        // New famous contract handlers
+        case 'list_famous_contracts':
+          return await this.handleListFamousContracts(input);
+        case 'get_contract_info':
+          return await this.handleGetContractInfo(input);
+        // NeoFS handlers
+        case 'neofs_create_container':
+          return await this.handleNeoFSCreateContainer(input);
+        case 'neofs_get_containers':
+          return await this.handleNeoFSGetContainers(input);
+        // NeoBurger handlers
+        case 'neoburger_deposit':
+          return await this.handleNeoBurgerDeposit(input);
+        case 'neoburger_withdraw':
+          return await this.handleNeoBurgerWithdraw(input);
+        case 'neoburger_get_balance':
+          return await this.handleNeoBurgerGetBalance(input);
+        case 'neoburger_claim_gas':
+          return await this.handleNeoBurgerClaimGas(input);
+        // Flamingo handlers
+        case 'flamingo_stake':
+          return await this.handleFlamingoStake(input);
+        case 'flamingo_unstake':
+          return await this.handleFlamingoUnstake(input);
+        case 'flamingo_get_balance':
+          return await this.handleFlamingoGetBalance(input);
+        // NeoCompound handlers
+        case 'neocompound_deposit':
+          return await this.handleNeoCompoundDeposit(input);
+        case 'neocompound_withdraw':
+          return await this.handleNeoCompoundWithdraw(input);
+        case 'neocompound_get_balance':
+          return await this.handleNeoCompoundGetBalance(input);
+        // GrandShare handlers
+        case 'grandshare_deposit':
+          return await this.handleGrandShareDeposit(input);
+        case 'grandshare_withdraw':
+          return await this.handleGrandShareWithdraw(input);
+        case 'grandshare_get_pool_details':
+          return await this.handleGrandShareGetPoolDetails(input);
+        // GhostMarket handlers
+        case 'ghostmarket_create_nft':
+          return await this.handleGhostMarketCreateNFT(input);
+        case 'ghostmarket_list_nft':
+          return await this.handleGhostMarketListNFT(input);
+        case 'ghostmarket_buy_nft':
+          return await this.handleGhostMarketBuyNFT(input);
+        case 'ghostmarket_get_token_info':
+          return await this.handleGhostMarketGetTokenInfo(input);
+        default:
+          throw new McpError(ErrorCode.InvalidParams, `Tool ${name} not found`);
       }
     });
   }
@@ -1191,6 +1203,19 @@ class NeoMcpServer {
       const neoService = this.getNeoService(args?.network);
       const info = await neoService.getBlockchainInfo();
       return createSuccessResponse(info);
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  /**
+   * Handle get_block_count tool
+   */
+  private async handleGetBlockCount(args: any) {
+    try {
+      const neoService = this.getNeoService(args?.network);
+      const count = await neoService.getBlockCount();
+      return createSuccessResponse(count);
     } catch (error) {
       return handleError(error);
     }

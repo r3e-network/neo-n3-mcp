@@ -2,6 +2,26 @@
 
 All notable changes to the Neo N3 MCP server will be documented in this file.
 
+## [1.1.0] - 2025-03-25
+
+### Added
+- New `get_block_count` operation to retrieve the current block height
+- API documentation for the `get_block_count` operation
+- Comprehensive test coverage for `get_block_count`
+- Expanded website documentation with MCP operations reference section
+
+### Changed
+- Enhanced error handling for RPC method calls
+- Improved MCP operation response formats for consistency
+- Updated AI integration examples with new operation
+- Enhanced chat examples to demonstrate proper operation usage
+
+### Fixed
+- Resolved "is not a function" errors in MCP bridge implementation
+- Improved error messages when operations are not found
+- Added proper network connectivity checks before RPC calls
+- Fixed documentation and implementation mismatches
+
 ## [1.0.8] - 2025-03-23
 
 ### Added

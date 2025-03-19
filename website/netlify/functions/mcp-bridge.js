@@ -16,6 +16,13 @@ const MCP_OPERATIONS = {
     return await callMcpEndpoint('getBlockchainInfo', { network });
   },
   
+  // Block height (using getblockcount RPC method)
+  get_block_count: async (params) => {
+    const { network = 'mainnet' } = params;
+    // Call getblockcount endpoint
+    return await callMcpEndpoint('getBlockCount', { network });
+  },
+  
   // Account balance
   get_balance: async (params) => {
     const { address, network = 'mainnet' } = params;
@@ -86,6 +93,7 @@ async function callMcpEndpoint(endpoint, params) {
   // First check if the endpoint is supported by the API playground
   const supportedEndpoints = [
     'getBlockchainInfo', 
+    'getBlockCount',
     'getAddressBalance', 
     'getBlock', 
     'getTransaction', 
