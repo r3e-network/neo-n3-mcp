@@ -1,7 +1,14 @@
 [build]
   publish = "./"
-  functions = "./functions"
+  functions = "./netlify/functions"
 
+# Redirect rule to ensure API requests are handled correctly
+[[redirects]]
+  from = "/.netlify/functions/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Redirect rule for SPA routing
 [[redirects]]
   from = "/*"
   to = "/index.html"

@@ -1,0 +1,16 @@
+{
+  "name": "neo-n3-mcp-website",
+  "description": "Official website for the Neo N3 MCP Server with interactive blockchain tools",
+  "deploy": {
+    "prod": {
+      "deployment": {
+        "dir": "website",
+        "functions": "website/netlify/functions"
+      },
+      "build": {
+        "cmd": "",
+        "functions": "website/netlify/functions"
+      }
+    }
+  }
+} 

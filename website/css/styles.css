@@ -1469,4 +1469,110 @@ details > ul {
     opacity: 1;
     transform: scale(1.05);
   }
+}
+
+/* Interactive Tools Section */
+.interactive-tools {
+    padding: 3rem 0;
+    background-color: #f6f8fa;
+}
+
+.interactive-tools .section-description {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto 2rem;
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 1.5rem;
+}
+
+.tool-card {
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 2rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.tool-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+.tool-icon {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 1.5rem;
+    background-color: rgba(88, 103, 221, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tool-icon i {
+    font-size: 30px;
+    color: #5867dd;
+}
+
+.tool-card h3 {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    color: #222;
+}
+
+.tool-card p {
+    color: #666;
+    margin-bottom: 1.5rem;
+}
+
+.btn-outline {
+    display: inline-block;
+    padding: 0.6rem 1.5rem;
+    background-color: transparent;
+    border: 2px solid #5867dd;
+    color: #5867dd;
+    font-weight: 600;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.btn-outline:hover {
+    background-color: #5867dd;
+    color: #fff;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+    .interactive-tools {
+        background-color: #2a2f35;
+    }
+    
+    .interactive-tools .section-description {
+        color: #b4b4b4;
+    }
+    
+    .tool-card {
+        background-color: #343a40;
+    }
+    
+    .tool-card h3 {
+        color: #e9ecef;
+    }
+    
+    .tool-card p {
+        color: #b4b4b4;
+    }
+    
+    .tool-icon {
+        background-color: rgba(88, 103, 221, 0.2);
+    }
 } 
