@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neo N3 MCP Chat | R3E Network</title>
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/chat.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1>Neo N3 MCP Server</h1>
+                <span class="powered-by">Powered by R3E Network</span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="documentation.html">Documentation</a></li>
+                    <li><a href="user-guide.html">User Guide</a></li>
+                    <li><a href="integration.html">Integration</a></li>
+                    <li><a href="block-explorer.html">Block Explorer</a></li>
+                    <li><a href="api-playground.html">API Playground</a></li>
+                    <li><a href="chat.html" class="active">AI Chat</a></li>
+                    <li><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank" class="github-link">GitHub</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="chat-hero">
+        <div class="container">
+            <div class="chat-hero-content">
+                <h1>Chat with Neo N3 <span>MCP AI</span></h1>
+                <p>Ask questions about Neo N3 blockchain, MCP protocol, and interact with blockchain features through AI</p>
+            </div>
+        </div>
+    </section>
+
+    <main class="chat-container">
+        <div class="container">
+            <div class="chat-wrapper">
+                <div class="chat-sidebar">
+                    <div class="api-settings">
+                        <h3>API Settings</h3>
+                        <div class="api-form">
+                            <div class="form-group">
+                                <label for="openroute-api-key">OpenRoute API Key</label>
+                                <div class="api-key-input">
+                                    <input type="password" id="openroute-api-key" placeholder="Enter your OpenRoute API key">
+                                    <button id="toggle-api-key" class="toggle-password" aria-label="Toggle password visibility">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <p class="api-key-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    Your API key is stored in your browser only and never sent to our servers.
+                                </p>
+                            </div>
+                            <div class="form-group">
+                                <label for="model-select">AI Model</label>
+                                <select id="model-select">
+                                    <option value="openai/gpt-3.5-turbo">OpenAI GPT-3.5 Turbo</option>
+                                    <option value="openai/gpt-4">OpenAI GPT-4</option>
+                                    <option value="openai/gpt-4-turbo">OpenAI GPT-4 Turbo</option>
+                                    <option value="openai/gpt-4o">OpenAI GPT-4o</option>
+                                    <option value="anthropic/claude-3-opus">Anthropic Claude 3 Opus</option>
+                                    <option value="anthropic/claude-3-sonnet">Anthropic Claude 3 Sonnet</option>
+                                    <option value="anthropic/claude-3-haiku">Anthropic Claude 3 Haiku</option>
+                                    <option value="google/gemini-1.5-pro">Google Gemini 1.5 Pro</option>
+                                    <option value="meta-llama/llama-3-70b-instruct">Meta Llama 3 70B</option>
+                                    <option value="meta-llama/llama-3-8b-instruct">Meta Llama 3 8B</option>
+                                    <option value="mistral/mistral-large">Mistral Large</option>
+                                    <option value="mistral/mistral-medium">Mistral Medium</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="temperature-slider">Temperature: <span id="temperature-value">0.7</span></label>
+                                <input type="range" id="temperature-slider" min="0" max="1" step="0.1" value="0.7">
+                            </div>
+                            <div class="form-group toggle-option">
+                                <label for="stream-toggle">Stream Response</label>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" id="stream-toggle" checked>
+                                    <span class="toggle-slider"></span>
+                                </div>
+                                <p class="setting-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    Stream responses word by word for a more interactive experience
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="conversation-controls">
+                        <button id="new-chat" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> New Chat
+                        </button>
+                        <button id="clear-history" class="btn btn-outline">
+                            <i class="fas fa-trash"></i> Clear History
+                        </button>
+                    </div>
+                </div>
+                <div class="chat-main">
+                    <div id="chat-messages" class="chat-messages">
+                        <div class="message system-message">
+                            <div class="message-content">
+                                <p>Welcome to Neo N3 MCP Chat! To get started:</p>
+                                <ol>
+                                    <li>Enter your <a href="https://openrouter.ai/" target="_blank">OpenRoute API key</a> in the sidebar</li>
+                                    <li>Select your preferred AI model</li>
+                                    <li>Start asking questions about Neo N3 blockchain and MCP!</li>
+                                </ol>
+                                <p>Example questions you can ask:</p>
+                                <ul>
+                                    <li>What is Neo N3 blockchain?</li>
+                                    <li>How does the Model Context Protocol work with Neo?</li>
+                                    <li>What smart contracts are supported?</li>
+                                    <li>How can I check my NEO balance using MCP?</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <form id="chat-form">
+                            <div class="chat-input-wrapper">
+                                <textarea 
+                                    id="chat-input" 
+                                    placeholder="Type your message here..." 
+                                    rows="1"
+                                    disabled
+                                ></textarea>
+                                <button type="submit" id="send-button" disabled>
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </form>
+                        <div class="api-key-notice" id="api-key-notice">
+                            <i class="fas fa-lock"></i>
+                            <span>Please enter your OpenRoute API key to start chatting</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <h2>Neo N3 MCP Server</h2>
+                    <p>Powered by R3E Network</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-links-column">
+                        <h3>Documentation</h3>
+                        <ul>
+                            <li><a href="documentation.html#overview">Overview</a></li>
+                            <li><a href="documentation.html#installation">Installation</a></li>
+                            <li><a href="documentation.html#configuration">Configuration</a></li>
+                            <li><a href="documentation.html#api-reference">API Reference</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-links-column">
+                        <h3>Resources</h3>
+                        <ul>
+                            <li><a href="user-guide.html">User Guide</a></li>
+                            <li><a href="integration.html">Integration Guide</a></li>
+                            <li><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank">GitHub</a></li>
+                            <li><a href="https://docs.neo.org/" target="_blank">Neo Documentation</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-links-column">
+                        <h3>Community</h3>
+                        <ul>
+                            <li><a href="https://discord.gg/R3E-Network" target="_blank">Discord</a></li>
+                            <li><a href="https://twitter.com/R3E-Network" target="_blank">Twitter</a></li>
+                            <li><a href="https://medium.com/@R3E-Network" target="_blank">Medium</a></li>
+                            <li><a href="https://t.me/R3E-Network" target="_blank">Telegram</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 R3E Network. All rights reserved.</p>
+                <div class="footer-bottom-links">
+                    <a href="terms-of-service.html">Terms of Service</a>
+                    <a href="privacy-policy.html">Privacy Policy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script src="js/chat.js"></script>
+</body>
+</html> 

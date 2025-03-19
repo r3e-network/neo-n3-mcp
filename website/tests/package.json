@@ -1,0 +1,19 @@
+{
+  "name": "neo-n3-mcp-website-tests",
+  "version": "1.0.0",
+  "description": "Tests for Neo N3 MCP Website",
+  "private": true,
+  "scripts": {
+    "test": "jest",
+    "test:functions": "jest functions",
+    "test:frontend": "jest frontend",
+    "test:watch": "jest --watch"
+  },
+  "devDependencies": {
+    "axios": "^1.6.7",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "node-fetch": "^2.6.9",
+    "nock": "^13.4.0"
+  }
+} 

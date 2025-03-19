@@ -1,0 +1,19 @@
+{
+  "name": "neo-n3-mcp-website",
+  "version": "1.0.0",
+  "description": "Neo N3 MCP Website",
+  "scripts": {
+    "test": "cd tests && jest",
+    "test:functions": "cd tests && jest functions",
+    "test:frontend": "cd tests && jest frontend",
+    "test:watch": "cd tests && jest --watch",
+    "dev": "npx serve",
+    "netlify:dev": "netlify dev"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "netlify-cli": "^17.11.1",
+    "serve": "^14.2.1"
+  }
+} 
