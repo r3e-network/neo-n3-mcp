@@ -665,7 +665,58 @@ const listing = await client.callTool('ghostmarket_list_nft', {
                         <li><strong>Temperature Control:</strong> Adjust the creativity level of the AI responses</li>
                         <li><strong>Conversation History:</strong> Your conversations are saved locally in your browser</li>
                         <li><strong>API Key Security:</strong> Your OpenRoute API key is stored only in your browser's local storage and never sent to our servers</li>
+                        <li><strong>Neo N3 MCP Integration:</strong> Execute real blockchain operations and view results directly in the chat</li>
                     </ul>
+                    
+                    <h4>Neo N3 MCP Operations</h4>
+                    <p>The AI Chat now features direct integration with Neo N3 MCP, allowing you to perform actual blockchain operations directly from your conversations. The following operations are supported:</p>
+                    
+                    <table class="mcp-operations-table">
+                        <thead>
+                            <tr>
+                                <th>Operation</th>
+                                <th>Description</th>
+                                <th>Parameters</th>
+                                <th>Example Usage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>get_blockchain_info</td>
+                                <td>Get general information about the Neo N3 blockchain</td>
+                                <td>network (optional): "mainnet" or "testnet"</td>
+                                <td>"What's the current status of the Neo N3 blockchain?"</td>
+                            </tr>
+                            <tr>
+                                <td>get_balance</td>
+                                <td>Check the balance of a Neo N3 address</td>
+                                <td>address: Neo N3 wallet address<br>network (optional): "mainnet" or "testnet"</td>
+                                <td>"What's the balance of NeoekE2EaP1hs583NSQ13nbR1zWMmHQK1L?"</td>
+                            </tr>
+                            <tr>
+                                <td>get_block</td>
+                                <td>Get information about a specific block</td>
+                                <td>block_height or block_hash: The height or hash of the block<br>network (optional): "mainnet" or "testnet"</td>
+                                <td>"Show me block 123456 on Neo N3"</td>
+                            </tr>
+                            <tr>
+                                <td>get_transaction</td>
+                                <td>Get details of a transaction</td>
+                                <td>tx_hash: Transaction hash<br>network (optional): "mainnet" or "testnet"</td>
+                                <td>"Can you show me details for transaction 0x1234abcd..."</td>
+                            </tr>
+                            <tr>
+                                <td>call_contract</td>
+                                <td>Call a smart contract method (read-only)</td>
+                                <td>contract_hash: Smart contract hash<br>method: Contract method name<br>args (optional): Array of arguments<br>network (optional): "mainnet" or "testnet"</td>
+                                <td>"Call the symbol method on the NEO token contract"</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="note">
+                        <p><strong>Note:</strong> When you ask the AI to perform any of these operations, it will detect your intent and execute the appropriate MCP function. The results will be displayed directly in the chat interface.</p>
+                    </div>
                     
                     <h4>Example Questions</h4>
                     <p>Here are some examples of questions you can ask the AI assistant:</p>

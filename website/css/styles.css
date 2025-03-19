@@ -1575,4 +1575,49 @@ details > ul {
     .tool-icon {
         background-color: rgba(88, 103, 221, 0.2);
     }
+}
+
+/* MCP operations table */
+.mcp-operations-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 0.9rem;
+}
+
+.mcp-operations-table th,
+.mcp-operations-table td {
+  border: 1px solid var(--border-color);
+  padding: 10px;
+  text-align: left;
+}
+
+.mcp-operations-table th {
+  background-color: var(--light-bg);
+  font-weight: 600;
+}
+
+.mcp-operations-table tr:nth-child(even) {
+  background-color: var(--light-color);
+}
+
+.mcp-operations-table tr:hover {
+  background-color: rgba(var(--primary-rgb), 0.05);
+}
+
+/* Dark mode for MCP operations table */
+.dark-mode .mcp-operations-table th {
+  background-color: var(--dark-color);
+}
+
+.dark-mode .mcp-operations-table td {
+  border-color: var(--dark-border);
+}
+
+.dark-mode .mcp-operations-table tr:nth-child(even) {
+  background-color: var(--dark-bg);
+}
+
+.dark-mode .mcp-operations-table tr:hover {
+  background-color: rgba(var(--primary-rgb), 0.1);
 } 

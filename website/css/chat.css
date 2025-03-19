@@ -566,4 +566,102 @@ input:checked + .toggle-slider:before {
 
 .dark-mode input:checked + .toggle-slider {
   background-color: var(--primary-color);
+}
+
+/* MCP Operation Results */
+.mcp-result {
+  margin: 15px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background-color: var(--light-color);
+}
+
+.mcp-result.loading {
+  background-color: var(--light-bg);
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mcp-result.success {
+  border-color: var(--success-color);
+}
+
+.mcp-result.error {
+  border-color: var(--error-color);
+}
+
+.mcp-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background-color: var(--light-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mcp-operation-name {
+  font-weight: 600;
+  color: var(--dark-color);
+}
+
+.mcp-operation-status {
+  font-size: 0.8rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.mcp-operation-status.success {
+  background-color: var(--success-bg);
+  color: var(--success-color);
+}
+
+.mcp-operation-status.error {
+  background-color: var(--error-bg);
+  color: var(--error-color);
+}
+
+.mcp-result-data {
+  margin: 0;
+  padding: 15px;
+  background-color: var(--code-bg);
+  white-space: pre-wrap;
+  font-family: monospace;
+  font-size: 0.9rem;
+  overflow-x: auto;
+}
+
+.mcp-result-error {
+  padding: 15px;
+  color: var(--error-color);
+  font-weight: 500;
+}
+
+/* Define success and error colors */
+:root {
+  --success-color: #28a745;
+  --success-bg: rgba(40, 167, 69, 0.1);
+  --error-color: #dc3545;
+  --error-bg: rgba(220, 53, 69, 0.1);
+}
+
+/* Dark mode for MCP operation results */
+.dark-mode .mcp-result {
+  background-color: var(--dark-bg);
+  border-color: var(--dark-border);
+}
+
+.dark-mode .mcp-result-header {
+  background-color: var(--dark-color);
+}
+
+.dark-mode .mcp-operation-name {
+  color: var(--light-color);
+}
+
+.dark-mode .mcp-result-data {
+  background-color: rgba(0, 0, 0, 0.2);
+  color: var(--light-color);
 } 

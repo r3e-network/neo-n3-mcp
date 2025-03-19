@@ -288,6 +288,11 @@ document.addEventListener('DOMContentLoaded', () => {
    * Format the message content with markdown-like syntax
    */
   function formatMessageContent(content) {
+    // Check for MCP operation requests
+    if (content.includes('{{mcp:')) {
+      content = processMcpOperations(content);
+    }
+    
     // Handle code blocks
     content = content.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
     
@@ -297,6 +302,112 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle paragraphs
     const paragraphs = content.split('\n\n');
     return paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
+  }
+  
+  /**
+   * Process MCP operation requests in the content
+   */
+  function processMcpOperations(content) {
+    const regex = /{{mcp:([a-z_]+):({.*?})}}/g;
+    let match;
+    let processedContent = content;
+    let promises = [];
+    
+    while ((match = regex.exec(content)) !== null) {
+      const [fullMatch, operation, paramsJson] = match;
+      
+      // Create placeholder for the operation result
+      const placeholderId = `mcp-result-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      processedContent = processedContent.replace(fullMatch, `<div id="${placeholderId}" class="mcp-result loading">
+        <div class="loading-indicator">
+          <span>Executing Neo N3 MCP operation...</span>
+          <div class="loading-dots"><span></span><span></span><span></span></div>
+        </div>
+      </div>`);
+      
+      // Queue the operation execution
+      promises.push(executeMcpOperation(operation, JSON.parse(paramsJson), placeholderId));
+    }
+    
+    // Execute all operations
+    if (promises.length > 0) {
+      Promise.all(promises).catch(error => {
+        console.error('Error executing MCP operations:', error);
+      });
+    }
+    
+    return processedContent;
+  }
+  
+  /**
+   * Execute a MCP operation and update the placeholder with the result
+   */
+  async function executeMcpOperation(operation, params, placeholderId) {
+    try {
+      const response = await fetch('/.netlify/functions/mcp-bridge', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          operation,
+          params
+        })
+      });
+      
+      const data = await response.json();
+      
+      // Find the placeholder element
+      const placeholderEl = document.getElementById(placeholderId);
+      if (!placeholderEl) return;
+      
+      if (data.success) {
+        // Format the result as JSON with syntax highlighting
+        placeholderEl.innerHTML = `
+          <div class="mcp-result-header">
+            <span class="mcp-operation-name">${operation}</span>
+            <span class="mcp-operation-status success">SUCCESS</span>
+          </div>
+          <pre class="mcp-result-data">${JSON.stringify(data.result, null, 2)}</pre>
+        `;
+        placeholderEl.classList.remove('loading');
+        placeholderEl.classList.add('success');
+      } else {
+        // Show error message
+        placeholderEl.innerHTML = `
+          <div class="mcp-result-header">
+            <span class="mcp-operation-name">${operation}</span>
+            <span class="mcp-operation-status error">ERROR</span>
+          </div>
+          <div class="mcp-result-error">${data.error || 'Unknown error'}</div>
+        `;
+        placeholderEl.classList.remove('loading');
+        placeholderEl.classList.add('error');
+      }
+      
+      // Scroll to bottom to show the updated result
+      scrollToBottom();
+      
+    } catch (error) {
+      console.error(`Error executing MCP operation ${operation}:`, error);
+      
+      // Find the placeholder element and show error
+      const placeholderEl = document.getElementById(placeholderId);
+      if (!placeholderEl) return;
+      
+      placeholderEl.innerHTML = `
+        <div class="mcp-result-header">
+          <span class="mcp-operation-name">${operation}</span>
+          <span class="mcp-operation-status error">ERROR</span>
+        </div>
+        <div class="mcp-result-error">Failed to execute operation: ${error.message}</div>
+      `;
+      placeholderEl.classList.remove('loading');
+      placeholderEl.classList.add('error');
+      
+      // Scroll to bottom to show the error
+      scrollToBottom();
+    }
   }
   
   /**
