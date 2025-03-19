@@ -579,7 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/api/status')
             .then(response => {
                 if (response.ok) {
-                    connectionStatus.innerHTML = '<i class="fas fa-circle"></i> Connected';
+                    connectionStatus.innerHTML = '<i class="fas fa-robot"></i> AI Integration';
                     connectionStatus.className = 'connection-status connected';
                 } else {
                     updateOfflineStatus();

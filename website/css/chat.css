@@ -276,12 +276,12 @@ input:checked + .toggle-slider:before {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.9rem;
-  color: var(--gray-color);
+  color: var(--primary-color);
 }
 
 .connection-status.connected i {
-  color: var(--success-color);
-  font-size: 0.7rem;
+  color: var(--primary-color);
+  font-size: 1rem;
 }
 
 .connection-status.disconnected i {
