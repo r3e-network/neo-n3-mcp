@@ -298,6 +298,29 @@
                 });
             });
             
+            // Helper function for API requests with retry logic
+            async function fetchWithRetry(url, retries = 3, delay = 1000) {
+                try {
+                    console.log(`Fetching ${url}`);
+                    const response = await fetch(url);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    
+                    return await response.json();
+                } catch (error) {
+                    if (retries === 0) {
+                        console.error(`Failed to fetch after multiple retries: ${error.message}`);
+                        throw error;
+                    }
+                    
+                    console.warn(`Fetch error, retrying (${retries} attempts left): ${error.message}`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return fetchWithRetry(url, retries - 1, delay * 1.5);
+                }
+            }
+            
             // Fetch latest blocks
             async function fetchLatestBlocks() {
                 try {
@@ -309,11 +332,21 @@
                         </div>
                     `;
                     
-                    const response = await fetch(`/.netlify/functions/block-explorer?action=latestBlocks&network=${currentNetwork}`);
-                    const blocks = await response.json();
+                    const blocks = await fetchWithRetry(
+                        `/.netlify/functions/block-explorer?action=latestBlocks&network=${currentNetwork}`
+                    );
+                    
+                    if (!blocks || !Array.isArray(blocks) || blocks.length === 0) {
+                        throw new Error('No blocks returned from API');
+                    }
                     
                     let blocksHtml = '';
                     blocks.forEach(block => {
+                        if (!block || !block.hash) {
+                            console.warn('Invalid block data:', block);
+                            return; // Skip this block
+                        }
+                        
                         const date = new Date(parseInt(block.time) * 1000);
                         const formattedDate = date.toLocaleString();
                         
@@ -332,6 +365,16 @@
                         `;
                     });
                     
+                    if (blocksHtml === '') {
+                        latestBlocksContainer.innerHTML = `
+                            <div class="alert alert-warning">
+                                No valid blocks found. <button class="btn btn-sm btn-outline-primary ms-2" id="retry-blocks-btn">Retry</button>
+                            </div>
+                        `;
+                        document.getElementById('retry-blocks-btn').addEventListener('click', fetchLatestBlocks);
+                        return;
+                    }
+                    
                     latestBlocksContainer.innerHTML = blocksHtml;
                     
                     // Add click event to block cards
@@ -343,7 +386,14 @@
                     });
                     
                 } catch (error) {
-                    latestBlocksContainer.innerHTML = `<div class="alert alert-danger">Error loading blocks: ${error.message}</div>`;
+                    console.error('Error loading blocks:', error);
+                    latestBlocksContainer.innerHTML = `
+                        <div class="alert alert-danger">
+                            Error loading blocks: ${error.message} 
+                            <button class="btn btn-sm btn-outline-primary ms-2" id="retry-blocks-btn">Retry</button>
+                        </div>
+                    `;
+                    document.getElementById('retry-blocks-btn').addEventListener('click', fetchLatestBlocks);
                 }
             }
             
@@ -358,8 +408,13 @@
                         </div>
                     `;
                     
-                    const response = await fetch(`/.netlify/functions/block-explorer?action=getStats&network=${currentNetwork}`);
-                    const stats = await response.json();
+                    const stats = await fetchWithRetry(
+                        `/.netlify/functions/block-explorer?action=getStats&network=${currentNetwork}`
+                    );
+                    
+                    if (!stats || !stats.version) {
+                        throw new Error('Invalid stats data returned from API');
+                    }
                     
                     blockchainStats.innerHTML = `
                         <div class="d-flex justify-content-between mb-2">
@@ -381,7 +436,14 @@
                     `;
                     
                 } catch (error) {
-                    blockchainStats.innerHTML = `<div class="alert alert-danger">Error loading stats: ${error.message}</div>`;
+                    console.error('Error loading stats:', error);
+                    blockchainStats.innerHTML = `
+                        <div class="alert alert-danger">
+                            Error loading stats: ${error.message}
+                            <button class="btn btn-sm btn-outline-primary ms-2" id="retry-stats-btn">Retry</button>
+                        </div>
+                    `;
+                    document.getElementById('retry-stats-btn').addEventListener('click', fetchBlockchainStats);
                 }
             }
             
@@ -406,8 +468,11 @@
                         url = `/.netlify/functions/block-explorer?action=getBlock&height=${heightOrHash}&network=${currentNetwork}`;
                     }
                     
-                    const response = await fetch(url);
-                    const block = await response.json();
+                    const block = await fetchWithRetry(url);
+                    
+                    if (!block || !block.hash) {
+                        throw new Error('Invalid block data returned from API');
+                    }
                     
                     const date = new Date(parseInt(block.time) * 1000);
                     const formattedDate = date.toLocaleString();
@@ -540,7 +605,16 @@
                     });
                     
                 } catch (error) {
-                    blockDetailsContainer.innerHTML = `<div class="alert alert-danger">Error loading block details: ${error.message}</div>`;
+                    console.error('Error loading block details:', error);
+                    blockDetailsContainer.innerHTML = `
+                        <div class="alert alert-danger">
+                            Error loading block details: ${error.message}
+                            <button class="btn btn-sm btn-outline-primary ms-2" id="retry-block-btn">Retry</button>
+                        </div>
+                    `;
+                    document.getElementById('retry-block-btn').addEventListener('click', function() {
+                        fetchBlockDetails(heightOrHash);
+                    });
                 }
             }
             
@@ -558,8 +632,13 @@
                     // Show the transaction details tab
                     txDetailsTabContent.show();
                     
-                    const response = await fetch(`/.netlify/functions/block-explorer?action=getTransaction&txid=${txid}&network=${currentNetwork}`);
-                    const tx = await response.json();
+                    const tx = await fetchWithRetry(
+                        `/.netlify/functions/block-explorer?action=getTransaction&txid=${txid}&network=${currentNetwork}`
+                    );
+                    
+                    if (!tx || !tx.txid) {
+                        throw new Error('Invalid transaction data returned from API');
+                    }
                     
                     // Format date if available
                     let formattedDate = 'Unknown';
@@ -633,7 +712,16 @@
                     });
                     
                 } catch (error) {
-                    txDetailsContainer.innerHTML = `<div class="alert alert-danger">Error loading transaction details: ${error.message}</div>`;
+                    console.error('Error loading transaction details:', error);
+                    txDetailsContainer.innerHTML = `
+                        <div class="alert alert-danger">
+                            Error loading transaction details: ${error.message}
+                            <button class="btn btn-sm btn-outline-primary ms-2" id="retry-tx-btn">Retry</button>
+                        </div>
+                    `;
+                    document.getElementById('retry-tx-btn').addEventListener('click', function() {
+                        fetchTransactionDetails(txid);
+                    });
                 }
             }
             
