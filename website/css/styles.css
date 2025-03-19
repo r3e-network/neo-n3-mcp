@@ -1854,4 +1854,11 @@ details > ul {
 
 .dark-mode .note {
   background-color: rgba(var(--warning-color), 0.1);
+}
+
+/* Favicon background fix */
+@media (prefers-color-scheme: light) {
+  link[rel="icon"] {
+    background-color: #6d5acd;
+  }
 } 
