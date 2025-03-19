@@ -15,7 +15,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
 </head>
-<body>
+<body class="chat-page">
     <header>
         <div class="container">
             <div class="logo">
@@ -37,21 +37,12 @@
         </div>
     </header>
 
-    <section class="chat-hero">
-        <div class="container">
-            <div class="chat-hero-content">
-                <h1>Chat with Neo N3 <span>MCP AI</span></h1>
-                <p>Ask questions about Neo N3 blockchain, MCP protocol, and interact with blockchain features through AI</p>
-            </div>
-        </div>
-    </section>
-
     <main class="chat-container">
         <div class="container">
-            <div class="chat-wrapper">
-                <div class="chat-sidebar">
-                    <div class="api-settings">
-                        <h3>API Settings</h3>
+            <div class="chat-layout">
+                <aside class="chat-sidebar">
+                    <div class="sidebar-section">
+                        <h3>AI Settings</h3>
                         <div class="api-form">
                             <div class="form-group">
                                 <label for="openroute-api-key">OpenRoute API Key</label>
@@ -63,84 +54,97 @@
                                 </div>
                                 <p class="api-key-info">
                                     <i class="fas fa-info-circle"></i>
-                                    Your API key is stored in your browser only and never sent to our servers.
+                                    Need a key? <a href="https://openrouter.ai/" target="_blank">Get one here</a>
                                 </p>
                             </div>
                             <div class="form-group">
                                 <label for="model-select">AI Model</label>
                                 <select id="model-select">
                                     <option value="openai/gpt-3.5-turbo">OpenAI GPT-3.5 Turbo</option>
-                                    <option value="openai/gpt-4">OpenAI GPT-4</option>
-                                    <option value="openai/gpt-4-turbo">OpenAI GPT-4 Turbo</option>
                                     <option value="openai/gpt-4o">OpenAI GPT-4o</option>
-                                    <option value="openai/gpt-4-turbo-2024-04-09">OpenAI GPT-4.5 Turbo</option>
-                                    <option value="anthropic/claude-3-opus">Anthropic Claude 3 Opus</option>
-                                    <option value="anthropic/claude-3-sonnet">Anthropic Claude 3 Sonnet</option>
-                                    <option value="anthropic/claude-3-haiku">Anthropic Claude 3 Haiku</option>
-                                    <option value="anthropic/claude-3-5-sonnet">Anthropic Claude 3.5 Sonnet</option>
-                                    <option value="anthropic/claude-3-7-sonnet">Anthropic Claude 3.7 Sonnet</option>
+                                    <option value="anthropic/claude-3-opus">Claude 3 Opus</option>
+                                    <option value="anthropic/claude-3-sonnet">Claude 3 Sonnet</option>
+                                    <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
                                     <option value="google/gemini-1.5-pro">Google Gemini 1.5 Pro</option>
-                                    <option value="meta-llama/llama-3-70b-instruct">Meta Llama 3 70B</option>
-                                    <option value="meta-llama/llama-3-8b-instruct">Meta Llama 3 8B</option>
-                                    <option value="mistral/mistral-large">Mistral Large</option>
-                                    <option value="mistral/mistral-medium">Mistral Medium</option>
                                 </select>
                             </div>
-                            <div class="form-group">
-                                <label for="temperature-slider">Temperature: <span id="temperature-value">0.7</span></label>
-                                <input type="range" id="temperature-slider" min="0" max="1" step="0.1" value="0.7">
-                            </div>
-                            <div class="form-group toggle-option">
+                        </div>
+                    </div>
+                    
+                    <div class="sidebar-section">
+                        <div class="conversation-controls">
+                            <button id="new-chat" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> New Chat
+                            </button>
+                            <button id="clear-history" class="btn btn-outline">
+                                <i class="fas fa-trash"></i> Clear History
+                            </button>
+                            <div class="toggle-option">
                                 <label for="stream-toggle">Stream Response</label>
                                 <div class="toggle-switch">
                                     <input type="checkbox" id="stream-toggle" checked>
                                     <span class="toggle-slider"></span>
                                 </div>
-                                <p class="setting-info">
-                                    <i class="fas fa-info-circle"></i>
-                                    Stream responses word by word for a more interactive experience
-                                </p>
                             </div>
                         </div>
                     </div>
-                    <div class="conversation-controls">
-                        <button id="new-chat" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> New Chat
-                        </button>
-                        <button id="clear-history" class="btn btn-outline">
-                            <i class="fas fa-trash"></i> Clear History
-                        </button>
+                </aside>
+                
+                <div class="chat-content">
+                    <div class="chat-header">
+                        <h2>Neo N3 MCP AI Chat</h2>
+                        <div class="chat-controls">
+                            <span class="connection-status connected">
+                                <i class="fas fa-circle"></i> Connected
+                            </span>
+                        </div>
                     </div>
-                </div>
-                <div class="chat-main">
+                    
                     <div id="chat-messages" class="chat-messages">
                         <div class="message system-message">
                             <div class="message-content">
-                                <p>Welcome to Neo N3 MCP Chat! To get started:</p>
-                                <ol>
-                                    <li>Enter your <a href="https://openrouter.ai/" target="_blank">OpenRoute API key</a> in the sidebar</li>
-                                    <li>Select your preferred AI model</li>
-                                    <li>Start asking questions about Neo N3 blockchain and MCP!</li>
-                                </ol>
-                                <p>Example questions you can ask:</p>
-                                <ul>
-                                    <li>What is Neo N3 blockchain?</li>
-                                    <li>How does the Model Context Protocol work with Neo?</li>
-                                    <li>What smart contracts are supported?</li>
-                                    <li>How can I check my NEO balance using MCP?</li>
-                                </ul>
-                                <p>Try these MCP operations:</p>
-                                <ul>
-                                    <li>"Show me the current Neo N3 blockchain info"</li>
-                                    <li>"Check the balance for address Ncm9TEzrp8SSer6Wa3UCSLTRnqzwVhCfAEt"</li>
-                                    <li>"Show me info about block 10000"</li>
-                                    <li>"What MCP operations are available?"</li>
-                                </ul>
+                                <h3>Welcome to Neo N3 MCP Chat!</h3>
+                                <p>Ask questions about the Neo N3 blockchain and perform operations using MCP directly in this chat interface.</p>
+                                <div class="examples-section">
+                                    <h4>Try asking:</h4>
+                                    <div class="example-queries">
+                                        <div class="example-query" data-query="What is Neo N3 blockchain?">What is Neo N3 blockchain?</div>
+                                        <div class="example-query" data-query="Show me the current Neo N3 blockchain info">Show me the current blockchain info</div>
+                                        <div class="example-query" data-query="What MCP operations are available?">What MCP operations are available?</div>
+                                        <div class="example-query" data-query="What is the current block height?">What is the current block height?</div>
+                                    </div>
+                                </div>
+
+                                <div class="examples-section">
+                                    <h4>Execute MCP Operations:</h4>
+                                    <p>This AI can execute Neo N3 MCP operations directly. For example, ask:</p>
+                                    <ul>
+                                        <li>"What's the current block height?"</li>
+                                        <li>"Get the latest block details"</li>
+                                        <li>"Check the NEO/GAS balance for address NbnjKGMBJzJ6j5PHeYhjJDaH7WDJXVGbRY"</li>
+                                        <li>"Show me transaction details for 0xd6f7c91283c2a0c5f5c55c5317d34c6c54aad0db58e20d6c81bfce78d822c3ca"</li>
+                                    </ul>
+                                    <p>The AI will format and execute the appropriate MCP operation and display the results directly in the chat.</p>
+                                </div>
+
+                                <div class="examples-section">
+                                    <h4>Keyboard Shortcuts:</h4>
+                                    <ul>
+                                        <li><strong>Enter</strong>: Send message</li>
+                                        <li><strong>Shift+Enter</strong>: New line</li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="chat-input-area">
-                        <form id="chat-form">
+                    
+                    <div class="chat-input-container">
+                        <div id="api-key-notice" class="api-key-notice">
+                            <i class="fas fa-lock"></i>
+                            <span>Please enter your OpenRoute API key to start chatting</span>
+                        </div>
+                        
+                        <form id="chat-form" class="chat-form">
                             <div class="chat-input-wrapper">
                                 <textarea 
                                     id="chat-input" 
@@ -153,10 +157,6 @@
                                 </button>
                             </div>
                         </form>
-                        <div class="api-key-notice" id="api-key-notice">
-                            <i class="fas fa-lock"></i>
-                            <span>Please enter your OpenRoute API key to start chatting</span>
-                        </div>
                     </div>
                 </div>
             </div>

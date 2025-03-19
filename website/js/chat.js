@@ -1,882 +1,679 @@
 /**
- * Neo N3 MCP Chat Interface JavaScript
+ * Neo N3 MCP Chat Interface
+ * 
+ * This script handles the AI chat functionality, including:
+ * - API key management
+ * - Message sending and receiving
+ * - UI interactions
+ * - Chat history persistence
+ * - MCP operations execution
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Elements
-  const chatForm = document.getElementById('chat-form');
-  const chatInput = document.getElementById('chat-input');
-  const sendButton = document.getElementById('send-button');
-  const chatMessages = document.getElementById('chat-messages');
-  const apiKeyInput = document.getElementById('openroute-api-key');
-  const apiKeyNotice = document.getElementById('api-key-notice');
-  const toggleApiKey = document.getElementById('toggle-api-key');
-  const modelSelect = document.getElementById('model-select');
-  const temperatureSlider = document.getElementById('temperature-slider');
-  const temperatureValue = document.getElementById('temperature-value');
-  const streamToggle = document.getElementById('stream-toggle');
-  const newChatButton = document.getElementById('new-chat');
-  const clearHistoryButton = document.getElementById('clear-history');
-  
-  // State variables
-  let messages = [];
-  let isWaitingForResponse = false;
-  let currentStreamingMessageElement = null;
-  
-  // Initialize the chat
-  init();
-  
-  /**
-   * Initialize the chat interface
-   */
-  function init() {
-    // Load API key from localStorage
-    const savedApiKey = localStorage.getItem('openroute_api_key');
-    if (savedApiKey) {
-      apiKeyInput.value = savedApiKey;
-      enableChat();
+    // DOM Elements
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const sendButton = document.getElementById('send-button');
+    const chatMessages = document.getElementById('chat-messages');
+    const apiKeyInput = document.getElementById('openroute-api-key');
+    const toggleApiKeyButton = document.getElementById('toggle-api-key');
+    const apiKeyNotice = document.getElementById('api-key-notice');
+    const modelSelect = document.getElementById('model-select');
+    const streamToggle = document.getElementById('stream-toggle');
+    const newChatButton = document.getElementById('new-chat');
+    const clearHistoryButton = document.getElementById('clear-history');
+    const exampleQueries = document.querySelectorAll('.example-query');
+    const connectionStatus = document.querySelector('.connection-status');
+
+    // State management
+    let currentConversation = [];
+    let isProcessingMessage = false;
+    let currentMessageElement = null;
+    let abortController = null;
+    let apiKeyValid = false;
+    let mcpOperationRegex = /{{mcp:([a-z_]+):({.*?})}}/g;
+
+    // Initialize
+    initializeChatInterface();
+
+    // Initialize chat interface
+    function initializeChatInterface() {
+        loadApiKey();
+        loadSettings();
+        loadChatHistory();
+        setupEventListeners();
+        updateConnectionStatus();
+        checkServerStatus();
     }
-    
-    // Load preferences from localStorage
-    const savedModel = localStorage.getItem('chat_model');
-    if (savedModel) {
-      modelSelect.value = savedModel;
-    }
-    
-    const savedTemperature = localStorage.getItem('chat_temperature');
-    if (savedTemperature) {
-      temperatureSlider.value = savedTemperature;
-      temperatureValue.textContent = savedTemperature;
-    }
-    
-    const isStreamEnabled = localStorage.getItem('chat_stream');
-    if (isStreamEnabled !== null) {
-      streamToggle.checked = isStreamEnabled === 'true';
-    }
-    
-    // Load chat history from localStorage
-    loadChatHistory();
-    
+
     // Setup event listeners
-    setupEventListeners();
-    
-    // Auto-focus input if API key is set
-    if (savedApiKey) {
-      chatInput.focus();
-    }
-  }
-  
-  /**
-   * Setup event listeners
-   */
-  function setupEventListeners() {
-    // API key input
-    apiKeyInput.addEventListener('input', handleApiKeyChange);
-    
-    // Toggle API key visibility
-    toggleApiKey.addEventListener('click', toggleApiKeyVisibility);
-    
-    // Temperature slider
-    temperatureSlider.addEventListener('input', handleTemperatureChange);
-    
-    // Model select
-    modelSelect.addEventListener('change', handleModelChange);
-    
-    // Stream toggle
-    streamToggle.addEventListener('change', handleStreamToggle);
-    
-    // Chat form submission
-    chatForm.addEventListener('submit', handleChatSubmit);
-    
-    // Auto-resize textarea
-    chatInput.addEventListener('input', autoResizeTextarea);
-    
-    // New chat button
-    newChatButton.addEventListener('click', startNewChat);
-    
-    // Clear history button
-    clearHistoryButton.addEventListener('click', clearChatHistory);
-  }
-  
-  /**
-   * Handle API key change
-   */
-  function handleApiKeyChange() {
-    const apiKey = apiKeyInput.value.trim();
-    localStorage.setItem('openroute_api_key', apiKey);
-    
-    if (apiKey) {
-      enableChat();
-    } else {
-      disableChat();
-    }
-  }
-  
-  /**
-   * Toggle API key visibility
-   */
-  function toggleApiKeyVisibility() {
-    const type = apiKeyInput.type === 'password' ? 'text' : 'password';
-    apiKeyInput.type = type;
-    
-    const icon = toggleApiKey.querySelector('i');
-    if (type === 'text') {
-      icon.classList.remove('fa-eye');
-      icon.classList.add('fa-eye-slash');
-    } else {
-      icon.classList.remove('fa-eye-slash');
-      icon.classList.add('fa-eye');
-    }
-  }
-  
-  /**
-   * Handle temperature change
-   */
-  function handleTemperatureChange() {
-    const value = temperatureSlider.value;
-    temperatureValue.textContent = value;
-    localStorage.setItem('chat_temperature', value);
-  }
-  
-  /**
-   * Handle model change
-   */
-  function handleModelChange() {
-    const model = modelSelect.value;
-    localStorage.setItem('chat_model', model);
-  }
-  
-  /**
-   * Handle stream toggle change
-   */
-  function handleStreamToggle() {
-    const isStreamEnabled = streamToggle.checked;
-    localStorage.setItem('chat_stream', isStreamEnabled);
-  }
-  
-  /**
-   * Enable chat interface
-   */
-  function enableChat() {
-    chatInput.disabled = false;
-    sendButton.disabled = false;
-    apiKeyNotice.style.display = 'none';
-    chatInput.placeholder = "Type your message here...";
-    chatInput.focus();
-  }
-  
-  /**
-   * Disable chat interface
-   */
-  function disableChat() {
-    chatInput.disabled = true;
-    sendButton.disabled = true;
-    apiKeyNotice.style.display = 'flex';
-  }
-  
-  /**
-   * Auto-resize textarea
-   */
-  function autoResizeTextarea() {
-    chatInput.style.height = 'auto';
-    chatInput.style.height = (chatInput.scrollHeight) + 'px';
-  }
-  
-  /**
-   * Handle chat form submission
-   */
-  async function handleChatSubmit(e) {
-    e.preventDefault();
-    
-    const messageText = chatInput.value.trim();
-    if (!messageText || isWaitingForResponse) return;
-    
-    // Add user message to chat
-    addMessage('user', messageText);
-    
-    // Clear input
-    chatInput.value = '';
-    chatInput.style.height = 'auto';
-    
-    // Send message to API
-    await sendMessageToApi(messageText);
-  }
-  
-  /**
-   * Add a message to the chat
-   */
-  function addMessage(role, content, model = '') {
-    // Create message object
-    const message = {
-      role,
-      content,
-      timestamp: new Date().toISOString(),
-      model
-    };
-    
-    // Add to messages array
-    messages.push(message);
-    
-    // Save to localStorage
-    saveChatHistory();
-    
-    // Create message element
-    const messageElement = createMessageElement(message);
-    
-    // Add to chat
-    chatMessages.appendChild(messageElement);
-    
-    // Scroll to bottom
-    scrollToBottom();
-    
-    return messageElement;
-  }
-  
-  /**
-   * Create a message element
-   */
-  function createMessageElement(message) {
-    const messageElement = document.createElement('div');
-    messageElement.className = `message ${message.role}-message`;
-    
-    // For assistant and user messages, add an avatar
-    if (message.role !== 'system') {
-      const avatarElement = document.createElement('div');
-      avatarElement.className = `message-avatar ${message.role}-avatar`;
-      
-      const avatarIcon = document.createElement('i');
-      if (message.role === 'user') {
-        avatarIcon.className = 'fas fa-user';
-      } else {
-        avatarIcon.className = 'fas fa-robot';
-      }
-      
-      avatarElement.appendChild(avatarIcon);
-      messageElement.appendChild(avatarElement);
-    }
-    
-    const contentElement = document.createElement('div');
-    contentElement.className = 'message-content';
-    
-    // Process the content to handle markdown-like formatting
-    contentElement.innerHTML = formatMessageContent(message.content);
-    
-    messageElement.appendChild(contentElement);
-    
-    // Add meta information for AI responses (model used)
-    if (message.role === 'assistant' && message.model) {
-      const metaElement = document.createElement('div');
-      metaElement.className = 'message-meta';
-      
-      const modelElement = document.createElement('span');
-      modelElement.className = 'message-model';
-      modelElement.textContent = `Model: ${formatModelName(message.model)}`;
-      
-      const timeElement = document.createElement('span');
-      timeElement.className = 'message-time';
-      timeElement.textContent = formatTime(message.timestamp);
-      
-      metaElement.appendChild(modelElement);
-      metaElement.appendChild(timeElement);
-      contentElement.appendChild(metaElement);
-    }
-    
-    return messageElement;
-  }
-  
-  /**
-   * Format the message content with markdown-like syntax
-   */
-  function formatMessageContent(content) {
-    // Check for MCP operation requests
-    if (content.includes('{{mcp:')) {
-      content = processMcpOperations(content);
-    }
-    
-    // Handle code blocks
-    content = content.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
-    
-    // Handle inline code
-    content = content.replace(/`([^`]+)`/g, '<code>$1</code>');
-    
-    // Handle paragraphs
-    const paragraphs = content.split('\n\n');
-    return paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
-  }
-  
-  /**
-   * Process MCP operation requests in the content
-   */
-  function processMcpOperations(content) {
-    if (!content || typeof content !== 'string') {
-      console.error("Invalid content passed to processMcpOperations:", content);
-      return content || '';
-    }
-    
-    const regex = /{{mcp:([a-z_]+):({.*?})}}/g;
-    let match;
-    let processedContent = content;
-    let promises = [];
-    
-    // First, validate if there are any MCP operations to process
-    if (!content.includes('{{mcp:')) {
-      return content;
-    }
-    
-    try {
-      while ((match = regex.exec(content)) !== null) {
-        const [fullMatch, operation, paramsJson] = match;
+    function setupEventListeners() {
+        // Form submission
+        chatForm.addEventListener('submit', handleChatSubmit);
+
+        // API key management
+        apiKeyInput.addEventListener('input', handleApiKeyInput);
+        toggleApiKeyButton.addEventListener('click', toggleApiKeyVisibility);
         
-        // Validate operation name
-        if (!operation || !/^[a-z_]+$/.test(operation)) {
-          processedContent = processedContent.replace(
-            fullMatch, 
-            `<div class="mcp-result error">
-              <div class="mcp-result-header">
-                <span class="mcp-operation-name">Error</span>
-                <span class="mcp-operation-status error">ERROR</span>
-              </div>
-              <div class="mcp-result-error">Invalid operation name: ${operation || 'empty'}</div>
-            </div>`
-          );
-          continue;
-        }
+        // Button actions
+        newChatButton.addEventListener('click', startNewChat);
+        clearHistoryButton.addEventListener('click', confirmClearHistory);
+
+        // Example queries
+        exampleQueries.forEach(example => {
+            example.addEventListener('click', () => {
+                if (!isProcessingMessage && apiKeyValid) {
+                    const query = example.dataset.query;
+                    chatInput.value = query;
+                    chatInput.dispatchEvent(new Event('input'));
+                    chatForm.dispatchEvent(new Event('submit'));
+                }
+            });
+        });
+
+        // Auto-resize textarea
+        chatInput.addEventListener('input', autoResizeTextarea);
+
+        // Save settings on change
+        modelSelect.addEventListener('change', saveSettings);
+        streamToggle.addEventListener('change', saveSettings);
+
+        // Keyboard shortcuts
+        chatInput.addEventListener('keydown', handleInputKeydown);
+    }
+
+    // Handle chat form submission
+    async function handleChatSubmit(e) {
+        e.preventDefault();
+        const message = chatInput.value.trim();
         
-        // Try to parse the JSON params
-        let params;
+        if (!message || isProcessingMessage || !apiKeyValid) return;
+        
+        isProcessingMessage = true;
+        abortController = new AbortController();
+        
+        // Add user message to UI
+        addMessageToUI('user', message);
+        
+        // Clear input and adjust height
+        chatInput.value = '';
+        autoResizeTextarea();
+        
         try {
-          params = JSON.parse(paramsJson);
-        } catch (e) {
-          console.error(`Failed to parse MCP operation params: ${e.message}`, paramsJson);
-          processedContent = processedContent.replace(
-            fullMatch, 
-            `<div class="mcp-result error">
-              <div class="mcp-result-header">
-                <span class="mcp-operation-name">${operation}</span>
-                <span class="mcp-operation-status error">ERROR</span>
-              </div>
-              <div class="mcp-result-error">Invalid JSON parameters: ${e.message}</div>
-            </div>`
-          );
-          continue;
+            // Add loading indicator for assistant message
+            currentMessageElement = addLoadingMessage();
+            
+            // Update state
+            currentConversation.push({ role: 'user', content: message });
+            
+            // Call API to get response
+            await getAIResponse(message);
+            
+            // Save conversation to localStorage
+            saveChatHistory();
+            
+        } catch (error) {
+            console.error('Error processing message:', error);
+            updateLoadingMessage('Sorry, there was an error processing your message. Please try again.');
+        } finally {
+            isProcessingMessage = false;
+            abortController = null;
+            scrollToBottom();
         }
-        
-        // Create placeholder for the operation result
-        const placeholderId = `mcp-result-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-        processedContent = processedContent.replace(fullMatch, `<div id="${placeholderId}" class="mcp-result loading">
-          <div class="loading-indicator">
-            <span>Executing Neo N3 MCP operation: ${operation}</span>
-            <div class="loading-dots"><span></span><span></span><span></span></div>
-          </div>
-        </div>`);
-        
-        // Queue the operation execution
-        promises.push(executeMcpOperation(operation, params, placeholderId));
-      }
-      
-      // Execute all operations
-      if (promises.length > 0) {
-        Promise.all(promises).catch(error => {
-          console.error('Error executing MCP operations:', error);
-        });
-      }
-    } catch (error) {
-      console.error('Error processing MCP operations:', error);
-      // If there's an error in the regex processing, return original content
-      return content;
     }
-    
-    return processedContent;
-  }
-  
-  /**
-   * Execute a MCP operation and update the placeholder with the result
-   */
-  async function executeMcpOperation(operation, params, placeholderId) {
-    try {
-      // Validate operation
-      if (!operation || typeof operation !== 'string') {
-        throw new Error(`Invalid operation: ${operation}. Must be a non-empty string.`);
-      }
-      
-      // Validate params
-      if (!params || typeof params !== 'object') {
-        throw new Error('Invalid parameters: must be an object');
-      }
-      
-      // Validate placeholderId
-      if (!placeholderId || typeof placeholderId !== 'string') {
-        throw new Error('Invalid placeholder ID');
-      }
-      
-      console.log(`Executing MCP operation: ${operation}`, params);
-      
-      // Find the placeholder element early to show connection status
-      const placeholderEl = document.getElementById(placeholderId);
-      if (!placeholderEl) {
-        console.error(`Placeholder element ${placeholderId} not found`);
-        return;
-      }
-      
-      // Update placeholder to show connecting status
-      placeholderEl.innerHTML = `
-        <div class="loading-indicator">
-          <span>Connecting to Neo N3 MCP server...</span>
-          <div class="loading-dots"><span></span><span></span><span></span></div>
-        </div>
-      `;
-      
-      // Set a timeout for the request
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
-      
-      try {
-        const response = await fetch('/.netlify/functions/mcp-bridge', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            operation,
-            params
-          }),
-          signal: controller.signal
-        });
+
+    // Get AI response from API
+    async function getAIResponse(message) {
+        const apiKey = apiKeyInput.value.trim();
+        const model = modelSelect.value;
+        const shouldStream = streamToggle.checked;
         
-        clearTimeout(timeoutId);
+        try {
+            // Prepare request options
+            const requestOptions = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: model,
+                    messages: currentConversation,
+                    stream: shouldStream
+                }),
+                signal: abortController.signal
+            };
+            
+            // Get API endpoint
+            const apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
+            
+            // Handle streaming and non-streaming responses differently
+            if (shouldStream) {
+                await handleStreamingResponse(apiUrl, requestOptions);
+            } else {
+                await handleNonStreamingResponse(apiUrl, requestOptions);
+            }
+            
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                updateLoadingMessage('Message generation was canceled.');
+            } else {
+                throw error;
+            }
+        }
+    }
+
+    // Handle streaming response
+    async function handleStreamingResponse(url, options) {
+        const response = await fetch(url, options);
         
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`API request failed: ${response.status} ${response.statusText}\n${errorText}`);
+            const error = await response.json().catch(() => ({ error: { message: 'Unknown error' } }));
+            throw new Error(error.error?.message || `API error: ${response.status}`);
+        }
+        
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let partialLine = '';
+        let fullContent = '';
+        
+        updateLoadingMessage('');  // Clear loading message
+        
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                
+                if (done) break;
+                
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = (partialLine + chunk).split('\n');
+                partialLine = lines.pop() || '';
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+                            const content = data.choices[0]?.delta?.content || '';
+                            
+                            if (content) {
+                                fullContent += content;
+                                appendToMessageContent(content);
+                            }
+                        } catch (e) {
+                            console.error('Error parsing JSON:', e);
+                        }
+                    }
+                }
+            }
+            
+            // Add the complete message to the conversation
+            if (fullContent) {
+                currentConversation.push({
+                    role: 'assistant',
+                    content: fullContent
+                });
+                
+                // Process any MCP operations in the response
+                processMcpOperations(fullContent, currentMessageElement);
+            }
+            
+        } catch (error) {
+            console.error('Error in stream reading:', error);
+            throw error;
+        }
+    }
+
+    // Handle non-streaming response
+    async function handleNonStreamingResponse(url, options) {
+        const response = await fetch(url, options);
+        
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: { message: 'Unknown error' } }));
+            throw new Error(error.error?.message || `API error: ${response.status}`);
         }
         
         const data = await response.json();
-        console.log(`MCP operation ${operation} result:`, data);
+        const content = data.choices[0]?.message?.content || '';
         
-        if (data.success) {
-          // Format the result as JSON with syntax highlighting
-          placeholderEl.innerHTML = `
-            <div class="mcp-result-header">
-              <span class="mcp-operation-name">${operation}</span>
-              <span class="mcp-operation-status success">SUCCESS</span>
-            </div>
-            <pre class="mcp-result-data">${JSON.stringify(data.result, null, 2)}</pre>
-          `;
-          placeholderEl.classList.remove('loading');
-          placeholderEl.classList.add('success');
-        } else {
-          // Show error message
-          placeholderEl.innerHTML = `
-            <div class="mcp-result-header">
-              <span class="mcp-operation-name">${operation}</span>
-              <span class="mcp-operation-status error">ERROR</span>
-            </div>
-            <div class="mcp-result-error">${data.error || 'Unknown error'}</div>
-            <div class="mcp-debug-info">
-              <details>
-                <summary>Debug Info</summary>
-                <pre>${JSON.stringify({operation, params}, null, 2)}</pre>
-              </details>
-            </div>
-          `;
-          placeholderEl.classList.remove('loading');
-          placeholderEl.classList.add('error');
-        }
-      } catch (fetchError) {
-        clearTimeout(timeoutId);
+        // Update UI with full message
+        updateLoadingMessage(content);
         
-        // Handle network errors or timeouts separately
-        let errorMessage = fetchError.message || 'Unknown error';
+        // Add to conversation
+        currentConversation.push({
+            role: 'assistant',
+            content: content
+        });
         
-        if (fetchError.name === 'AbortError') {
-          errorMessage = 'Operation timed out. The Neo N3 server may be experiencing high load or connectivity issues.';
-        } else if (!navigator.onLine) {
-          errorMessage = 'You appear to be offline. Please check your internet connection and try again.';
-        }
-        
-        console.error(`Network error executing MCP operation ${operation}:`, fetchError);
-        
-        placeholderEl.innerHTML = `
-          <div class="mcp-result-header">
-            <span class="mcp-operation-name">${operation}</span>
-            <span class="mcp-operation-status error">CONNECTION ERROR</span>
-          </div>
-          <div class="mcp-result-error">${errorMessage}</div>
-          <div class="mcp-debug-info">
-            <details>
-              <summary>Debug Info</summary>
-              <pre>${JSON.stringify({
-                operation, 
-                params, 
-                error: errorMessage,
-                network: navigator.onLine ? 'online' : 'offline'
-              }, null, 2)}</pre>
-              <p>If this error persists, try the 'list_operations' command to see available operations.</p>
-            </details>
-          </div>
-        `;
-        placeholderEl.classList.remove('loading');
-        placeholderEl.classList.add('error');
-      }
-      
-      // Scroll to bottom to show the updated result
-      scrollToBottom();
-      
-    } catch (error) {
-      console.error(`Error executing MCP operation ${operation}:`, error);
-      
-      // Find the placeholder element and show error
-      const placeholderEl = document.getElementById(placeholderId);
-      if (!placeholderEl) {
-        console.error(`Placeholder element ${placeholderId} not found for error handling`);
-        return;
-      }
-      
-      placeholderEl.innerHTML = `
-        <div class="mcp-result-header">
-          <span class="mcp-operation-name">${operation}</span>
-          <span class="mcp-operation-status error">ERROR</span>
-        </div>
-        <div class="mcp-result-error">Failed to execute operation: ${error.message || 'Unknown error'}</div>
-        <div class="mcp-debug-info">
-          <details>
-            <summary>Debug Info</summary>
-            <pre>${JSON.stringify({operation, params, error: error.message}, null, 2)}</pre>
-            <p>If this error persists, try the 'list_operations' command to see available operations.</p>
-          </details>
-        </div>
-      `;
-      placeholderEl.classList.remove('loading');
-      placeholderEl.classList.add('error');
-      
-      // Scroll to bottom to show the error
-      scrollToBottom();
+        // Process any MCP operations in the response
+        processMcpOperations(content, currentMessageElement);
     }
-  }
-  
-  /**
-   * Format the model name for display
-   */
-  function formatModelName(model) {
-    if (!model) return 'Unknown model';
-    
-    // Extract the model name from the full string
-    const parts = model.split('/');
-    let modelName = parts[parts.length - 1];
-    
-    // Capitalize provider name
-    let provider = parts.length > 1 ? parts[0] : '';
-    if (provider) {
-      provider = provider.charAt(0).toUpperCase() + provider.slice(1);
-      return `${provider} ${modelName}`;
-    }
-    
-    return modelName;
-  }
-  
-  /**
-   * Format timestamp for display
-   */
-  function formatTime(timestamp) {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }
-  
-  /**
-   * Scroll chat to bottom
-   */
-  function scrollToBottom() {
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  }
-  
-  /**
-   * Send message to API
-   */
-  async function sendMessageToApi(messageText) {
-    try {
-      // Get API key, model, and settings
-      const apiKey = apiKeyInput.value.trim();
-      const model = modelSelect.value;
-      const temperature = parseFloat(temperatureSlider.value);
-      const stream = streamToggle.checked;
-      
-      if (!apiKey) {
-        throw new Error('Please enter your OpenRoute API key');
-      }
-      
-      // Prepare messages for API (excluding 'system' message objects that are for UI only)
-      const apiMessages = messages.filter(m => m.role !== 'system' || m.apiSystem)
-        .map(({ role, content }) => ({ role, content }));
-      
-      // Add loading indicator
-      isWaitingForResponse = true;
-      const loadingElement = addLoadingIndicator();
-      
-      if (stream) {
-        // Handle streaming response
-        await handleStreamingResponse(apiKey, model, apiMessages, temperature, loadingElement);
-      } else {
-        // Handle regular response
-        await handleRegularResponse(apiKey, model, apiMessages, temperature, loadingElement);
-      }
-      
-    } catch (error) {
-      // Add error message
-      addErrorMessage(error.message);
-      console.error('Error sending message:', error);
-    } finally {
-      isWaitingForResponse = false;
-    }
-  }
-  
-  /**
-   * Handle streaming response from API
-   */
-  async function handleStreamingResponse(apiKey, model, apiMessages, temperature, loadingElement) {
-    try {
-      // Remove loading indicator and prepare for streaming
-      chatMessages.removeChild(loadingElement);
-      
-      // Setup streaming message placeholder
-      const placeholder = {
-        role: 'assistant',
-        content: '',
-        timestamp: new Date().toISOString(),
-        model: model
-      };
-      messages.push(placeholder);
-      
-      const messageElement = createMessageElement(placeholder);
-      chatMessages.appendChild(messageElement);
-      currentStreamingMessageElement = messageElement;
-      
-      // Create content element for streaming updates
-      const contentEl = messageElement.querySelector('.message-content');
-      const originalContent = contentEl.innerHTML;
-      contentEl.innerHTML = '<p></p>' + originalContent.replace(/<p>.*?<\/p>/g, '');
-      const streamTarget = contentEl.querySelector('p');
-      
-      // Stream the response
-      const response = await fetch('/.netlify/functions/openroute-chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          apiKey,
-          model,
-          messages: apiMessages,
-          temperature,
-          stream: true
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to get response from API');
-      }
-      
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let accumulatedContent = '';
-      
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+
+    // Process MCP operations in the message content
+    async function processMcpOperations(content, messageElement) {
+        if (!content || !content.includes('{{mcp:')) return;
         
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
+        const matches = [...content.matchAll(mcpOperationRegex)];
+        if (!matches || matches.length === 0) return;
         
-        for (const line of lines) {
-          if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+        // For each MCP operation in the content
+        for (const match of matches) {
+            const [fullMatch, operation, paramsJson] = match;
+            
             try {
-              const jsonData = JSON.parse(line.slice(6));
-              if (jsonData.choices && jsonData.choices[0].delta && jsonData.choices[0].delta.content) {
-                const content = jsonData.choices[0].delta.content;
-                accumulatedContent += content;
-                streamTarget.innerHTML = formatMessageContent(accumulatedContent);
-                scrollToBottom();
-              }
-            } catch (e) {
-              console.error('Error parsing stream data:', e);
+                // Parse parameters
+                const params = JSON.parse(paramsJson);
+                
+                // Create a unique ID for this operation
+                const operationId = `mcp-op-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+                
+                // Create a placeholder for the operation result
+                const opPlaceholder = document.createElement('div');
+                opPlaceholder.id = operationId;
+                opPlaceholder.className = 'mcp-result loading';
+                opPlaceholder.innerHTML = `
+                    <div class="loading-indicator">
+                        <span>Executing Neo N3 MCP operation: ${operation}</span>
+                        <div class="loading-dots"><span></span><span></span><span></span></div>
+                    </div>
+                `;
+                
+                // Replace the operation text with the placeholder
+                const contentElement = messageElement.querySelector('.message-content');
+                const htmlContent = contentElement.innerHTML;
+                contentElement.innerHTML = htmlContent.replace(
+                    fullMatch,
+                    `<div id="${operationId}" class="mcp-result loading">
+                        <div class="loading-indicator">
+                            <span>Executing Neo N3 MCP operation: ${operation}</span>
+                            <div class="loading-dots"><span></span><span></span><span></span></div>
+                        </div>
+                    </div>`
+                );
+                
+                // Execute the MCP operation
+                await executeMcpOperation(operation, params, operationId);
+                
+            } catch (error) {
+                console.error('Error processing MCP operation:', error);
+                
+                // Replace the operation with an error message
+                const contentElement = messageElement.querySelector('.message-content');
+                const htmlContent = contentElement.innerHTML;
+                contentElement.innerHTML = htmlContent.replace(
+                    fullMatch,
+                    `<div class="mcp-result error">
+                        <div class="mcp-result-header">
+                            <span class="mcp-operation-name">Error</span>
+                            <span class="mcp-operation-status error">ERROR</span>
+                        </div>
+                        <div class="mcp-result-error">Failed to process MCP operation: ${error.message}</div>
+                    </div>`
+                );
             }
-          }
         }
-      }
-      
-      // Update the message content in the messages array
-      const lastMessage = messages[messages.length - 1];
-      lastMessage.content = accumulatedContent;
-      lastMessage.model = model;
-      
-      // Save updated history
-      saveChatHistory();
-      
-      // Reset streaming state
-      currentStreamingMessageElement = null;
-      
-    } catch (error) {
-      if (currentStreamingMessageElement) {
-        chatMessages.removeChild(currentStreamingMessageElement);
-        messages.pop(); // Remove incomplete message
-      }
-      throw error;
     }
-  }
-  
-  /**
-   * Handle regular (non-streaming) response from API
-   */
-  async function handleRegularResponse(apiKey, model, apiMessages, temperature, loadingElement) {
-    // Send request to our Netlify function
-    const response = await fetch('/.netlify/functions/openroute-chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        apiKey,
-        model,
-        messages: apiMessages,
-        temperature,
-        stream: false
-      })
-    });
-    
-    // Remove loading indicator
-    chatMessages.removeChild(loadingElement);
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to get response from API');
+
+    // Execute an MCP operation and update the UI
+    async function executeMcpOperation(operation, params, elementId) {
+        try {
+            // Find the element to update
+            const element = document.getElementById(elementId);
+            if (!element) {
+                throw new Error(`Element with ID ${elementId} not found`);
+            }
+            
+            // Update to connecting status
+            element.innerHTML = `
+                <div class="loading-indicator">
+                    <span>Connecting to Neo N3 MCP server...</span>
+                    <div class="loading-dots"><span></span><span></span><span></span></div>
+                </div>
+            `;
+            
+            // Call the MCP bridge function
+            const response = await fetch('/api/mcp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    operation,
+                    params
+                }),
+                timeout: 15000 // 15 seconds timeout
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text().catch(() => 'Unknown error');
+                throw new Error(`MCP server error: ${response.status} ${response.statusText}\n${errorText}`);
+            }
+            
+            const data = await response.json();
+            
+            // Update the UI with the result
+            if (data.success) {
+                element.innerHTML = `
+                    <div class="mcp-result-header">
+                        <span class="mcp-operation-name">${operation}</span>
+                        <span class="mcp-operation-status success">SUCCESS</span>
+                    </div>
+                    <pre class="mcp-result-data">${JSON.stringify(data.result, null, 2)}</pre>
+                `;
+                element.classList.remove('loading');
+                element.classList.add('success');
+            } else {
+                element.innerHTML = `
+                    <div class="mcp-result-header">
+                        <span class="mcp-operation-name">${operation}</span>
+                        <span class="mcp-operation-status error">ERROR</span>
+                    </div>
+                    <div class="mcp-result-error">${data.error || 'An unknown error occurred'}</div>
+                `;
+                element.classList.remove('loading');
+                element.classList.add('error');
+            }
+            
+        } catch (error) {
+            console.error(`Error executing MCP operation ${operation}:`, error);
+            
+            // Update the UI with the error
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = `
+                    <div class="mcp-result-header">
+                        <span class="mcp-operation-name">${operation}</span>
+                        <span class="mcp-operation-status error">ERROR</span>
+                    </div>
+                    <div class="mcp-result-error">${error.message || 'An unknown error occurred'}</div>
+                `;
+                element.classList.remove('loading');
+                element.classList.add('error');
+            }
+        }
     }
-    
-    const data = await response.json();
-    
-    // Add assistant message to chat
-    addMessage('assistant', data.message.content, data.model);
-  }
-  
-  /**
-   * Add loading indicator to chat
-   */
-  function addLoadingIndicator() {
-    const loadingElement = document.createElement('div');
-    loadingElement.className = 'message assistant-message loading-indicator';
-    
-    const avatar = document.createElement('div');
-    avatar.className = 'message-avatar assistant-avatar';
-    const avatarIcon = document.createElement('i');
-    avatarIcon.className = 'fas fa-robot';
-    avatar.appendChild(avatarIcon);
-    
-    const content = document.createElement('div');
-    content.className = 'message-content';
-    content.innerHTML = 'Thinking <div class="loading-dots"><span></span><span></span><span></span></div>';
-    
-    loadingElement.appendChild(avatar);
-    loadingElement.appendChild(content);
-    
-    chatMessages.appendChild(loadingElement);
-    scrollToBottom();
-    
-    return loadingElement;
-  }
-  
-  /**
-   * Add error message to chat
-   */
-  function addErrorMessage(errorText) {
-    const message = {
-      role: 'system',
-      content: `<strong>Error:</strong> ${errorText}`,
-      timestamp: new Date().toISOString()
-    };
-    
-    const messageElement = document.createElement('div');
-    messageElement.className = 'message system-message error-message';
-    
-    const contentElement = document.createElement('div');
-    contentElement.className = 'message-content';
-    contentElement.innerHTML = message.content;
-    
-    messageElement.appendChild(contentElement);
-    chatMessages.appendChild(messageElement);
-    
-    scrollToBottom();
-  }
-  
-  /**
-   * Save chat history to localStorage
-   */
-  function saveChatHistory() {
-    localStorage.setItem('chat_messages', JSON.stringify(messages));
-  }
-  
-  /**
-   * Load chat history from localStorage
-   */
-  function loadChatHistory() {
-    const savedMessages = localStorage.getItem('chat_messages');
-    if (savedMessages) {
-      messages = JSON.parse(savedMessages);
-      
-      // Render saved messages
-      chatMessages.innerHTML = ''; // Clear default welcome message
-      messages.forEach(message => {
-        chatMessages.appendChild(createMessageElement(message));
-      });
-      
-      scrollToBottom();
+
+    // Add a message to the UI
+    function addMessageToUI(role, content) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${role}-message`;
+        
+        const messageContent = document.createElement('div');
+        messageContent.className = 'message-content';
+        
+        if (role === 'user') {
+            messageContent.textContent = content;
+        } else {
+            messageContent.innerHTML = formatMessage(content);
+        }
+        
+        messageDiv.appendChild(messageContent);
+        chatMessages.appendChild(messageDiv);
+        scrollToBottom();
+        
+        return messageDiv;
     }
-  }
-  
-  /**
-   * Start a new chat
-   */
-  function startNewChat() {
-    if (messages.length > 0 && !confirm('Start a new chat? This will clear your current conversation.')) {
-      return;
+
+    // Add loading message
+    function addLoadingMessage() {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message assistant-message';
+        
+        const messageContent = document.createElement('div');
+        messageContent.className = 'message-content';
+        
+        const loadingDots = document.createElement('div');
+        loadingDots.className = 'loading-dots';
+        loadingDots.innerHTML = '<span></span><span></span><span></span>';
+        
+        messageContent.appendChild(loadingDots);
+        messageDiv.appendChild(messageContent);
+        chatMessages.appendChild(messageDiv);
+        
+        scrollToBottom();
+        return messageDiv;
     }
-    
-    // Clear messages
-    messages = [];
-    saveChatHistory();
-    
-    // Clear chat UI and add welcome message
-    chatMessages.innerHTML = '';
-    const welcomeMessage = document.createElement('div');
-    welcomeMessage.className = 'message system-message';
-    welcomeMessage.innerHTML = `
-      <div class="message-content">
-        <p>Welcome to Neo N3 MCP Chat! To get started:</p>
-        <ol>
-          <li>Enter your <a href="https://openrouter.ai/" target="_blank">OpenRoute API key</a> in the sidebar</li>
-          <li>Select your preferred AI model</li>
-          <li>Start asking questions about Neo N3 blockchain and MCP!</li>
-        </ol>
-        <p>Example questions you can ask:</p>
-        <ul>
-          <li>What is Neo N3 blockchain?</li>
-          <li>How does the Model Context Protocol work with Neo?</li>
-          <li>What smart contracts are supported?</li>
-          <li>How can I check my NEO balance using MCP?</li>
-        </ul>
-      </div>
-    `;
-    chatMessages.appendChild(welcomeMessage);
-    
-    // Focus on input
-    chatInput.focus();
-  }
-  
-  /**
-   * Clear chat history
-   */
-  function clearChatHistory() {
-    if (confirm('Are you sure you want to clear all chat history? This cannot be undone.')) {
-      localStorage.removeItem('chat_messages');
-      startNewChat();
+
+    // Update loading message with content
+    function updateLoadingMessage(content) {
+        if (currentMessageElement) {
+            const messageContent = currentMessageElement.querySelector('.message-content');
+            messageContent.innerHTML = formatMessage(content);
+        }
     }
-  }
+
+    // Append text to existing message
+    function appendToMessageContent(text) {
+        if (currentMessageElement) {
+            const messageContent = currentMessageElement.querySelector('.message-content');
+            const formattedText = formatMessage(text, true);
+            
+            if (messageContent.innerHTML.includes('loading-dots')) {
+                messageContent.innerHTML = formattedText;
+            } else {
+                // We need to handle the case when we're appending to already formatted content
+                // This is simplified and might need enhancement for complex markdown
+                messageContent.innerHTML += formattedText;
+            }
+        }
+    }
+
+    // Format message with markdown and code highlighting
+    function formatMessage(message, isChunk = false) {
+        if (!message) return '';
+        
+        // Simple markdown-like formatting
+        // This is a basic implementation - a real app would use a proper markdown parser
+        
+        // Code blocks
+        message = message.replace(/```([\s\S]*?)```/g, '<pre class="code-block">$1</pre>');
+        
+        // Inline code
+        message = message.replace(/`([^`]+)`/g, '<code>$1</code>');
+        
+        // Bold
+        message = message.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        
+        // Italic
+        message = message.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        
+        // Links
+        message = message.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+        
+        // Newlines to <br>
+        if (!isChunk) {
+            message = message.replace(/\n/g, '<br>');
+        }
+        
+        return message;
+    }
+
+    // API key management
+    function handleApiKeyInput() {
+        const apiKey = apiKeyInput.value.trim();
+        apiKeyValid = apiKey.length > 0;
+        
+        // Update UI based on API key status
+        updateApiKeyStatus();
+        
+        // Save API key
+        if (apiKeyValid) {
+            localStorage.setItem('openrouteApiKey', btoa(apiKey));
+        }
+    }
+
+    // Toggle API key visibility
+    function toggleApiKeyVisibility() {
+        const type = apiKeyInput.type;
+        apiKeyInput.type = type === 'password' ? 'text' : 'password';
+        
+        const icon = toggleApiKeyButton.querySelector('i');
+        icon.className = type === 'password' ? 'fas fa-eye-slash' : 'fas fa-eye';
+    }
+
+    // Update UI based on API key status
+    function updateApiKeyStatus() {
+        if (apiKeyValid) {
+            apiKeyNotice.style.display = 'none';
+            chatInput.disabled = false;
+            sendButton.disabled = false;
+            chatInput.focus();
+        } else {
+            apiKeyNotice.style.display = 'flex';
+            chatInput.disabled = true;
+            sendButton.disabled = true;
+        }
+    }
+
+    // Load API key from localStorage
+    function loadApiKey() {
+        const savedApiKey = localStorage.getItem('openrouteApiKey');
+        
+        if (savedApiKey) {
+            try {
+                apiKeyInput.value = atob(savedApiKey);
+                handleApiKeyInput();
+            } catch (e) {
+                console.error('Error decoding API key:', e);
+                localStorage.removeItem('openrouteApiKey');
+            }
+        }
+    }
+
+    // Load settings from localStorage
+    function loadSettings() {
+        const savedModel = localStorage.getItem('selectedModel');
+        const streamingSetting = localStorage.getItem('streamResponse');
+        
+        if (savedModel) {
+            modelSelect.value = savedModel;
+        }
+        
+        if (streamingSetting !== null) {
+            streamToggle.checked = streamingSetting === 'true';
+        }
+    }
+
+    // Save settings to localStorage
+    function saveSettings() {
+        localStorage.setItem('selectedModel', modelSelect.value);
+        localStorage.setItem('streamResponse', streamToggle.checked);
+    }
+
+    // Auto-resize textarea based on content
+    function autoResizeTextarea() {
+        chatInput.style.height = 'auto';
+        chatInput.style.height = chatInput.scrollHeight + 'px';
+    }
+
+    // Handle keyboard shortcuts
+    function handleInputKeydown(e) {
+        // Send on Enter (without Shift)
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            chatForm.dispatchEvent(new Event('submit'));
+        }
+    }
+
+    // Check server connection status
+    function checkServerStatus() {
+        fetch('/api/status')
+            .then(response => {
+                if (response.ok) {
+                    connectionStatus.innerHTML = '<i class="fas fa-circle"></i> Connected';
+                    connectionStatus.className = 'connection-status connected';
+                } else {
+                    updateOfflineStatus();
+                }
+            })
+            .catch(() => {
+                updateOfflineStatus();
+            });
+    }
+
+    // Update status when offline
+    function updateOfflineStatus() {
+        connectionStatus.innerHTML = '<i class="fas fa-circle"></i> Disconnected';
+        connectionStatus.className = 'connection-status disconnected';
+    }
+
+    // Update connection status
+    function updateConnectionStatus() {
+        if (navigator.onLine) {
+            checkServerStatus();
+        } else {
+            updateOfflineStatus();
+        }
+    }
+
+    // Start a new chat
+    function startNewChat() {
+        // Clear conversation state
+        currentConversation = [];
+        
+        // Clear UI
+        const welcomeMessage = document.querySelector('.system-message');
+        chatMessages.innerHTML = '';
+        chatMessages.appendChild(welcomeMessage);
+        
+        // Save empty conversation
+        saveChatHistory();
+    }
+
+    // Confirm and clear chat history
+    function confirmClearHistory() {
+        const confirm = window.confirm('Are you sure you want to clear all conversation history?');
+        
+        if (confirm) {
+            localStorage.removeItem('chatHistory');
+            startNewChat();
+        }
+    }
+
+    // Save chat history to localStorage
+    function saveChatHistory() {
+        try {
+            localStorage.setItem('chatHistory', JSON.stringify(currentConversation));
+        } catch (e) {
+            console.error('Error saving chat history:', e);
+            // If localStorage is full, we could implement a cleanup strategy
+        }
+    }
+
+    // Load chat history from localStorage
+    function loadChatHistory() {
+        try {
+            const savedHistory = localStorage.getItem('chatHistory');
+            
+            if (savedHistory) {
+                currentConversation = JSON.parse(savedHistory);
+                
+                // Rebuild UI from conversation history
+                rebuildConversationUI();
+            }
+        } catch (e) {
+            console.error('Error loading chat history:', e);
+        }
+    }
+
+    // Rebuild conversation UI from history
+    function rebuildConversationUI() {
+        // Clear messages except welcome message
+        const welcomeMessage = document.querySelector('.system-message');
+        chatMessages.innerHTML = '';
+        chatMessages.appendChild(welcomeMessage);
+        
+        // Add all messages from history
+        currentConversation.forEach(msg => {
+            addMessageToUI(msg.role, msg.content);
+        });
+    }
+
+    // Scroll to bottom of chat
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Listen for online/offline status changes
+    window.addEventListener('online', updateConnectionStatus);
+    window.addEventListener('offline', updateConnectionStatus);
 }); 
