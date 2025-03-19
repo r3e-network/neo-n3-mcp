@@ -103,6 +103,24 @@ async function callMcpEndpoint(endpoint, params) {
       throw new Error('Invalid parameters: must be an object');
     }
     
+    // Add network connectivity check
+    const network = params.network || 'mainnet';
+    try {
+      // Test API playground health before making the actual request
+      const healthCheck = await axios.post('/.netlify/functions/api-playground', {
+        endpoint: 'getBlockchainInfo',
+        network
+      }, { timeout: 5000 });
+      
+      // If the health check fails, throw an error
+      if (healthCheck.data.error) {
+        throw new Error(`Neo N3 network (${network}) connectivity issue: ${healthCheck.data.error}`);
+      }
+    } catch (networkError) {
+      console.error(`Neo N3 network connectivity issue (${network}):`, networkError);
+      throw new Error(`Could not connect to Neo N3 ${network} network. Please try again later.`);
+    }
+    
     // In a production environment, you would replace this with your actual Neo N3 MCP API endpoint
     // For now, we'll route through the API playground function which already exists
     const response = await axios.post('/.netlify/functions/api-playground', {

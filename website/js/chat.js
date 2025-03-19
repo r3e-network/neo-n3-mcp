@@ -411,55 +411,107 @@ document.addEventListener('DOMContentLoaded', () => {
       
       console.log(`Executing MCP operation: ${operation}`, params);
       
-      const response = await fetch('/.netlify/functions/mcp-bridge', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          operation,
-          params
-        })
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API request failed: ${response.status} ${response.statusText}\n${errorText}`);
-      }
-      
-      const data = await response.json();
-      console.log(`MCP operation ${operation} result:`, data);
-      
-      // Find the placeholder element
+      // Find the placeholder element early to show connection status
       const placeholderEl = document.getElementById(placeholderId);
       if (!placeholderEl) {
         console.error(`Placeholder element ${placeholderId} not found`);
         return;
       }
       
-      if (data.success) {
-        // Format the result as JSON with syntax highlighting
+      // Update placeholder to show connecting status
+      placeholderEl.innerHTML = `
+        <div class="loading-indicator">
+          <span>Connecting to Neo N3 MCP server...</span>
+          <div class="loading-dots"><span></span><span></span><span></span></div>
+        </div>
+      `;
+      
+      // Set a timeout for the request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+      
+      try {
+        const response = await fetch('/.netlify/functions/mcp-bridge', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            operation,
+            params
+          }),
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`API request failed: ${response.status} ${response.statusText}\n${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log(`MCP operation ${operation} result:`, data);
+        
+        if (data.success) {
+          // Format the result as JSON with syntax highlighting
+          placeholderEl.innerHTML = `
+            <div class="mcp-result-header">
+              <span class="mcp-operation-name">${operation}</span>
+              <span class="mcp-operation-status success">SUCCESS</span>
+            </div>
+            <pre class="mcp-result-data">${JSON.stringify(data.result, null, 2)}</pre>
+          `;
+          placeholderEl.classList.remove('loading');
+          placeholderEl.classList.add('success');
+        } else {
+          // Show error message
+          placeholderEl.innerHTML = `
+            <div class="mcp-result-header">
+              <span class="mcp-operation-name">${operation}</span>
+              <span class="mcp-operation-status error">ERROR</span>
+            </div>
+            <div class="mcp-result-error">${data.error || 'Unknown error'}</div>
+            <div class="mcp-debug-info">
+              <details>
+                <summary>Debug Info</summary>
+                <pre>${JSON.stringify({operation, params}, null, 2)}</pre>
+              </details>
+            </div>
+          `;
+          placeholderEl.classList.remove('loading');
+          placeholderEl.classList.add('error');
+        }
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        
+        // Handle network errors or timeouts separately
+        let errorMessage = fetchError.message || 'Unknown error';
+        
+        if (fetchError.name === 'AbortError') {
+          errorMessage = 'Operation timed out. The Neo N3 server may be experiencing high load or connectivity issues.';
+        } else if (!navigator.onLine) {
+          errorMessage = 'You appear to be offline. Please check your internet connection and try again.';
+        }
+        
+        console.error(`Network error executing MCP operation ${operation}:`, fetchError);
+        
         placeholderEl.innerHTML = `
           <div class="mcp-result-header">
             <span class="mcp-operation-name">${operation}</span>
-            <span class="mcp-operation-status success">SUCCESS</span>
+            <span class="mcp-operation-status error">CONNECTION ERROR</span>
           </div>
-          <pre class="mcp-result-data">${JSON.stringify(data.result, null, 2)}</pre>
-        `;
-        placeholderEl.classList.remove('loading');
-        placeholderEl.classList.add('success');
-      } else {
-        // Show error message
-        placeholderEl.innerHTML = `
-          <div class="mcp-result-header">
-            <span class="mcp-operation-name">${operation}</span>
-            <span class="mcp-operation-status error">ERROR</span>
-          </div>
-          <div class="mcp-result-error">${data.error || 'Unknown error'}</div>
+          <div class="mcp-result-error">${errorMessage}</div>
           <div class="mcp-debug-info">
             <details>
               <summary>Debug Info</summary>
-              <pre>${JSON.stringify({operation, params}, null, 2)}</pre>
+              <pre>${JSON.stringify({
+                operation, 
+                params, 
+                error: errorMessage,
+                network: navigator.onLine ? 'online' : 'offline'
+              }, null, 2)}</pre>
+              <p>If this error persists, try the 'list_operations' command to see available operations.</p>
             </details>
           </div>
         `;
