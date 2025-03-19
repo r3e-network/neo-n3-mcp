@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neo N3 MCP Server - API Playground</title>
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/api-playground.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="d-flex align-items-center">
+                <img src="img/logo.png" alt="Neo N3 Logo" class="me-3" width="50">
+                <h1>Neo N3 MCP Server</h1>
+            </div>
+            <p class="mb-0 lead">Seamless integration with the Neo N3 blockchain for Claude AI</p>
+        </div>
+    </header>
+    
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary">
+        <div class="container">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="documentation.html">Documentation</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="user-guide.html">User Guide</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="integration.html">Integration</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="block-explorer.html">Block Explorer</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="api-playground.html">API Playground</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="container py-5">
+        <h2>Neo N3 MCP API Playground</h2>
+        <p class="lead">Interactively test Neo N3 MCP API functionality directly from your browser</p>
+        
+        <div class="row">
+            <div class="col-lg-8 mb-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="h5 mb-0">Neo N3 RPC API</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Use this playground to interact with the Neo N3 blockchain through our API. Select an operation, customize parameters, and see the results in real-time.</p>
+                        <div id="api-playground">
+                            <!-- API Playground component will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="h5 mb-0">Address Balance Tool</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Check the balance of any Neo N3 address</p>
+                        <form id="balance-form">
+                            <div class="mb-3">
+                                <label for="address-input" class="form-label">Neo N3 Address</label>
+                                <input type="text" class="form-control" id="address-input" placeholder="Enter Neo N3 address">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Network</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="balance-network" id="balance-mainnet" value="mainnet">
+                                    <label class="form-check-label" for="balance-mainnet">Mainnet</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="balance-network" id="balance-testnet" value="testnet" checked>
+                                    <label class="form-check-label" for="balance-testnet">Testnet</label>
+                                </div>
+                            </div>
+                            <button type="button" id="check-balance-btn" class="btn btn-primary">Check Balance</button>
+                        </form>
+                        <div id="balance-result" class="mt-3 d-none">
+                            <h5>Results</h5>
+                            <div id="balance-spinner" class="text-center d-none">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            <div id="balance-content"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="h5 mb-0">Quick Links</h3>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <a href="block-explorer.html" class="text-decoration-none">
+                                    <i class="fas fa-cube me-2"></i> Block Explorer
+                                </a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="documentation.html" class="text-decoration-none">
+                                    <i class="fas fa-book me-2"></i> API Documentation
+                                </a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="integration.html" class="text-decoration-none">
+                                    <i class="fas fa-plug me-2"></i> Integration Guide
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="h5 mb-0">Understanding Neo N3 MCP Server API</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>The Neo N3 MCP Server provides a variety of tools and endpoints for interacting with the Neo N3 blockchain. Here are some key concepts:</p>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <h5><i class="fas fa-network-wired me-2"></i> Dual Network Support</h5>
+                                        <p>All API endpoints support both mainnet and testnet networks, allowing you to easily switch between them for development and production use.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <h5><i class="fas fa-shield-alt me-2"></i> Secure Integration</h5>
+                                        <p>The API uses secure HTTPS endpoints and includes proper input validation to ensure safe interaction with the blockchain.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <h5><i class="fas fa-code-branch me-2"></i> Smart Contract Support</h5>
+                                        <p>The MCP Server allows you to invoke and interact with smart contracts on the Neo N3 blockchain through a simple API interface.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <h5><i class="fas fa-wallet me-2"></i> Wallet Management</h5>
+                                        <p>Create, import, and manage Neo N3 wallets securely, with support for asset transfers and balance checks via the API.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p class="mb-0 mt-3">Use the playground above to experiment with these features and see real-time responses from the Neo N3 blockchain.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Neo N3 MCP Server</h5>
+                    <p>An MCP server providing seamless integration with the Neo N3 blockchain</p>
+                </div>
+                <div class="col-md-3">
+                    <h5>Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="https://github.com/R3E-Network/neo-n3-mcp" class="text-white">GitHub</a></li>
+                        <li><a href="https://neo.org/" class="text-white">Neo Website</a></li>
+                        <li><a href="https://docs.neo.org/" class="text-white">Neo Docs</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>Legal</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="terms-of-service.html" class="text-white">Terms of Service</a></li>
+                        <li><a href="privacy-policy.html" class="text-white">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-top border-secondary mt-3 pt-3">
+                <p class="mb-0 text-center">&copy; 2024 R3E Network. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/api-playground.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Balance checker functionality
+            const addressInput = document.getElementById('address-input');
+            const balanceForm = document.getElementById('balance-form');
+            const checkBalanceBtn = document.getElementById('check-balance-btn');
+            const balanceResult = document.getElementById('balance-result');
+            const balanceSpinner = document.getElementById('balance-spinner');
+            const balanceContent = document.getElementById('balance-content');
+            
+            checkBalanceBtn.addEventListener('click', async function() {
+                const address = addressInput.value.trim();
+                if (!address) {
+                    alert('Please enter a Neo N3 address');
+                    return;
+                }
+                
+                // Get selected network
+                const network = document.querySelector('input[name="balance-network"]:checked').value;
+                
+                // Show spinner and result container
+                balanceResult.classList.remove('d-none');
+                balanceSpinner.classList.remove('d-none');
+                balanceContent.innerHTML = '';
+                
+                try {
+                    // Call the balance-checker function
+                    const response = await fetch(`/.netlify/functions/balance-checker?address=${address}&network=${network}`);
+                    const data = await response.json();
+                    
+                    // Hide spinner
+                    balanceSpinner.classList.add('d-none');
+                    
+                    if (data.error) {
+                        balanceContent.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                        return;
+                    }
+                    
+                    // Create result HTML
+                    let resultHtml = `
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <strong>Address: ${data.address}</strong>
+                                <span class="badge ${network === 'mainnet' ? 'bg-success' : 'bg-warning text-dark'} ms-2">
+                                    ${network.toUpperCase()}
+                                </span>
+                            </div>
+                            <div class="card-body p-0">
+                    `;
+                    
+                    if (data.balances && data.balances.length > 0) {
+                        resultHtml += `<ul class="list-group list-group-flush">`;
+                        
+                        data.balances.forEach(token => {
+                            resultHtml += `
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span>
+                                            <strong>${token.name}</strong> 
+                                            <small class="text-muted">${token.symbol}</small>
+                                        </span>
+                                        <span>${token.formatted}</span>
+                                    </div>
+                                    <small class="text-muted d-block">Asset Hash: ${token.assetHash}</small>
+                                </li>
+                            `;
+                        });
+                        
+                        resultHtml += `</ul>`;
+                    } else {
+                        resultHtml += `
+                            <div class="p-3 text-center text-muted">
+                                No balances found for this address
+                            </div>
+                        `;
+                    }
+                    
+                    resultHtml += `
+                            </div>
+                        </div>
+                    `;
+                    
+                    balanceContent.innerHTML = resultHtml;
+                    
+                } catch (error) {
+                    balanceSpinner.classList.add('d-none');
+                    balanceContent.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                }
+            });
+            
+            // Handle enter key in address input
+            addressInput.addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') {
+                    checkBalanceBtn.click();
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

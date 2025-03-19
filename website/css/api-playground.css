@@ -1,0 +1,166 @@
+/**
+ * API Playground Component Styles
+ */
+
+/* Main Container */
+.api-playground-container {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Operation Selector */
+.operation-selector {
+  margin-bottom: 15px;
+}
+
+.operation-selector label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+/* Operation Description */
+.operation-description {
+  margin-bottom: 20px;
+  color: #555;
+  font-style: italic;
+}
+
+/* Parameters Container */
+.parameters-container {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #fff;
+  border-radius: 5px;
+  border: 1px solid #dee2e6;
+}
+
+.parameter {
+  margin-bottom: 15px;
+}
+
+.parameter:last-child {
+  margin-bottom: 0;
+}
+
+.parameter label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  position: relative;
+}
+
+.parameter-description {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 0.85em;
+  color: #6c757d;
+  font-weight: normal;
+}
+
+.parameter input,
+.parameter select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  margin-top: 3px;
+}
+
+/* Action Buttons */
+.action-buttons {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+/* Results Container */
+.results-container {
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.results-header {
+  background-color: #343a40;
+  color: #fff;
+  padding: 10px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.results-header h4 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.results-output {
+  padding: 15px;
+  margin: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  font-family: monospace;
+  white-space: pre-wrap;
+  background-color: #f8f9fa;
+  color: #212529;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Code Snippet Modal */
+.code-snippet {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 5px;
+  border: 1px solid #dee2e6;
+  margin-bottom: 10px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .api-playground-container {
+    background-color: #212529;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  .parameters-container,
+  .results-container,
+  .code-snippet {
+    background-color: #343a40;
+    border-color: #495057;
+  }
+  
+  .operation-description {
+    color: #adb5bd;
+  }
+  
+  .parameter-description {
+    color: #adb5bd;
+  }
+  
+  .results-header {
+    background-color: #212529;
+  }
+  
+  .results-output,
+  .code-snippet {
+    background-color: #2b3035;
+    color: #e9ecef;
+  }
+  
+  .parameter input,
+  .parameter select {
+    background-color: #2b3035;
+    border-color: #495057;
+    color: #e9ecef;
+  }
+} 
