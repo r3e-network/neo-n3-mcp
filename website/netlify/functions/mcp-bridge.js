@@ -7,7 +7,7 @@
 
 const axios = require('axios');
 
-// Map of available MCP operations
+// Map of available MCP operations with proper error handling
 const MCP_OPERATIONS = {
   // Blockchain information
   get_blockchain_info: async (params) => {
@@ -64,6 +64,14 @@ const MCP_OPERATIONS = {
       args,
       network
     });
+  },
+  
+  // List available operations - helpful for troubleshooting
+  list_operations: async () => {
+    return {
+      available_operations: Object.keys(MCP_OPERATIONS),
+      description: "These are the available MCP operations that can be called through this bridge."
+    };
   }
 };
 
@@ -71,7 +79,30 @@ const MCP_OPERATIONS = {
  * Helper function to call the MCP API endpoints
  */
 async function callMcpEndpoint(endpoint, params) {
+  if (!endpoint || typeof endpoint !== 'string') {
+    throw new Error(`Invalid endpoint: ${endpoint}. Must be a non-empty string.`);
+  }
+
+  // First check if the endpoint is supported by the API playground
+  const supportedEndpoints = [
+    'getBlockchainInfo', 
+    'getAddressBalance', 
+    'getBlock', 
+    'getTransaction', 
+    'invokeRead',
+    // Add more as they become available
+  ];
+  
+  if (!supportedEndpoints.includes(endpoint)) {
+    throw new Error(`Endpoint "${endpoint}" is not supported by the API playground.`);
+  }
+
   try {
+    // Validate params is an object
+    if (!params || typeof params !== 'object') {
+      throw new Error('Invalid parameters: must be an object');
+    }
+    
     // In a production environment, you would replace this with your actual Neo N3 MCP API endpoint
     // For now, we'll route through the API playground function which already exists
     const response = await axios.post('/.netlify/functions/api-playground', {
@@ -79,10 +110,14 @@ async function callMcpEndpoint(endpoint, params) {
       ...params
     });
     
+    if (response.data.error) {
+      throw new Error(response.data.error);
+    }
+    
     return response.data;
   } catch (error) {
     console.error(`Error calling MCP endpoint ${endpoint}:`, error);
-    throw new Error(`Failed to execute MCP operation: ${error.message}`);
+    throw new Error(`Failed to execute MCP operation: ${error.message || 'Unknown error'}`);
   }
 }
 
@@ -114,31 +149,68 @@ exports.handler = async function(event, context) {
     const { operation, params = {} } = data;
     
     // Validate that operation is supported
-    if (!operation || !MCP_OPERATIONS[operation]) {
+    if (!operation) {
       return {
         statusCode: 400,
         body: JSON.stringify({ 
-          error: `Unsupported operation. Available operations: ${Object.keys(MCP_OPERATIONS).join(', ')}`
+          error: `Operation name is required. Available operations: ${Object.keys(MCP_OPERATIONS).join(', ')}`
+        })
+      };
+    }
+    
+    // Check if operation exists
+    const operationFunction = MCP_OPERATIONS[operation];
+    if (!operationFunction) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ 
+          error: `Unsupported operation "${operation}". Available operations: ${Object.keys(MCP_OPERATIONS).join(', ')}`
+        })
+      };
+    }
+    
+    // Ensure operation is a function
+    if (typeof operationFunction !== 'function') {
+      console.error(`Operation "${operation}" is defined but not a function.`);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ 
+          error: `Internal error: Operation "${operation}" is defined but not a function.`
         })
       };
     }
     
     // Execute the operation
-    const result = await MCP_OPERATIONS[operation](params);
-    
-    // Return the result
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        operation,
-        result,
-        success: true
-      })
-    };
+    try {
+      const result = await operationFunction(params);
+      
+      // Return the result
+      return {
+        statusCode: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          operation,
+          result,
+          success: true
+        })
+      };
+    } catch (error) {
+      console.error(`Error executing operation "${operation}":`, error);
+      return {
+        statusCode: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          error: error.message || 'Failed to execute MCP operation',
+          success: false
+        })
+      };
+    }
   } catch (error) {
     console.error('MCP Bridge error:', error);
     

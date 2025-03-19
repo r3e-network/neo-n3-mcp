@@ -308,32 +308,82 @@ document.addEventListener('DOMContentLoaded', () => {
    * Process MCP operation requests in the content
    */
   function processMcpOperations(content) {
+    if (!content || typeof content !== 'string') {
+      console.error("Invalid content passed to processMcpOperations:", content);
+      return content || '';
+    }
+    
     const regex = /{{mcp:([a-z_]+):({.*?})}}/g;
     let match;
     let processedContent = content;
     let promises = [];
     
-    while ((match = regex.exec(content)) !== null) {
-      const [fullMatch, operation, paramsJson] = match;
-      
-      // Create placeholder for the operation result
-      const placeholderId = `mcp-result-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-      processedContent = processedContent.replace(fullMatch, `<div id="${placeholderId}" class="mcp-result loading">
-        <div class="loading-indicator">
-          <span>Executing Neo N3 MCP operation...</span>
-          <div class="loading-dots"><span></span><span></span><span></span></div>
-        </div>
-      </div>`);
-      
-      // Queue the operation execution
-      promises.push(executeMcpOperation(operation, JSON.parse(paramsJson), placeholderId));
+    // First, validate if there are any MCP operations to process
+    if (!content.includes('{{mcp:')) {
+      return content;
     }
     
-    // Execute all operations
-    if (promises.length > 0) {
-      Promise.all(promises).catch(error => {
-        console.error('Error executing MCP operations:', error);
-      });
+    try {
+      while ((match = regex.exec(content)) !== null) {
+        const [fullMatch, operation, paramsJson] = match;
+        
+        // Validate operation name
+        if (!operation || !/^[a-z_]+$/.test(operation)) {
+          processedContent = processedContent.replace(
+            fullMatch, 
+            `<div class="mcp-result error">
+              <div class="mcp-result-header">
+                <span class="mcp-operation-name">Error</span>
+                <span class="mcp-operation-status error">ERROR</span>
+              </div>
+              <div class="mcp-result-error">Invalid operation name: ${operation || 'empty'}</div>
+            </div>`
+          );
+          continue;
+        }
+        
+        // Try to parse the JSON params
+        let params;
+        try {
+          params = JSON.parse(paramsJson);
+        } catch (e) {
+          console.error(`Failed to parse MCP operation params: ${e.message}`, paramsJson);
+          processedContent = processedContent.replace(
+            fullMatch, 
+            `<div class="mcp-result error">
+              <div class="mcp-result-header">
+                <span class="mcp-operation-name">${operation}</span>
+                <span class="mcp-operation-status error">ERROR</span>
+              </div>
+              <div class="mcp-result-error">Invalid JSON parameters: ${e.message}</div>
+            </div>`
+          );
+          continue;
+        }
+        
+        // Create placeholder for the operation result
+        const placeholderId = `mcp-result-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+        processedContent = processedContent.replace(fullMatch, `<div id="${placeholderId}" class="mcp-result loading">
+          <div class="loading-indicator">
+            <span>Executing Neo N3 MCP operation: ${operation}</span>
+            <div class="loading-dots"><span></span><span></span><span></span></div>
+          </div>
+        </div>`);
+        
+        // Queue the operation execution
+        promises.push(executeMcpOperation(operation, params, placeholderId));
+      }
+      
+      // Execute all operations
+      if (promises.length > 0) {
+        Promise.all(promises).catch(error => {
+          console.error('Error executing MCP operations:', error);
+        });
+      }
+    } catch (error) {
+      console.error('Error processing MCP operations:', error);
+      // If there's an error in the regex processing, return original content
+      return content;
     }
     
     return processedContent;
@@ -344,6 +394,23 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   async function executeMcpOperation(operation, params, placeholderId) {
     try {
+      // Validate operation
+      if (!operation || typeof operation !== 'string') {
+        throw new Error(`Invalid operation: ${operation}. Must be a non-empty string.`);
+      }
+      
+      // Validate params
+      if (!params || typeof params !== 'object') {
+        throw new Error('Invalid parameters: must be an object');
+      }
+      
+      // Validate placeholderId
+      if (!placeholderId || typeof placeholderId !== 'string') {
+        throw new Error('Invalid placeholder ID');
+      }
+      
+      console.log(`Executing MCP operation: ${operation}`, params);
+      
       const response = await fetch('/.netlify/functions/mcp-bridge', {
         method: 'POST',
         headers: {
@@ -355,11 +422,20 @@ document.addEventListener('DOMContentLoaded', () => {
         })
       });
       
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API request failed: ${response.status} ${response.statusText}\n${errorText}`);
+      }
+      
       const data = await response.json();
+      console.log(`MCP operation ${operation} result:`, data);
       
       // Find the placeholder element
       const placeholderEl = document.getElementById(placeholderId);
-      if (!placeholderEl) return;
+      if (!placeholderEl) {
+        console.error(`Placeholder element ${placeholderId} not found`);
+        return;
+      }
       
       if (data.success) {
         // Format the result as JSON with syntax highlighting
@@ -380,6 +456,12 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="mcp-operation-status error">ERROR</span>
           </div>
           <div class="mcp-result-error">${data.error || 'Unknown error'}</div>
+          <div class="mcp-debug-info">
+            <details>
+              <summary>Debug Info</summary>
+              <pre>${JSON.stringify({operation, params}, null, 2)}</pre>
+            </details>
+          </div>
         `;
         placeholderEl.classList.remove('loading');
         placeholderEl.classList.add('error');
@@ -393,14 +475,24 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Find the placeholder element and show error
       const placeholderEl = document.getElementById(placeholderId);
-      if (!placeholderEl) return;
+      if (!placeholderEl) {
+        console.error(`Placeholder element ${placeholderId} not found for error handling`);
+        return;
+      }
       
       placeholderEl.innerHTML = `
         <div class="mcp-result-header">
           <span class="mcp-operation-name">${operation}</span>
           <span class="mcp-operation-status error">ERROR</span>
         </div>
-        <div class="mcp-result-error">Failed to execute operation: ${error.message}</div>
+        <div class="mcp-result-error">Failed to execute operation: ${error.message || 'Unknown error'}</div>
+        <div class="mcp-debug-info">
+          <details>
+            <summary>Debug Info</summary>
+            <pre>${JSON.stringify({operation, params, error: error.message}, null, 2)}</pre>
+            <p>If this error persists, try the 'list_operations' command to see available operations.</p>
+          </details>
+        </div>
       `;
       placeholderEl.classList.remove('loading');
       placeholderEl.classList.add('error');

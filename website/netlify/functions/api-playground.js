@@ -27,10 +27,22 @@ const RPC_TEMPLATES = {
     params: ["{{blockHeight}}", 1],
     id: 1
   },
-  getBalance: {
+  getAddressBalance: {
     jsonrpc: "2.0",
     method: "getnep17balances", 
     params: ["{{address}}"],
+    id: 1
+  },
+  getTransaction: {
+    jsonrpc: "2.0",
+    method: "getrawtransaction",
+    params: ["{{txHash}}", 1],
+    id: 1
+  },
+  invokeRead: {
+    jsonrpc: "2.0",
+    method: "invokefunction",
+    params: ["{{scriptHash}}", "{{operation}}", "{{args}}"],
     id: 1
   }
 };
@@ -63,11 +75,40 @@ exports.handler = async function(event, context) {
     const { endpoint, network = 'testnet', params = {} } = data;
     
     // Validate request
-    if (!endpoint || !RPC_TEMPLATES[endpoint]) {
+    if (!endpoint || typeof endpoint !== 'string') {
       return {
         statusCode: 400,
         body: JSON.stringify({ 
-          error: 'Invalid endpoint. Available endpoints: ' + Object.keys(RPC_TEMPLATES).join(', ')
+          error: `Invalid endpoint: ${endpoint}. Available endpoints: ${Object.keys(RPC_TEMPLATES).join(', ')}`
+        })
+      };
+    }
+    
+    if (!RPC_TEMPLATES[endpoint]) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ 
+          error: `Endpoint "${endpoint}" not supported. Available endpoints: ${Object.keys(RPC_TEMPLATES).join(', ')}`
+        })
+      };
+    }
+    
+    // Validate network
+    if (!NODE_URLS[network]) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ 
+          error: `Invalid network: ${network}. Available networks: ${Object.keys(NODE_URLS).join(', ')}`
+        })
+      };
+    }
+    
+    // Validate params is an object
+    if (params && typeof params !== 'object') {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ 
+          error: 'Invalid parameters: must be an object'
         })
       };
     }
@@ -77,29 +118,55 @@ exports.handler = async function(event, context) {
     
     // Replace template variables with actual values
     const stringifiedRequest = JSON.stringify(rpcRequest);
-    const processedRequest = JSON.parse(
-      Object.entries(params).reduce((req, [key, value]) => {
-        return req.replace(new RegExp(`"{{${key}}}"`, 'g'), typeof value === 'number' ? value : `"${value}"`);
-      }, stringifiedRequest)
-    );
+    let processedRequest;
+    
+    try {
+      processedRequest = JSON.parse(
+        Object.entries(params).reduce((req, [key, value]) => {
+          return req.replace(new RegExp(`"{{${key}}}"`, 'g'), typeof value === 'number' ? value : `"${value}"`);
+        }, stringifiedRequest)
+      );
+    } catch (error) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ 
+          error: `Failed to process request parameters: ${error.message}`
+        })
+      };
+    }
     
     // Make the RPC call to the Neo node
-    const nodeUrl = NODE_URLS[network] || NODE_URLS.testnet;
-    const response = await axios.post(nodeUrl, processedRequest);
-    
-    // Return the result
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        result: response.data,
-        request: processedRequest
-      })
-    };
-    
+    const nodeUrl = NODE_URLS[network];
+    try {
+      const response = await axios.post(nodeUrl, processedRequest);
+      
+      // Return the result
+      return {
+        statusCode: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          result: response.data,
+          request: processedRequest
+        })
+      };
+    } catch (error) {
+      console.error(`Error calling Neo RPC endpoint: ${nodeUrl}`, error);
+      
+      return {
+        statusCode: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          error: `Failed to call Neo RPC endpoint: ${error.message || 'Unknown error'}`,
+          request: processedRequest
+        })
+      };
+    }
   } catch (error) {
     console.error('Function error:', error);
     
