@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Neo N3 DApp Integration Guide - Learn how to interact with Neo N3 DApps using the Neo N3 MCP Server">
+    <title>Neo N3 DApp Guide | R3E Network</title>
+    <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
+    <link rel="alternate icon" type="image/png" href="img/favicon.png">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/accessibility.css">
+    <link rel="stylesheet" href="css/contract-styles.css">
+    <link rel="stylesheet" href="css/nav-styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-to-content">Skip to content</a>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1>Neo N3 MCP Server</h1>
+                <span class="powered-by">Powered by R3E Network</span>
+            </div>
+            <nav class="main-nav" aria-label="Main navigation">
+                <button class="menu-toggle" aria-expanded="false" aria-controls="main-menu">
+                    <i class="fas fa-bars"></i>
+                    <span class="sr-only">Toggle menu</span>
+                </button>
+                <ul id="main-menu" role="menubar">
+                    <li role="none"><a href="index.html" role="menuitem">Home</a></li>
+                    <li role="none"><a href="documentation.html" role="menuitem">Documentation</a></li>
+                    <li role="none" class="dropdown">
+                        <a href="#" class="dropdown-toggle" role="menuitem" aria-haspopup="true" aria-expanded="false">Guides</a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li role="none"><a href="user-guide.html" role="menuitem">User Guide</a></li>
+                            <li role="none"><a href="integration.html" role="menuitem">Integration Guide</a></li>
+                            <li role="none"><a href="dapp-guide.html" class="active" role="menuitem" aria-current="page">DApp Guide</a></li>
+                        </ul>
+                    </li>
+                    <li role="none" class="dropdown">
+                        <a href="#" class="dropdown-toggle" role="menuitem" aria-haspopup="true" aria-expanded="false">Tools</a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li role="none"><a href="block-explorer.html" role="menuitem">Block Explorer</a></li>
+                            <li role="none"><a href="api-playground.html" role="menuitem">API Playground</a></li>
+                            <li role="none"><a href="chat.html" role="menuitem">AI Chat</a></li>
+                        </ul>
+                    </li>
+                    <li role="none"><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank" rel="noopener noreferrer" class="github-link" role="menuitem">GitHub <span class="sr-only">(opens in new window)</span></a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main id="main-content">
+        <div class="container">
+            <div class="doc-sidebar">
+                <div class="sidebar-header">
+                    <h2>DApp Guide</h2>
+                </div>
+                <nav aria-label="DApp Guide navigation">
+                    <ul>
+                        <li><a href="#introduction">Introduction</a></li>
+                        <li><a href="#contract-availability">Contract Availability</a></li>
+                        <li>
+                            <a href="#neofs">NeoFS</a>
+                            <ul>
+                                <li><a href="#neofs-overview">Overview</a></li>
+                                <li><a href="#neofs-operations">Operations</a></li>
+                                <li><a href="#neofs-examples">Examples</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="#neoburger">NeoBurger</a>
+                            <ul>
+                                <li><a href="#neoburger-overview">Overview</a></li>
+                                <li><a href="#neoburger-operations">Operations</a></li>
+                                <li><a href="#neoburger-examples">Examples</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="#flamingo">Flamingo</a>
+                            <ul>
+                                <li><a href="#flamingo-overview">Overview</a></li>
+                                <li><a href="#flamingo-operations">Operations</a></li>
+                                <li><a href="#flamingo-examples">Examples</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="#neocompound">NeoCompound</a>
+                            <ul>
+                                <li><a href="#neocompound-overview">Overview</a></li>
+                                <li><a href="#neocompound-operations">Operations</a></li>
+                                <li><a href="#neocompound-examples">Examples</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="#grandshare">GrandShare</a>
+                            <ul>
+                                <li><a href="#grandshare-overview">Overview</a></li>
+                                <li><a href="#grandshare-operations">Operations</a></li>
+                                <li><a href="#grandshare-examples">Examples</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="#ghostmarket">GhostMarket</a>
+                            <ul>
+                                <li><a href="#ghostmarket-overview">Overview</a></li>
+                                <li><a href="#ghostmarket-operations">Operations</a></li>
+                                <li><a href="#ghostmarket-examples">Examples</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#best-practices">Best Practices</a></li>
+                        <li><a href="#error-handling">Error Handling</a></li>
+                    </ul>
+                </nav>
+            </div>
+
+            <div class="doc-content">
+                <section id="introduction">
+                    <h1>Neo N3 DApp Integration Guide</h1>
+                    <p>This guide provides comprehensive information about integrating with Neo N3 DApps through the Neo N3 MCP Server. The server supports several popular Neo N3 DApps, allowing AI assistants to interact with these applications through a standardized interface.</p>
+
+                    <div class="info-box">
+                        <h3><i class="fas fa-info-circle"></i> What are Neo N3 DApps?</h3>
+                        <p>Neo N3 DApps (Decentralized Applications) are applications that run on the Neo N3 blockchain. They leverage smart contracts to provide various services, from decentralized storage to financial applications, without relying on centralized servers or authorities.</p>
+                    </div>
+                </section>
+
+                <section id="contract-availability">
+                    <h2>Contract Availability</h2>
+                    <p>Not all contracts are available on both mainnet and testnet. The table below shows the availability of each contract:</p>
+
+                    <div class="table-responsive">
+                        <table class="availability-table">
+                            <thead>
+                                <tr>
+                                    <th>Contract</th>
+                                    <th>Mainnet</th>
+                                    <th>Testnet</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>NeoFS</td>
+                                    <td><span class="available">✅</span></td>
+                                    <td><span class="available">✅</span></td>
+                                    <td>Decentralized storage system</td>
+                                </tr>
+                                <tr>
+                                    <td>NeoBurger</td>
+                                    <td><span class="available">✅</span></td>
+                                    <td><span class="unavailable">❌</span></td>
+                                    <td>Neo staking service</td>
+                                </tr>
+                                <tr>
+                                    <td>Flamingo</td>
+                                    <td><span class="available">✅</span></td>
+                                    <td><span class="unavailable">❌</span></td>
+                                    <td>DeFi platform with AMM and staking</td>
+                                </tr>
+                                <tr>
+                                    <td>NeoCompound</td>
+                                    <td><span class="available">✅</span></td>
+                                    <td><span class="unavailable">❌</span></td>
+                                    <td>Automatic yield farming protocol</td>
+                                </tr>
+                                <tr>
+                                    <td>GrandShare</td>
+                                    <td><span class="available">✅</span></td>
+                                    <td><span class="unavailable">❌</span></td>
+                                    <td>Profit sharing protocol</td>
+                                </tr>
+                                <tr>
+                                    <td>GhostMarket</td>
+                                    <td><span class="available">✅</span></td>
+                                    <td><span class="unavailable">❌</span></td>
+                                    <td>NFT marketplace</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="warning-box">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Important</h3>
+                        <p>Always check contract availability before attempting to interact with a contract. Trying to use a contract that is not available on the selected network will result in an error.</p>
+                    </div>
+                </section>
+
+                <section id="neofs">
+                    <h2>NeoFS</h2>
+
+                    <section id="neofs-overview">
+                        <h3>Overview</h3>
+                        <p>NeoFS is a distributed, decentralized object storage network built on the Neo blockchain. It allows users to store and retrieve data in a decentralized manner, with data integrity guaranteed by the blockchain.</p>
+
+                        <div class="contract-info">
+                            <h4>Contract Information</h4>
+                            <ul>
+                                <li><strong>Name:</strong> NeoFS</li>
+                                <li><strong>Mainnet Script Hash:</strong> 0x50ac1c37690cc2cfc594472833cf57505d5f46de</li>
+                                <li><strong>Testnet Script Hash:</strong> 0xccca29443855a1c455d72a3318cf605debb9e384</li>
+                                <li><strong>Available on:</strong> Mainnet, Testnet</li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    <section id="neofs-operations">
+                        <h3>Operations</h3>
+                        <p>The following operations are available for the NeoFS contract:</p>
+
+                        <div class="table-responsive">
+                            <table class="operations-table">
+                                <thead>
+                                    <tr>
+                                        <th>Operation</th>
+                                        <th>Description</th>
+                                        <th>Parameters</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>createContainer</td>
+                                        <td>Create a new storage container</td>
+                                        <td>
+                                            <ul>
+                                                <li>ownerId (string): Owner ID of the container</li>
+                                                <li>rules (array): Container rules</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>getContainers</td>
+                                        <td>Get containers owned by an address</td>
+                                        <td>
+                                            <ul>
+                                                <li>ownerId (string): Owner ID to query</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>getContainerInfo</td>
+                                        <td>Get information about a container</td>
+                                        <td>
+                                            <ul>
+                                                <li>containerId (string): ID of the container</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section id="neofs-examples">
+                        <h3>Examples</h3>
+
+                        <h4>Creating a Container</h4>
+                        <pre><code>const result = await client.callTool('neofs_create_container', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'password',
+  ownerId: 'your-owner-id',
+  rules: [
+    { key: 'Placement', value: 'REP 3 IN X CBF 1 SELECT 1 FROM * AS X' },
+    { key: 'StoragePolicy', value: 'REP 3' }
+  ],
+  network: 'mainnet'
+});
+
+console.log('Container created:', result);</code></pre>
+
+                        <h4>Getting Containers</h4>
+                        <pre><code>const result = await client.callTool('neofs_get_containers', {
+  ownerId: 'your-owner-id',
+  network: 'mainnet'
+});
+
+console.log('Containers:', result.containers);</code></pre>
+                    </section>
+                </section>
+
+                <section id="neoburger">
+                    <h2>NeoBurger</h2>
+
+                    <section id="neoburger-overview">
+                        <h3>Overview</h3>
+                        <p>NeoBurger is a Neo N3 staking service that simplifies the process of earning GAS rewards. Users can deposit their NEO tokens to earn GAS without the complexity of running a consensus node.</p>
+
+                        <div class="contract-info">
+                            <h4>Contract Information</h4>
+                            <ul>
+                                <li><strong>Name:</strong> NeoBurger</li>
+                                <li><strong>Mainnet Script Hash:</strong> 0x48c40d4666f93408be1bef038b6722404d9a4c2a</li>
+                                <li><strong>Available on:</strong> Mainnet only</li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    <section id="neoburger-operations">
+                        <h3>Operations</h3>
+                        <p>The following operations are available for the NeoBurger contract:</p>
+
+                        <div class="table-responsive">
+                            <table class="operations-table">
+                                <thead>
+                                    <tr>
+                                        <th>Operation</th>
+                                        <th>Description</th>
+                                        <th>Parameters</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>depositNeo</td>
+                                        <td>Deposit NEO to NeoBurger</td>
+                                        <td>
+                                            <ul>
+                                                <li>account (hash160): Account depositing NEO</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>withdrawNeo</td>
+                                        <td>Withdraw NEO from NeoBurger</td>
+                                        <td>
+                                            <ul>
+                                                <li>account (hash160): Account withdrawing NEO</li>
+                                                <li>amount (integer): Amount to withdraw</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>balanceOf</td>
+                                        <td>Get NeoBurger balance</td>
+                                        <td>
+                                            <ul>
+                                                <li>account (hash160): Account to check</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>claimGas</td>
+                                        <td>Claim GAS rewards</td>
+                                        <td>
+                                            <ul>
+                                                <li>account (hash160): Account claiming rewards</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section id="neoburger-examples">
+                        <h3>Examples</h3>
+
+                        <h4>Depositing NEO</h4>
+                        <pre><code>const result = await client.callTool('neoburger_deposit', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'password',
+  network: 'mainnet'
+});
+
+console.log('Deposit transaction:', result.txid);</code></pre>
+
+                        <h4>Getting Balance</h4>
+                        <pre><code>const result = await client.callTool('neoburger_get_balance', {
+  address: 'NXV7ZhHaLY2GNjp6R1AYBV9FqrVnGLfQcz',
+  network: 'mainnet'
+});
+
+console.log('NeoBurger balance:', result.amount);</code></pre>
+                    </section>
+                </section>
+
+                <!-- Additional contract sections follow the same pattern -->
+                <!-- Flamingo section -->
+                <section id="flamingo">
+                    <h2>Flamingo</h2>
+
+                    <section id="flamingo-overview">
+                        <h3>Overview</h3>
+                        <p>Flamingo is a Neo N3 DeFi platform that offers various financial services, including an automated market maker (AMM), staking, and yield farming. It allows users to trade tokens, provide liquidity, and earn rewards.</p>
+
+                        <div class="contract-info">
+                            <h4>Contract Information</h4>
+                            <ul>
+                                <li><strong>Name:</strong> Flamingo</li>
+                                <li><strong>Mainnet Script Hash:</strong> 0xf970f4ccecd765b63732b821775dc38c25d74b39</li>
+                                <li><strong>Available on:</strong> Mainnet only</li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    <section id="flamingo-operations">
+                        <h3>Operations</h3>
+                        <p>The following operations are available for the Flamingo contract:</p>
+
+                        <div class="table-responsive">
+                            <table class="operations-table">
+                                <thead>
+                                    <tr>
+                                        <th>Operation</th>
+                                        <th>Description</th>
+                                        <th>Parameters</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>stake</td>
+                                        <td>Stake FLM tokens</td>
+                                        <td>
+                                            <ul>
+                                                <li>account (hash160): Account staking tokens</li>
+                                                <li>amount (integer): Amount to stake</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>unstake</td>
+                                        <td>Unstake FLM tokens</td>
+                                        <td>
+                                            <ul>
+                                                <li>account (hash160): Account unstaking tokens</li>
+                                                <li>amount (integer): Amount to unstake</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>getStakedAmount</td>
+                                        <td>Get staked amount</td>
+                                        <td>
+                                            <ul>
+                                                <li>account (hash160): Account to check</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>claimRewards</td>
+                                        <td>Claim staking rewards</td>
+                                        <td>
+                                            <ul>
+                                                <li>account (hash160): Account claiming rewards</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section id="flamingo-examples">
+                        <h3>Examples</h3>
+
+                        <h4>Staking FLM</h4>
+                        <pre><code>const result = await client.callTool('flamingo_stake', {
+  walletPath: '/path/to/wallet.json',
+  walletPassword: 'password',
+  amount: '100',
+  network: 'mainnet'
+});
+
+console.log('Stake transaction:', result.txid);</code></pre>
+
+                        <h4>Getting Staked Amount</h4>
+                        <pre><code>const result = await client.callTool('flamingo_get_staked_amount', {
+  address: 'NXV7ZhHaLY2GNjp6R1AYBV9FqrVnGLfQcz',
+  network: 'mainnet'
+});
+
+console.log('Staked amount:', result.amount);</code></pre>
+                    </section>
+                </section>
+
+                <!-- Best Practices section -->
+                <section id="best-practices">
+                    <h2>Best Practices</h2>
+                    <p>Follow these best practices when integrating with Neo N3 DApps:</p>
+
+                    <ol class="best-practices-list">
+                        <li>
+                            <h3>Check Contract Availability</h3>
+                            <p>Always check if a contract is available on your target network before attempting to interact with it:</p>
+                            <pre><code>const contracts = await client.callTool('list_famous_contracts', {
+  network: 'mainnet'
+});
+
+const isAvailable = contracts.contracts.some(
+  c => c.name.toLowerCase() === 'neoburger' && c.available
+);</code></pre>
+                        </li>
+                        <li>
+                            <h3>Handle Rate Limits</h3>
+                            <p>The service implements rate limiting to prevent abuse. Handle potential rate limit errors in your application:</p>
+                            <pre><code>try {
+  const result = await client.callTool('neoburger_deposit', {
+    // parameters
+  });
+} catch (error) {
+  if (error.message.includes('Rate limit exceeded')) {
+    // Handle rate limit error
+    console.error('Rate limit exceeded. Please try again later.');
+  } else {
+    // Handle other errors
+    console.error('Operation failed:', error.message);
+  }
+}</code></pre>
+                        </li>
+                        <li>
+                            <h3>Validate Inputs Client-Side</h3>
+                            <p>While the service performs server-side validation, implementing client-side validation can improve user experience by catching errors earlier:</p>
+                            <pre><code>function validateAddress(address) {
+  // Neo N3 addresses are 34 characters long and start with 'N'
+  return typeof address === 'string' &&
+         address.length === 34 &&
+         address.startsWith('N');
+}</code></pre>
+                        </li>
+                        <li>
+                            <h3>Monitor Transaction Status</h3>
+                            <p>After invoking a write operation, monitor the transaction status to confirm it was successfully processed on the blockchain:</p>
+                            <pre><code>const result = await client.callTool('neoburger_deposit', {
+  // parameters
+});
+
+// Get the transaction ID
+const txid = result.txid;
+
+// Monitor transaction status
+const txStatus = await client.callTool('get_transaction', {
+  txid: txid,
+  network: 'mainnet'
+});</code></pre>
+                        </li>
+                        <li>
+                            <h3>Use Testnet First</h3>
+                            <p>When developing new integrations, test on the testnet first before moving to mainnet (for contracts that are available on testnet).</p>
+                        </li>
+                    </ol>
+                </section>
+
+                <!-- Error Handling section -->
+                <section id="error-handling">
+                    <h2>Error Handling</h2>
+                    <p>The Neo N3 MCP Server uses specific error types to provide clear information about failures:</p>
+
+                    <div class="table-responsive">
+                        <table class="error-table">
+                            <thead>
+                                <tr>
+                                    <th>Error Type</th>
+                                    <th>Description</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>ContractError</td>
+                                    <td>Thrown when a contract operation fails</td>
+                                    <td>"Contract execution failed: FAULT Exception"</td>
+                                </tr>
+                                <tr>
+                                    <td>ValidationError</td>
+                                    <td>Thrown when input validation fails</td>
+                                    <td>"Invalid address format: ABC123"</td>
+                                </tr>
+                                <tr>
+                                    <td>NetworkError</td>
+                                    <td>Thrown when there are network-related issues</td>
+                                    <td>"Failed to connect to RPC endpoint"</td>
+                                </tr>
+                                <tr>
+                                    <td>RateLimitError</td>
+                                    <td>Thrown when rate limits are exceeded</td>
+                                    <td>"Rate limit exceeded. Try again in 60 seconds."</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3>Example Error Handling</h3>
+                    <pre><code>try {
+  const result = await client.callTool('neoburger_deposit', {
+    walletPath: '/path/to/wallet.json',
+    walletPassword: 'password',
+    network: 'mainnet'
+  });
+  console.log('Deposit successful:', result);
+} catch (error) {
+  if (error.message.includes('Contract not available')) {
+    console.error('NeoBurger contract is not available on this network');
+  } else if (error.message.includes('Rate limit')) {
+    console.error('Rate limit exceeded. Please try again later.');
+  } else if (error.message.includes('Invalid address')) {
+    console.error('Invalid address format');
+  } else if (error.message.includes('Failed to connect')) {
+    console.error('Network connection issue. Please check your internet connection.');
+  } else {
+    console.error('Operation failed:', error.message);
+  }
+}</code></pre>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <h2>Neo N3 MCP Server</h2>
+                    <p>Powered by R3E Network</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-links-column">
+                        <h3>Documentation</h3>
+                        <ul>
+                            <li><a href="documentation.html#overview">Overview</a></li>
+                            <li><a href="documentation.html#installation">Installation</a></li>
+                            <li><a href="documentation.html#configuration">Configuration</a></li>
+                            <li><a href="documentation.html#api-reference">API Reference</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-links-column">
+                        <h3>Resources</h3>
+                        <ul>
+                            <li><a href="user-guide.html">User Guide</a></li>
+                            <li><a href="integration.html">Integration Guide</a></li>
+                            <li><a href="dapp-guide.html" class="active">DApp Guide</a></li>
+                            <li><a href="block-explorer.html">Block Explorer</a></li>
+                            <li><a href="chat.html">AI Chat</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-links-column">
+                        <h3>Community</h3>
+                        <ul>
+                            <li><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank">GitHub</a></li>
+                            <li><a href="https://discord.gg/neo" target="_blank">Discord</a></li>
+                            <li><a href="https://neo.org" target="_blank">Neo.org</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 R3E Network. All rights reserved.</p>
+                <div class="footer-bottom-links">
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Privacy Policy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script src="js/nav.js"></script>
+</body>
+</html>

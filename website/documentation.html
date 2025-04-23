@@ -8,6 +8,7 @@
     <link rel="alternate icon" type="image/png" href="img/favicon.png">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/contract-styles.css">
+    <link rel="stylesheet" href="css/nav-styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -19,17 +20,31 @@
                 <h1>Neo N3 MCP Server</h1>
                 <span class="powered-by">Powered by R3E Network</span>
             </div>
-            <nav>
-                <ul>
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="documentation.html" class="active">Documentation</a></li>
-                    <li><a href="user-guide.html">User Guide</a></li>
-                    <li><a href="integration.html">Integration</a></li>
-                    <li><a href="dapp-guide.html">DApp Guide</a></li>
-                    <li><a href="block-explorer.html">Block Explorer</a></li>
-                    <li><a href="api-playground.html">API Playground</a></li>
-                    <li><a href="chat.html">AI Chat</a></li>
-                    <li><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank" class="github-link">GitHub</a></li>
+            <nav class="main-nav" aria-label="Main navigation">
+                <button class="menu-toggle" aria-expanded="false" aria-controls="main-menu">
+                    <i class="fas fa-bars"></i>
+                    <span class="sr-only">Toggle menu</span>
+                </button>
+                <ul id="main-menu" role="menubar">
+                    <li role="none"><a href="index.html" role="menuitem">Home</a></li>
+                    <li role="none"><a href="documentation.html" class="active" role="menuitem" aria-current="page">Documentation</a></li>
+                    <li role="none" class="dropdown">
+                        <a href="#" class="dropdown-toggle" role="menuitem" aria-haspopup="true" aria-expanded="false">Guides</a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li role="none"><a href="user-guide.html" role="menuitem">User Guide</a></li>
+                            <li role="none"><a href="integration.html" role="menuitem">Integration Guide</a></li>
+                            <li role="none"><a href="dapp-guide.html" role="menuitem">DApp Guide</a></li>
+                        </ul>
+                    </li>
+                    <li role="none" class="dropdown">
+                        <a href="#" class="dropdown-toggle" role="menuitem" aria-haspopup="true" aria-expanded="false">Tools</a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li role="none"><a href="block-explorer.html" role="menuitem">Block Explorer</a></li>
+                            <li role="none"><a href="api-playground.html" role="menuitem">API Playground</a></li>
+                            <li role="none"><a href="chat.html" role="menuitem">AI Chat</a></li>
+                        </ul>
+                    </li>
+                    <li role="none"><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank" rel="noopener noreferrer" class="github-link" role="menuitem">GitHub <span class="sr-only">(opens in new window)</span></a></li>
                 </ul>
             </nav>
         </div>
@@ -825,5 +840,6 @@ console.log(`Current block height: ${result.count}`);</code></pre>
     </footer>
 
     <script src="js/main.js"></script>
+    <script src="js/nav.js"></script>
 </body>
 </html>
