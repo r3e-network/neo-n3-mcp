@@ -3,53 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Neo N3 MCP Server enables AI assistants like Claude and ChatGPT to interact with Neo N3 blockchain through the Model Context Protocol.">
     <title>Neo N3 MCP Server | R3E Network</title>
     <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
     <link rel="alternate icon" type="image/png" href="img/favicon.png">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/accessibility.css">
+    <link rel="stylesheet" href="css/contract-styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
 </head>
 <body>
+    <a href="#main-content" class="skip-to-content">Skip to content</a>
     <header>
         <div class="container">
             <div class="logo">
                 <h1>Neo N3 MCP Server</h1>
                 <span class="powered-by">Powered by R3E Network</span>
             </div>
-            <nav>
-                <ul>
-                    <li><a href="index.html" class="active">Home</a></li>
-                    <li><a href="documentation.html">Documentation</a></li>
-                    <li><a href="user-guide.html">User Guide</a></li>
-                    <li><a href="integration.html">Integration</a></li>
-                    <li><a href="block-explorer.html">Block Explorer</a></li>
-                    <li><a href="api-playground.html">API Playground</a></li>
-                    <li><a href="chat.html">AI Chat</a></li>
-                    <li><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank" class="github-link">GitHub</a></li>
+            <nav aria-label="Main navigation">
+                <ul role="menubar">
+                    <li role="none"><a href="index.html" class="active" role="menuitem" aria-current="page">Home</a></li>
+                    <li role="none"><a href="documentation.html" role="menuitem">Documentation</a></li>
+                    <li role="none"><a href="user-guide.html" role="menuitem">User Guide</a></li>
+                    <li role="none"><a href="integration.html" role="menuitem">Integration</a></li>
+                    <li role="none"><a href="dapp-guide.html" role="menuitem">DApp Guide</a></li>
+                    <li role="none"><a href="block-explorer.html" role="menuitem">Block Explorer</a></li>
+                    <li role="none"><a href="api-playground.html" role="menuitem">API Playground</a></li>
+                    <li role="none"><a href="chat.html" role="menuitem">AI Chat</a></li>
+                    <li role="none"><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank" rel="noopener noreferrer" class="github-link" role="menuitem">GitHub <span class="sr-only">(opens in new window)</span></a></li>
                 </ul>
             </nav>
         </div>
     </header>
 
-    <section class="hero">
+    <main id="main-content">
+    <section class="hero" aria-labelledby="hero-heading">
         <div class="container">
             <div class="hero-content">
-                <h1>Neo N3 MCP Server</h1>
+                <h1 id="hero-heading">Neo N3 MCP Server</h1>
                 <p>An MCP server that enables AI assistants like Claude, ChatGPT, and others to directly interact with Neo N3 blockchain</p>
-                <div class="hero-buttons">
+                <div class="hero-buttons" role="group" aria-label="Getting started options">
                     <a href="user-guide.html#ai-integration" class="btn btn-primary">AI Integration Guide</a>
                     <a href="user-guide.html" class="btn btn-secondary">Get Started</a>
                 </div>
-                <div class="hero-stats">
+                <div class="hero-stats" aria-label="Key statistics">
                     <div class="stat-item">
-                        <span class="stat-number">6+</span>
+                        <span class="stat-number" aria-label="More than 6">6+</span>
                         <span class="stat-label">AI Platforms</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-number">30+</span>
+                        <span class="stat-number" aria-label="More than 30">30+</span>
                         <span class="stat-label">MCP Tools</span>
                     </div>
                     <div class="stat-item">
@@ -58,8 +64,8 @@
                     </div>
                 </div>
             </div>
-            <div class="hero-image">
-                <img src="img/neo-mcp-illustration.svg" alt="Neo N3 MCP Server Illustration">
+            <div class="hero-image" aria-hidden="true">
+                <img src="img/neo-mcp-illustration.svg" alt="" role="presentation">
                 <div class="floating-badge">
                     <span>AI-Ready</span>
                 </div>
@@ -67,13 +73,14 @@
         </div>
     </section>
 
-    <section class="features">
+    <section class="features" aria-labelledby="features-heading">
         <div class="container">
-            <h2>Key Features</h2>
+            <h2 id="features-heading">Key Features</h2>
             <div class="feature-grid">
                 <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+                    <div class="feature-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none" role="img" aria-hidden="true">
+                            <title>AI Assistant Icon</title>
                             <circle cx="32" cy="32" r="28" fill="url(#ai-gradient)"/>
                             <rect x="18" y="16" width="28" height="24" rx="6" stroke="white" stroke-width="2"/>
                             <path d="M32 10V16" stroke="white" stroke-width="2" stroke-linecap="round"/>
@@ -92,117 +99,160 @@
                             </defs>
                         </svg>
                     </div>
-                    <h3>AI Assistant Integration</h3>
+                    <h3 id="feature-ai">AI Assistant Integration</h3>
                     <p>Seamlessly connect Claude, ChatGPT, and other AI assistants to Neo N3 blockchain via the Model Context Protocol.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">
-                        <img src="img/icon-blockchain.svg" alt="Blockchain Icon">
+                    <div class="feature-icon" aria-hidden="true">
+                        <img src="img/icon-blockchain.svg" alt="" role="presentation">
                     </div>
-                    <h3>Neo N3 Blockchain Access</h3>
+                    <h3 id="feature-blockchain">Neo N3 Blockchain Access</h3>
                     <p>Allow AI tools to access Neo N3 blockchain features including account management, transactions, and smart contracts.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">
-                        <img src="img/icon-network.svg" alt="Network Icon">
+                    <div class="feature-icon" aria-hidden="true">
+                        <img src="img/icon-network.svg" alt="" role="presentation">
                     </div>
-                    <h3>Dual Network Support</h3>
+                    <h3 id="feature-network">Dual Network Support</h3>
                     <p>Configure your AI tools to interact with both Neo N3 mainnet and testnet environments.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">
-                        <img src="img/icon-protocol.svg" alt="Protocol Icon">
+                    <div class="feature-icon" aria-hidden="true">
+                        <img src="img/icon-protocol.svg" alt="" role="presentation">
                     </div>
-                    <h3>MCP Protocol Integration</h3>
+                    <h3 id="feature-protocol">MCP Protocol Integration</h3>
                     <p>Standardized interface for AI systems to interact with Neo N3 blockchain through the Model Context Protocol.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="interactive-tools">
+    <section class="interactive-tools" aria-labelledby="tools-heading">
         <div class="container">
-            <h2>Interactive Tools</h2>
+            <h2 id="tools-heading">Interactive Tools</h2>
             <p class="section-description">Explore and interact with the Neo N3 blockchain directly from your browser</p>
             <div class="tools-grid">
                 <div class="tool-card">
-                    <div class="tool-icon">
+                    <div class="tool-icon" aria-hidden="true">
                         <i class="fa fa-cube"></i>
                     </div>
-                    <h3>Block Explorer</h3>
+                    <h3 id="tool-explorer">Block Explorer</h3>
                     <p>Browse blockchain blocks, inspect transactions, and view network statistics in real-time</p>
-                    <a href="block-explorer.html" class="btn btn-outline">Launch Explorer</a>
+                    <a href="block-explorer.html" class="btn btn-outline" aria-describedby="tool-explorer">Launch Explorer</a>
                 </div>
                 <div class="tool-card">
-                    <div class="tool-icon">
+                    <div class="tool-icon" aria-hidden="true">
                         <i class="fa fa-code"></i>
                     </div>
-                    <h3>API Playground</h3>
+                    <h3 id="tool-api">API Playground</h3>
                     <p>Test and experiment with Neo N3 blockchain API calls and get instant results</p>
-                    <a href="api-playground.html" class="btn btn-outline">Try API</a>
+                    <a href="api-playground.html" class="btn btn-outline" aria-describedby="tool-api">Try API</a>
                 </div>
                 <div class="tool-card featured">
-                    <div class="new-badge">New</div>
-                    <div class="tool-icon pulse">
+                    <div class="new-badge" aria-label="New feature">New</div>
+                    <div class="tool-icon pulse" aria-hidden="true">
                         <i class="fa fa-robot"></i>
                     </div>
-                    <h3>AI Chat</h3>
+                    <h3 id="tool-chat">AI Chat</h3>
                     <p>Chat with an AI assistant about Neo N3 blockchain concepts and execute MCP operations directly</p>
-                    <div class="tool-feature-list">
-                        <span><i class="fa fa-check-circle"></i> Multiple AI Models</span>
-                        <span><i class="fa fa-check-circle"></i> MCP Integration</span>
-                        <span><i class="fa fa-check-circle"></i> Blockchain Operations</span>
+                    <div class="tool-feature-list" aria-label="Features included">
+                        <span><i class="fa fa-check-circle" aria-hidden="true"></i> Multiple AI Models</span>
+                        <span><i class="fa fa-check-circle" aria-hidden="true"></i> MCP Integration</span>
+                        <span><i class="fa fa-check-circle" aria-hidden="true"></i> Blockchain Operations</span>
                     </div>
-                    <a href="chat.html" class="btn btn-primary">Start Chatting</a>
+                    <a href="chat.html" class="btn btn-primary" aria-describedby="tool-chat">Start Chatting</a>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="contracts">
+    <section class="contracts" aria-labelledby="contracts-heading">
         <div class="container">
-            <h2>Supported Famous Contracts</h2>
+            <h2 id="contracts-heading">Supported Neo N3 DApps</h2>
+            <p class="section-intro">The Neo N3 MCP Server provides integration with these popular Neo N3 DApps, allowing AI assistants to interact with them through a standardized interface.</p>
             <div class="contracts-grid">
                 <div class="contract-card">
-                    <h3>NeoFS</h3>
+                    <div class="contract-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h3 id="contract-neofs">NeoFS</h3>
                     <p>Decentralized storage system on Neo N3 blockchain</p>
-                    <a href="documentation.html#neofs" class="learn-more">Learn more →</a>
+                    <div class="contract-availability">
+                        <span class="availability-badge available">Mainnet</span>
+                        <span class="availability-badge available">Testnet</span>
+                    </div>
+                    <a href="dapp-guide.html#neofs" class="learn-more" aria-describedby="contract-neofs">View DApp Guide <span aria-hidden="true">→</span><span class="sr-only"> about NeoFS</span></a>
                 </div>
                 <div class="contract-card">
-                    <h3>NeoBurger</h3>
-                    <p>Neo N3 staking service</p>
-                    <a href="documentation.html#neoburger" class="learn-more">Learn more →</a>
+                    <div class="contract-icon">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <h3 id="contract-neoburger">NeoBurger</h3>
+                    <p>Neo N3 staking service for simplified GAS generation</p>
+                    <div class="contract-availability">
+                        <span class="availability-badge available">Mainnet</span>
+                        <span class="availability-badge unavailable">Testnet</span>
+                    </div>
+                    <a href="dapp-guide.html#neoburger" class="learn-more" aria-describedby="contract-neoburger">View DApp Guide <span aria-hidden="true">→</span><span class="sr-only"> about NeoBurger</span></a>
                 </div>
                 <div class="contract-card">
-                    <h3>Flamingo</h3>
-                    <p>Neo N3 DeFi platform</p>
-                    <a href="documentation.html#flamingo" class="learn-more">Learn more →</a>
+                    <div class="contract-icon">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <h3 id="contract-flamingo">Flamingo</h3>
+                    <p>Neo N3 DeFi platform with AMM, staking, and yield farming</p>
+                    <div class="contract-availability">
+                        <span class="availability-badge available">Mainnet</span>
+                        <span class="availability-badge unavailable">Testnet</span>
+                    </div>
+                    <a href="dapp-guide.html#flamingo" class="learn-more" aria-describedby="contract-flamingo">View DApp Guide <span aria-hidden="true">→</span><span class="sr-only"> about Flamingo</span></a>
                 </div>
                 <div class="contract-card">
-                    <h3>NeoCompound</h3>
+                    <div class="contract-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3 id="contract-neocompound">NeoCompound</h3>
                     <p>Automatic yield farming protocol on Neo N3</p>
-                    <a href="documentation.html#neocompound" class="learn-more">Learn more →</a>
+                    <div class="contract-availability">
+                        <span class="availability-badge available">Mainnet</span>
+                        <span class="availability-badge unavailable">Testnet</span>
+                    </div>
+                    <a href="dapp-guide.html#neocompound" class="learn-more" aria-describedby="contract-neocompound">View DApp Guide <span aria-hidden="true">→</span><span class="sr-only"> about NeoCompound</span></a>
                 </div>
                 <div class="contract-card">
-                    <h3>GrandShare</h3>
+                    <div class="contract-icon">
+                        <i class="fas fa-share-alt"></i>
+                    </div>
+                    <h3 id="contract-grandshare">GrandShare</h3>
                     <p>Profit sharing protocol on Neo N3</p>
-                    <a href="documentation.html#grandshare" class="learn-more">Learn more →</a>
+                    <div class="contract-availability">
+                        <span class="availability-badge available">Mainnet</span>
+                        <span class="availability-badge unavailable">Testnet</span>
+                    </div>
+                    <a href="dapp-guide.html#grandshare" class="learn-more" aria-describedby="contract-grandshare">View DApp Guide <span aria-hidden="true">→</span><span class="sr-only"> about GrandShare</span></a>
                 </div>
                 <div class="contract-card">
-                    <h3>GhostMarket</h3>
-                    <p>NFT marketplace on Neo N3</p>
-                    <a href="documentation.html#ghostmarket" class="learn-more">Learn more →</a>
+                    <div class="contract-icon">
+                        <i class="fas fa-images"></i>
+                    </div>
+                    <h3 id="contract-ghostmarket">GhostMarket</h3>
+                    <p>Cross-chain NFT marketplace with Neo N3 support</p>
+                    <div class="contract-availability">
+                        <span class="availability-badge available">Mainnet</span>
+                        <span class="availability-badge unavailable">Testnet</span>
+                    </div>
+                    <a href="dapp-guide.html#ghostmarket" class="learn-more" aria-describedby="contract-ghostmarket">View DApp Guide <span aria-hidden="true">→</span><span class="sr-only"> about GhostMarket</span></a>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="quick-start">
+    <section class="quick-start" aria-labelledby="quickstart-heading">
         <div class="container">
             <div class="quick-start-content">
-                <h2>Quick Start: Add to Your AI Setup</h2>
+                <h2 id="quickstart-heading">Quick Start: Add to Your AI Setup</h2>
                 <p>Integrate Neo N3 MCP server with your AI assistant in just a few steps:</p>
-                <pre><code>
+                <pre aria-label="Installation code example"><code>
 # Install the server
 npm install @r3e/neo-n3-mcp
 
@@ -219,20 +269,20 @@ npm install @r3e/neo-n3-mcp
   }
 }
                 </code></pre>
-                <a href="user-guide.html#ai-integration" class="btn btn-primary">View Full Integration Guide</a>
+                <a href="user-guide.html#ai-integration" class="btn btn-primary" aria-describedby="quickstart-heading">View Full Integration Guide</a>
             </div>
         </div>
     </section>
 
-    <section class="cta">
+    <section class="cta" aria-labelledby="cta-heading">
         <div class="container">
-            <h2>Ready to Give Your AI Access to Neo N3 Blockchain?</h2>
+            <h2 id="cta-heading">Ready to Give Your AI Access to Neo N3 Blockchain?</h2>
             <p>Follow our integration guide to connect your AI assistant to the Neo N3 blockchain using the MCP protocol.</p>
-            <a href="user-guide.html#ai-integration" class="btn btn-primary">AI Integration Guide</a>
+            <a href="user-guide.html#ai-integration" class="btn btn-primary" aria-describedby="cta-heading">AI Integration Guide</a>
         </div>
     </section>
 
-    <footer>
+    <footer role="contentinfo">
         <div class="container">
             <div class="footer-content">
                 <div class="footer-logo">
@@ -241,8 +291,8 @@ npm install @r3e/neo-n3-mcp
                 </div>
                 <div class="footer-links">
                     <div class="footer-links-column">
-                        <h3>Documentation</h3>
-                        <ul>
+                        <h3 id="footer-docs">Documentation</h3>
+                        <ul aria-labelledby="footer-docs">
                             <li><a href="documentation.html#overview">Overview</a></li>
                             <li><a href="documentation.html#installation">Installation</a></li>
                             <li><a href="documentation.html#configuration">Configuration</a></li>
@@ -250,21 +300,23 @@ npm install @r3e/neo-n3-mcp
                         </ul>
                     </div>
                     <div class="footer-links-column">
-                        <h3>Resources</h3>
-                        <ul>
+                        <h3 id="footer-resources">Resources</h3>
+                        <ul aria-labelledby="footer-resources">
                             <li><a href="user-guide.html">User Guide</a></li>
                             <li><a href="integration.html">Integration Guide</a></li>
-                            <li><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank">GitHub</a></li>
-                            <li><a href="https://docs.neo.org/" target="_blank">Neo Documentation</a></li>
+                            <li><a href="dapp-guide.html">DApp Guide</a></li>
+                            <li><a href="chat.html">AI Chat</a></li>
+                            <li><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank" rel="noopener noreferrer">GitHub <span class="sr-only">(opens in new window)</span></a></li>
+                            <li><a href="https://docs.neo.org/" target="_blank" rel="noopener noreferrer">Neo Documentation <span class="sr-only">(opens in new window)</span></a></li>
                         </ul>
                     </div>
                     <div class="footer-links-column">
-                        <h3>Community</h3>
-                        <ul>
-                            <li><a href="https://discord.gg/R3E-Network" target="_blank">Discord</a></li>
-                            <li><a href="https://twitter.com/R3E-Network" target="_blank">Twitter</a></li>
-                            <li><a href="https://medium.com/@R3E-Network" target="_blank">Medium</a></li>
-                            <li><a href="https://t.me/R3E-Network" target="_blank">Telegram</a></li>
+                        <h3 id="footer-community">Community</h3>
+                        <ul aria-labelledby="footer-community">
+                            <li><a href="https://discord.gg/R3E-Network" target="_blank" rel="noopener noreferrer">Discord <span class="sr-only">(opens in new window)</span></a></li>
+                            <li><a href="https://twitter.com/R3E-Network" target="_blank" rel="noopener noreferrer">Twitter <span class="sr-only">(opens in new window)</span></a></li>
+                            <li><a href="https://medium.com/@R3E-Network" target="_blank" rel="noopener noreferrer">Medium <span class="sr-only">(opens in new window)</span></a></li>
+                            <li><a href="https://t.me/R3E-Network" target="_blank" rel="noopener noreferrer">Telegram <span class="sr-only">(opens in new window)</span></a></li>
                         </ul>
                     </div>
                 </div>
@@ -278,7 +330,8 @@ npm install @r3e/neo-n3-mcp
             </div>
         </div>
     </footer>
+    </main>
 
     <script src="js/main.js"></script>
 </body>
-</html> 
+</html>

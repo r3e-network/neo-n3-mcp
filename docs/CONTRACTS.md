@@ -4,14 +4,29 @@ This document provides comprehensive documentation for the famous Neo N3 contrac
 
 ## Overview
 
-The Neo N3 MCP server supports integration with several well-known Neo N3 contracts, enabling users to interact with these contracts through MCP tools. The supported contracts include:
+The Neo N3 MCP server supports integration with several well-known Neo N3 DApps and their smart contracts, enabling users to interact with these contracts through MCP tools. The supported contracts include:
 
 - **NeoFS**: Decentralized storage system on Neo N3 blockchain
-- **NeoBurger**: Neo N3 staking service
-- **Flamingo**: Neo N3 DeFi platform
+- **NeoBurger**: Neo N3 staking service for simplified GAS generation
+- **Flamingo**: Neo N3 DeFi platform with AMM, staking, and yield farming
 - **NeoCompound**: Automatic yield farming protocol on Neo N3
 - **GrandShare**: Profit sharing protocol on Neo N3
-- **GhostMarket**: NFT marketplace on Neo N3
+- **GhostMarket**: Cross-chain NFT marketplace with Neo N3 support
+
+## Contract Availability and Network Support
+
+Each contract has different availability across Neo N3 networks:
+
+| Contract | Mainnet | Testnet | Description |
+|----------|---------|---------|-------------|
+| NeoFS | ✅ | ✅ | Decentralized storage system |
+| NeoBurger | ✅ | ❌ | Neo staking service |
+| Flamingo | ✅ | ❌ | DeFi platform with AMM and staking |
+| NeoCompound | ✅ | ❌ | Automatic yield farming protocol |
+| GrandShare | ✅ | ❌ | Profit sharing protocol |
+| GhostMarket | ✅ | ❌ | NFT marketplace |
+
+> **Note**: Contracts marked as unavailable on testnet will throw an error if you attempt to use them on that network. Always check contract availability before interacting with them.
 
 ## Architecture
 
@@ -486,11 +501,55 @@ Contract script hashes are validated to ensure they conform to the expected form
 
 Input parameters for contract operations are validated to ensure they meet the required format and constraints, providing early error detection and improving security.
 
+## Error Handling and Best Practices
+
+### Error Types
+
+The contract service uses specific error types to provide clear information about failures:
+
+- **ContractError**: Thrown when a contract operation fails (e.g., execution error, invalid operation)
+- **ValidationError**: Thrown when input validation fails (e.g., invalid address format, negative amount)
+- **NetworkError**: Thrown when there are network-related issues (e.g., RPC connection failure)
+
+### Best Practices
+
+1. **Always Check Contract Availability**: Use `isContractAvailable` or `list_famous_contracts` to check if a contract is available on your target network before attempting to interact with it.
+
+2. **Handle Rate Limits**: The service implements rate limiting to prevent abuse. Handle potential rate limit errors in your application.
+
+3. **Validate Inputs Client-Side**: While the service performs server-side validation, implementing client-side validation can improve user experience by catching errors earlier.
+
+4. **Monitor Transaction Status**: After invoking a write operation, monitor the transaction status to confirm it was successfully processed on the blockchain.
+
+5. **Use Testnet First**: When developing new integrations, test on the testnet first before moving to mainnet.
+
+### Example Error Handling
+
+```javascript
+try {
+  const result = await callTool('neoburger_deposit', {
+    walletPath: '/path/to/wallet.json',
+    walletPassword: 'password',
+    network: 'mainnet'
+  });
+  console.log('Deposit successful:', result);
+} catch (error) {
+  if (error.message.includes('Contract not available')) {
+    console.error('NeoBurger contract is not available on this network');
+  } else if (error.message.includes('Rate limit')) {
+    console.error('Rate limit exceeded. Please try again later.');
+  } else {
+    console.error('Operation failed:', error.message);
+  }
+}
+```
+
 ## Test Coverage
 
 The contract implementation is covered by comprehensive tests:
 
 - `contract-validation.test.ts`: Tests contract definitions and validation
 - `contract-operations.test.ts`: Tests contract operations and error handling
+- `contract-service.test.ts`: Tests the core contract service functionality
 
-These tests ensure that all contract operations function correctly and handle edge cases properly. 
+These tests ensure that all contract operations function correctly and handle edge cases properly.

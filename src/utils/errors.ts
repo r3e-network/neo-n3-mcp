@@ -9,6 +9,7 @@ export enum ErrorType {
   TRANSACTION_ERROR = 'TransactionError',
   NETWORK_ERROR = 'NetworkError',
   RATE_LIMIT_ERROR = 'RateLimitError',
+  WALLET_ERROR = 'WalletError',
   INTERNAL_ERROR = 'InternalError'
 }
 
@@ -18,19 +19,19 @@ export enum ErrorType {
 export class NeoMcpError extends Error {
   public readonly type: ErrorType;
   public readonly details?: Record<string, any>;
-  
+
   constructor(message: string, type: ErrorType, details?: Record<string, any>) {
     super(message);
     this.name = 'NeoMcpError';
     this.type = type;
     this.details = details;
-    
+
     // Capture stack trace
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, NeoMcpError);
     }
   }
-  
+
   /**
    * Convert to a format suitable for API responses
    */
@@ -96,6 +97,16 @@ export class RateLimitError extends NeoMcpError {
 }
 
 /**
+ * Error for wallet-related issues
+ */
+export class WalletError extends NeoMcpError {
+  constructor(message: string, details?: Record<string, any>) {
+    super(message, ErrorType.WALLET_ERROR, details);
+    this.name = 'WalletError';
+  }
+}
+
+/**
  * Error for internal server issues
  */
 export class InternalError extends NeoMcpError {
@@ -103,4 +114,4 @@ export class InternalError extends NeoMcpError {
     super(message, ErrorType.INTERNAL_ERROR, details);
     this.name = 'InternalError';
   }
-} 
+}

@@ -1,17 +1,26 @@
 /**
  * Famous Neo N3 Contracts Service
- * 
+ *
  * This service provides methods to interact with well-known Neo N3 contracts
  * like NeoFS, NeoBurger, Flamingo, NeoCompound, GrandShare, and GhostMarket.
  */
 import * as neonJs from '@cityofzion/neon-js';
 import { NeoNetwork } from '../services/neo-service.js';
-import { 
-  FAMOUS_CONTRACTS, 
-  ContractDefinition, 
-  ContractNetwork 
+import {
+  FAMOUS_CONTRACTS,
+  ContractDefinition,
+  ContractNetwork
 } from './contracts.js';
-import { validateScriptHash, validateAmount } from '../utils/validation.js';
+import {
+  validateScriptHash,
+  validateAmount,
+  validateContractName,
+  validateContractOperation,
+  validateAddress,
+  validateInteger
+} from '../utils/validation.js';
+import { ContractError, NetworkError, ValidationError } from '../utils/errors.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Service for interacting with famous Neo N3 contracts
@@ -24,19 +33,24 @@ export class ContractService {
    * Create a new ContractService
    * @param rpcUrl URL of the Neo N3 RPC node
    * @param network Network type (mainnet or testnet)
+   * @throws NetworkError if RPC client initialization fails
    */
   constructor(rpcUrl: string, network: NeoNetwork = NeoNetwork.MAINNET) {
     if (!rpcUrl) {
-      throw new Error('RPC URL is required');
+      throw new NetworkError('RPC URL is required');
     }
-    
+
     try {
       this.rpcClient = new neonJs.rpc.RPCClient(rpcUrl);
+
+      // Log successful initialization
+      logger.info(`ContractService initialized for ${network}`, { rpcUrl });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Failed to initialize Neo RPC client: ${errorMessage}`);
+      logger.error(`Failed to initialize Neo RPC client`, { error: errorMessage, rpcUrl, network });
+      throw new NetworkError(`Failed to initialize Neo RPC client: ${errorMessage}`);
     }
-    
+
     this.network = network;
   }
 
@@ -44,15 +58,25 @@ export class ContractService {
    * Get a contract by name
    * @param contractName Name of the contract
    * @returns Contract definition
+   * @throws ContractError if contract not found
    */
   getContract(contractName: string): ContractDefinition {
-    const contractKey = contractName.toLowerCase();
-    const contract = FAMOUS_CONTRACTS[contractKey];
-    
+    // Get available contract names
+    const availableContracts = Object.values(FAMOUS_CONTRACTS).map(c => c.name);
+
+    // Validate contract name
+    const validContractName = validateContractName(contractName, availableContracts);
+
+    // Find the contract (case-insensitive)
+    const contractKey = validContractName.toLowerCase();
+    const contract = Object.values(FAMOUS_CONTRACTS).find(
+      c => c.name.toLowerCase() === contractKey
+    );
+
     if (!contract) {
-      throw new Error(`Contract ${contractName} not found`);
+      throw new ContractError(`Contract ${validContractName} not found`);
     }
-    
+
     return contract;
   }
 
@@ -60,21 +84,40 @@ export class ContractService {
    * Get contract script hash based on the current network
    * @param contractName Name of the contract
    * @returns Script hash for the current network
+   * @throws ContractError if contract not available on current network
    */
   getContractScriptHash(contractName: string): string {
-    const contract = this.getContract(contractName);
-    
-    const networkKey = this.network === NeoNetwork.MAINNET 
-      ? ContractNetwork.MAINNET 
-      : ContractNetwork.TESTNET;
-    
-    const scriptHash = contract.scriptHash[networkKey];
-    
-    if (!scriptHash) {
-      throw new Error(`Contract ${contractName} is not available on ${this.network}`);
+    try {
+      // Get the contract definition
+      const contract = this.getContract(contractName);
+
+      // Determine the network key
+      const networkKey = this.network === NeoNetwork.MAINNET
+        ? ContractNetwork.MAINNET
+        : ContractNetwork.TESTNET;
+
+      // Get the script hash for the current network
+      const scriptHash = contract.scriptHash[networkKey];
+
+      if (!scriptHash) {
+        throw new ContractError(
+          `Contract ${contract.name} is not available on ${this.network}. ` +
+          `It's only available on ${Object.keys(contract.scriptHash).join(', ')}.`
+        );
+      }
+
+      // Validate and normalize the script hash
+      return validateScriptHash(scriptHash);
+    } catch (error) {
+      // If it's already a ContractError, rethrow it
+      if (error instanceof ContractError) {
+        throw error;
+      }
+
+      // Otherwise, wrap it in a ContractError
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new ContractError(`Failed to get script hash for ${contractName}: ${errorMessage}`);
     }
-    
-    return scriptHash;
   }
 
   /**
@@ -83,31 +126,66 @@ export class ContractService {
    * @param operation Operation name
    * @param args Arguments for the operation
    * @returns Operation result
+   * @throws ContractError if contract execution fails
    */
   async queryContract(contractName: string, operation: string, args: any[] = []): Promise<any> {
     try {
+      // Get the contract definition
+      const contract = this.getContract(contractName);
+
+      // Get available operations
+      const availableOperations = Object.values(contract.operations).map(op => op.name);
+
+      // Validate operation
+      const validOperation = validateContractOperation(operation, availableOperations);
+
+      // Get the script hash
       const scriptHash = this.getContractScriptHash(contractName);
-      
+
+      // Log the query
+      logger.info(`Querying contract ${contractName}`, {
+        operation: validOperation,
+        args: JSON.stringify(args),
+        network: this.network
+      });
+
       // Create a script to execute the operation
       const script = neonJs.sc.createScript({
         scriptHash,
-        operation,
+        operation: validOperation,
         args
       });
-      
+
       // Execute the script through the RPC client
       const result = await this.rpcClient.invokeScript(
         neonJs.u.HexString.fromHex(script)
       );
-      
+
       if (result.state === 'FAULT') {
-        throw new Error(`Contract execution failed: ${result.exception || 'Unknown error'}`);
+        throw new ContractError(
+          `Contract execution failed: ${result.exception || 'Unknown error'}`,
+          { contractName, operation: validOperation, args }
+        );
       }
-      
+
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Failed to query contract ${contractName}: ${errorMessage}`);
+      // If it's already a ContractError, rethrow it
+      if (error instanceof ContractError) {
+        throw error;
+      }
+
+      // If it's a network error, wrap it in a NetworkError
+      if (error instanceof Error && error.message.includes('ECONNREFUSED')) {
+        throw new NetworkError(`Failed to connect to Neo N3 node: ${error.message}`);
+      }
+
+      // Otherwise, wrap it in a ContractError
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new ContractError(
+        `Failed to query contract ${contractName}: ${errorMessage}`,
+        { contractName, operation, args }
+      );
     }
   }
 
@@ -119,6 +197,7 @@ export class ContractService {
    * @param args Arguments for the operation
    * @param additionalScriptAttributes Additional script attributes
    * @returns Transaction hash
+   * @throws ContractError if contract execution fails
    */
   async invokeContract(
     fromAccount: any,
@@ -128,20 +207,41 @@ export class ContractService {
     additionalScriptAttributes: any[] = []
   ): Promise<string> {
     try {
+      // Get the contract definition
+      const contract = this.getContract(contractName);
+
+      // Get available operations
+      const availableOperations = Object.values(contract.operations).map(op => op.name);
+
+      // Validate operation
+      const validOperation = validateContractOperation(operation, availableOperations);
+
+      // Get the script hash
       const scriptHash = this.getContractScriptHash(contractName);
-      
+
       // Validate account
       if (!fromAccount || !fromAccount.address) {
-        throw new Error('Invalid account: missing address');
+        throw new ContractError('Invalid account: missing address');
       }
-      
+
+      // Validate address
+      validateAddress(fromAccount.address);
+
+      // Log the invocation
+      logger.info(`Invoking contract ${contractName}`, {
+        operation: validOperation,
+        args: JSON.stringify(args),
+        network: this.network,
+        address: fromAccount.address
+      });
+
       // Create a script to execute the operation
       const script = neonJs.sc.createScript({
         scriptHash,
-        operation,
+        operation: validOperation,
         args
       });
-      
+
       // Create transaction intent
       const txIntent = {
         script,
@@ -155,48 +255,115 @@ export class ContractService {
           },
         ],
       };
-      
+
       // Get transaction information from RPC
       const tx = await this.rpcClient.invokeScript(
         neonJs.u.HexString.fromHex(script),
         txIntent.signers
       );
-      
+
+      // Check for execution errors
+      if (tx.state === 'FAULT') {
+        throw new ContractError(
+          `Contract execution failed: ${tx.exception || 'Unknown error'}`,
+          { contractName, operation: validOperation, args }
+        );
+      }
+
       // Sign the transaction
       const transaction = new neonJs.tx.Transaction(tx);
       transaction.sign(fromAccount);
-      
+
       // Send the transaction
       const txid = await this.rpcClient.sendRawTransaction(
         transaction.serialize(true)
       );
-      
+
       return txid;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Failed to invoke contract ${contractName}: ${errorMessage}`);
+      // If it's already a ContractError, rethrow it
+      if (error instanceof ContractError) {
+        throw error;
+      }
+
+      // If it's a network error, wrap it in a NetworkError
+      if (error instanceof Error && error.message.includes('ECONNREFUSED')) {
+        throw new NetworkError(`Failed to connect to Neo N3 node: ${error.message}`);
+      }
+
+      // Otherwise, wrap it in a ContractError
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new ContractError(
+        `Failed to invoke contract ${contractName}: ${errorMessage}`,
+        { contractName, operation, args }
+      );
     }
   }
 
   /**
    * List all supported famous contracts
-   * @returns Array of contract names and descriptions
+   * @returns Array of contract details including availability on current network
    */
-  listSupportedContracts(): Array<{ name: string, description: string }> {
-    return Object.values(FAMOUS_CONTRACTS).map(contract => ({
-      name: contract.name,
-      description: contract.description
-    }));
+  listSupportedContracts(): Array<{
+    name: string,
+    description: string,
+    available: boolean,
+    operationCount: number,
+    network: NeoNetwork
+  }> {
+    try {
+      return Object.values(FAMOUS_CONTRACTS).map(contract => {
+        const contractName = contract.name;
+        const isAvailable = this.isContractAvailable(contractName);
+        const operationCount = Object.keys(contract.operations).length;
+
+        return {
+          name: contractName,
+          description: contract.description,
+          available: isAvailable,
+          operationCount,
+          network: this.network
+        };
+      });
+    } catch (error) {
+      // Log the error but return an empty array
+      logger.error(`Error listing supported contracts`, {
+        error: error instanceof Error ? error.message : String(error),
+        network: this.network
+      });
+      return [];
+    }
   }
 
   /**
    * Get details about a contract's operations
    * @param contractName Name of the contract
    * @returns Contract operations details
+   * @throws ContractError if contract not found
    */
   getContractOperations(contractName: string): any {
-    const contract = this.getContract(contractName);
-    return contract.operations;
+    try {
+      // Get the contract definition
+      const contract = this.getContract(contractName);
+
+      // Return the operations with additional metadata
+      return {
+        operations: contract.operations,
+        count: Object.keys(contract.operations).length,
+        contractName: contract.name,
+        network: this.network,
+        available: this.isContractAvailable(contractName)
+      };
+    } catch (error) {
+      // If it's already a ContractError, rethrow it
+      if (error instanceof ContractError) {
+        throw error;
+      }
+
+      // Otherwise, wrap it in a ContractError
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new ContractError(`Failed to get contract operations: ${errorMessage}`);
+    }
   }
 
   /**
@@ -206,9 +373,36 @@ export class ContractService {
    */
   isContractAvailable(contractName: string): boolean {
     try {
-      this.getContractScriptHash(contractName);
-      return true;
+      // Get available contract names
+      const availableContracts = Object.values(FAMOUS_CONTRACTS).map(c => c.name);
+
+      // Validate contract name without throwing
+      if (!contractName || typeof contractName !== 'string') {
+        return false;
+      }
+
+      // Find the contract (case-insensitive)
+      const contractKey = contractName.toLowerCase().trim();
+      const contract = Object.values(FAMOUS_CONTRACTS).find(
+        c => c.name.toLowerCase() === contractKey
+      );
+
+      if (!contract) {
+        return false;
+      }
+
+      // Check if the contract is available on the current network
+      const networkKey = this.network === NeoNetwork.MAINNET
+        ? ContractNetwork.MAINNET
+        : ContractNetwork.TESTNET;
+
+      return !!contract.scriptHash[networkKey];
     } catch (error) {
+      // Log the error but return false
+      logger.debug(`Error checking contract availability: ${contractName}`, {
+        error: error instanceof Error ? error.message : String(error),
+        network: this.network
+      });
       return false;
     }
   }
@@ -247,7 +441,7 @@ export class ContractService {
   async withdrawNeoFromNeoBurger(fromAccount: any, amount: string | number): Promise<string> {
     // Validate amount
     const validAmount = validateAmount(amount);
-    
+
     return this.invokeContract(
       fromAccount,
       'neoburger',
@@ -280,7 +474,7 @@ export class ContractService {
   async stakeFlamingo(fromAccount: any, amount: string | number): Promise<string> {
     // Validate amount
     const validAmount = validateAmount(amount);
-    
+
     return this.invokeContract(
       fromAccount,
       'flamingo',
@@ -295,7 +489,7 @@ export class ContractService {
   async unstakeFlamingo(fromAccount: any, amount: string | number): Promise<string> {
     // Validate amount
     const validAmount = validateAmount(amount);
-    
+
     return this.invokeContract(
       fromAccount,
       'flamingo',
@@ -320,7 +514,7 @@ export class ContractService {
     // Validate parameters
     const validAmount = validateAmount(amount);
     const validAssetId = validateScriptHash(assetId);
-    
+
     return this.invokeContract(
       fromAccount,
       'neocompound',
@@ -337,7 +531,7 @@ export class ContractService {
     // Validate parameters
     const validAmount = validateAmount(amount);
     const validAssetId = validateScriptHash(assetId);
-    
+
     return this.invokeContract(
       fromAccount,
       'neocompound',
@@ -353,7 +547,7 @@ export class ContractService {
   async getNeoCompoundBalance(address: string, assetId: string): Promise<any> {
     // Validate parameters
     const validAssetId = validateScriptHash(assetId);
-    
+
     return this.queryContract(
       'neocompound',
       FAMOUS_CONTRACTS.neocompound.operations.getBalance.name,
@@ -365,48 +559,67 @@ export class ContractService {
   }
 
   // GrandShare specific methods
-  async depositToGrandShare(fromAccount: any, poolId: number, amount: string | number): Promise<string> {
+  async depositToGrandShare(fromAccount: any, poolId: number | string, amount: string | number): Promise<string> {
     // Validate parameters
     const validAmount = validateAmount(amount);
-    
+    const validPoolId = validateInteger(poolId);
+
+    // Validate address
+    validateAddress(fromAccount.address);
+
     return this.invokeContract(
       fromAccount,
       'grandshare',
       FAMOUS_CONTRACTS.grandshare.operations.deposit.name,
       [
         neonJs.sc.ContractParam.hash160(fromAccount.address),
-        neonJs.sc.ContractParam.integer(poolId),
+        neonJs.sc.ContractParam.integer(validPoolId),
         neonJs.sc.ContractParam.integer(validAmount)
       ]
     );
   }
 
-  async withdrawFromGrandShare(fromAccount: any, poolId: number, amount: string | number): Promise<string> {
+  async withdrawFromGrandShare(fromAccount: any, poolId: number | string, amount: string | number): Promise<string> {
     // Validate parameters
     const validAmount = validateAmount(amount);
-    
+    const validPoolId = validateInteger(poolId);
+
+    // Validate address
+    validateAddress(fromAccount.address);
+
     return this.invokeContract(
       fromAccount,
       'grandshare',
       FAMOUS_CONTRACTS.grandshare.operations.withdraw.name,
       [
         neonJs.sc.ContractParam.hash160(fromAccount.address),
-        neonJs.sc.ContractParam.integer(poolId),
+        neonJs.sc.ContractParam.integer(validPoolId),
         neonJs.sc.ContractParam.integer(validAmount)
       ]
     );
   }
 
-  async getGrandSharePoolDetails(poolId: number): Promise<any> {
+  async getGrandSharePoolDetails(poolId: number | string): Promise<any> {
+    // Validate parameters
+    const validPoolId = validateInteger(poolId);
+
     return this.queryContract(
       'grandshare',
       FAMOUS_CONTRACTS.grandshare.operations.getPoolDetails.name,
-      [neonJs.sc.ContractParam.integer(poolId)]
+      [neonJs.sc.ContractParam.integer(validPoolId)]
     );
   }
 
   // GhostMarket specific methods
   async createGhostMarketNFT(fromAccount: any, tokenURI: string, properties: any[]): Promise<string> {
+    // Validate address
+    validateAddress(fromAccount.address);
+
+    // Validate tokenURI (basic validation)
+    if (!tokenURI || typeof tokenURI !== 'string') {
+      throw new ValidationError('Token URI must be a non-empty string');
+    }
+
     return this.invokeContract(
       fromAccount,
       'ghostmarket',
@@ -419,40 +632,53 @@ export class ContractService {
     );
   }
 
-  async listGhostMarketNFT(fromAccount: any, tokenId: number, price: string | number, paymentToken: string): Promise<string> {
+  async listGhostMarketNFT(fromAccount: any, tokenId: number | string, price: string | number, paymentToken: string): Promise<string> {
     // Validate parameters
+    const validTokenId = validateInteger(tokenId);
     const validPrice = validateAmount(price);
     const validPaymentToken = validateScriptHash(paymentToken);
-    
+
+    // Validate address
+    validateAddress(fromAccount.address);
+
     return this.invokeContract(
       fromAccount,
       'ghostmarket',
       FAMOUS_CONTRACTS.ghostmarket.operations.listNFT.name,
       [
-        neonJs.sc.ContractParam.integer(tokenId),
+        neonJs.sc.ContractParam.integer(validTokenId),
         neonJs.sc.ContractParam.integer(validPrice),
         neonJs.sc.ContractParam.hash160(validPaymentToken)
       ]
     );
   }
 
-  async buyGhostMarketNFT(fromAccount: any, tokenId: number): Promise<string> {
+  async buyGhostMarketNFT(fromAccount: any, tokenId: number | string): Promise<string> {
+    // Validate parameters
+    const validTokenId = validateInteger(tokenId);
+
+    // Validate address
+    validateAddress(fromAccount.address);
+
     return this.invokeContract(
       fromAccount,
       'ghostmarket',
       FAMOUS_CONTRACTS.ghostmarket.operations.buyNFT.name,
       [
-        neonJs.sc.ContractParam.integer(tokenId),
+        neonJs.sc.ContractParam.integer(validTokenId),
         neonJs.sc.ContractParam.hash160(fromAccount.address)
       ]
     );
   }
 
-  async getGhostMarketTokenInfo(tokenId: number): Promise<any> {
+  async getGhostMarketTokenInfo(tokenId: number | string): Promise<any> {
+    // Validate parameters
+    const validTokenId = validateInteger(tokenId);
+
     return this.queryContract(
       'ghostmarket',
       FAMOUS_CONTRACTS.ghostmarket.operations.getTokenInfo.name,
-      [neonJs.sc.ContractParam.integer(tokenId)]
+      [neonJs.sc.ContractParam.integer(validTokenId)]
     );
   }
 
@@ -463,4 +689,70 @@ export class ContractService {
   getNetwork(): NeoNetwork {
     return this.network;
   }
-} 
+
+  /**
+   * Invoke a read-only contract method
+   * @param contractName Name of the contract
+   * @param operation Operation name
+   * @param args Arguments for the operation
+   * @returns Operation result
+   * @throws ContractError if contract execution fails
+   */
+  async invokeReadContract(
+    contractName: string,
+    operation: string,
+    args: any[] = []
+  ): Promise<any> {
+    try {
+      // Use the queryContract method to execute the read-only operation
+      return await this.queryContract(contractName, operation, args);
+    } catch (error) {
+      // If it's already a ContractError, rethrow it
+      if (error instanceof ContractError) {
+        throw error;
+      }
+
+      // Otherwise, wrap it in a ContractError
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new ContractError(
+        `Failed to invoke read contract ${contractName}: ${errorMessage}`,
+        { contractName, operation, args }
+      );
+    }
+  }
+
+  /**
+   * Invoke a write contract method that requires signing
+   * @param fromAccount Account to sign the transaction
+   * @param contractName Name of the contract
+   * @param operation Operation name
+   * @param args Arguments for the operation
+   * @returns Transaction hash
+   * @throws ContractError if contract execution fails
+   */
+  async invokeWriteContract(
+    fromAccount: any,
+    contractName: string,
+    operation: string,
+    args: any[] = []
+  ): Promise<{ txid: string }> {
+    try {
+      // Use the invokeContract method to execute the write operation
+      const txid = await this.invokeContract(fromAccount, contractName, operation, args);
+
+      return { txid };
+    } catch (error) {
+      // If it's already a ContractError, rethrow it
+      if (error instanceof ContractError) {
+        throw error;
+      }
+
+      // Otherwise, wrap it in a ContractError
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new ContractError(
+        `Failed to invoke write contract ${contractName}: ${errorMessage}`,
+        { contractName, operation, args }
+      );
+    }
+  }
+}

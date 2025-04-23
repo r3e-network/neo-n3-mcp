@@ -7,6 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
     <link rel="alternate icon" type="image/png" href="img/favicon.png">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/contract-styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -24,8 +25,10 @@
                     <li><a href="documentation.html" class="active">Documentation</a></li>
                     <li><a href="user-guide.html">User Guide</a></li>
                     <li><a href="integration.html">Integration</a></li>
+                    <li><a href="dapp-guide.html">DApp Guide</a></li>
                     <li><a href="block-explorer.html">Block Explorer</a></li>
                     <li><a href="api-playground.html">API Playground</a></li>
+                    <li><a href="chat.html">AI Chat</a></li>
                     <li><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank" class="github-link">GitHub</a></li>
                 </ul>
             </nav>
@@ -65,6 +68,7 @@
                             <li><a href="#ghostmarket">GhostMarket</a></li>
                         </ul>
                     </li>
+                    <li><a href="dapp-guide.html">DApp Guide</a></li>
                     <li><a href="#troubleshooting">Troubleshooting</a></li>
                 </ul>
             </div>
@@ -74,10 +78,10 @@
             <section id="overview">
                 <h1>Neo N3 MCP Server Documentation</h1>
                 <p>The Neo N3 MCP Server is an implementation of the Model Context Protocol (MCP) that provides standardized access to Neo N3 blockchain features and famous smart contracts. This server allows AI systems to interact with the Neo N3 blockchain through a consistent interface, enabling a wide range of blockchain operations without requiring deep blockchain knowledge.</p>
-                
+
                 <h2>What is MCP?</h2>
                 <p>The Model Context Protocol (MCP) is a standardized protocol for AI systems to interact with external tools and resources. It provides a consistent interface for AI models to access capabilities outside of their training data, including blockchain operations, file systems, and more.</p>
-                
+
                 <h2>Key Features</h2>
                 <ul>
                     <li><strong>Neo N3 Blockchain Access:</strong> Direct access to Neo N3 blockchain features, including block queries, transaction creation, and more.</li>
@@ -92,13 +96,13 @@
                 <h2>Installation</h2>
                 <p>You can install the Neo N3 MCP Server using npm:</p>
                 <pre><code>npm install @r3e/neo-n3-mcp</code></pre>
-                
+
                 <h3>Requirements</h3>
                 <ul>
                     <li>Node.js v14 or later</li>
                     <li>npm v6 or later</li>
                 </ul>
-                
+
                 <h3>Global Installation</h3>
                 <p>For global installation, which allows running the server from any directory:</p>
                 <pre><code>npm install -g @r3e/neo-n3-mcp</code></pre>
@@ -107,7 +111,7 @@
             <section id="configuration">
                 <h2>Configuration</h2>
                 <p>The Neo N3 MCP Server can be configured through environment variables or a configuration file.</p>
-                
+
                 <h3>Environment Variables</h3>
                 <table class="config-table">
                     <thead>
@@ -140,7 +144,7 @@
                         </tr>
                     </tbody>
                 </table>
-                
+
                 <h3>Configuration File</h3>
                 <p>You can also provide a configuration file at <code>~/.neo-n3-mcp/config.json</code>:</p>
                 <pre><code>{
@@ -155,7 +159,7 @@
             <section id="mcp-tools">
                 <h2>MCP Tools</h2>
                 <p>The Neo N3 MCP Server provides a variety of tools for interacting with the Neo N3 blockchain.</p>
-                
+
                 <section id="blockchain-tools">
                     <h3>Blockchain Tools</h3>
                     <table class="tool-table">
@@ -193,7 +197,7 @@
                         </tbody>
                     </table>
                 </section>
-                
+
                 <section id="contract-tools">
                     <h3>Contract Tools</h3>
                     <table class="tool-table">
@@ -222,10 +226,10 @@
                             </tr>
                         </tbody>
                     </table>
-                    
+
                     <h4>Famous Contract Specific Tools</h4>
                     <p>For each famous contract, specific tools are available:</p>
-                    
+
                     <details>
                         <summary><strong>NeoFS Tools</strong></summary>
                         <table class="tool-table">
@@ -241,7 +245,7 @@
                             </tbody>
                         </table>
                     </details>
-                    
+
                     <details>
                         <summary><strong>NeoBurger Tools</strong></summary>
                         <table class="tool-table">
@@ -265,7 +269,7 @@
                             </tbody>
                         </table>
                     </details>
-                    
+
                     <details>
                         <summary><strong>Flamingo Tools</strong></summary>
                         <table class="tool-table">
@@ -285,7 +289,7 @@
                             </tbody>
                         </table>
                     </details>
-                    
+
                     <details>
                         <summary><strong>NeoCompound Tools</strong></summary>
                         <table class="tool-table">
@@ -305,7 +309,7 @@
                             </tbody>
                         </table>
                     </details>
-                    
+
                     <details>
                         <summary><strong>GrandShare Tools</strong></summary>
                         <table class="tool-table">
@@ -325,7 +329,7 @@
                             </tbody>
                         </table>
                     </details>
-                    
+
                     <details>
                         <summary><strong>GhostMarket Tools</strong></summary>
                         <table class="tool-table">
@@ -350,7 +354,7 @@
                         </table>
                     </details>
                 </section>
-                
+
                 <section id="wallet-tools">
                     <h3>Wallet Tools</h3>
                     <table class="tool-table">
@@ -385,7 +389,7 @@
             <section id="api-reference">
                 <h2>API Reference</h2>
                 <p>The Neo N3 MCP Server follows the MCP protocol for API endpoints. Here are the main endpoints:</p>
-                
+
                 <h3>Tool Management</h3>
                 <table class="api-table">
                     <thead>
@@ -408,7 +412,7 @@
                         </tr>
                     </tbody>
                 </table>
-                
+
                 <h3>Resource Management</h3>
                 <table class="api-table">
                     <thead>
@@ -431,10 +435,10 @@
                         </tr>
                     </tbody>
                 </table>
-                
+
                 <h3>Request and Response Format</h3>
                 <p>All API endpoints use JSON for request and response bodies. Here's an example of calling a tool:</p>
-                
+
                 <h4>Request</h4>
                 <pre><code>{
   "jsonrpc": "2.0",
@@ -447,7 +451,7 @@
   },
   "id": 1
 }</code></pre>
-                
+
                 <h4>Response</h4>
                 <pre><code>{
   "jsonrpc": "2.0",
@@ -464,11 +468,11 @@
             <section id="mcp-operations">
                 <h2>MCP Operation Reference</h2>
                 <p>This section provides detailed documentation for each MCP operation supported by the Neo N3 MCP Server.</p>
-                
+
                 <section id="get_blockchain_info_op">
                     <h3>get_blockchain_info</h3>
                     <p>Returns general information about the Neo N3 blockchain.</p>
-                    
+
                     <h4>Parameters</h4>
                     <table>
                         <thead>
@@ -488,7 +492,7 @@
                             </tr>
                         </tbody>
                     </table>
-                    
+
                     <h4>Returns</h4>
                     <p>Returns an object with information about the blockchain:</p>
                     <pre><code>{
@@ -498,11 +502,11 @@
   "version": "3.0.0"
 }</code></pre>
                 </section>
-                
+
                 <section id="get_block_count_op">
                     <h3>get_block_count</h3>
                     <p>Returns the current block height of the Neo N3 blockchain.</p>
-                    
+
                     <h4>Parameters</h4>
                     <table>
                         <thead>
@@ -522,36 +526,40 @@
                             </tr>
                         </tbody>
                     </table>
-                    
+
                     <h4>Returns</h4>
                     <p>Returns an object with information about the current block height:</p>
                     <pre><code>{
   "count": 5123456,  // Current block height
   "network": "mainnet"  // Network that was queried
 }</code></pre>
-                    
+
                     <h4>Example</h4>
                     <pre><code>// Using MCP client
 const result = await client.callTool('get_block_count', {
   network: 'mainnet'
 });
 console.log(`Current block height: ${result.count}`);</code></pre>
-                    
+
                     <h4>Neo RPC Method</h4>
                     <p>This operation calls the Neo N3 <code>getblockcount</code> RPC method. For more information, see the <a href="https://docs.neo.org/docs/n3/reference/rpc/getblockcount.html" target="_blank">Neo documentation</a>.</p>
                 </section>
-                
+
                 <!-- Additional operations can be documented here -->
             </section>
 
             <section id="contract-reference">
                 <h2>Contract Reference</h2>
-                <p>The Neo N3 MCP Server supports various famous Neo N3 contracts. Here's a reference for each contract:</p>
-                
+                <p>The Neo N3 MCP Server supports various famous Neo N3 contracts. Here's a reference for each contract. For more detailed information, see the <a href="dapp-guide.html">DApp Guide</a>.</p>
+
                 <section id="neofs">
                     <h3>NeoFS</h3>
-                    <p>NeoFS is a decentralized storage system on the Neo N3 blockchain.</p>
-                    
+                    <p>NeoFS is a decentralized storage system on the Neo N3 blockchain. It allows users to store and retrieve data in a decentralized manner, with data integrity guaranteed by the blockchain.</p>
+
+                    <div class="info-box">
+                        <p><strong>Use Cases:</strong> File storage, content distribution, data backup, decentralized websites</p>
+                    </div>
+
                     <h4>Contract Information</h4>
                     <table class="contract-table">
                         <tbody>
@@ -567,9 +575,15 @@ console.log(`Current block height: ${result.count}`);</code></pre>
                                 <th>Testnet Script Hash</th>
                                 <td>0xccca29443855a1c455d72a3318cf605debb9e384</td>
                             </tr>
+                            <tr>
+                                <th>Available on</th>
+                                <td>Mainnet, Testnet</td>
+                            </tr>
                         </tbody>
                     </table>
-                    
+
+                    <p><a href="dapp-guide.html#neofs" class="btn btn-secondary">View NeoFS Guide</a></p>
+
                     <h4>Operations</h4>
                     <table class="operation-table">
                         <thead>
@@ -616,7 +630,7 @@ console.log(`Current block height: ${result.count}`);</code></pre>
                 <section id="neoburger">
                     <h3>NeoBurger</h3>
                     <p>NeoBurger is a Neo N3 staking service.</p>
-                    
+
                     <h4>Contract Information</h4>
                     <table class="contract-table">
                         <tbody>
@@ -630,7 +644,7 @@ console.log(`Current block height: ${result.count}`);</code></pre>
                             </tr>
                         </tbody>
                     </table>
-                    
+
                     <h4>Operations</h4>
                     <table class="operation-table">
                         <thead>
@@ -686,7 +700,7 @@ console.log(`Current block height: ${result.count}`);</code></pre>
             <section id="troubleshooting">
                 <h2>Troubleshooting</h2>
                 <p>Common issues and their solutions:</p>
-                
+
                 <details>
                     <summary><strong>Connection Issues</strong></summary>
                     <p>If you're experiencing connection issues to the Neo N3 blockchain:</p>
@@ -696,7 +710,7 @@ console.log(`Current block height: ${result.count}`);</code></pre>
                         <li>Try a different RPC provider</li>
                     </ul>
                 </details>
-                
+
                 <details>
                     <summary><strong>Wallet Access Issues</strong></summary>
                     <p>If you're having trouble accessing wallets:</p>
@@ -706,7 +720,7 @@ console.log(`Current block height: ${result.count}`);</code></pre>
                         <li>Ensure the wallet format is supported (NEP-6, WIF)</li>
                     </ul>
                 </details>
-                
+
                 <details>
                     <summary><strong>Contract Interaction Issues</strong></summary>
                     <p>If contract interactions are failing:</p>
@@ -716,7 +730,7 @@ console.log(`Current block height: ${result.count}`);</code></pre>
                         <li>Ensure you have sufficient GAS for the transaction</li>
                     </ul>
                 </details>
-                
+
                 <h3>Common Error Codes</h3>
                 <table class="error-table">
                     <thead>
@@ -749,7 +763,7 @@ console.log(`Current block height: ${result.count}`);</code></pre>
                         </tr>
                     </tbody>
                 </table>
-                
+
                 <h3>Getting Support</h3>
                 <p>If you need additional help, you can:</p>
                 <ul>
@@ -783,6 +797,8 @@ console.log(`Current block height: ${result.count}`);</code></pre>
                         <ul>
                             <li><a href="user-guide.html">User Guide</a></li>
                             <li><a href="integration.html">Integration Guide</a></li>
+                            <li><a href="dapp-guide.html">DApp Guide</a></li>
+                            <li><a href="chat.html">AI Chat</a></li>
                             <li><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank">GitHub</a></li>
                             <li><a href="https://docs.neo.org/" target="_blank">Neo Documentation</a></li>
                         </ul>
@@ -810,4 +826,4 @@ console.log(`Current block height: ${result.count}`);</code></pre>
 
     <script src="js/main.js"></script>
 </body>
-</html> 
+</html>

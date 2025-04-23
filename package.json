@@ -3,7 +3,6 @@
   "version": "1.1.0",
   "description": "MCP server for Neo N3 blockchain integration",
   "main": "dist/index.js",
-  "type": "module",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -45,10 +44,13 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@types/jest": "^29.5.0",
+    "@babel/preset-env": "^7.26.9",
+    "@babel/preset-typescript": "^7.27.0",
+    "@types/jest": "^29.5.14",
     "@types/node": "^18.15.11",
-    "jest": "^29.5.0",
-    "ts-jest": "^29.1.0",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.3.2",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.4"
   },

@@ -345,7 +345,7 @@ neo://testnet/address/{address}/balance
 
 ## Testing
 
-The Neo N3 MCP server includes comprehensive tests to ensure its functionality. There are two primary ways to run tests:
+The Neo N3 MCP server includes comprehensive tests to ensure its functionality. There are multiple ways to run tests:
 
 ### Using Jest (TypeScript Tests)
 
@@ -355,28 +355,46 @@ Jest tests provide comprehensive testing with proper mocking:
 # Install dependencies first
 npm install
 
-# Run Jest tests
+# Run all Jest tests
 npm test
+
+# Run specific test files
+npx jest tests/utils/validation.test.ts
+npx jest tests/contracts/contract-service.test.ts
 ```
 
 The test suite includes tests for:
-- Blockchain information retrieval
-- Block and transaction data access
-- Account balance queries
-- Wallet creation and import
-- Asset transfers
-- Smart contract invocation
+- Core Services:
+  - Neo service (blockchain interactions)
+  - Contract service (smart contract interactions)
+- Utilities:
+  - Validation (input parameter validation)
+  - Error handling (standardized error responses)
+  - Cache (in-memory caching with TTL)
+  - Rate limiting (request throttling)
+- Website Components:
+  - Main page functionality
+  - Documentation page navigation
+  - API playground interactions
+  - Block explorer functionality
+  - Chat interface
 
 ### Using Simple Test Runner (JavaScript)
 
-A simplified JavaScript test runner is also available for quick testing:
+Simplified JavaScript test runners are also available for quick testing:
 
 ```bash
 # Run the simplified test
 node tests/simple-test.js
+
+# Run network test
+node tests/network-test.js
+
+# Run transaction status test
+node tests/transaction-status-test.js
 ```
 
-This test covers the core API functionality without requiring TypeScript compilation.
+These tests cover core API functionality without requiring TypeScript compilation.
 
 ## Development and Contributing
 
