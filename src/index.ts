@@ -2389,9 +2389,8 @@ export async function handleMcpRequest(request: any) {
       switch (req.name) {
         case 'get_blockchain_info':
           const neoService = server['getNeoService'](networkParam);
-          const height = await neoService.getBlockchainHeight();
-          const network = neoService.getNetwork();
-          return createSuccessResponse({ height, network });
+          const blockchainInfo = await neoService.getBlockchainInfo();
+          return createSuccessResponse(blockchainInfo);
 
         case 'get_block':
           if (!req.arguments?.hashOrHeight) {
