@@ -1,21 +1,44 @@
-/* Neo N3 MCP Server - Consistent Navigation Bar Styles */
+/* Neo N3 MCP Server - Enhanced Navigation Bar Styles */
 
+/* Main navbar styles */
 .navbar-neo {
   background-color: #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  padding: 0.75rem 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 0;
   transition: all 0.3s ease;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1030;
+  height: 80px;
+  display: flex;
+  align-items: center;
 }
 
 .navbar-neo.scrolled {
-  padding: 0.5rem 0;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  height: 65px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
 }
 
+/* Container styles */
+.navbar-neo .container {
+  max-width: 1400px;
+  width: 100%;
+  padding: 0 2rem;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Brand styles */
 .navbar-brand {
   display: flex;
   flex-direction: column;
   padding: 0;
+  margin-right: 3rem;
 }
 
 .navbar-brand h1 {
@@ -23,23 +46,58 @@
   margin-bottom: 0;
   font-weight: 600;
   color: #222939;
+  letter-spacing: -0.02em;
 }
 
 .navbar-brand h1 span {
   color: #6d5acd;
+  position: relative;
+}
+
+.navbar-brand h1 span::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #6d5acd, #9c8dff);
+  opacity: 0.7;
 }
 
 .navbar-brand small {
   font-size: 0.75rem;
   opacity: 0.7;
+  margin-top: 2px;
+}
+
+/* Navbar collapse */
+.navbar-collapse {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-grow: 1;
+}
+
+/* Nav items and links */
+.navbar-nav {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.navbar-neo .navbar-nav .nav-item {
+  margin: 0 0.25rem;
 }
 
 .navbar-neo .navbar-nav .nav-link {
   color: #222939;
   font-weight: 500;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   position: relative;
   transition: all 0.3s ease;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
 }
 
 .navbar-neo .navbar-nav .nav-link:hover,
@@ -50,14 +108,15 @@
 .navbar-neo .navbar-nav .nav-link::after {
   content: '';
   position: absolute;
-  bottom: 0;
+  bottom: 0.5rem;
   left: 1rem;
   right: 1rem;
   height: 2px;
-  background-color: #6d5acd;
+  background: linear-gradient(90deg, #6d5acd, #9c8dff);
   transform: scaleX(0);
   transform-origin: right;
   transition: transform 0.3s ease;
+  border-radius: 1px;
 }
 
 .navbar-neo .navbar-nav .nav-link:hover::after,
@@ -66,35 +125,66 @@
   transform-origin: left;
 }
 
+/* Dropdown styles */
 .navbar-neo .dropdown-menu {
   border: none;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  padding: 0.5rem 0;
-  margin-top: 0.5rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  padding: 0.75rem 0;
+  margin-top: 0.75rem;
+  min-width: 200px;
+  animation: fadeInUp 0.3s ease;
+  border-top: 3px solid #6d5acd;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .navbar-neo .dropdown-item {
-  padding: 0.5rem 1.5rem;
+  padding: 0.6rem 1.5rem;
   font-weight: 500;
   color: #222939;
   transition: all 0.2s ease;
+  position: relative;
 }
 
 .navbar-neo .dropdown-item:hover,
-.navbar-neo .dropdown-item:focus {
-  background-color: rgba(109, 90, 205, 0.1);
+.navbar-neo .dropdown-item:focus,
+.navbar-neo .dropdown-item.active {
+  background-color: rgba(109, 90, 205, 0.08);
   color: #6d5acd;
 }
 
+.navbar-neo .dropdown-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, #6d5acd, #9c8dff);
+}
+
+/* GitHub button */
 .btn-neo-outline {
   color: #222939;
   background-color: transparent;
   border: 2px solid #6d5acd;
   border-radius: 8px;
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.2rem;
   font-weight: 500;
   transition: all 0.3s ease;
+  margin-left: 1rem;
+  display: flex;
+  align-items: center;
 }
 
 .btn-neo-outline:hover {
@@ -104,9 +194,17 @@
   box-shadow: 0 4px 12px rgba(109, 90, 205, 0.2);
 }
 
+.btn-neo-outline i {
+  margin-right: 0.5rem;
+  font-size: 1.1rem;
+}
+
+/* Toggler button */
 .navbar-toggler {
   border: none;
   padding: 0.5rem;
+  margin-right: 0;
+  background: transparent;
 }
 
 .navbar-toggler:focus {
@@ -114,36 +212,88 @@
   outline: none;
 }
 
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28109, 90, 205, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
 /* Responsive adjustments */
-@media (max-width: 991.98px) {
-  .navbar-neo .navbar-nav {
-    padding: 1rem 0;
+@media (max-width: 1199.98px) {
+  .navbar-neo .container {
+    padding: 0 1.5rem;
   }
-  
+
+  .navbar-brand {
+    margin-right: 1.5rem;
+  }
+
   .navbar-neo .navbar-nav .nav-link {
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 0.75rem;
   }
-  
+}
+
+@media (max-width: 991.98px) {
+  .navbar-neo {
+    height: auto;
+    padding: 0.75rem 0;
+  }
+
+  .navbar-neo.scrolled {
+    padding: 0.5rem 0;
+    height: auto;
+  }
+
+  .navbar-collapse {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: white;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    padding: 1rem 0;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+  }
+
+  .navbar-nav {
+    padding: 0.5rem 1.5rem;
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .navbar-neo .navbar-nav .nav-item {
+    width: 100%;
+    margin: 0;
+  }
+
+  .navbar-neo .navbar-nav .nav-link {
+    padding: 0.75rem 0;
+    width: 100%;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
   .navbar-neo .navbar-nav .nav-link::after {
-    bottom: 0.5rem;
+    display: none;
   }
-  
+
   .navbar-neo .dropdown-menu {
     box-shadow: none;
+    border: none;
     border-left: 2px solid #6d5acd;
     border-radius: 0;
     background-color: rgba(109, 90, 205, 0.05);
-    margin-left: 1rem;
-    margin-right: 1rem;
+    margin: 0.5rem 0 0.5rem 1rem;
+    padding: 0.5rem 0;
+    animation: none;
   }
-  
+
   .navbar-neo .nav-item.ms-lg-2 {
-    margin-top: 0.5rem;
+    margin-top: 1rem;
   }
-  
+
   .btn-neo-outline {
-    display: block;
-    text-align: center;
-    margin: 0.5rem 1rem;
+    display: inline-flex;
+    margin: 0.5rem 0;
+    width: auto;
   }
 }
