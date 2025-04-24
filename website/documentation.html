@@ -6,50 +6,73 @@
     <title>Documentation - Neo N3 MCP Server</title>
     <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
     <link rel="alternate icon" type="image/png" href="img/favicon.png">
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/contract-styles.css">
-    <link rel="stylesheet" href="css/nav-styles.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/contract-styles.css">
+    <link rel="stylesheet" href="css/navbar.css">
+    <link rel="stylesheet" href="css/footer.css">
+    <link rel="stylesheet" href="css/accessibility.css">
 </head>
 <body class="documentation-page">
+    <a href="#main-content" class="skip-to-content">Skip to content</a>
     <header>
-        <div class="container">
-            <div class="logo">
-                <h1>Neo N3 MCP Server</h1>
-                <span class="powered-by">Powered by R3E Network</span>
-            </div>
-            <nav class="main-nav" aria-label="Main navigation">
-                <button class="menu-toggle" aria-expanded="false" aria-controls="main-menu">
-                    <i class="fas fa-bars"></i>
-                    <span class="sr-only">Toggle menu</span>
+        <nav class="navbar navbar-expand-lg navbar-neo sticky-top">
+            <div class="container">
+                <a class="navbar-brand" href="index.html">
+                    <h1 class="fs-4 mb-0">Neo N3 <span>MCP Server</span></h1>
+                    <small class="d-block text-muted">Powered by R3E Network</small>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNeo" aria-controls="navbarNeo" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
                 </button>
-                <ul id="main-menu" role="menubar">
-                    <li role="none"><a href="index.html" role="menuitem">Home</a></li>
-                    <li role="none"><a href="documentation.html" class="active" role="menuitem" aria-current="page">Documentation</a></li>
-                    <li role="none" class="dropdown">
-                        <a href="#" class="dropdown-toggle" role="menuitem" aria-haspopup="true" aria-expanded="false">Guides</a>
-                        <ul class="dropdown-menu" role="menu">
-                            <li role="none"><a href="user-guide.html" role="menuitem">User Guide</a></li>
-                            <li role="none"><a href="integration.html" role="menuitem">Integration Guide</a></li>
-                            <li role="none"><a href="dapp-guide.html" role="menuitem">DApp Guide</a></li>
-                        </ul>
-                    </li>
-                    <li role="none" class="dropdown">
-                        <a href="#" class="dropdown-toggle" role="menuitem" aria-haspopup="true" aria-expanded="false">Tools</a>
-                        <ul class="dropdown-menu" role="menu">
-                            <li role="none"><a href="block-explorer.html" role="menuitem">Block Explorer</a></li>
-                            <li role="none"><a href="api-playground.html" role="menuitem">API Playground</a></li>
-                            <li role="none"><a href="chat.html" role="menuitem">AI Chat</a></li>
-                        </ul>
-                    </li>
-                    <li role="none"><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank" rel="noopener noreferrer" class="github-link" role="menuitem">GitHub <span class="sr-only">(opens in new window)</span></a></li>
-                </ul>
-            </nav>
-        </div>
+                <div class="collapse navbar-collapse" id="navbarNeo">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="documentation.html">Documentation</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Guides
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="user-guide.html">User Guide</a></li>
+                                <li><a class="dropdown-item" href="integration.html">Integration Guide</a></li>
+                                <li><a class="dropdown-item" href="dapp-guide.html">DApp Guide</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Tools
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="block-explorer.html">Block Explorer</a></li>
+                                <li><a class="dropdown-item" href="api-playground.html">API Playground</a></li>
+                                <li><a class="dropdown-item" href="chat.html">AI Chat</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                            <a class="btn btn-neo-outline" href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank" rel="noopener noreferrer">
+                                <i class="fab fa-github me-2"></i>GitHub
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
     </header>
 
+    <main id="main-content">
     <div class="documentation-container">
         <aside class="doc-sidebar">
             <div class="sidebar-content">
@@ -819,56 +842,76 @@ console.log(`Current block height: ${result.count}`);</code></pre>
         </main>
     </div>
 
-    <footer>
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-logo">
-                    <h2>Neo N3 MCP Server</h2>
-                    <p>Powered by R3E Network</p>
+    <footer class="footer-neo py-5" role="contentinfo">
+        <div class="container py-4">
+            <div class="row gy-4">
+                <div class="col-lg-4">
+                    <div class="mb-4">
+                        <h2 class="h4 text-white">Neo N3 MCP Server</h2>
+                        <p class="text-muted">Powered by R3E Network</p>
+                    </div>
+                    <p class="text-muted mb-4">Connect AI assistants to the Neo N3 blockchain with our MCP server implementation.</p>
+                    <div class="d-flex gap-3">
+                        <a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank" rel="noopener noreferrer" class="text-white" aria-label="GitHub">
+                            <i class="fab fa-github fa-lg"></i>
+                        </a>
+                        <a href="https://discord.gg/R3E-Network" target="_blank" rel="noopener noreferrer" class="text-white" aria-label="Discord">
+                            <i class="fab fa-discord fa-lg"></i>
+                        </a>
+                        <a href="https://twitter.com/R3E-Network" target="_blank" rel="noopener noreferrer" class="text-white" aria-label="Twitter">
+                            <i class="fab fa-twitter fa-lg"></i>
+                        </a>
+                    </div>
                 </div>
-                <div class="footer-links">
-                    <div class="footer-links-column">
-                        <h3>Documentation</h3>
-                        <ul>
-                            <li><a href="documentation.html#overview">Overview</a></li>
-                            <li><a href="documentation.html#installation">Installation</a></li>
-                            <li><a href="documentation.html#configuration">Configuration</a></li>
-                            <li><a href="documentation.html#api-reference">API Reference</a></li>
-                        </ul>
-                    </div>
-                    <div class="footer-links-column">
-                        <h3>Resources</h3>
-                        <ul>
-                            <li><a href="user-guide.html">User Guide</a></li>
-                            <li><a href="integration.html">Integration Guide</a></li>
-                            <li><a href="dapp-guide.html">DApp Guide</a></li>
-                            <li><a href="chat.html">AI Chat</a></li>
-                            <li><a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank">GitHub</a></li>
-                            <li><a href="https://docs.neo.org/" target="_blank">Neo Documentation</a></li>
-                        </ul>
-                    </div>
-                    <div class="footer-links-column">
-                        <h3>Community</h3>
-                        <ul>
-                            <li><a href="https://discord.gg/R3E-Network" target="_blank">Discord</a></li>
-                            <li><a href="https://twitter.com/R3E-Network" target="_blank">Twitter</a></li>
-                            <li><a href="https://medium.com/@R3E-Network" target="_blank">Medium</a></li>
-                            <li><a href="https://t.me/R3E-Network" target="_blank">Telegram</a></li>
-                        </ul>
-                    </div>
+                <div class="col-sm-6 col-md-4 col-lg-2 offset-lg-1">
+                    <h3 class="h6 text-white" id="footer-docs">Documentation</h3>
+                    <ul class="list-unstyled" aria-labelledby="footer-docs">
+                        <li class="mb-2"><a href="documentation.html#overview" class="text-decoration-none">Overview</a></li>
+                        <li class="mb-2"><a href="documentation.html#installation" class="text-decoration-none">Installation</a></li>
+                        <li class="mb-2"><a href="documentation.html#configuration" class="text-decoration-none">Configuration</a></li>
+                        <li class="mb-2"><a href="documentation.html#api-reference" class="text-decoration-none">API Reference</a></li>
+                    </ul>
+                </div>
+                <div class="col-sm-6 col-md-4 col-lg-2">
+                    <h3 class="h6 text-white" id="footer-resources">Resources</h3>
+                    <ul class="list-unstyled" aria-labelledby="footer-resources">
+                        <li class="mb-2"><a href="user-guide.html" class="text-decoration-none">User Guide</a></li>
+                        <li class="mb-2"><a href="integration.html" class="text-decoration-none">Integration Guide</a></li>
+                        <li class="mb-2"><a href="dapp-guide.html" class="text-decoration-none">DApp Guide</a></li>
+                        <li class="mb-2"><a href="chat.html" class="text-decoration-none">AI Chat</a></li>
+                        <li class="mb-2"><a href="https://docs.neo.org/" target="_blank" rel="noopener noreferrer" class="text-decoration-none">Neo Documentation <span class="sr-only">(opens in new window)</span></a></li>
+                    </ul>
+                </div>
+                <div class="col-sm-6 col-md-4 col-lg-2">
+                    <h3 class="h6 text-white" id="footer-community">Community</h3>
+                    <ul class="list-unstyled" aria-labelledby="footer-community">
+                        <li class="mb-2"><a href="https://discord.gg/R3E-Network" target="_blank" rel="noopener noreferrer" class="text-decoration-none">Discord <span class="sr-only">(opens in new window)</span></a></li>
+                        <li class="mb-2"><a href="https://twitter.com/R3E-Network" target="_blank" rel="noopener noreferrer" class="text-decoration-none">Twitter <span class="sr-only">(opens in new window)</span></a></li>
+                        <li class="mb-2"><a href="https://medium.com/@R3E-Network" target="_blank" rel="noopener noreferrer" class="text-decoration-none">Medium <span class="sr-only">(opens in new window)</span></a></li>
+                        <li class="mb-2"><a href="https://t.me/R3E-Network" target="_blank" rel="noopener noreferrer" class="text-decoration-none">Telegram <span class="sr-only">(opens in new window)</span></a></li>
+                    </ul>
                 </div>
             </div>
-            <div class="footer-bottom">
-                <p>&copy; 2025 R3E Network. All rights reserved.</p>
-                <div class="footer-bottom-links">
-                    <a href="#">Terms of Service</a>
-                    <a href="#">Privacy Policy</a>
+            <hr class="mt-4 mb-4 border-secondary">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="text-muted mb-md-0">&copy; 2025 R3E Network. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <div class="d-flex justify-content-center justify-content-md-end gap-3">
+                        <a href="#" class="text-decoration-none text-muted">Terms of Service</a>
+                        <a href="#" class="text-decoration-none text-muted">Privacy Policy</a>
+                    </div>
                 </div>
             </div>
         </div>
     </footer>
+    </main>
 
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Scripts -->
     <script src="js/main.js"></script>
-    <script src="js/nav.js"></script>
+    <script src="js/navbar.js"></script>
 </body>
 </html>

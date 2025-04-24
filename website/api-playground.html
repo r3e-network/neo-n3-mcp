@@ -6,61 +6,80 @@
     <title>Neo N3 MCP Server - API Playground</title>
     <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
     <link rel="alternate icon" type="image/png" href="img/favicon.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/navbar.css">
+    <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/api-playground.css">
+    <link rel="stylesheet" href="css/accessibility.css">
 </head>
 <body>
-    <!-- Header -->
-    <header class="bg-dark text-white py-4">
-        <div class="container">
-            <div class="d-flex align-items-center">
-                <img src="img/logo.png" alt="Neo N3 Logo" class="me-3" width="50">
-                <h1>Neo N3 MCP Server</h1>
+    <a href="#main-content" class="skip-to-content">Skip to content</a>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-neo sticky-top">
+            <div class="container">
+                <a class="navbar-brand" href="index.html">
+                    <h1 class="fs-4 mb-0">Neo N3 <span>MCP Server</span></h1>
+                    <small class="d-block text-muted">Powered by R3E Network</small>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNeo" aria-controls="navbarNeo" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNeo">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="documentation.html">Documentation</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Guides
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="user-guide.html">User Guide</a></li>
+                                <li><a class="dropdown-item" href="integration.html">Integration Guide</a></li>
+                                <li><a class="dropdown-item" href="dapp-guide.html">DApp Guide</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Tools
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="block-explorer.html">Block Explorer</a></li>
+                                <li><a class="dropdown-item active" href="api-playground.html">API Playground</a></li>
+                                <li><a class="dropdown-item" href="chat.html">AI Chat</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                            <a class="btn btn-neo-outline" href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank" rel="noopener noreferrer">
+                                <i class="fab fa-github me-2"></i>GitHub
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
-            <p class="mb-0 lead">Seamless integration with the Neo N3 blockchain for Claude AI</p>
-        </div>
+        </nav>
     </header>
-    
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary">
-        <div class="container">
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="index.html">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="documentation.html">Documentation</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="user-guide.html">User Guide</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="integration.html">Integration</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="block-explorer.html">Block Explorer</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="api-playground.html">API Playground</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-    
+
     <!-- Main Content -->
-    <main class="container py-5">
-        <h2>Neo N3 MCP API Playground</h2>
-        <p class="lead">Interactively test Neo N3 MCP API functionality directly from your browser</p>
-        
-        <div class="row">
-            <div class="col-lg-8 mb-4">
+    <main id="main-content">
+        <div class="container py-5">
+            <h2>Neo N3 MCP API Playground</h2>
+            <p class="lead">Interactively test Neo N3 MCP API functionality directly from your browser</p>
+
+            <div class="row">
+                <div class="col-lg-8 mb-4">
                 <div class="card">
                     <div class="card-header bg-primary text-white">
                         <h3 class="h5 mb-0">Neo N3 RPC API</h3>
@@ -73,7 +92,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-lg-4">
                 <div class="card mb-4">
                     <div class="card-header bg-primary text-white">
@@ -110,7 +129,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="card">
                     <div class="card-header bg-primary text-white">
                         <h3 class="h5 mb-0">Quick Links</h3>
@@ -137,7 +156,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="row mt-4">
             <div class="col-12">
                 <div class="card">
@@ -146,7 +165,7 @@
                     </div>
                     <div class="card-body">
                         <p>The Neo N3 MCP Server provides a variety of tools and endpoints for interacting with the Neo N3 blockchain. Here are some key concepts:</p>
-                        
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="card mb-3">
@@ -165,7 +184,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="card mb-3">
@@ -184,46 +203,87 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <p class="mb-0 mt-3">Use the playground above to experiment with these features and see real-time responses from the Neo N3 blockchain.</p>
                     </div>
                 </div>
             </div>
         </div>
     </main>
-    
+
     <!-- Footer -->
-    <footer class="bg-dark text-white py-4">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>Neo N3 MCP Server</h5>
-                    <p>An MCP server providing seamless integration with the Neo N3 blockchain</p>
+    <footer class="footer-neo py-5" role="contentinfo">
+        <div class="container py-4">
+            <div class="row gy-4">
+                <div class="col-lg-4">
+                    <div class="mb-4">
+                        <h2 class="h4 text-white">Neo N3 MCP Server</h2>
+                        <p class="text-muted">Powered by R3E Network</p>
+                    </div>
+                    <p class="text-muted mb-4">Connect AI assistants to the Neo N3 blockchain with our MCP server implementation.</p>
+                    <div class="d-flex gap-3">
+                        <a href="https://github.com/R3E-Network/neo-n3-mcp" target="_blank" rel="noopener noreferrer" class="text-white" aria-label="GitHub">
+                            <i class="fab fa-github fa-lg"></i>
+                        </a>
+                        <a href="https://discord.gg/R3E-Network" target="_blank" rel="noopener noreferrer" class="text-white" aria-label="Discord">
+                            <i class="fab fa-discord fa-lg"></i>
+                        </a>
+                        <a href="https://twitter.com/R3E-Network" target="_blank" rel="noopener noreferrer" class="text-white" aria-label="Twitter">
+                            <i class="fab fa-twitter fa-lg"></i>
+                        </a>
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <h5>Links</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="https://github.com/R3E-Network/neo-n3-mcp" class="text-white">GitHub</a></li>
-                        <li><a href="https://neo.org/" class="text-white">Neo Website</a></li>
-                        <li><a href="https://docs.neo.org/" class="text-white">Neo Docs</a></li>
+                <div class="col-sm-6 col-md-4 col-lg-2 offset-lg-1">
+                    <h3 class="h6 text-white" id="footer-docs">Documentation</h3>
+                    <ul class="list-unstyled" aria-labelledby="footer-docs">
+                        <li class="mb-2"><a href="documentation.html#overview" class="text-decoration-none">Overview</a></li>
+                        <li class="mb-2"><a href="documentation.html#installation" class="text-decoration-none">Installation</a></li>
+                        <li class="mb-2"><a href="documentation.html#configuration" class="text-decoration-none">Configuration</a></li>
+                        <li class="mb-2"><a href="documentation.html#api-reference" class="text-decoration-none">API Reference</a></li>
                     </ul>
                 </div>
-                <div class="col-md-3">
-                    <h5>Legal</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="terms-of-service.html" class="text-white">Terms of Service</a></li>
-                        <li><a href="privacy-policy.html" class="text-white">Privacy Policy</a></li>
+                <div class="col-sm-6 col-md-4 col-lg-2">
+                    <h3 class="h6 text-white" id="footer-resources">Resources</h3>
+                    <ul class="list-unstyled" aria-labelledby="footer-resources">
+                        <li class="mb-2"><a href="user-guide.html" class="text-decoration-none">User Guide</a></li>
+                        <li class="mb-2"><a href="integration.html" class="text-decoration-none">Integration Guide</a></li>
+                        <li class="mb-2"><a href="dapp-guide.html" class="text-decoration-none">DApp Guide</a></li>
+                        <li class="mb-2"><a href="chat.html" class="text-decoration-none">AI Chat</a></li>
+                        <li class="mb-2"><a href="https://docs.neo.org/" target="_blank" rel="noopener noreferrer" class="text-decoration-none">Neo Documentation <span class="sr-only">(opens in new window)</span></a></li>
+                    </ul>
+                </div>
+                <div class="col-sm-6 col-md-4 col-lg-2">
+                    <h3 class="h6 text-white" id="footer-community">Community</h3>
+                    <ul class="list-unstyled" aria-labelledby="footer-community">
+                        <li class="mb-2"><a href="https://discord.gg/R3E-Network" target="_blank" rel="noopener noreferrer" class="text-decoration-none">Discord <span class="sr-only">(opens in new window)</span></a></li>
+                        <li class="mb-2"><a href="https://twitter.com/R3E-Network" target="_blank" rel="noopener noreferrer" class="text-decoration-none">Twitter <span class="sr-only">(opens in new window)</span></a></li>
+                        <li class="mb-2"><a href="https://medium.com/@R3E-Network" target="_blank" rel="noopener noreferrer" class="text-decoration-none">Medium <span class="sr-only">(opens in new window)</span></a></li>
+                        <li class="mb-2"><a href="https://t.me/R3E-Network" target="_blank" rel="noopener noreferrer" class="text-decoration-none">Telegram <span class="sr-only">(opens in new window)</span></a></li>
                     </ul>
                 </div>
             </div>
-            <div class="border-top border-secondary mt-3 pt-3">
-                <p class="mb-0 text-center">&copy; 2024 R3E Network. All rights reserved.</p>
+            <hr class="mt-4 mb-4 border-secondary">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="text-muted mb-md-0">&copy; 2025 R3E Network. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <div class="d-flex justify-content-center justify-content-md-end gap-3">
+                        <a href="terms-of-service.html" class="text-decoration-none text-muted">Terms of Service</a>
+                        <a href="privacy-policy.html" class="text-decoration-none text-muted">Privacy Policy</a>
+                    </div>
+                </div>
             </div>
         </div>
+        </div>
     </footer>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </main>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Scripts -->
     <script src="js/api-playground.js"></script>
+    <script src="js/navbar.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Balance checker functionality
@@ -233,35 +293,35 @@
             const balanceResult = document.getElementById('balance-result');
             const balanceSpinner = document.getElementById('balance-spinner');
             const balanceContent = document.getElementById('balance-content');
-            
+
             checkBalanceBtn.addEventListener('click', async function() {
                 const address = addressInput.value.trim();
                 if (!address) {
                     alert('Please enter a Neo N3 address');
                     return;
                 }
-                
+
                 // Get selected network
                 const network = document.querySelector('input[name="balance-network"]:checked').value;
-                
+
                 // Show spinner and result container
                 balanceResult.classList.remove('d-none');
                 balanceSpinner.classList.remove('d-none');
                 balanceContent.innerHTML = '';
-                
+
                 try {
                     // Call the balance-checker function
                     const response = await fetch(`/.netlify/functions/balance-checker?address=${address}&network=${network}`);
                     const data = await response.json();
-                    
+
                     // Hide spinner
                     balanceSpinner.classList.add('d-none');
-                    
+
                     if (data.error) {
                         balanceContent.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
                         return;
                     }
-                    
+
                     // Create result HTML
                     let resultHtml = `
                         <div class="card">
@@ -273,16 +333,16 @@
                             </div>
                             <div class="card-body p-0">
                     `;
-                    
+
                     if (data.balances && data.balances.length > 0) {
                         resultHtml += `<ul class="list-group list-group-flush">`;
-                        
+
                         data.balances.forEach(token => {
                             resultHtml += `
                                 <li class="list-group-item">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <span>
-                                            <strong>${token.name}</strong> 
+                                            <strong>${token.name}</strong>
                                             <small class="text-muted">${token.symbol}</small>
                                         </span>
                                         <span>${token.formatted}</span>
@@ -291,7 +351,7 @@
                                 </li>
                             `;
                         });
-                        
+
                         resultHtml += `</ul>`;
                     } else {
                         resultHtml += `
@@ -300,20 +360,20 @@
                             </div>
                         `;
                     }
-                    
+
                     resultHtml += `
                             </div>
                         </div>
                     `;
-                    
+
                     balanceContent.innerHTML = resultHtml;
-                    
+
                 } catch (error) {
                     balanceSpinner.classList.add('d-none');
                     balanceContent.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
                 }
             });
-            
+
             // Handle enter key in address input
             addressInput.addEventListener('keyup', function(e) {
                 if (e.key === 'Enter') {
@@ -323,4 +383,4 @@
         });
     </script>
 </body>
-</html> 
+</html>

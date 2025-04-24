@@ -1,0 +1,149 @@
+/* Neo N3 MCP Server - Consistent Navigation Bar Styles */
+
+.navbar-neo {
+  background-color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 0.75rem 0;
+  transition: all 0.3s ease;
+}
+
+.navbar-neo.scrolled {
+  padding: 0.5rem 0;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.navbar-brand h1 {
+  font-size: 1.5rem;
+  margin-bottom: 0;
+  font-weight: 600;
+  color: #222939;
+}
+
+.navbar-brand h1 span {
+  color: #6d5acd;
+}
+
+.navbar-brand small {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.navbar-neo .navbar-nav .nav-link {
+  color: #222939;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.navbar-neo .navbar-nav .nav-link:hover,
+.navbar-neo .navbar-nav .nav-link.active {
+  color: #6d5acd;
+}
+
+.navbar-neo .navbar-nav .nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 1rem;
+  right: 1rem;
+  height: 2px;
+  background-color: #6d5acd;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s ease;
+}
+
+.navbar-neo .navbar-nav .nav-link:hover::after,
+.navbar-neo .navbar-nav .nav-link.active::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.navbar-neo .dropdown-menu {
+  border: none;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 0.5rem 0;
+  margin-top: 0.5rem;
+}
+
+.navbar-neo .dropdown-item {
+  padding: 0.5rem 1.5rem;
+  font-weight: 500;
+  color: #222939;
+  transition: all 0.2s ease;
+}
+
+.navbar-neo .dropdown-item:hover,
+.navbar-neo .dropdown-item:focus {
+  background-color: rgba(109, 90, 205, 0.1);
+  color: #6d5acd;
+}
+
+.btn-neo-outline {
+  color: #222939;
+  background-color: transparent;
+  border: 2px solid #6d5acd;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-neo-outline:hover {
+  background-color: #6d5acd;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(109, 90, 205, 0.2);
+}
+
+.navbar-toggler {
+  border: none;
+  padding: 0.5rem;
+}
+
+.navbar-toggler:focus {
+  box-shadow: none;
+  outline: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+  .navbar-neo .navbar-nav {
+    padding: 1rem 0;
+  }
+  
+  .navbar-neo .navbar-nav .nav-link {
+    padding: 0.75rem 1rem;
+  }
+  
+  .navbar-neo .navbar-nav .nav-link::after {
+    bottom: 0.5rem;
+  }
+  
+  .navbar-neo .dropdown-menu {
+    box-shadow: none;
+    border-left: 2px solid #6d5acd;
+    border-radius: 0;
+    background-color: rgba(109, 90, 205, 0.05);
+    margin-left: 1rem;
+    margin-right: 1rem;
+  }
+  
+  .navbar-neo .nav-item.ms-lg-2 {
+    margin-top: 0.5rem;
+  }
+  
+  .btn-neo-outline {
+    display: block;
+    text-align: center;
+    margin: 0.5rem 1rem;
+  }
+}
