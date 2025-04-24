@@ -60,6 +60,7 @@
                     <li><a href="#configuration">Configuration</a></li>
                     <li><a href="#mcp-tools">MCP Tools</a>
                         <ul>
+                            <li><a href="#network-tools">Network Configuration Tools</a></li>
                             <li><a href="#blockchain-tools">Blockchain Tools</a></li>
                             <li><a href="#contract-tools">Contract Tools</a></li>
                             <li><a href="#wallet-tools">Wallet Tools</a></li>
@@ -148,6 +149,11 @@
                             <td>https://testnet1.neo.coz.io:443</td>
                         </tr>
                         <tr>
+                            <td>NEO_NETWORK_MODE</td>
+                            <td>Network mode (mainnet_only, testnet_only, both)</td>
+                            <td>both</td>
+                        </tr>
+                        <tr>
                             <td>NEO_MCP_PORT</td>
                             <td>Port number for the MCP server</td>
                             <td>8080</td>
@@ -165,6 +171,7 @@
                 <pre><code>{
   "port": 3000,
   "network": "mainnet",
+  "networkMode": "both",
   "mainnetRpcUrl": "https://mainnet1.neo.coz.io:443",
   "testnetRpcUrl": "https://testnet1.neo.coz.io:443",
   "walletPath": "./wallets"
@@ -174,6 +181,28 @@
             <section id="mcp-tools">
                 <h2>MCP Tools</h2>
                 <p>The Neo N3 MCP Server provides a variety of tools for interacting with the Neo N3 blockchain.</p>
+
+                <section id="network-tools">
+                    <h3>Network Configuration Tools</h3>
+                    <table class="tool-table">
+                        <thead>
+                            <tr>
+                                <th>Tool Name</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>get_network_mode</td>
+                                <td>Get the current network mode configuration</td>
+                            </tr>
+                            <tr>
+                                <td>set_network_mode</td>
+                                <td>Set the active network mode (mainnet_only, testnet_only, or both)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
 
                 <section id="blockchain-tools">
                     <h3>Blockchain Tools</h3>

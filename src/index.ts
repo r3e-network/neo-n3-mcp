@@ -32,7 +32,7 @@ import {
  * Neo N3 MCP Server
  * Exposes Neo N3 blockchain functionality as MCP tools and resources
  */
-class NeoMcpServer {
+export class NeoMcpServer {
   private server: Server;
   private neoServices: Map<NeoNetwork, NeoService>;
   private contractServices: Map<NeoNetwork, ContractService>;
@@ -2369,6 +2369,130 @@ class NeoMcpServer {
       process.exit(1);
     }
   }
+}
+
+/**
+ * Handle MCP request
+ * This function is used for testing purposes
+ * @param request MCP request
+ * @returns MCP response
+ */
+export async function handleMcpRequest(request: any) {
+  const server = new NeoMcpServer();
+
+  // Create a mock handler function that simulates the MCP server's request handling
+  const mockHandler = async (req: any) => {
+    try {
+      // Get the appropriate service based on the network parameter
+      const networkParam = req.arguments?.network;
+
+      switch (req.name) {
+        case 'get_blockchain_info':
+          const neoService = server['getNeoService'](networkParam);
+          const height = await neoService.getBlockchainHeight();
+          const network = neoService.getNetwork();
+          return createSuccessResponse({ height, network });
+
+        case 'get_block':
+          if (!req.arguments?.hashOrHeight) {
+            return createErrorResponse('Missing required parameter: hashOrHeight', ErrorCode.InvalidParams);
+          }
+          return createSuccessResponse(
+            await server['getNeoService'](networkParam).getBlock(req.arguments.hashOrHeight)
+          );
+
+        case 'get_transaction':
+          if (!req.arguments?.txid) {
+            return createErrorResponse('Missing required parameter: txid', ErrorCode.InvalidParams);
+          }
+          return createSuccessResponse(
+            await server['getNeoService'](networkParam).getTransaction(req.arguments.txid)
+          );
+
+        case 'get_balance':
+          if (!req.arguments?.address) {
+            return createErrorResponse('Missing required parameter: address', ErrorCode.InvalidParams);
+          }
+          return createSuccessResponse(
+            await server['getNeoService'](networkParam).getBalance(req.arguments.address)
+          );
+
+        case 'transfer_assets':
+          if (!req.arguments?.fromWIF || !req.arguments?.toAddress ||
+              !req.arguments?.asset || !req.arguments?.amount || req.arguments?.confirm !== true) {
+            return createErrorResponse('Missing required parameters for transfer_assets', ErrorCode.InvalidParams);
+          }
+          return createSuccessResponse(
+            await server['getNeoService'](networkParam).transferAssets(
+              req.arguments.fromWIF,
+              req.arguments.toAddress,
+              req.arguments.asset,
+              req.arguments.amount
+            )
+          );
+
+        case 'create_wallet':
+          if (!req.arguments?.password) {
+            return createErrorResponse('Missing required parameter: password', ErrorCode.InvalidParams);
+          }
+          return createSuccessResponse(
+            server['getNeoService'](networkParam).createWallet(req.arguments.password)
+          );
+
+        case 'import_wallet':
+          if (!req.arguments?.key) {
+            return createErrorResponse('Missing required parameter: key', ErrorCode.InvalidParams);
+          }
+          return createSuccessResponse(
+            server['getNeoService'](networkParam).importWallet(req.arguments.key, req.arguments.password)
+          );
+
+        case 'list_famous_contracts':
+          const contracts = server['getContractService'](networkParam).listSupportedContracts();
+          return createSuccessResponse({ contracts });
+
+        case 'get_contract_info':
+          if (!req.arguments?.contractName) {
+            return createErrorResponse('Missing required parameter: contractName', ErrorCode.InvalidParams);
+          }
+          const contractInfo = server['getContractService'](networkParam).getContract(req.arguments.contractName);
+          return createSuccessResponse(contractInfo);
+
+        case 'invoke_read_contract':
+          if (!req.arguments?.contractName || !req.arguments?.operation) {
+            return createErrorResponse('Missing required parameters for invoke_read_contract', ErrorCode.InvalidParams);
+          }
+          return createSuccessResponse(
+            await server['getContractService'](networkParam).invokeReadContract(
+              req.arguments.contractName,
+              req.arguments.operation,
+              req.arguments.args || []
+            )
+          );
+
+        case 'invoke_write_contract':
+          if (!req.arguments?.fromWIF || !req.arguments?.contractName ||
+              !req.arguments?.operation || req.arguments?.confirm !== true) {
+            return createErrorResponse('Missing required parameters for invoke_write_contract', ErrorCode.InvalidParams);
+          }
+          return createSuccessResponse(
+            await server['getContractService'](networkParam).invokeWriteContract(
+              req.arguments.fromWIF,
+              req.arguments.contractName,
+              req.arguments.operation,
+              req.arguments.args || []
+            )
+          );
+
+        default:
+          return createErrorResponse(`Invalid tool name: ${req.name}`, ErrorCode.InvalidRequest);
+      }
+    } catch (error) {
+      return handleError(error);
+    }
+  };
+
+  return await mockHandler(request);
 }
 
 // Start the server
