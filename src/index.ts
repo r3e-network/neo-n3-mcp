@@ -13,19 +13,19 @@ import {
 import { NeoService, NeoNetwork } from './services/neo-service.js';
 import { ContractService } from './contracts/contract-service.js';
 import { FAMOUS_CONTRACTS } from './contracts/contracts.js';
-import { config } from './config.js';
-import { 
-  validateAddress, 
-  validateHash, 
-  validateAmount, 
+import { config, NetworkMode } from './config.js';
+import {
+  validateAddress,
+  validateHash,
+  validateAmount,
   validatePassword,
   validateScriptHash,
   validateNetwork
 } from './utils/validation.js';
-import { 
-  handleError, 
-  createSuccessResponse, 
-  createErrorResponse 
+import {
+  handleError,
+  createSuccessResponse,
+  createErrorResponse
 } from './utils/error-handler.js';
 
 /**
@@ -51,37 +51,50 @@ class NeoMcpServer {
       }
     );
 
-    // Initialize Neo services for both networks
+    // Initialize Neo services based on network mode
     this.neoServices = new Map();
     this.contractServices = new Map();
-    
-    // Initialize mainnet service
-    this.neoServices.set(
-      NeoNetwork.MAINNET, 
-      new NeoService(config.mainnetRpcUrl, NeoNetwork.MAINNET)
-    );
-    
-    // Initialize mainnet contract service
-    this.contractServices.set(
-      NeoNetwork.MAINNET,
-      new ContractService(config.mainnetRpcUrl, NeoNetwork.MAINNET)
-    );
-    
-    // Initialize testnet service
-    this.neoServices.set(
-      NeoNetwork.TESTNET, 
-      new NeoService(config.testnetRpcUrl, NeoNetwork.TESTNET)
-    );
-    
-    // Initialize testnet contract service
-    this.contractServices.set(
-      NeoNetwork.TESTNET,
-      new ContractService(config.testnetRpcUrl, NeoNetwork.TESTNET)
-    );
-    
+
+    // Initialize mainnet services if mainnet is enabled
+    if (config.networkMode === NetworkMode.MAINNET_ONLY || config.networkMode === NetworkMode.BOTH) {
+      console.log('Initializing mainnet services...');
+
+      // Initialize mainnet service
+      this.neoServices.set(
+        NeoNetwork.MAINNET,
+        new NeoService(config.mainnetRpcUrl, NeoNetwork.MAINNET)
+      );
+
+      // Initialize mainnet contract service
+      this.contractServices.set(
+        NeoNetwork.MAINNET,
+        new ContractService(config.mainnetRpcUrl, NeoNetwork.MAINNET)
+      );
+    }
+
+    // Initialize testnet services if testnet is enabled
+    if (config.networkMode === NetworkMode.TESTNET_ONLY || config.networkMode === NetworkMode.BOTH) {
+      console.log('Initializing testnet services...');
+
+      // Initialize testnet service
+      this.neoServices.set(
+        NeoNetwork.TESTNET,
+        new NeoService(config.testnetRpcUrl, NeoNetwork.TESTNET)
+      );
+
+      // Initialize testnet contract service
+      this.contractServices.set(
+        NeoNetwork.TESTNET,
+        new ContractService(config.testnetRpcUrl, NeoNetwork.TESTNET)
+      );
+    }
+
+    // Log the active network mode
+    console.log(`Network mode: ${config.networkMode}`);
+
     this.setupToolHandlers();
     this.setupResourceHandlers();
-    
+
     this.server.onerror = (error) => console.error('[MCP Error]', error);
   }
 
@@ -91,17 +104,38 @@ class NeoMcpServer {
    * @returns Neo service for the requested network
    */
   private getNeoService(networkParam?: string): NeoService {
+    // If no network specified, use default based on network mode
     if (!networkParam) {
+      // For testnet_only mode, return testnet service
+      if (config.networkMode === NetworkMode.TESTNET_ONLY) {
+        return this.neoServices.get(NeoNetwork.TESTNET)!;
+      }
+      // For all other modes, return mainnet service (if available)
       return this.neoServices.get(NeoNetwork.MAINNET)!;
     }
-    
+
+    // Validate the requested network
     const network = validateNetwork(networkParam);
+
+    // Check if the requested network is enabled in the current mode
+    if (
+      (network === NeoNetwork.MAINNET &&
+       config.networkMode === NetworkMode.TESTNET_ONLY) ||
+      (network === NeoNetwork.TESTNET &&
+       config.networkMode === NetworkMode.MAINNET_ONLY)
+    ) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Network ${network} is not enabled in the current mode (${config.networkMode})`
+      );
+    }
+
     const service = this.neoServices.get(network);
-    
+
     if (!service) {
       throw new McpError(ErrorCode.InvalidParams, `Unsupported network: ${network}`);
     }
-    
+
     return service;
   }
 
@@ -111,17 +145,38 @@ class NeoMcpServer {
    * @returns Contract service for the requested network
    */
   private getContractService(networkParam?: string): ContractService {
+    // If no network specified, use default based on network mode
     if (!networkParam) {
+      // For testnet_only mode, return testnet service
+      if (config.networkMode === NetworkMode.TESTNET_ONLY) {
+        return this.contractServices.get(NeoNetwork.TESTNET)!;
+      }
+      // For all other modes, return mainnet service (if available)
       return this.contractServices.get(NeoNetwork.MAINNET)!;
     }
-    
+
+    // Validate the requested network
     const network = validateNetwork(networkParam);
+
+    // Check if the requested network is enabled in the current mode
+    if (
+      (network === NeoNetwork.MAINNET &&
+       config.networkMode === NetworkMode.TESTNET_ONLY) ||
+      (network === NeoNetwork.TESTNET &&
+       config.networkMode === NetworkMode.MAINNET_ONLY)
+    ) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Network ${network} is not enabled in the current mode (${config.networkMode})`
+      );
+    }
+
     const service = this.contractServices.get(network);
-    
+
     if (!service) {
       throw new McpError(ErrorCode.InvalidParams, `Unsupported network: ${network}`);
     }
-    
+
     return service;
   }
 
@@ -414,6 +469,30 @@ class NeoMcpServer {
               },
             },
             required: ['contractName'],
+          },
+        },
+        {
+          name: 'get_network_mode',
+          description: 'Get the current network mode configuration',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+            required: [],
+          },
+        },
+        {
+          name: 'set_network_mode',
+          description: 'Set the active network mode',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              mode: {
+                type: 'string',
+                description: 'Network mode to set: "mainnet_only", "testnet_only", or "both"',
+                enum: [NetworkMode.MAINNET_ONLY, NetworkMode.TESTNET_ONLY, NetworkMode.BOTH],
+              },
+            },
+            required: ['mode'],
           },
         },
         // NeoFS specific tools
@@ -968,6 +1047,10 @@ class NeoMcpServer {
           return await this.handleListFamousContracts(input);
         case 'get_contract_info':
           return await this.handleGetContractInfo(input);
+        case 'get_network_mode':
+          return await this.handleGetNetworkMode();
+        case 'set_network_mode':
+          return await this.handleSetNetworkMode(input);
         // NeoFS handlers
         case 'neofs_create_container':
           return await this.handleNeoFSCreateContainer(input);
@@ -1145,14 +1228,14 @@ class NeoMcpServer {
         if (typeof request.params.name !== 'string') {
           throw new McpError(ErrorCode.InvalidParams, 'Resource name must be a string');
         }
-        
+
         const url = new URL(request.params.name);
         const pathParts = url.pathname.split('/').filter(Boolean);
-        
+
         // Check if the first part is a network specifier
         let network = NeoNetwork.MAINNET;
         let startIndex = 0;
-        
+
         if (pathParts[0] === 'mainnet') {
           network = NeoNetwork.MAINNET;
           startIndex = 1;
@@ -1160,15 +1243,15 @@ class NeoMcpServer {
           network = NeoNetwork.TESTNET;
           startIndex = 1;
         }
-        
+
         const neoService = this.getNeoService(network);
-        
+
         // Handle resources
         if (pathParts[startIndex] === 'network' && pathParts[startIndex + 1] === 'status') {
           const info = await neoService.getBlockchainInfo();
           return createSuccessResponse(info);
         }
-        
+
         if (pathParts[startIndex] === 'block' && pathParts[startIndex + 1]) {
           const height = parseInt(pathParts[startIndex + 1], 10);
           if (isNaN(height)) {
@@ -1177,14 +1260,14 @@ class NeoMcpServer {
           const block = await neoService.getBlock(height);
           return createSuccessResponse(block);
         }
-        
+
         if (pathParts[startIndex] === 'address' && pathParts[startIndex + 2] === 'balance') {
           const address = pathParts[startIndex + 1];
           validateAddress(address);
           const balance = await neoService.getBalance(address);
           return createSuccessResponse(balance);
         }
-        
+
         throw new McpError(
           ErrorCode.InvalidParams,
           `Resource not found: ${request.params.name}`
@@ -1279,7 +1362,7 @@ class NeoMcpServer {
 
       const toAddress = validateAddress(args.toAddress);
       const amount = validateAmount(args.amount);
-      
+
       if (typeof args.fromWIF !== 'string') {
         throw new McpError(ErrorCode.InvalidParams, 'fromWIF must be a string');
       }
@@ -1290,10 +1373,10 @@ class NeoMcpServer {
 
       // Import the wallet from WIF
       const account = new (await import('@cityofzion/neon-js')).wallet.Account(args.fromWIF);
-      
+
       // Get the right service for the requested network
       const neoService = this.getNeoService(args?.network);
-      
+
       // Transfer assets
       const result = await neoService.transferAssets(
         account,
@@ -1322,7 +1405,7 @@ class NeoMcpServer {
       }
 
       const scriptHash = validateScriptHash(args.scriptHash);
-      
+
       if (typeof args.fromWIF !== 'string') {
         throw new McpError(ErrorCode.InvalidParams, 'fromWIF must be a string');
       }
@@ -1336,7 +1419,7 @@ class NeoMcpServer {
 
       // Get the right service for the requested network
       const neoService = this.getNeoService(args?.network);
-      
+
       // Invoke contract
       const result = await neoService.invokeContract(
         account,
@@ -1361,11 +1444,11 @@ class NeoMcpServer {
   private async handleCreateWallet(args: any) {
     try {
       const password = validatePassword(args.password);
-      
-      // Network doesn't actually matter for wallet creation, 
+
+      // Network doesn't actually matter for wallet creation,
       // but we'll include it in the response
       const neoService = this.getNeoService(args?.network);
-      
+
       const wallet = neoService.createWallet(password);
       return createSuccessResponse({
         ...wallet,
@@ -1390,10 +1473,10 @@ class NeoMcpServer {
         password = validatePassword(args.password);
       }
 
-      // Network doesn't actually matter for wallet import, 
+      // Network doesn't actually matter for wallet import,
       // but we'll include it in the response
       const neoService = this.getNeoService(args?.network);
-      
+
       const wallet = neoService.importWallet(args.key, password);
       return createSuccessResponse({
         ...wallet,
@@ -1413,14 +1496,14 @@ class NeoMcpServer {
       const toAddress = validateAddress(args.toAddress);
       const asset = validateScriptHash(args.asset);
       const amount = validateAmount(args.amount);
-      
+
       if (typeof args.network !== 'string') {
         throw new McpError(ErrorCode.InvalidParams, 'network must be a string');
       }
 
       const network = validateNetwork(args.network);
       const neoService = this.getNeoService(network);
-      
+
       const fees = await neoService.estimateTransferFees(fromAddress, toAddress, asset, amount);
       return createSuccessResponse(fees);
     } catch (error) {
@@ -1451,12 +1534,12 @@ class NeoMcpServer {
     try {
       const { network } = args;
       const contractService = this.getContractService(network);
-      
+
       const contracts = contractService.listSupportedContracts();
       const availableContracts = contracts.filter(contract => {
         return contractService.isContractAvailable(contract.name);
       });
-      
+
       return createSuccessResponse({
         contracts: availableContracts,
         network: contractService.getNetwork()
@@ -1474,18 +1557,18 @@ class NeoMcpServer {
   private async handleGetContractInfo(args: any) {
     try {
       const { contractName, network } = args;
-      
+
       if (!contractName) {
         throw new McpError(ErrorCode.InvalidParams, 'Contract name is required');
       }
-      
+
       const contractService = this.getContractService(network);
-      
+
       try {
         const contract = contractService.getContract(contractName);
         const operations = contractService.getContractOperations(contractName);
         const scriptHash = contractService.getContractScriptHash(contractName);
-        
+
         return createSuccessResponse({
           name: contract.name,
           description: contract.description,
@@ -1509,32 +1592,32 @@ class NeoMcpServer {
   private async handleNeoFSCreateContainer(args: any) {
     try {
       const { fromWIF, ownerId, rules, confirm, network } = args;
-      
+
       if (!fromWIF) {
         throw new McpError(ErrorCode.InvalidParams, 'WIF is required');
       }
-      
+
       if (!ownerId) {
         throw new McpError(ErrorCode.InvalidParams, 'Owner ID is required');
       }
-      
+
       if (!confirm) {
         throw new McpError(ErrorCode.InvalidParams, 'Confirmation is required');
       }
-      
+
       const contractService = this.getContractService(network);
       const neoService = this.getNeoService(network);
-      
+
       // Import wallet
       const account = neoService.importWallet(fromWIF);
-      
+
       // Create container
       const txid = await contractService.createNeoFSContainer(
         account,
         ownerId,
         rules || []
       );
-      
+
       return createSuccessResponse({
         txid,
         message: 'NeoFS container creation transaction sent'
@@ -1552,15 +1635,15 @@ class NeoMcpServer {
   private async handleNeoFSGetContainers(args: any) {
     try {
       const { ownerId, network } = args;
-      
+
       if (!ownerId) {
         throw new McpError(ErrorCode.InvalidParams, 'Owner ID is required');
       }
-      
+
       const contractService = this.getContractService(network);
-      
+
       const result = await contractService.getNeoFSContainers(ownerId);
-      
+
       return createSuccessResponse({
         result,
         network: contractService.getNetwork()
@@ -1578,24 +1661,24 @@ class NeoMcpServer {
   private async handleNeoBurgerDeposit(args: any) {
     try {
       const { fromWIF, confirm, network } = args;
-      
+
       if (!fromWIF) {
         throw new McpError(ErrorCode.InvalidParams, 'WIF is required');
       }
-      
+
       if (!confirm) {
         throw new McpError(ErrorCode.InvalidParams, 'Confirmation is required');
       }
-      
+
       const contractService = this.getContractService(network);
       const neoService = this.getNeoService(network);
-      
+
       // Import wallet
       const account = neoService.importWallet(fromWIF);
-      
+
       // Deposit to NeoBurger
       const txid = await contractService.depositNeoToNeoBurger(account);
-      
+
       return createSuccessResponse({
         txid,
         message: 'NEO deposit to NeoBurger transaction sent'
@@ -1613,31 +1696,31 @@ class NeoMcpServer {
   private async handleNeoBurgerWithdraw(args: any) {
     try {
       const { fromWIF, amount, confirm, network } = args;
-      
+
       if (!fromWIF) {
         throw new McpError(ErrorCode.InvalidParams, 'WIF is required');
       }
-      
+
       if (!amount) {
         throw new McpError(ErrorCode.InvalidParams, 'Amount is required');
       }
-      
+
       if (!confirm) {
         throw new McpError(ErrorCode.InvalidParams, 'Confirmation is required');
       }
-      
+
       const contractService = this.getContractService(network);
       const neoService = this.getNeoService(network);
-      
+
       // Validate amount
       validateAmount(amount);
-      
+
       // Import wallet
       const account = neoService.importWallet(fromWIF);
-      
+
       // Withdraw from NeoBurger
       const txid = await contractService.withdrawNeoFromNeoBurger(account, amount);
-      
+
       return createSuccessResponse({
         txid,
         message: 'NEO withdrawal from NeoBurger transaction sent'
@@ -1655,18 +1738,18 @@ class NeoMcpServer {
   private async handleNeoBurgerGetBalance(args: any) {
     try {
       const { address, network } = args;
-      
+
       if (!address) {
         throw new McpError(ErrorCode.InvalidParams, 'Address is required');
       }
-      
+
       // Validate address
       validateAddress(address);
-      
+
       const contractService = this.getContractService(network);
-      
+
       const result = await contractService.getNeoBurgerBalance(address);
-      
+
       return createSuccessResponse({
         result,
         network: contractService.getNetwork()
@@ -1684,24 +1767,24 @@ class NeoMcpServer {
   private async handleNeoBurgerClaimGas(args: any) {
     try {
       const { fromWIF, confirm, network } = args;
-      
+
       if (!fromWIF) {
         throw new McpError(ErrorCode.InvalidParams, 'WIF is required');
       }
-      
+
       if (!confirm) {
         throw new McpError(ErrorCode.InvalidParams, 'Confirmation is required');
       }
-      
+
       const contractService = this.getContractService(network);
       const neoService = this.getNeoService(network);
-      
+
       // Import wallet
       const account = neoService.importWallet(fromWIF);
-      
+
       // Claim GAS from NeoBurger
       const txid = await contractService.claimNeoBurgerGas(account);
-      
+
       return createSuccessResponse({
         txid,
         message: 'GAS claim from NeoBurger transaction sent'
@@ -1719,31 +1802,31 @@ class NeoMcpServer {
   private async handleFlamingoStake(args: any) {
     try {
       const { fromWIF, amount, confirm, network } = args;
-      
+
       if (!fromWIF) {
         throw new McpError(ErrorCode.InvalidParams, 'WIF is required');
       }
-      
+
       if (!amount) {
         throw new McpError(ErrorCode.InvalidParams, 'Amount is required');
       }
-      
+
       if (!confirm) {
         throw new McpError(ErrorCode.InvalidParams, 'Confirmation is required');
       }
-      
+
       const contractService = this.getContractService(network);
       const neoService = this.getNeoService(network);
-      
+
       // Validate amount
       validateAmount(amount);
-      
+
       // Import wallet
       const account = neoService.importWallet(fromWIF);
-      
+
       // Stake on Flamingo
       const txid = await contractService.stakeFlamingo(account, amount);
-      
+
       return createSuccessResponse({
         txid,
         message: 'FLM staking transaction sent'
@@ -1761,31 +1844,31 @@ class NeoMcpServer {
   private async handleFlamingoUnstake(args: any) {
     try {
       const { fromWIF, amount, confirm, network } = args;
-      
+
       if (!fromWIF) {
         throw new McpError(ErrorCode.InvalidParams, 'WIF is required');
       }
-      
+
       if (!amount) {
         throw new McpError(ErrorCode.InvalidParams, 'Amount is required');
       }
-      
+
       if (!confirm) {
         throw new McpError(ErrorCode.InvalidParams, 'Confirmation is required');
       }
-      
+
       const contractService = this.getContractService(network);
       const neoService = this.getNeoService(network);
-      
+
       // Validate amount
       validateAmount(amount);
-      
+
       // Import wallet
       const account = neoService.importWallet(fromWIF);
-      
+
       // Unstake from Flamingo
       const txid = await contractService.unstakeFlamingo(account, amount);
-      
+
       return createSuccessResponse({
         txid,
         message: 'FLM unstaking transaction sent'
@@ -1803,18 +1886,18 @@ class NeoMcpServer {
   private async handleFlamingoGetBalance(args: any) {
     try {
       const { address, network } = args;
-      
+
       if (!address) {
         throw new McpError(ErrorCode.InvalidParams, 'Address is required');
       }
-      
+
       // Validate address
       validateAddress(address);
-      
+
       const contractService = this.getContractService(network);
-      
+
       const result = await contractService.getFlamingoBalance(address);
-      
+
       return createSuccessResponse({
         result,
         network: contractService.getNetwork()
@@ -1826,30 +1909,30 @@ class NeoMcpServer {
 
   private async handleNeoCompoundDeposit(args: any) {
     try {
-      const { 
-        network, 
-        walletPath, 
-        walletPassword, 
+      const {
+        network,
+        walletPath,
+        walletPassword,
         assetId,
-        amount 
+        amount
       } = args;
-      
+
       // Validate asset ID
       const validAssetId = validateScriptHash(assetId);
-      
+
       // Validate amount
       const validAmount = validateAmount(amount);
-      
+
       // Get the appropriate services
       const neoService = this.getNeoService(network);
       const contractService = this.getContractService(network);
-      
+
       // Import the wallet
       const account = await neoService.importWallet(walletPath, walletPassword);
-      
+
       // Deposit assets to NeoCompound
       const txid = await contractService.depositToNeoCompound(account, validAssetId, validAmount);
-      
+
       return createSuccessResponse({
         txid,
         address: account.address,
@@ -1862,30 +1945,30 @@ class NeoMcpServer {
 
   private async handleNeoCompoundWithdraw(args: any) {
     try {
-      const { 
-        network, 
-        walletPath, 
-        walletPassword, 
+      const {
+        network,
+        walletPath,
+        walletPassword,
         assetId,
-        amount 
+        amount
       } = args;
-      
+
       // Validate asset ID
       const validAssetId = validateScriptHash(assetId);
-      
+
       // Validate amount
       const validAmount = validateAmount(amount);
-      
+
       // Get the appropriate services
       const neoService = this.getNeoService(network);
       const contractService = this.getContractService(network);
-      
+
       // Import the wallet
       const account = await neoService.importWallet(walletPath, walletPassword);
-      
+
       // Withdraw assets from NeoCompound
       const txid = await contractService.withdrawFromNeoCompound(account, validAssetId, validAmount);
-      
+
       return createSuccessResponse({
         txid,
         address: account.address,
@@ -1899,19 +1982,19 @@ class NeoMcpServer {
   private async handleNeoCompoundGetBalance(args: any) {
     try {
       const { network, address, assetId } = args;
-      
+
       // Validate address
       const validAddress = validateAddress(address);
-      
+
       // Validate asset ID
       const validAssetId = validateScriptHash(assetId);
-      
+
       // Get the appropriate contract service
       const contractService = this.getContractService(network);
-      
+
       // Get balance from NeoCompound
       const result = await contractService.getNeoCompoundBalance(validAddress, validAssetId);
-      
+
       return createSuccessResponse({
         balance: result,
         address: validAddress,
@@ -1925,31 +2008,31 @@ class NeoMcpServer {
 
   private async handleGrandShareDeposit(args: any) {
     try {
-      const { 
-        network, 
-        walletPath, 
-        walletPassword, 
+      const {
+        network,
+        walletPath,
+        walletPassword,
         poolId,
-        amount 
+        amount
       } = args;
-      
+
       // Validate pool ID and amount
       if (typeof poolId !== 'number' || poolId < 0) {
         throw new Error('Invalid pool ID');
       }
-      
+
       const validAmount = validateAmount(amount);
-      
+
       // Get the appropriate services
       const neoService = this.getNeoService(network);
       const contractService = this.getContractService(network);
-      
+
       // Import the wallet
       const account = await neoService.importWallet(walletPath, walletPassword);
-      
+
       // Deposit assets to GrandShare
       const txid = await contractService.depositToGrandShare(account, poolId, validAmount);
-      
+
       return createSuccessResponse({
         txid,
         address: account.address,
@@ -1963,31 +2046,31 @@ class NeoMcpServer {
 
   private async handleGrandShareWithdraw(args: any) {
     try {
-      const { 
-        network, 
-        walletPath, 
-        walletPassword, 
+      const {
+        network,
+        walletPath,
+        walletPassword,
         poolId,
-        amount 
+        amount
       } = args;
-      
+
       // Validate pool ID and amount
       if (typeof poolId !== 'number' || poolId < 0) {
         throw new Error('Invalid pool ID');
       }
-      
+
       const validAmount = validateAmount(amount);
-      
+
       // Get the appropriate services
       const neoService = this.getNeoService(network);
       const contractService = this.getContractService(network);
-      
+
       // Import the wallet
       const account = await neoService.importWallet(walletPath, walletPassword);
-      
+
       // Withdraw assets from GrandShare
       const txid = await contractService.withdrawFromGrandShare(account, poolId, validAmount);
-      
+
       return createSuccessResponse({
         txid,
         address: account.address,
@@ -2002,18 +2085,18 @@ class NeoMcpServer {
   private async handleGrandShareGetPoolDetails(args: any) {
     try {
       const { network, poolId } = args;
-      
+
       // Validate pool ID
       if (typeof poolId !== 'number' || poolId < 0) {
         throw new Error('Invalid pool ID');
       }
-      
+
       // Get the appropriate contract service
       const contractService = this.getContractService(network);
-      
+
       // Get pool details from GrandShare
       const result = await contractService.getGrandSharePoolDetails(poolId);
-      
+
       return createSuccessResponse({
         poolDetails: result,
         poolId,
@@ -2026,24 +2109,24 @@ class NeoMcpServer {
 
   private async handleGhostMarketCreateNFT(args: any) {
     try {
-      const { 
-        network, 
-        walletPath, 
-        walletPassword, 
+      const {
+        network,
+        walletPath,
+        walletPassword,
         tokenURI,
-        properties = [] 
+        properties = []
       } = args;
-      
+
       // Get the appropriate services
       const neoService = this.getNeoService(network);
       const contractService = this.getContractService(network);
-      
+
       // Import the wallet
       const account = await neoService.importWallet(walletPath, walletPassword);
-      
+
       // Create NFT on GhostMarket
       const txid = await contractService.createGhostMarketNFT(account, tokenURI, properties);
-      
+
       return createSuccessResponse({
         txid,
         address: account.address,
@@ -2057,34 +2140,34 @@ class NeoMcpServer {
 
   private async handleGhostMarketListNFT(args: any) {
     try {
-      const { 
-        network, 
-        walletPath, 
-        walletPassword, 
+      const {
+        network,
+        walletPath,
+        walletPassword,
         tokenId,
         price,
         paymentToken
       } = args;
-      
+
       // Validate token ID
       if (typeof tokenId !== 'number' || tokenId < 0) {
         throw new Error('Invalid token ID');
       }
-      
+
       // Validate price and payment token
       const validPrice = validateAmount(price);
       const validPaymentToken = validateScriptHash(paymentToken);
-      
+
       // Get the appropriate services
       const neoService = this.getNeoService(network);
       const contractService = this.getContractService(network);
-      
+
       // Import the wallet
       const account = await neoService.importWallet(walletPath, walletPassword);
-      
+
       // List NFT on GhostMarket
       const txid = await contractService.listGhostMarketNFT(account, tokenId, validPrice, validPaymentToken);
-      
+
       return createSuccessResponse({
         txid,
         address: account.address,
@@ -2100,28 +2183,28 @@ class NeoMcpServer {
 
   private async handleGhostMarketBuyNFT(args: any) {
     try {
-      const { 
-        network, 
-        walletPath, 
-        walletPassword, 
+      const {
+        network,
+        walletPath,
+        walletPassword,
         tokenId
       } = args;
-      
+
       // Validate token ID
       if (typeof tokenId !== 'number' || tokenId < 0) {
         throw new Error('Invalid token ID');
       }
-      
+
       // Get the appropriate services
       const neoService = this.getNeoService(network);
       const contractService = this.getContractService(network);
-      
+
       // Import the wallet
       const account = await neoService.importWallet(walletPath, walletPassword);
-      
+
       // Buy NFT on GhostMarket
       const txid = await contractService.buyGhostMarketNFT(account, tokenId);
-      
+
       return createSuccessResponse({
         txid,
         address: account.address,
@@ -2136,22 +2219,137 @@ class NeoMcpServer {
   private async handleGhostMarketGetTokenInfo(args: any) {
     try {
       const { network, tokenId } = args;
-      
+
       // Validate token ID
       if (typeof tokenId !== 'number' || tokenId < 0) {
         throw new Error('Invalid token ID');
       }
-      
+
       // Get the appropriate contract service
       const contractService = this.getContractService(network);
-      
+
       // Get token info from GhostMarket
       const result = await contractService.getGhostMarketTokenInfo(tokenId);
-      
+
       return createSuccessResponse({
         tokenInfo: result,
         tokenId,
         network: contractService.getNetwork()
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  /**
+   * Handle get_network_mode tool
+   * @returns Current network mode configuration
+   */
+  private async handleGetNetworkMode() {
+    try {
+      // Get the available networks based on the current mode
+      const availableNetworks = [];
+
+      if (config.networkMode === NetworkMode.MAINNET_ONLY || config.networkMode === NetworkMode.BOTH) {
+        availableNetworks.push(NeoNetwork.MAINNET);
+      }
+
+      if (config.networkMode === NetworkMode.TESTNET_ONLY || config.networkMode === NetworkMode.BOTH) {
+        availableNetworks.push(NeoNetwork.TESTNET);
+      }
+
+      return createSuccessResponse({
+        mode: config.networkMode,
+        availableNetworks,
+        defaultNetwork: config.networkMode === NetworkMode.TESTNET_ONLY ?
+          NeoNetwork.TESTNET : NeoNetwork.MAINNET
+      });
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  /**
+   * Handle set_network_mode tool
+   * @param args Input arguments
+   * @returns Updated network mode configuration
+   */
+  private async handleSetNetworkMode(args: any) {
+    try {
+      const { mode } = args;
+
+      if (!mode) {
+        throw new McpError(ErrorCode.InvalidParams, 'Mode is required');
+      }
+
+      // Validate the mode
+      if (![NetworkMode.MAINNET_ONLY, NetworkMode.TESTNET_ONLY, NetworkMode.BOTH].includes(mode)) {
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          `Invalid mode: ${mode}. Must be one of: ${NetworkMode.MAINNET_ONLY}, ${NetworkMode.TESTNET_ONLY}, ${NetworkMode.BOTH}`
+        );
+      }
+
+      // Update the network mode
+      (config as any).networkMode = mode;
+
+      console.log(`Network mode updated to: ${mode}`);
+
+      // Reinitialize services based on the new mode
+      this.neoServices.clear();
+      this.contractServices.clear();
+
+      // Initialize mainnet services if mainnet is enabled
+      if (mode === NetworkMode.MAINNET_ONLY || mode === NetworkMode.BOTH) {
+        console.log('Initializing mainnet services...');
+
+        // Initialize mainnet service
+        this.neoServices.set(
+          NeoNetwork.MAINNET,
+          new NeoService(config.mainnetRpcUrl, NeoNetwork.MAINNET)
+        );
+
+        // Initialize mainnet contract service
+        this.contractServices.set(
+          NeoNetwork.MAINNET,
+          new ContractService(config.mainnetRpcUrl, NeoNetwork.MAINNET)
+        );
+      }
+
+      // Initialize testnet services if testnet is enabled
+      if (mode === NetworkMode.TESTNET_ONLY || mode === NetworkMode.BOTH) {
+        console.log('Initializing testnet services...');
+
+        // Initialize testnet service
+        this.neoServices.set(
+          NeoNetwork.TESTNET,
+          new NeoService(config.testnetRpcUrl, NeoNetwork.TESTNET)
+        );
+
+        // Initialize testnet contract service
+        this.contractServices.set(
+          NeoNetwork.TESTNET,
+          new ContractService(config.testnetRpcUrl, NeoNetwork.TESTNET)
+        );
+      }
+
+      // Get the available networks based on the new mode
+      const availableNetworks = [];
+
+      if (mode === NetworkMode.MAINNET_ONLY || mode === NetworkMode.BOTH) {
+        availableNetworks.push(NeoNetwork.MAINNET);
+      }
+
+      if (mode === NetworkMode.TESTNET_ONLY || mode === NetworkMode.BOTH) {
+        availableNetworks.push(NeoNetwork.TESTNET);
+      }
+
+      return createSuccessResponse({
+        mode,
+        availableNetworks,
+        defaultNetwork: mode === NetworkMode.TESTNET_ONLY ?
+          NeoNetwork.TESTNET : NeoNetwork.MAINNET,
+        message: 'Network mode updated successfully'
       });
     } catch (error) {
       return handleError(error);

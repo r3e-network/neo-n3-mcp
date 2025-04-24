@@ -23,6 +23,7 @@ An MCP server that provides seamless integration with the Neo N3 blockchain, all
 - [Testing Guide](TESTING.md) - Testing approach and instructions for verifying functionality
 - [Architecture](ARCHITECTURE.md) - Detailed system architecture and design decisions
 - [Network Architecture](NETWORKS.md) - Dual-network support and configuration details
+- [Network Configuration](NETWORK_CONFIG.md) - Configure which networks (mainnet, testnet, or both) are enabled
 
 ## 🚀 Features
 
@@ -151,6 +152,7 @@ The server can be configured using environment variables:
 - `NEO_MAINNET_RPC_URL`: URL of the Neo N3 mainnet RPC node (default: same as NEO_RPC_URL or https://mainnet1.neo.coz.io:443)
 - `NEO_TESTNET_RPC_URL`: URL of the Neo N3 testnet RPC node (default: https://testnet1.neo.coz.io:443)
 - `NEO_NETWORK`: Default network type: 'mainnet' or 'testnet' (default: mainnet)
+- `NEO_NETWORK_MODE`: Network mode: 'mainnet_only', 'testnet_only', or 'both' (default: both)
 - `WALLET_PATH`: Path to the wallet files (default: ./wallets)
 - `LOG_LEVEL`: Log level: 'debug', 'info', 'warn', 'error' (default: info)
 - `LOG_CONSOLE`: Whether to log to console (default: true)
@@ -161,9 +163,37 @@ The server can be configured using environment variables:
 
 ## Usage
 
-### Tools
+### Network Configuration Tools
 
-All tools now support an optional `network` parameter to specify which network to use ('mainnet' or 'testnet').
+The server provides tools to get and set the network mode at runtime:
+
+#### get_network_mode
+
+Get the current network mode configuration.
+
+```json
+{
+  "name": "get_network_mode",
+  "arguments": {}
+}
+```
+
+#### set_network_mode
+
+Set the active network mode.
+
+```json
+{
+  "name": "set_network_mode",
+  "arguments": {
+    "mode": "testnet_only"
+  }
+}
+```
+
+### Blockchain Tools
+
+All tools support an optional `network` parameter to specify which network to use ('mainnet' or 'testnet').
 
 #### get_blockchain_info
 
