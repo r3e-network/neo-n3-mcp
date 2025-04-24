@@ -1,6 +1,4 @@
-import { strict as assert } from 'assert';
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
+const assert = require('assert').strict;
 
 console.log('Script started');
 
@@ -194,11 +192,11 @@ console.log('Defined TestNeoService class');
 // Simple test runner
 async function runTests() {
   console.log('Running Neo Service tests...');
-  
+
   const neoService = new TestNeoService('http://localhost:10332');
   let passedTests = 0;
   let failedTests = 0;
-  
+
   try {
     // Test getBlockchainInfo
     console.log('Testing getBlockchainInfo...');
@@ -294,4 +292,4 @@ console.log('Starting test execution');
 runTests().catch(error => {
   console.error('Test runner error:', error);
   process.exit(1);
-}); 
+});
