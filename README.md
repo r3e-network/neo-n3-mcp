@@ -12,7 +12,7 @@ An MCP server that provides seamless integration with the Neo N3 blockchain, all
 [![NPM](https://img.shields.io/badge/npm-package-red.svg)](https://www.npmjs.com/package/@r3e/neo-n3-mcp)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/R3E-Network/neo-n3-mcp/actions)
 [![Test Status](https://img.shields.io/badge/tests-passing-brightgreen.svg)](https://github.com/R3E-Network/neo-n3-mcp/actions)
-[![Version](https://img.shields.io/badge/version-1.0.8-blue.svg)](https://github.com/R3E-Network/neo-n3-mcp/releases)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/R3E-Network/neo-n3-mcp/releases)
 [![Netlify Status](https://api.netlify.com/api/v1/badges/f6c219c8-9cc1-4271-befe-80b43d72f4b3/deploy-status)](https://app.netlify.com/sites/neo-n3-mcp/deploys)
 
 ## 📚 Documentation
