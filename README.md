@@ -1,62 +1,160 @@
 # Neo N3 Model Context Protocol (MCP) v1.2.1
 
-The Neo N3 Model Context Protocol (MCP) enables AI agents and applications to interact with the Neo N3 blockchain through a standardized interface. This protocol bridges the gap between AI systems and blockchain technology, allowing for seamless integration of Neo N3 capabilities into AI workflows.
+The Neo N3 Model Context Protocol (MCP) provides a standardized interface for AI agents and applications to interact with the Neo N3 blockchain. This guide focuses on how to use and configure the Neo N3 MCP server.
 
-## What is Neo N3 MCP?
+## Quick Start
 
-Neo N3 MCP is an implementation of the Model Context Protocol specifically designed for the Neo N3 blockchain. It provides AI agents with the ability to:
+### Installation
 
-- Query blockchain information (blocks, transactions, balances)
-- Create and manage wallets
-- Transfer NEO, GAS, and other NEP-17 tokens
-- Invoke smart contracts
-- Interact with popular Neo N3 DeFi platforms and NFT marketplaces
-
-## For AI Agent Developers
-
-If you're developing AI agents that need to interact with the Neo N3 blockchain, the Neo N3 MCP provides a standardized way to access blockchain functionality without requiring deep blockchain expertise.
-
-### Supported Operations
-
-The Neo N3 MCP supports the following operations:
-
-#### Blockchain Information
-- `get_blockchain_info` - Get current blockchain height and network information
-- `get_block` - Retrieve detailed information about a specific block
-- `get_transaction` - Get transaction details and confirmation status
-- `get_network_mode` - Check which networks (mainnet/testnet) are currently enabled
-
-#### Wallet Management
-- `create_wallet` - Generate a new Neo N3 wallet
-- `import_wallet` - Import an existing wallet using WIF or private key
-- `get_balance` - Check NEP-17 token balances for an address
-
-#### Asset Transfers
-- `transfer_assets` - Send NEO, GAS, or other tokens to another address
-- `estimate_fees` - Calculate the gas fees required for a transaction
-
-#### Smart Contract Interaction
-- `invoke_read_contract` - Execute read-only smart contract methods
-- `invoke_write_contract` - Execute methods that modify blockchain state
-- `list_famous_contracts` - Get a list of well-known Neo N3 contracts
-- `get_contract_info` - Get details about a specific contract
-
-#### DeFi & NFT Operations
-- `neoburger_deposit` - Stake NEO in NeoBurger
-- `neoburger_withdraw` - Withdraw NEO from NeoBurger
-- `neocompound_deposit` - Deposit assets into NeoCompound
-- `neocompound_withdraw` - Withdraw assets from NeoCompound
-- `ghostmarket_create_nft` - Create an NFT on GhostMarket
-- `ghostmarket_list_nft` - List an NFT for sale
-- `ghostmarket_buy_nft` - Purchase a listed NFT
-
-### Example Usage
-
-Here's how an AI agent might use the Neo N3 MCP to check the current blockchain height:
-
+```bash
+npm install @r3e/neo-n3-mcp
 ```
-Tool: neo_n3_mcp.get_blockchain_info
-Parameters: {"network": "mainnet"}
+
+### Starting the Server
+
+**HTTP Server Mode (Recommended for most users):**
+```bash
+npx neo-n3-mcp-http
+```
+
+This starts an HTTP server on port 5000 (default) with the MCP endpoint available at `http://localhost:5000/mcp`.
+
+**Standard Mode (For AI agent integrations):**
+```bash
+npx neo-n3-mcp
+```
+
+This starts the MCP server in standard input/output mode, suitable for direct integration with AI agents.
+
+## Server Configuration
+
+### Environment Variables
+
+Configure the Neo N3 MCP server using these environment variables:
+
+| Variable | Description | Default | Options |
+|----------|-------------|---------|---------|
+| `NEO_NETWORK_MODE` | Which networks to enable | `both` | `mainnet_only`, `testnet_only`, `both` |
+| `NEO_MAINNET_RPC_URL` | Mainnet RPC URL | `https://mainnet1.neo.coz.io:443` | Any Neo N3 RPC URL |
+| `NEO_TESTNET_RPC_URL` | Testnet RPC URL | `https://testnet1.neo.coz.io:443` | Any Neo N3 RPC URL |
+| `PORT` | HTTP server port | `5000` | Any valid port number |
+| `LOG_LEVEL` | Logging verbosity | `info` | `error`, `warn`, `info`, `debug`, `trace` |
+| `RATE_LIMIT_ENABLED` | Enable rate limiting | `true` | `true`, `false` |
+| `MIN_CALL_INTERVAL_MS` | Minimum time between RPC calls | `100` | Any number in milliseconds |
+| `MAX_RETRIES` | Maximum RPC retry attempts | `3` | Any positive integer |
+| `INITIAL_RETRY_DELAY_MS` | Initial delay before retry | `1000` | Any number in milliseconds |
+
+### Configuration Examples
+
+**Example 1: Mainnet Only with Custom RPC**
+```bash
+NEO_NETWORK_MODE=mainnet_only NEO_MAINNET_RPC_URL=https://my-neo-node.example.com:10331 npx neo-n3-mcp-http
+```
+
+**Example 2: Testnet with Custom Port and Logging**
+```bash
+NEO_NETWORK_MODE=testnet_only PORT=8080 LOG_LEVEL=debug npx neo-n3-mcp-http
+```
+
+**Example 3: Using a Configuration File**
+
+Create a `.env` file:
+```
+NEO_NETWORK_MODE=both
+NEO_MAINNET_RPC_URL=https://mainnet1.neo.coz.io:443
+NEO_TESTNET_RPC_URL=https://testnet1.neo.coz.io:443
+PORT=5000
+LOG_LEVEL=info
+RATE_LIMIT_ENABLED=true
+MIN_CALL_INTERVAL_MS=100
+MAX_RETRIES=3
+INITIAL_RETRY_DELAY_MS=1000
+```
+
+Then start the server:
+```bash
+npx dotenv-cli npx neo-n3-mcp-http
+```
+
+## Using the MCP Server
+
+### HTTP API
+
+Send requests to the MCP server using HTTP POST:
+
+```javascript
+const axios = require('axios');
+
+async function callMcp(toolName, args = {}) {
+  const response = await axios.post('http://localhost:5000/mcp', {
+    name: toolName,
+    arguments: args
+  });
+  return response.data;
+}
+```
+
+### Health Check
+
+The HTTP server provides a health check endpoint:
+
+```bash
+curl http://localhost:5000/health
+```
+
+Response:
+```json
+{
+  "status": "ok",
+  "version": "1.2.1",
+  "networks": ["mainnet", "testnet"]
+}
+```
+
+## Available Tools
+
+### Blockchain Information
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `get_blockchain_info` | Get current height and network info | `network`: "mainnet" or "testnet" |
+| `get_block` | Get block details | `network`, `blockHeight` or `blockHash` |
+| `get_transaction` | Get transaction details | `network`, `txid` |
+
+### Wallet Operations
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `create_wallet` | Create a new wallet | `network`, `password` |
+| `import_wallet` | Import existing wallet | `network`, `wif` or `privateKey`, `password` |
+| `get_balance` | Get token balances | `network`, `address` |
+
+### Asset Transfers
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `transfer_assets` | Send tokens | `network`, `walletPath`, `walletPassword`, `toAddress`, `asset`, `amount`, `confirm` |
+| `estimate_fees` | Calculate gas fees | `network`, `walletPath`, `walletPassword`, `toAddress`, `asset`, `amount` |
+
+### Smart Contract Interaction
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `invoke_read_contract` | Call read-only methods | `network`, `scriptHash`, `operation`, `args` |
+| `invoke_write_contract` | Call state-changing methods | `network`, `walletPath`, `walletPassword`, `scriptHash`, `operation`, `args`, `confirm` |
+
+## Example Requests
+
+### Get Blockchain Information
+
+Request:
+```json
+{
+  "name": "get_blockchain_info",
+  "arguments": {
+    "network": "mainnet"
+  }
+}
 ```
 
 Response:
@@ -69,18 +167,21 @@ Response:
 }
 ```
 
-To transfer NEO tokens:
+### Transfer Assets
 
-```
-Tool: neo_n3_mcp.transfer_assets
-Parameters: {
-  "network": "testnet",
-  "walletPath": "/path/to/wallet.json",
-  "walletPassword": "secure-password",
-  "toAddress": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  "asset": "NEO",
-  "amount": "1",
-  "confirm": true
+Request:
+```json
+{
+  "name": "transfer_assets",
+  "arguments": {
+    "network": "testnet",
+    "walletPath": "/path/to/wallet.json",
+    "walletPassword": "secure-password",
+    "toAddress": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
+    "asset": "NEO",
+    "amount": "1",
+    "confirm": true
+  }
 }
 ```
 
@@ -95,86 +196,35 @@ Response:
 }
 ```
 
-## For Application Developers
+## Error Handling
 
-If you're building applications that need to integrate with Neo N3 blockchain, you can use the Neo N3 MCP as a standardized interface.
+The MCP server returns standardized error responses:
 
-### Installation
-
-```bash
-npm install @r3e/neo-n3-mcp
-```
-
-### Running the MCP Server
-
-The Neo N3 MCP can be run in two modes:
-
-1. **Standard Mode** - Uses standard input/output for communication
-   ```bash
-   npx neo-n3-mcp
-   ```
-
-2. **HTTP Server Mode** - Exposes an HTTP endpoint for communication
-   ```bash
-   npx neo-n3-mcp-http
-   ```
-
-### HTTP API Usage
-
-```javascript
-const axios = require('axios');
-
-// Call the MCP service
-async function callMcp(toolName, args = {}) {
-  const response = await axios.post('http://localhost:5000/mcp', {
-    name: toolName,
-    arguments: args
-  });
-
-  return response.data;
-}
-
-// Example: Get blockchain information
-async function getBlockchainInfo() {
-  const result = await callMcp('get_blockchain_info', {
-    network: 'mainnet'
-  });
-
-  console.log(`Current block height: ${result.result.height}`);
-  return result;
-}
-
-// Example: Create a wallet
-async function createWallet() {
-  const result = await callMcp('create_wallet', {
-    password: 'secure-password-123',
-    network: 'testnet'
-  });
-
-  console.log(`Wallet address: ${result.result.address}`);
-  console.log(`WIF key: ${result.result.WIF}`);
-  return result;
+```json
+{
+  "error": {
+    "code": "INVALID_PARAMETER",
+    "message": "Invalid network parameter. Must be 'mainnet' or 'testnet'."
+  }
 }
 ```
 
-## Security Considerations
+Common error codes:
+- `INVALID_PARAMETER`: Missing or invalid parameter
+- `NETWORK_ERROR`: Error connecting to Neo N3 node
+- `BLOCKCHAIN_ERROR`: Error from the Neo N3 blockchain
+- `WALLET_ERROR`: Error with wallet operations
+- `CONTRACT_ERROR`: Error with smart contract operations
+- `UNAUTHORIZED`: Operation not permitted
+- `INTERNAL_ERROR`: Unexpected server error
 
-When using Neo N3 MCP, keep these security best practices in mind:
+## Security Best Practices
 
-- **Private Keys**: Never expose private keys or wallet passwords in plaintext
-- **Confirmation**: Always use the `confirm: true` parameter for transactions to prevent accidental execution
-- **Simulation**: Use `estimate_fees` to simulate transactions before executing them
-- **Network Selection**: Be explicit about which network you're using (mainnet/testnet)
-- **Error Handling**: Always handle errors gracefully, especially for blockchain operations
-
-## Networks
-
-Neo N3 MCP supports both mainnet and testnet environments:
-
-- **Mainnet**: The main Neo N3 blockchain network with real value tokens
-- **Testnet**: A test network for development and testing without real value
-
-You can specify which network to use in each request with the `network` parameter.
+- Store wallet files securely with strong passwords
+- Use `confirm: true` for all state-changing operations
+- Always validate responses before taking action
+- Use testnet for development and testing
+- Keep your Neo N3 MCP server updated to the latest version
 
 ## Resources
 
