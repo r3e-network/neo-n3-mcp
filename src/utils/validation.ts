@@ -7,9 +7,9 @@
  */
 
 import * as neonJs from '@cityofzion/neon-js';
-import { NeoNetwork } from '../services/neo-service.js';
-import { ValidationError } from './errors.js';
-import { logger } from './logger.js';
+import { NeoNetwork } from '../services/neo-service';
+import { ValidationError } from './errors';
+import { logger } from './logger';
 
 // Constants for validation
 const MAX_GAS_AMOUNT = 1_000_000_000; // 1 billion GAS

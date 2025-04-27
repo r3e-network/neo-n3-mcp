@@ -25,7 +25,7 @@ export class NeoService {
    * @param options Additional service options
    */
   constructor(
-    rpcUrl: string, 
+    rpcUrl: string,
     network: NeoNetwork = NeoNetwork.MAINNET,
     options: {
       rateLimitEnabled?: boolean,
@@ -35,10 +35,10 @@ export class NeoService {
     if (!rpcUrl) {
       throw new Error('RPC URL is required');
     }
-    
+
     try {
       this.rpcClient = new neonJs.rpc.RPCClient(rpcUrl);
-      
+
       // Validate that the RPC URL is formatted correctly
       const urlPattern = /^(http|https):\/\/[^ "]+$/;
       if (!urlPattern.test(rpcUrl)) {
@@ -48,49 +48,45 @@ export class NeoService {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to initialize Neo RPC client: ${errorMessage}`);
     }
-    
+
     // Validate network
     if (!Object.values(NeoNetwork).includes(network)) {
       throw new Error(`Invalid network: ${network}. Must be one of: ${Object.values(NeoNetwork).join(', ')}`);
     }
-    
+
     this.network = network;
-    
+
     // Apply options
     if (options.rateLimitEnabled !== undefined) {
       this.rateLimitEnabled = options.rateLimitEnabled;
     }
-    
+
     if (options.minCallInterval !== undefined && options.minCallInterval > 0) {
       this.minCallInterval = options.minCallInterval;
     }
   }
 
   /**
-   * Get general blockchain information
-   * @returns Object containing blockchain height and validators
+   * Get essential blockchain information
+   * @returns Object containing blockchain height and network
    */
   async getBlockchainInfo() {
     try {
-      // Always use direct execute calls to avoid method naming inconsistencies
-      let height, validators;
-      
-      // Use direct RPC calls with retry logic for better reliability
+      // Get the current block height using getblockcount RPC method
+      let height;
+
       try {
         height = await this.executeWithRetry('getblockcount', []);
       } catch (blockCountError) {
         console.error('Error getting block count:', blockCountError);
         height = 0;
       }
-      
-      try {
-        validators = await this.executeWithRetry('getvalidators', []);
-      } catch (validatorsError) {
-        console.error('Error getting validators:', validatorsError);
-        validators = [];
-      }
-      
-      return { height, validators, network: this.network };
+
+      // Return only the essential information
+      return {
+        height,
+        network: this.network
+      };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to get blockchain info: ${errorMessage}`);
@@ -134,24 +130,75 @@ export class NeoService {
    */
   async getBalance(address: string) {
     try {
-      // Use direct RPC call for better compatibility
-      const accountState = await this.rpcClient.execute('getaccountstate', [address]);
-      
-      // Format the response to match the expected structure
-      if (accountState && accountState.balances) {
+      // Validate the address format
+      if (!address || typeof address !== 'string') {
+        throw new Error('Invalid address format');
+      }
+
+      // Use getnep17balances RPC call as per Neo N3 documentation
+      try {
+        const balanceResult = await this.executeWithRetry('getnep17balances', [address]);
+
+        if (balanceResult && balanceResult.balance) {
+          // Format the response to include additional information
+          return {
+            address: balanceResult.address,
+            balance: balanceResult.balance.map((item: any) => ({
+              asset_hash: item.assethash,
+              amount: item.amount,
+              asset_name: this.getAssetNameByHash(item.assethash),
+              last_updated_block: item.lastupdatedblock
+            }))
+          };
+        }
+
+        // Return empty balance if no data
         return {
-          balance: accountState.balances || []
+          address,
+          balance: []
+        };
+      } catch (nep17Error) {
+        console.error('Error getting NEP-17 balances:', nep17Error);
+
+        // Fallback to getaccountstate if getnep17balances fails
+        try {
+          const accountState = await this.executeWithRetry('getaccountstate', [address]);
+
+          if (accountState && accountState.balances) {
+            return {
+              address,
+              balance: accountState.balances || []
+            };
+          }
+        } catch (accountError) {
+          console.error('Error getting account state:', accountError);
+        }
+
+        // Return empty balance if all methods fail
+        return {
+          address,
+          balance: []
         };
       }
-      
-      // Fallback if account state doesn't have the expected structure
-      return {
-        balance: []
-      };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to get balance for address ${address}: ${errorMessage}`);
     }
+  }
+
+  /**
+   * Get asset name by hash
+   * @param assetHash Asset hash
+   * @returns Asset name or hash if not found
+   */
+  private getAssetNameByHash(assetHash: string): string {
+    // Common NEO and GAS asset hashes (same for mainnet and testnet)
+    const assetNames: Record<string, string> = {
+      '0xd2a4cff31913016155e38e474a2c06d08be276cf': 'GAS',
+      '0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5': 'NEO'
+    };
+
+    return assetNames[assetHash.toLowerCase()] || assetHash;
   }
 
   /**
@@ -181,16 +228,16 @@ export class NeoService {
       }
 
       // Ensure addresses are strings, not objects
-      const fromAddress = typeof fromAccount.address === 'string' 
-        ? fromAccount.address 
+      const fromAddress = typeof fromAccount.address === 'string'
+        ? fromAccount.address
         : String(fromAccount.address);
-        
+
       // Validate addresses using Neo address pattern
       const addressPattern = /^[A-Za-z0-9]{33,35}$/;
       if (!addressPattern.test(fromAddress)) {
         throw new Error(`Invalid sender address format: ${fromAddress}`);
       }
-      
+
       if (!addressPattern.test(toAddress)) {
         throw new Error(`Invalid recipient address format: ${toAddress}`);
       }
@@ -236,7 +283,7 @@ export class NeoService {
       } catch (signError) {
         // Fall back to other methods if the standard approach fails
         console.error('Transaction signing error:', signError);
-        
+
         // Try a different approach if the standard one fails
         try {
           // If tx is already a string, use it directly
@@ -252,7 +299,7 @@ export class NeoService {
         } catch (fallbackError: any) {
           throw new Error(`Failed to sign transaction: ${fallbackError.message}`);
         }
-        
+
         console.warn('Transaction signing fallback used - verify transaction structure');
       }
 
@@ -298,10 +345,10 @@ export class NeoService {
       }
 
       // Ensure address is a string, not an object
-      const fromAddress = typeof fromAccount.address === 'string' 
-        ? fromAccount.address 
+      const fromAddress = typeof fromAccount.address === 'string'
+        ? fromAccount.address
         : String(fromAccount.address);
-      
+
       // Validate address using Neo address pattern
       const addressPattern = /^[A-Za-z0-9]{33,35}$/;
       if (!addressPattern.test(fromAddress)) {
@@ -344,7 +391,7 @@ export class NeoService {
       } catch (signError) {
         // Fall back to other methods if the standard approach fails
         console.error('Transaction signing error:', signError);
-        
+
         // Try a different approach if the standard one fails
         try {
           // If tx is already a string, use it directly
@@ -360,7 +407,7 @@ export class NeoService {
         } catch (fallbackError: any) {
           throw new Error(`Failed to sign transaction: ${fallbackError.message}`);
         }
-        
+
         console.warn('Transaction signing fallback used - verify transaction structure');
       }
 
@@ -408,7 +455,7 @@ export class NeoService {
       if (password) {
         // Import from encrypted key
         account = new neonJs.wallet.Account();
-        
+
         try {
           account.decrypt(key, password);
         } catch (decryptError: any) {
@@ -442,7 +489,7 @@ export class NeoService {
     if (!symbol) {
       throw new Error('Asset symbol is required');
     }
-    
+
     // Asset hashes for different networks
     const assets: Record<NeoNetwork, Record<string, string>> = {
       [NeoNetwork.MAINNET]: {
@@ -462,7 +509,7 @@ export class NeoService {
 
     const networkAssets = assets[this.network];
     const symbolUpper = symbol.toUpperCase();
-    
+
     if (!networkAssets[symbolUpper]) {
       const availableAssets = Object.keys(networkAssets).join(', ');
       throw new Error(`Unknown asset: "${symbol}" on network "${this.network}". Available assets: ${availableAssets}`);
@@ -470,7 +517,7 @@ export class NeoService {
 
     return networkAssets[symbolUpper];
   }
-  
+
   /**
    * Get the current network
    * @returns The current network
@@ -489,25 +536,25 @@ export class NeoService {
       if (!txid) {
         throw new Error('Transaction ID is required');
       }
-      
+
       // Validate transaction ID format
       const txidPattern = /^0x[a-fA-F0-9]{64}$/;
       if (!txidPattern.test(txid)) {
         throw new Error(`Invalid transaction ID format: ${txid}. Expected format: 0x<64 hex chars>`);
       }
-      
+
       // Try to get the transaction
       try {
         const tx = await this.rpcClient.execute('getrawtransaction', [txid, 1]);
-        
+
         // If transaction exists, check if it's confirmed by getting its block
         if (tx && tx.blockhash) {
           const block = await this.rpcClient.execute('getblock', [tx.blockhash, 1]);
           const currentHeight = await this.rpcClient.execute('getblockcount', []);
-          
+
           // Calculate confirmations
           const confirmations = currentHeight - block.index;
-          
+
           return {
             status: 'confirmed',
             confirmations,
@@ -515,7 +562,7 @@ export class NeoService {
             network: this.network
           };
         }
-        
+
         // Transaction found but not yet confirmed
         return {
           status: 'pending',
@@ -548,29 +595,29 @@ export class NeoService {
       if (!txid) {
         throw new Error('Transaction hash is required');
       }
-      
+
       // Remove '0x' prefix if present
       const normalizedTxid = txid.startsWith('0x') ? txid.substring(2) : txid;
-      
+
       // Validate hash format
       if (!/^[0-9a-fA-F]{64}$/.test(normalizedTxid)) {
         throw new Error(`Invalid transaction hash format: ${txid}`);
       }
-      
+
       try {
         // Try to get transaction using executeWithRetry for better reliability
         const tx = await this.executeWithRetry('getrawtransaction', [normalizedTxid, 1]);
-        
+
         // If transaction exists, check if it's confirmed
         if (tx) {
           if (tx.blockhash) {
             // Transaction is confirmed in a block
             const block = await this.executeWithRetry('getblock', [tx.blockhash, 1]);
             const currentHeight = await this.executeWithRetry('getblockcount', []);
-            
+
             // Calculate confirmations
             const confirmations = currentHeight - block.index;
-            
+
             return {
               status: 'confirmed',
               confirmations,
@@ -606,7 +653,7 @@ export class NeoService {
             };
           }
         }
-        
+
         // This line should not be reached but added as a fallback
         throw new Error('Transaction not found');
       } catch (error) {
@@ -641,45 +688,94 @@ export class NeoService {
   ): Promise<any> {
     let lastError;
     let delay = initialDelay;
-    
+    const startTime = Date.now();
+
     // Apply rate limiting if enabled
     if (this.rateLimitEnabled) {
       const now = Date.now();
       const timeElapsed = now - this.lastCallTime;
-      
+
       if (timeElapsed < this.minCallInterval) {
         const waitTime = this.minCallInterval - timeElapsed;
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }
-      
+
       this.lastCallTime = Date.now();
     }
-    
+
     // Try the initial call plus retries
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         // Execute the RPC call
-        return await this.rpcClient.execute(method, params);
+        let response;
+
+        try {
+          response = await this.rpcClient.execute(method, params);
+        } catch (execError) {
+          // Handle specific RPC client errors
+          if (execError instanceof Error) {
+            // Check for network connectivity issues
+            if (execError.message.includes('ECONNREFUSED') ||
+                execError.message.includes('ETIMEDOUT') ||
+                execError.message.includes('ENOTFOUND')) {
+              throw new Error(`Network error connecting to Neo N3 node: ${execError.message}`);
+            }
+
+            // Check for method not found errors
+            if (execError.message.includes('Method not found') ||
+                execError.message.includes('is not a function')) {
+              throw new Error(`RPC method '${method}' not supported by the Neo N3 node`);
+            }
+          }
+
+          // Rethrow the original error if not handled specifically
+          throw execError;
+        }
+
+        // Check for error in response
+        if (response && response.error) {
+          throw new Error(`RPC error: ${response.error.message || JSON.stringify(response.error)}`);
+        }
+
+        // Check for null or undefined response
+        if (response === null || response === undefined) {
+          throw new Error(`RPC call to ${method} returned null or undefined response`);
+        }
+
+        // Log successful call for debugging (only in development)
+        if (process.env.NODE_ENV === 'development') {
+          console.debug(`RPC call to ${method} succeeded in ${Date.now() - startTime}ms`);
+        }
+
+        return response;
       } catch (error) {
         lastError = error;
-        
+
         // Don't wait after the last attempt
         if (attempt < maxRetries) {
           // Log the error and retry information
           console.warn(`RPC call to ${method} failed (attempt ${attempt + 1}/${maxRetries + 1}). Retrying in ${delay}ms...`);
-          
+          console.warn(`Error details: ${error instanceof Error ? error.message : JSON.stringify(error)}`);
+
           // Wait before retrying
           await new Promise(resolve => setTimeout(resolve, delay));
-          
+
           // Exponential backoff
           delay *= 2;
         }
       }
     }
-    
+
     // If we get here, all attempts failed
-    const errorMessage = lastError instanceof Error ? lastError.message : 'Unknown error';
-    throw new Error(`RPC call to ${method} failed after ${maxRetries + 1} attempts: ${errorMessage}`);
+    const errorMessage = lastError instanceof Error ? lastError.message : JSON.stringify(lastError);
+    const totalTime = Date.now() - startTime;
+
+    // Provide a more detailed error message
+    throw new Error(
+      `RPC call to ${method} failed after ${maxRetries + 1} attempts (${totalTime}ms): ${errorMessage}. ` +
+      `Network: ${this.network}. ` +
+      `Please check your Neo N3 node connection or try again later.`
+    );
   }
 
   /**
@@ -705,13 +801,13 @@ export class NeoService {
       if (!toAddress) {
         throw new Error('Recipient address is required');
       }
-      
+
       // Validate addresses using Neo address pattern
       const addressPattern = /^[A-Za-z0-9]{33,35}$/;
       if (!addressPattern.test(fromAddress)) {
         throw new Error(`Invalid sender address format: ${fromAddress}`);
       }
-      
+
       if (!addressPattern.test(toAddress)) {
         throw new Error(`Invalid recipient address format: ${toAddress}`);
       }
@@ -749,7 +845,7 @@ export class NeoService {
       if (result && result.gasconsumed) {
         // Add a 10% buffer for safety
         const estimatedGas = parseFloat(result.gasconsumed) * 1.1;
-        
+
         return {
           estimatedGas: estimatedGas.toFixed(8),
           minRequired: result.gasconsumed,
@@ -758,7 +854,7 @@ export class NeoService {
           network: this.network
         };
       }
-      
+
       throw new Error('Failed to estimate gas: Invalid response from RPC node');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';

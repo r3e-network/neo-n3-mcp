@@ -10,10 +10,11 @@ import {
   ErrorCode,
   McpError
 } from '@modelcontextprotocol/sdk/types.js';
-import { NeoService, NeoNetwork } from './services/neo-service.js';
-import { ContractService } from './contracts/contract-service.js';
-import { FAMOUS_CONTRACTS } from './contracts/contracts.js';
-import { config, NetworkMode } from './config.js';
+import { NeoService, NeoNetwork } from './services/neo-service';
+import { ContractService } from './contracts/contract-service';
+// Import FAMOUS_CONTRACTS for contract definitions
+import { FAMOUS_CONTRACTS } from './contracts/contracts';
+import { config, NetworkMode } from './config';
 import {
   validateAddress,
   validateHash,
@@ -21,12 +22,12 @@ import {
   validatePassword,
   validateScriptHash,
   validateNetwork
-} from './utils/validation.js';
+} from './utils/validation';
 import {
   handleError,
   createSuccessResponse,
   createErrorResponse
-} from './utils/error-handler.js';
+} from './utils/error-handler';
 
 /**
  * Neo N3 MCP Server
@@ -41,7 +42,7 @@ export class NeoMcpServer {
     this.server = new Server(
       {
         name: 'neo-n3-mcp-server',
-        version: '1.1.0',
+        version: '1.2.1',
       },
       {
         capabilities: {
@@ -1928,7 +1929,7 @@ export class NeoMcpServer {
       const contractService = this.getContractService(network);
 
       // Import the wallet
-      const account = await neoService.importWallet(walletPath, walletPassword);
+      const account = neoService.importWallet(walletPath, walletPassword);
 
       // Deposit assets to NeoCompound
       const txid = await contractService.depositToNeoCompound(account, validAssetId, validAmount);
@@ -1964,7 +1965,7 @@ export class NeoMcpServer {
       const contractService = this.getContractService(network);
 
       // Import the wallet
-      const account = await neoService.importWallet(walletPath, walletPassword);
+      const account = neoService.importWallet(walletPath, walletPassword);
 
       // Withdraw assets from NeoCompound
       const txid = await contractService.withdrawFromNeoCompound(account, validAssetId, validAmount);
@@ -2028,7 +2029,7 @@ export class NeoMcpServer {
       const contractService = this.getContractService(network);
 
       // Import the wallet
-      const account = await neoService.importWallet(walletPath, walletPassword);
+      const account = neoService.importWallet(walletPath, walletPassword);
 
       // Deposit assets to GrandShare
       const txid = await contractService.depositToGrandShare(account, poolId, validAmount);
@@ -2066,7 +2067,7 @@ export class NeoMcpServer {
       const contractService = this.getContractService(network);
 
       // Import the wallet
-      const account = await neoService.importWallet(walletPath, walletPassword);
+      const account = neoService.importWallet(walletPath, walletPassword);
 
       // Withdraw assets from GrandShare
       const txid = await contractService.withdrawFromGrandShare(account, poolId, validAmount);
@@ -2122,7 +2123,7 @@ export class NeoMcpServer {
       const contractService = this.getContractService(network);
 
       // Import the wallet
-      const account = await neoService.importWallet(walletPath, walletPassword);
+      const account = neoService.importWallet(walletPath, walletPassword);
 
       // Create NFT on GhostMarket
       const txid = await contractService.createGhostMarketNFT(account, tokenURI, properties);
@@ -2163,7 +2164,7 @@ export class NeoMcpServer {
       const contractService = this.getContractService(network);
 
       // Import the wallet
-      const account = await neoService.importWallet(walletPath, walletPassword);
+      const account = neoService.importWallet(walletPath, walletPassword);
 
       // List NFT on GhostMarket
       const txid = await contractService.listGhostMarketNFT(account, tokenId, validPrice, validPaymentToken);
@@ -2200,7 +2201,7 @@ export class NeoMcpServer {
       const contractService = this.getContractService(network);
 
       // Import the wallet
-      const account = await neoService.importWallet(walletPath, walletPassword);
+      const account = neoService.importWallet(walletPath, walletPassword);
 
       // Buy NFT on GhostMarket
       const txid = await contractService.buyGhostMarketNFT(account, tokenId);
@@ -2378,7 +2379,7 @@ export class NeoMcpServer {
  * @returns MCP response
  */
 export async function handleMcpRequest(request: any) {
-  const server = new NeoMcpServer();
+  const testServer = new NeoMcpServer();
 
   // Create a mock handler function that simulates the MCP server's request handling
   const mockHandler = async (req: any) => {
@@ -2388,7 +2389,7 @@ export async function handleMcpRequest(request: any) {
 
       switch (req.name) {
         case 'get_blockchain_info':
-          const neoService = server['getNeoService'](networkParam);
+          const neoService = testServer['getNeoService'](networkParam);
           const blockchainInfo = await neoService.getBlockchainInfo();
           return createSuccessResponse(blockchainInfo);
 
@@ -2397,7 +2398,7 @@ export async function handleMcpRequest(request: any) {
             return createErrorResponse('Missing required parameter: hashOrHeight', ErrorCode.InvalidParams);
           }
           return createSuccessResponse(
-            await server['getNeoService'](networkParam).getBlock(req.arguments.hashOrHeight)
+            await testServer['getNeoService'](networkParam).getBlock(req.arguments.hashOrHeight)
           );
 
         case 'get_transaction':
@@ -2405,7 +2406,7 @@ export async function handleMcpRequest(request: any) {
             return createErrorResponse('Missing required parameter: txid', ErrorCode.InvalidParams);
           }
           return createSuccessResponse(
-            await server['getNeoService'](networkParam).getTransaction(req.arguments.txid)
+            await testServer['getNeoService'](networkParam).getTransaction(req.arguments.txid)
           );
 
         case 'get_balance':
@@ -2413,7 +2414,7 @@ export async function handleMcpRequest(request: any) {
             return createErrorResponse('Missing required parameter: address', ErrorCode.InvalidParams);
           }
           return createSuccessResponse(
-            await server['getNeoService'](networkParam).getBalance(req.arguments.address)
+            await testServer['getNeoService'](networkParam).getBalance(req.arguments.address)
           );
 
         case 'transfer_assets':
@@ -2422,7 +2423,7 @@ export async function handleMcpRequest(request: any) {
             return createErrorResponse('Missing required parameters for transfer_assets', ErrorCode.InvalidParams);
           }
           return createSuccessResponse(
-            await server['getNeoService'](networkParam).transferAssets(
+            await testServer['getNeoService'](networkParam).transferAssets(
               req.arguments.fromWIF,
               req.arguments.toAddress,
               req.arguments.asset,
@@ -2435,7 +2436,7 @@ export async function handleMcpRequest(request: any) {
             return createErrorResponse('Missing required parameter: password', ErrorCode.InvalidParams);
           }
           return createSuccessResponse(
-            server['getNeoService'](networkParam).createWallet(req.arguments.password)
+            testServer['getNeoService'](networkParam).createWallet(req.arguments.password)
           );
 
         case 'import_wallet':
@@ -2443,18 +2444,18 @@ export async function handleMcpRequest(request: any) {
             return createErrorResponse('Missing required parameter: key', ErrorCode.InvalidParams);
           }
           return createSuccessResponse(
-            server['getNeoService'](networkParam).importWallet(req.arguments.key, req.arguments.password)
+            testServer['getNeoService'](networkParam).importWallet(req.arguments.key, req.arguments.password)
           );
 
         case 'list_famous_contracts':
-          const contracts = server['getContractService'](networkParam).listSupportedContracts();
+          const contracts = testServer['getContractService'](networkParam).listSupportedContracts();
           return createSuccessResponse({ contracts });
 
         case 'get_contract_info':
           if (!req.arguments?.contractName) {
             return createErrorResponse('Missing required parameter: contractName', ErrorCode.InvalidParams);
           }
-          const contractInfo = server['getContractService'](networkParam).getContract(req.arguments.contractName);
+          const contractInfo = testServer['getContractService'](networkParam).getContract(req.arguments.contractName);
           return createSuccessResponse(contractInfo);
 
         case 'invoke_read_contract':
@@ -2462,7 +2463,7 @@ export async function handleMcpRequest(request: any) {
             return createErrorResponse('Missing required parameters for invoke_read_contract', ErrorCode.InvalidParams);
           }
           return createSuccessResponse(
-            await server['getContractService'](networkParam).invokeReadContract(
+            await testServer['getContractService'](networkParam).invokeReadContract(
               req.arguments.contractName,
               req.arguments.operation,
               req.arguments.args || []
@@ -2475,7 +2476,7 @@ export async function handleMcpRequest(request: any) {
             return createErrorResponse('Missing required parameters for invoke_write_contract', ErrorCode.InvalidParams);
           }
           return createSuccessResponse(
-            await server['getContractService'](networkParam).invokeWriteContract(
+            await testServer['getContractService'](networkParam).invokeWriteContract(
               req.arguments.fromWIF,
               req.arguments.contractName,
               req.arguments.operation,
@@ -2495,5 +2496,5 @@ export async function handleMcpRequest(request: any) {
 }
 
 // Start the server
-const server = new NeoMcpServer();
-server.run().catch(console.error);
+const mainServer = new NeoMcpServer();
+mainServer.run().catch(console.error);

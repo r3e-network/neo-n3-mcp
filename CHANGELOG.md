@@ -2,6 +2,50 @@
 
 All notable changes to the Neo N3 MCP server will be documented in this file.
 
+## [1.2.1] - 2025-04-27
+
+### Added
+- Enhanced mock data support for testing without live RPC connection
+- Improved error handling with detailed error messages
+- Better fallback mechanisms for RPC failures
+
+### Changed
+- Optimized codebase by removing unnecessary files and dependencies
+- Improved test reliability with mock data
+- Enhanced documentation for core functionality
+
+### Fixed
+- Fixed RPC call retry mechanism
+- Resolved TypeScript warnings and errors
+- Improved error handling in contract service
+- Fixed duplicate asset hash definitions
+
+## [1.2.0] - 2025-04-25
+
+### Added
+- Advanced gas fee management with automatic adjustment based on network congestion
+- Contract call batching support for multiple operations in a single transaction
+- Enhanced GhostMarket NFT tools for creation, trading, and management
+- Transaction notification system with websocket integration
+- Basic cross-chain functionality for Neo N3 assets and transactions
+- More comprehensive test coverage for all components
+- Additional usage examples in documentation
+
+### Changed
+- Improved key management and wallet encryption
+- Enhanced error messages with more detailed information
+- Optimized RPC communication and response handling
+- Expanded famous contract integrations and operations
+- Improved development tooling and build process
+- Enhanced logging for easier debugging
+
+### Fixed
+- Wallet import issues with certain key formats
+- Transaction status reporting inconsistencies
+- Asset transfer validation for edge cases
+- Contract invocation parameter handling for complex data types
+- Docker compatibility issues on certain platforms
+
 ## [1.1.0] - 2025-03-25
 
 ### Added
@@ -186,4 +230,4 @@ All notable changes to the Neo N3 MCP server will be documented in this file.
 - Core functionality for Neo N3 blockchain interaction
 - MCP protocol integration
 - Docker support
-- NPM package structure 
+- NPM package structure

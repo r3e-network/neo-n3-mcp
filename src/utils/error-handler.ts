@@ -1,6 +1,6 @@
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import { NeoMcpError, ErrorType } from './errors.js';
-import { logger } from './logger.js';
+import { NeoMcpError, ErrorType } from './errors';
+import { logger } from './logger';
 
 /**
  * Error mapping from Neo N3 error messages to user-friendly messages

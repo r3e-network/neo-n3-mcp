@@ -5,12 +5,12 @@
  * like NeoFS, NeoBurger, Flamingo, NeoCompound, GrandShare, and GhostMarket.
  */
 import * as neonJs from '@cityofzion/neon-js';
-import { NeoNetwork } from '../services/neo-service.js';
+import { NeoNetwork } from '../services/neo-service';
 import {
   FAMOUS_CONTRACTS,
   ContractDefinition,
   ContractNetwork
-} from './contracts.js';
+} from './contracts';
 import {
   validateScriptHash,
   validateAmount,
@@ -18,9 +18,9 @@ import {
   validateContractOperation,
   validateAddress,
   validateInteger
-} from '../utils/validation.js';
-import { ContractError, NetworkError, ValidationError } from '../utils/errors.js';
-import { logger } from '../utils/logger.js';
+} from '../utils/validation';
+import { ContractError, NetworkError, ValidationError } from '../utils/errors';
+import { logger } from '../utils/logger';
 
 /**
  * Service for interacting with famous Neo N3 contracts
@@ -149,19 +149,37 @@ export class ContractService {
         network: this.network
       });
 
-      // Create a script to execute the operation
-      const script = neonJs.sc.createScript({
-        scriptHash,
-        operation: validOperation,
-        args
-      });
+      let result;
 
-      // Execute the script through the RPC client
-      const result = await this.rpcClient.invokeScript(
-        neonJs.u.HexString.fromHex(script)
-      );
+      // Use invokefunction RPC method as per Neo N3 documentation
+      try {
+        // Format the arguments according to Neo N3 RPC specification
+        const formattedArgs = this.formatContractArgs(args);
 
-      if (result.state === 'FAULT') {
+        // Execute the function through the RPC client
+        result = await this.rpcClient.execute(
+          'invokefunction',
+          [scriptHash, validOperation, formattedArgs]
+        );
+      } catch (invokeError) {
+        console.error('Error invoking function:', invokeError);
+
+        // Fallback to invokeScript if invokefunction fails
+        // Create a script to execute the operation
+        const script = neonJs.sc.createScript({
+          scriptHash,
+          operation: validOperation,
+          args
+        });
+
+        // Execute the script through the RPC client
+        result = await this.rpcClient.invokeScript(
+          neonJs.u.HexString.fromHex(script)
+        );
+      }
+
+      // Check for execution errors
+      if (result && result.state === 'FAULT') {
         throw new ContractError(
           `Contract execution failed: ${result.exception || 'Unknown error'}`,
           { contractName, operation: validOperation, args }
@@ -242,25 +260,57 @@ export class ContractService {
         args
       });
 
-      // Create transaction intent
-      const txIntent = {
-        script,
-        attributes: additionalScriptAttributes,
-        signers: [
-          {
-            account: neonJs.u.HexString.fromHex(
-              neonJs.wallet.getScriptHashFromAddress(fromAccount.address)
-            ),
-            scopes: 'CalledByEntry',
-          },
-        ],
+      // Create signer object
+      const signer = {
+        account: neonJs.u.HexString.fromHex(
+          neonJs.wallet.getScriptHashFromAddress(fromAccount.address)
+        ),
+        scopes: 'CalledByEntry',
+        allowedcontracts: [],
+        allowedgroups: []
       };
 
-      // Get transaction information from RPC
-      const tx = await this.rpcClient.invokeScript(
-        neonJs.u.HexString.fromHex(script),
-        txIntent.signers
-      );
+      // Format the arguments according to Neo N3 RPC specification
+      const formattedArgs = this.formatContractArgs(args);
+
+      let tx;
+
+      // Use invokefunction RPC method as per Neo N3 documentation
+      try {
+        // Execute the function through the RPC client
+        tx = await this.rpcClient.execute(
+          'invokefunction',
+          [scriptHash, validOperation, formattedArgs, [signer]]
+        );
+
+        // If invokefunction succeeds, use the result
+        if (!tx || !tx.script) {
+          throw new Error('Invalid response from invokefunction');
+        }
+      } catch (invokeError) {
+        console.error('Error invoking function:', invokeError);
+
+        // Fallback to invokeScript if invokefunction fails
+        // Create transaction intent
+        const txIntent = {
+          script,
+          attributes: additionalScriptAttributes,
+          signers: [
+            {
+              account: neonJs.u.HexString.fromHex(
+                neonJs.wallet.getScriptHashFromAddress(fromAccount.address)
+              ),
+              scopes: 'CalledByEntry',
+            },
+          ],
+        };
+
+        // Get transaction information from RPC
+        tx = await this.rpcClient.invokeScript(
+          neonJs.u.HexString.fromHex(script),
+          txIntent.signers
+        );
+      }
 
       // Check for execution errors
       if (tx.state === 'FAULT') {
@@ -688,6 +738,65 @@ export class ContractService {
    */
   getNetwork(): NeoNetwork {
     return this.network;
+  }
+
+  /**
+   * Format contract arguments according to Neo N3 RPC specification
+   * @param args Arguments to format
+   * @returns Formatted arguments
+   */
+  private formatContractArgs(args: any[]): any[] {
+    if (!args || !Array.isArray(args)) {
+      return [];
+    }
+
+    return args.map(arg => {
+      // Handle null or undefined
+      if (arg === null || arg === undefined) {
+        return { type: 'Any', value: null };
+      }
+
+      // Handle numbers
+      if (typeof arg === 'number') {
+        if (Number.isInteger(arg)) {
+          return { type: 'Integer', value: arg.toString() };
+        } else {
+          return { type: 'Float', value: arg.toString() };
+        }
+      }
+
+      // Handle booleans
+      if (typeof arg === 'boolean') {
+        return { type: 'Boolean', value: arg };
+      }
+
+      // Handle strings
+      if (typeof arg === 'string') {
+        // Check if it's a hex string (script hash)
+        if (arg.startsWith('0x') && /^0x[0-9a-fA-F]{40}$/.test(arg)) {
+          return { type: 'Hash160', value: arg };
+        }
+
+        // Regular string
+        return { type: 'String', value: arg };
+      }
+
+      // Handle arrays
+      if (Array.isArray(arg)) {
+        return { type: 'Array', value: this.formatContractArgs(arg) };
+      }
+
+      // Handle objects (as Map)
+      if (typeof arg === 'object') {
+        return { type: 'Map', value: Object.entries(arg).map(([k, v]) => ({
+          key: this.formatContractArgs([k])[0],
+          value: this.formatContractArgs([v])[0]
+        }))};
+      }
+
+      // Default to ByteArray for unknown types
+      return { type: 'ByteArray', value: Buffer.from(String(arg)).toString('hex') };
+    });
   }
 
   /**

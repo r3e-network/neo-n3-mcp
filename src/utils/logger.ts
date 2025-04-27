@@ -5,7 +5,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { config } from '../config.js';
+import { config } from '../config';
 
 /**
  * Log levels enum
@@ -27,7 +27,7 @@ export class Logger {
   private logToFile: boolean;
   private logFilePath: string;
   private logStream: fs.WriteStream | null = null;
-  
+
   /**
    * Private constructor - use getInstance() instead
    */
@@ -36,7 +36,7 @@ export class Logger {
     this.logToConsole = config.logging.console;
     this.logToFile = config.logging.file;
     this.logFilePath = config.logging.filePath;
-    
+
     if (this.logToFile) {
       try {
         // Ensure directory exists
@@ -44,7 +44,7 @@ export class Logger {
         if (!fs.existsSync(dir)) {
           fs.mkdirSync(dir, { recursive: true });
         }
-        
+
         this.logStream = fs.createWriteStream(this.logFilePath, { flags: 'a' });
       } catch (error) {
         console.error(`Failed to create log stream: ${error instanceof Error ? error.message : String(error)}`);
@@ -52,7 +52,7 @@ export class Logger {
       }
     }
   }
-  
+
   /**
    * Convert string log level to enum
    * @param level Log level string
@@ -67,7 +67,7 @@ export class Logger {
       default: return LogLevel.INFO;
     }
   }
-  
+
   /**
    * Get singleton instance
    * @returns Logger instance
@@ -78,7 +78,7 @@ export class Logger {
     }
     return Logger.instance;
   }
-  
+
   /**
    * Format log message with timestamp and context
    * @param level Log level string
@@ -91,7 +91,7 @@ export class Logger {
     const contextStr = context ? ` ${JSON.stringify(context)}` : '';
     return `[${timestamp}] [${level}] ${message}${contextStr}`;
   }
-  
+
   /**
    * Internal log method
    * @param level Log level
@@ -103,9 +103,9 @@ export class Logger {
     if (level < this.logLevel) {
       return;
     }
-    
+
     const formattedMessage = this.formatMessage(levelStr, message, context);
-    
+
     if (this.logToConsole) {
       const consoleMethod = level === LogLevel.ERROR ? console.error :
                             level === LogLevel.WARN ? console.warn :
@@ -113,7 +113,7 @@ export class Logger {
                             console.debug;
       consoleMethod(formattedMessage);
     }
-    
+
     if (this.logToFile && this.logStream) {
       try {
         this.logStream.write(formattedMessage + '\n');
@@ -122,7 +122,7 @@ export class Logger {
       }
     }
   }
-  
+
   /**
    * Log debug message
    * @param message Log message
@@ -131,7 +131,7 @@ export class Logger {
   public debug(message: string, context?: Record<string, any>): void {
     this.log(LogLevel.DEBUG, 'DEBUG', message, context);
   }
-  
+
   /**
    * Log info message
    * @param message Log message
@@ -140,7 +140,7 @@ export class Logger {
   public info(message: string, context?: Record<string, any>): void {
     this.log(LogLevel.INFO, 'INFO', message, context);
   }
-  
+
   /**
    * Log warning message
    * @param message Log message
@@ -149,7 +149,7 @@ export class Logger {
   public warn(message: string, context?: Record<string, any>): void {
     this.log(LogLevel.WARN, 'WARN', message, context);
   }
-  
+
   /**
    * Log error message
    * @param message Log message
@@ -158,7 +158,7 @@ export class Logger {
   public error(message: string, context?: Record<string, any>): void {
     this.log(LogLevel.ERROR, 'ERROR', message, context);
   }
-  
+
   /**
    * Close log stream
    */
@@ -183,4 +183,4 @@ process.on('exit', () => logger.close());
 process.on('SIGINT', () => {
   logger.close();
   process.exit(0);
-}); 
+});
