@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.4.0] - 2024-07-02
+### Added
+- Enhanced error handling in HTTP server
+- Contract deployment support via HTTP API
+- Additional unit tests for wallet service
+- Improved logging for better debugging
+
+### Changed
+- Enhanced documentation for HTTP API
+- Optimized HTTP request handling
+- Improved validation for API parameters
+
 ## [1.3.0] - 2024-07-01
 ### Added
 - HTTP server that exposes Neo N3 functionality through a RESTful API

@@ -43,11 +43,12 @@ export class HttpServer {
    * Handle HTTP requests
    */
   private async handleRequest(req: http.IncomingMessage, res: http.ServerResponse) {
-    try {
-      const parsedUrl = url.parse(req.url || '', true);
-      const path = parsedUrl.pathname || '';
-      const method = req.method || 'GET';
+    // Define these variables outside the try block so they're available in the catch block
+    const parsedUrl = url.parse(req.url || '', true);
+    const path = parsedUrl.pathname || '';
+    const method = req.method || 'GET';
 
+    try {
       console.log(`HTTP ${method} ${path}`);
 
       // Set CORS headers
@@ -110,6 +111,54 @@ export class HttpServer {
         const operation = body.operation || '';
         const args = body.args || [];
         result = await this.contractService.invokeReadContract(contractName, operation, args);
+      }
+      // Contract deployment
+      else if (path === '/api/contracts/deploy' && method === 'POST') {
+        // Validate required parameters
+        if (!body.wif) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: wif' };
+        } else if (!body.script) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: script' };
+        } else if (!body.manifest) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: manifest' };
+        } else {
+          try {
+            // Deploy the contract
+            result = await this.contractService.deployContract(
+              body.wif,
+              body.script,
+              body.manifest
+            );
+          } catch (error) {
+            statusCode = 500;
+            result = {
+              error: 'Contract deployment failed',
+              details: error instanceof Error ? error.message : 'Unknown error'
+            };
+          }
+        }
+      }
+      // Wallet import
+      else if (path === '/api/wallets/import' && method === 'POST') {
+        // Validate required parameters
+        if (!body.key) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: key (WIF or private key)' };
+        } else {
+          try {
+            const password = body.password || 'password';
+            result = await this.walletService.importWallet(body.key, password);
+          } catch (error) {
+            statusCode = 500;
+            result = {
+              error: 'Wallet import failed',
+              details: error instanceof Error ? error.message : 'Unknown error'
+            };
+          }
+        }
       } else {
         statusCode = 404;
         result = { error: 'Not found' };
@@ -122,9 +171,50 @@ export class HttpServer {
 
       console.log(`HTTP Response ${statusCode}: ${responseBody.substring(0, 100)}${responseBody.length > 100 ? '...' : ''}`);
     } catch (error) {
-      console.error('Error handling request:', error);
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }));
+      // Log the error with detailed information
+      console.error('Error handling request:', {
+        requestMethod: method,
+        requestPath: path,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+
+      // Determine the appropriate status code based on the error type
+      let statusCode = 500;
+      let errorMessage = 'Internal server error';
+      let errorDetails = null;
+
+      if (error instanceof Error) {
+        // Handle specific error types
+        if (error.message.includes('not found') || error.message.includes('Not found')) {
+          statusCode = 404;
+          errorMessage = 'Resource not found';
+        } else if (error.message.includes('invalid') || error.message.includes('Invalid')) {
+          statusCode = 400;
+          errorMessage = 'Bad request';
+        } else if (error.message.includes('unauthorized') || error.message.includes('Unauthorized')) {
+          statusCode = 401;
+          errorMessage = 'Unauthorized';
+        } else if (error.message.includes('forbidden') || error.message.includes('Forbidden')) {
+          statusCode = 403;
+          errorMessage = 'Forbidden';
+        } else if (error.message.includes('timeout') || error.message.includes('Timeout')) {
+          statusCode = 504;
+          errorMessage = 'Gateway timeout';
+        }
+
+        // Include the original error message as details
+        errorDetails = error.message;
+      }
+
+      // Send the error response
+      res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        error: errorMessage,
+        details: errorDetails,
+        path: path,
+        method: method
+      }));
     }
   }
 

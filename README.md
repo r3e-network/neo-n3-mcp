@@ -1,4 +1,4 @@
-# Neo N3 Model Context Protocol (MCP) v1.3.0
+# Neo N3 Model Context Protocol (MCP) v1.4.0
 
 The Neo N3 Model Context Protocol (MCP) provides a standardized interface for AI agents and applications to interact with the Neo N3 blockchain. This server implementation aims for simplicity and ease of use, running directly via `npx` without requiring manual environment configuration for standard usage.
 
@@ -204,8 +204,10 @@ In addition to the MCP server, this package also provides an HTTP server that ex
 | `/api/accounts/:address/balance` | GET | Get token balances for an address |
 | `/api/wallets` | POST | Create a new wallet |
 | `/api/wallets/:address` | GET | Get wallet information |
+| `/api/wallets/import` | POST | Import a wallet from WIF or private key |
 | `/api/network/mode` | GET | Get the current network mode |
 | `/api/contracts/:name/invoke` | POST | Invoke a smart contract method |
+| `/api/contracts/deploy` | POST | Deploy a new smart contract |
 
 ### Example HTTP Requests
 
@@ -224,6 +226,36 @@ curl -X POST -H "Content-Type: application/json" -d '{"password":"your-password"
 
 # Get the current network mode
 curl http://localhost:3002/api/network/mode
+
+# Deploy a smart contract
+curl -X POST -H "Content-Type: application/json" -d '{
+  "wif": "your-private-key-wif",
+  "script": "base64-encoded-contract-script",
+  "manifest": {
+    "name": "MyContract",
+    "groups": [],
+    "features": {},
+    "abi": {
+      "methods": [
+        {
+          "name": "myMethod",
+          "parameters": [],
+          "returnType": "Boolean",
+          "offset": 0
+        }
+      ],
+      "events": []
+    },
+    "permissions": [
+      {
+        "contract": "*",
+        "methods": "*"
+      }
+    ],
+    "trusts": [],
+    "supportedStandards": []
+  }
+}' http://localhost:3002/api/contracts/deploy
 ```
 
 ### Benefits of the HTTP Server

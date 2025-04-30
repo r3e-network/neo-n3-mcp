@@ -478,6 +478,114 @@ export class ContractService {
     );
   }
 
+  /**
+   * Deploy a smart contract
+   * @param wif WIF private key of the account that will deploy the contract
+   * @param script Base64-encoded contract script
+   * @param manifest Contract manifest
+   * @returns Transaction hash and contract hash
+   * @throws ContractError if deployment fails
+   */
+  async deployContract(wif: string, script: string, manifest: any): Promise<any> {
+    try {
+      // Create account from WIF
+      const account = new neonJs.wallet.Account(wif);
+
+      // Validate script
+      if (!script || typeof script !== 'string') {
+        throw new ValidationError('Invalid script: must be a non-empty string');
+      }
+
+      // Validate manifest
+      if (!manifest || typeof manifest !== 'object') {
+        throw new ValidationError('Invalid manifest: must be a non-empty object');
+      }
+
+      // Convert script from base64 to hex if needed
+      let scriptHex = script;
+      if (script.match(/^[A-Za-z0-9+/=]+$/)) {
+        // Looks like base64, convert to hex
+        const scriptBuffer = Buffer.from(script, 'base64');
+        scriptHex = scriptBuffer.toString('hex');
+      }
+
+      // Log the deployment
+      logger.info(`Deploying contract`, {
+        network: this.network,
+        address: account.address,
+        manifestName: manifest.name
+      });
+
+      // Create deployment transaction
+      const deploymentConfig = {
+        script: scriptHex,
+        manifest: JSON.stringify(manifest),
+        account: account
+      };
+
+      // Create a transaction to deploy the contract
+      const tx = new neonJs.tx.Transaction({
+        signers: [
+          {
+            account: neonJs.wallet.getScriptHashFromAddress(account.address),
+            scopes: neonJs.tx.WitnessScope.CalledByEntry
+          }
+        ],
+        systemFee: '10',
+        networkFee: '1',
+        validUntilBlock: 1000,
+        script: neonJs.sc.createScript({
+          // Use the ContractManagement native contract hash
+          scriptHash: '0xfffdc93764dbaddd97c48f252a53ea4643faa3fd',
+          operation: 'deploy',
+          args: [
+            neonJs.sc.ContractParam.byteArray(scriptHex),
+            neonJs.sc.ContractParam.string(JSON.stringify(manifest))
+          ]
+        })
+      });
+
+      // Sign the transaction
+      tx.sign(account);
+
+      // Send the transaction
+      const txid = await this.rpcClient.sendRawTransaction(
+        tx.serialize(true)
+      );
+
+      // Calculate the contract hash (simplified version)
+      const contractHash = neonJs.wallet.getScriptHashFromAddress(account.address);
+
+      return {
+        txid,
+        contractHash,
+        address: account.address,
+        network: this.network
+      };
+    } catch (error) {
+      // If it's already a ContractError, rethrow it
+      if (error instanceof ContractError) {
+        throw error;
+      }
+
+      // If it's a validation error, rethrow it
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+
+      // If it's a network error, wrap it in a NetworkError
+      if (error instanceof Error && error.message.includes('ECONNREFUSED')) {
+        throw new NetworkError(`Failed to connect to Neo N3 node: ${error.message}`);
+      }
+
+      // Otherwise, wrap it in a ContractError
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new ContractError(
+        `Failed to deploy contract: ${errorMessage}`
+      );
+    }
+  }
+
   // NeoBurger specific methods
   async depositNeoToNeoBurger(fromAccount: any): Promise<string> {
     return this.invokeContract(
