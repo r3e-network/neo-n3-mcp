@@ -286,18 +286,22 @@ export function validateContractName(contractName: string, availableContracts: s
     throw new ValidationError('Contract name must be a non-empty string');
   }
 
-  // Sanitize and normalize contract name
+  // Sanitize and normalize contract name (case-insensitive)
   const normalizedName = contractName.trim();
+  const lowerCaseName = normalizedName.toLowerCase();
 
-  // Check if contract name is in the list of available contracts
-  if (availableContracts.length > 0 && !availableContracts.includes(normalizedName)) {
+  // Find the contract name case-insensitively
+  const matchingContract = availableContracts.find(c => c.toLowerCase() === lowerCaseName);
+
+  if (availableContracts.length > 0 && !matchingContract) {
     throw new ValidationError(
       `Invalid contract name: ${normalizedName}. ` +
       `Available contracts: ${availableContracts.join(', ')}`
     );
   }
 
-  return normalizedName;
+  // Return the name with the correct casing from the available list
+  return matchingContract || normalizedName; // Fallback to original if somehow not found after check
 }
 
 /**

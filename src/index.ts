@@ -12,9 +12,11 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { NeoService, NeoNetwork } from './services/neo-service';
 import { ContractService } from './contracts/contract-service';
+import { WalletService } from './services/wallet-service';
 // Import FAMOUS_CONTRACTS for contract definitions
 import { FAMOUS_CONTRACTS } from './contracts/contracts';
 import { config, NetworkMode } from './config';
+import { HttpServer } from './http-server';
 import {
   validateAddress,
   validateHash,
@@ -42,7 +44,7 @@ export class NeoMcpServer {
     this.server = new Server(
       {
         name: 'neo-n3-mcp-server',
-        version: '1.2.1',
+        version: '1.2.2',
       },
       {
         capabilities: {
@@ -1023,8 +1025,6 @@ export class NeoMcpServer {
       switch (name) {
         case 'get_blockchain_info':
           return await this.handleGetBlockchainInfo(input);
-        case 'get_block_count':
-          return await this.handleGetBlockCount(input);
         case 'get_block':
           return await this.handleGetBlock(input);
         case 'get_transaction':
@@ -1034,16 +1034,15 @@ export class NeoMcpServer {
         case 'transfer_assets':
           return await this.handleTransferAssets(input);
         case 'invoke_contract':
-          return await this.handleInvokeContract(input);
+          if (input.fromWIF) {
+            return await this.handleInvokeWriteContract(input);
+          } else {
+            return await this.handleInvokeReadContract(input);
+          }
         case 'create_wallet':
           return await this.handleCreateWallet(input);
         case 'import_wallet':
           return await this.handleImportWallet(input);
-        case 'estimate_transfer_fees':
-          return await this.handleEstimateTransferFees(input);
-        case 'check_transaction_status':
-          return await this.handleCheckTransactionStatus(input);
-        // New famous contract handlers
         case 'list_famous_contracts':
           return await this.handleListFamousContracts(input);
         case 'get_contract_info':
@@ -1052,12 +1051,10 @@ export class NeoMcpServer {
           return await this.handleGetNetworkMode();
         case 'set_network_mode':
           return await this.handleSetNetworkMode(input);
-        // NeoFS handlers
         case 'neofs_create_container':
           return await this.handleNeoFSCreateContainer(input);
         case 'neofs_get_containers':
           return await this.handleNeoFSGetContainers(input);
-        // NeoBurger handlers
         case 'neoburger_deposit':
           return await this.handleNeoBurgerDeposit(input);
         case 'neoburger_withdraw':
@@ -1066,28 +1063,24 @@ export class NeoMcpServer {
           return await this.handleNeoBurgerGetBalance(input);
         case 'neoburger_claim_gas':
           return await this.handleNeoBurgerClaimGas(input);
-        // Flamingo handlers
         case 'flamingo_stake':
           return await this.handleFlamingoStake(input);
         case 'flamingo_unstake':
           return await this.handleFlamingoUnstake(input);
         case 'flamingo_get_balance':
           return await this.handleFlamingoGetBalance(input);
-        // NeoCompound handlers
         case 'neocompound_deposit':
           return await this.handleNeoCompoundDeposit(input);
         case 'neocompound_withdraw':
           return await this.handleNeoCompoundWithdraw(input);
         case 'neocompound_get_balance':
           return await this.handleNeoCompoundGetBalance(input);
-        // GrandShare handlers
         case 'grandshare_deposit':
           return await this.handleGrandShareDeposit(input);
         case 'grandshare_withdraw':
           return await this.handleGrandShareWithdraw(input);
         case 'grandshare_get_pool_details':
           return await this.handleGrandShareGetPoolDetails(input);
-        // GhostMarket handlers
         case 'ghostmarket_create_nft':
           return await this.handleGhostMarketCreateNFT(input);
         case 'ghostmarket_list_nft':
@@ -1293,19 +1286,6 @@ export class NeoMcpServer {
   }
 
   /**
-   * Handle get_block_count tool
-   */
-  private async handleGetBlockCount(args: any) {
-    try {
-      const neoService = this.getNeoService(args?.network);
-      const count = await neoService.getBlockCount();
-      return createSuccessResponse(count);
-    } catch (error) {
-      return handleError(error);
-    }
-  }
-
-  /**
    * Handle get_block tool
    */
   private async handleGetBlock(args: any) {
@@ -1397,41 +1377,65 @@ export class NeoMcpServer {
   }
 
   /**
-   * Handle invoke_contract tool
+   * Handle invoke_contract tool (READ operation)
    */
-  private async handleInvokeContract(args: any) {
+  private async handleInvokeReadContract(args: any) {
     try {
-      if (!args.confirm) {
-        return createErrorResponse('Contract invocation not confirmed. Please set confirm=true to proceed with the invocation.');
-      }
-
       const scriptHash = validateScriptHash(args.scriptHash);
-
-      if (typeof args.fromWIF !== 'string') {
-        throw new McpError(ErrorCode.InvalidParams, 'fromWIF must be a string');
-      }
-
       if (typeof args.operation !== 'string') {
         throw new McpError(ErrorCode.InvalidParams, 'operation must be a string');
       }
+      // Args validation might be needed here depending on contract
 
-      // Import the wallet from WIF
-      const account = new (await import('@cityofzion/neon-js')).wallet.Account(args.fromWIF);
-
-      // Get the right service for the requested network
       const neoService = this.getNeoService(args?.network);
-
-      // Invoke contract
-      const result = await neoService.invokeContract(
-        account,
+      const result = await neoService.invokeReadContract(
         scriptHash,
         args.operation,
         args.args || []
       );
 
+      // Return the full invokeScript result for reads
+      return createSuccessResponse(result);
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  /**
+   * Handle invoke_contract tool (WRITE operation)
+   */
+  private async handleInvokeWriteContract(args: any) {
+    try {
+      if (!args.confirm) {
+        // Use InvalidParams for missing confirmation, provide clear message
+        return createErrorResponse('Write invocation requires confirmation. Please set confirm=true.', ErrorCode.InvalidParams);
+      }
+
+      const scriptHash = validateScriptHash(args.scriptHash);
+      if (typeof args.fromWIF !== 'string') {
+        throw new McpError(ErrorCode.InvalidParams, 'fromWIF must be a string for write operations');
+      }
+      if (typeof args.operation !== 'string') {
+        throw new McpError(ErrorCode.InvalidParams, 'operation must be a string');
+      }
+      // Args validation might be needed here
+
+      // Import the wallet from WIF
+      const account = new (await import('@cityofzion/neon-js')).wallet.Account(args.fromWIF);
+
+      const neoService = this.getNeoService(args?.network);
+      const result = await neoService.invokeContract( // Calls the write-only version now
+        account,
+        scriptHash,
+        args.operation,
+        args.args || []
+        // additionalScriptAttributes could be added here if needed
+      );
+
+      // Return txid result for writes
       return createSuccessResponse({
         txid: result.txid,
-        message: 'Contract invocation successful',
+        message: 'Contract write invocation successful',
         network: neoService.getNetwork()
       });
     } catch (error) {
@@ -1483,44 +1487,6 @@ export class NeoMcpServer {
         ...wallet,
         network: neoService.getNetwork()
       });
-    } catch (error) {
-      return handleError(error);
-    }
-  }
-
-  /**
-   * Handle estimate_transfer_fees tool
-   */
-  private async handleEstimateTransferFees(args: any) {
-    try {
-      const fromAddress = validateAddress(args.fromAddress);
-      const toAddress = validateAddress(args.toAddress);
-      const asset = validateScriptHash(args.asset);
-      const amount = validateAmount(args.amount);
-
-      if (typeof args.network !== 'string') {
-        throw new McpError(ErrorCode.InvalidParams, 'network must be a string');
-      }
-
-      const network = validateNetwork(args.network);
-      const neoService = this.getNeoService(network);
-
-      const fees = await neoService.estimateTransferFees(fromAddress, toAddress, asset, amount);
-      return createSuccessResponse(fees);
-    } catch (error) {
-      return handleError(error);
-    }
-  }
-
-  /**
-   * Handle check_transaction_status tool
-   */
-  private async handleCheckTransactionStatus(args: any) {
-    try {
-      const txid = validateHash(args.txid);
-      const neoService = this.getNeoService(args?.network);
-      const status = await neoService.checkTransactionStatus(txid);
-      return createSuccessResponse(status);
     } catch (error) {
       return handleError(error);
     }
@@ -2476,8 +2442,8 @@ export async function handleMcpRequest(request: any) {
             return createErrorResponse('Missing required parameters for invoke_write_contract', ErrorCode.InvalidParams);
           }
           return createSuccessResponse(
-            await testServer['getContractService'](networkParam).invokeWriteContract(
-              req.arguments.fromWIF,
+            await testServer['getContractService'](networkParam).invokeContract( // Corrected method name
+              req.arguments.fromWIF, // Needs Account object, not WIF
               req.arguments.contractName,
               req.arguments.operation,
               req.arguments.args || []
@@ -2489,12 +2455,42 @@ export async function handleMcpRequest(request: any) {
       }
     } catch (error) {
       return handleError(error);
-    }
-  };
+    };
 
   return await mockHandler(request);
 }
 
-// Start the server
+// Start the MCP server
+console.log('Starting Neo N3 MCP server...');
 const mainServer = new NeoMcpServer();
 mainServer.run().catch(console.error);
+console.log('MCP server started');
+
+// Start the HTTP server
+console.log('Starting HTTP server...');
+console.log('Network mode:', config.networkMode);
+
+const neoService = mainServer['neoServices'].get(
+  config.networkMode === NetworkMode.TESTNET_ONLY ? NeoNetwork.TESTNET : NeoNetwork.MAINNET
+);
+console.log('Neo service available:', !!neoService);
+
+const contractService = mainServer['contractServices'].get(
+  config.networkMode === NetworkMode.TESTNET_ONLY ? NeoNetwork.TESTNET : NeoNetwork.MAINNET
+);
+console.log('Contract service available:', !!contractService);
+
+const walletService = new WalletService();
+console.log('Wallet service created');
+
+if (neoService && contractService) {
+  try {
+    const httpServer = new HttpServer(neoService, walletService, contractService);
+    console.log('HTTP server started successfully');
+  } catch (error) {
+    console.error('Error starting HTTP server:', error);
+  }
+} else {
+  console.error('Failed to start HTTP server: Neo service or Contract service not available');
+}
+}

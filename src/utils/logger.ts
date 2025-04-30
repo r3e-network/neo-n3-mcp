@@ -7,6 +7,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { config } from '../config';
 
+// Define default logging settings
+const DEFAULT_LOG_LEVEL = 'info';
+const DEFAULT_LOG_CONSOLE = true;
+const DEFAULT_LOG_FILE = false;
+const DEFAULT_LOG_FILE_PATH = './logs/neo-n3-mcp.log';
+
 /**
  * Log levels enum
  */
@@ -32,10 +38,12 @@ export class Logger {
    * Private constructor - use getInstance() instead
    */
   private constructor() {
-    this.logLevel = this.stringToLogLevel(config.logging.level);
-    this.logToConsole = config.logging.console;
-    this.logToFile = config.logging.file;
-    this.logFilePath = config.logging.filePath;
+    // Use defaults if config or specific logging properties are not available
+    const loggingConfig = (config as any)?.logging; // Check if logging exists
+    this.logLevel = this.stringToLogLevel(loggingConfig?.level || DEFAULT_LOG_LEVEL);
+    this.logToConsole = loggingConfig?.console !== undefined ? loggingConfig.console : DEFAULT_LOG_CONSOLE;
+    this.logToFile = loggingConfig?.file || DEFAULT_LOG_FILE;
+    this.logFilePath = loggingConfig?.filePath || DEFAULT_LOG_FILE_PATH;
 
     if (this.logToFile) {
       try {
@@ -55,10 +63,13 @@ export class Logger {
 
   /**
    * Convert string log level to enum
-   * @param level Log level string
+   * @param level Log level string (case-insensitive)
    * @returns LogLevel enum value
    */
-  private stringToLogLevel(level: string): LogLevel {
+  private stringToLogLevel(level?: string): LogLevel {
+    if (!level) {
+      level = DEFAULT_LOG_LEVEL;
+    }
     switch (level.toLowerCase()) {
       case 'debug': return LogLevel.DEBUG;
       case 'info': return LogLevel.INFO;

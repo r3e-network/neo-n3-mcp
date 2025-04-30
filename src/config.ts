@@ -9,9 +9,14 @@ export enum NetworkMode {
   BOTH = 'both'
 }
 
-// Helper function to parse network mode from environment variable
+// Default configuration values - simplified to reduce reliance on environment variables
+const DEFAULT_MAINNET_RPC = 'https://mainnet1.neo.coz.io:443';
+const DEFAULT_TESTNET_RPC = 'https://testnet1.neo.n3.nodereal.io';
+const DEFAULT_NETWORK_MODE = NetworkMode.BOTH;
+
+// Helper function remains for potential advanced override, but not used by default config
 function parseNetworkMode(value: string | undefined): NetworkMode {
-  if (!value) return NetworkMode.BOTH;
+  if (!value) return DEFAULT_NETWORK_MODE;
 
   switch (value.toLowerCase()) {
     case 'mainnet':
@@ -27,43 +32,20 @@ function parseNetworkMode(value: string | undefined): NetworkMode {
 }
 
 export const config = {
-  // Neo N3 RPC URLs for different networks
-  neoRpcUrl: process.env.NEO_RPC_URL || 'https://mainnet1.neo.coz.io:443', // Default/Legacy config
+  // Use hardcoded defaults, allowing optional override via environment variables
+  // if absolutely necessary for advanced use cases, but primarily rely on defaults.
+  mainnetRpcUrl: process.env.NEO_MAINNET_RPC_URL || DEFAULT_MAINNET_RPC,
+  testnetRpcUrl: process.env.NEO_TESTNET_RPC_URL || DEFAULT_TESTNET_RPC,
+  networkMode: parseNetworkMode(process.env.NEO_NETWORK_MODE), // Keep parsing for potential override
 
-  // Network-specific RPC URLs
-  mainnetRpcUrl: process.env.NEO_MAINNET_RPC_URL || process.env.NEO_RPC_URL || 'https://mainnet1.neo.coz.io:443',
-  testnetRpcUrl: process.env.NEO_TESTNET_RPC_URL || 'https://testnet1.neo.coz.io:443',
+  // Port for the *optional* HTTP server - KEEPING this, as http-mcp-server.js might be added back later or used differently
+  // port: parseInt(process.env.PORT || '5000', 10),
 
-  // Path to wallet files
-  walletPath: process.env.WALLET_PATH || './wallets',
-
-  // Network type: 'mainnet', 'testnet', or 'private'
-  network: process.env.NEO_NETWORK || 'mainnet',
-
-  // Network mode: controls which networks are enabled
-  networkMode: parseNetworkMode(process.env.NEO_NETWORK_MODE),
-
-  // Security settings
-  security: {
-    // Maximum number of requests per minute (rate limiting)
-    maxRequestsPerMinute: parseInt(process.env.MAX_REQUESTS_PER_MINUTE || '60', 10),
-
-    // Whether to require confirmation for sensitive operations
-    requireConfirmation: process.env.REQUIRE_CONFIRMATION !== 'false',
-  },
-
-  // Logging settings
-  logging: {
-    // Log level: 'debug', 'info', 'warn', 'error'
-    level: process.env.LOG_LEVEL || 'info',
-
-    // Whether to log to console
-    console: process.env.LOG_CONSOLE !== 'false',
-
-    // Whether to log to file
-    file: process.env.LOG_FILE === 'true',
-
-    // Path to log file
-    filePath: process.env.LOG_FILE_PATH || './logs/neo-n3-mcp.log',
-  },
+  // Other settings (like walletPath, security, logging) are removed from this primary export
+  // to simplify basic usage. They might still exist internally or be added back if needed.
 };
+
+// Example of accessing the simplified config:
+// import { config } from './config';
+// console.log(config.mainnetRpcUrl);
+// console.log(config.networkMode);

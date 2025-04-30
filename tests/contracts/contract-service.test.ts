@@ -8,10 +8,20 @@ import { ContractError, NetworkError, ValidationError } from '../../src/utils/er
 jest.mock('../../src/utils/validation', () => {
   const originalModule = jest.requireActual('../../src/utils/validation');
   return {
-    ...originalModule,
+    ...originalModule as any,
     validateAddress: jest.fn().mockImplementation((address) => address),
-    validateScriptHash: jest.fn().mockImplementation((hash) => hash.startsWith('0x') ? hash : `0x${hash}`),
-    validateAmount: jest.fn().mockImplementation((amount) => amount.toString()),
+    validateScriptHash: jest.fn().mockImplementation((hash: any) => {
+      if (typeof hash === 'string') {
+        return hash.startsWith('0x') ? hash : `0x${hash}`;
+      }
+      return hash;
+    }),
+    validateAmount: jest.fn().mockImplementation((amount: any) => {
+      if (amount !== undefined && amount !== null) {
+        return amount.toString();
+      }
+      return '0';
+    }),
     validateInteger: jest.fn().mockImplementation((value) => typeof value === 'string' ? parseInt(value, 10) : value),
   };
 });
@@ -36,15 +46,15 @@ jest.mock('@cityofzion/neon-js', () => {
           gasconsumed: '10',
           stack: [{ type: 'ByteString', value: 'test' }]
         }),
-        execute: jest.fn().mockImplementation((method, params) => {
+        execute: jest.fn().mockImplementation(async (method, params) => {
           if (method === 'invokefunction') {
             return Promise.resolve({
               state: 'HALT',
               gasconsumed: '10',
               stack: [{ type: 'ByteString', value: 'test' }]
-            });
+            } as any);
           }
-          return Promise.resolve(null);
+          return Promise.resolve(null as any);
         })
       })),
     },
@@ -247,12 +257,12 @@ describe('ContractService', () => {
 
     await contractService.invokeReadContract(
       'NeoFS',
-      'getContainerInfo',
-      ['containerId']
+      'getContainers',
+      ['ownerId']
     );
 
     // Verify queryContract was called with the right parameters
-    expect(querySpy).toHaveBeenCalledWith('NeoFS', 'getContainerInfo', ['containerId']);
+    expect(querySpy).toHaveBeenCalledWith('NeoFS', 'getContainers', ['ownerId']);
   });
 
   test('invokeReadContract handles errors properly', async () => {
@@ -261,8 +271,8 @@ describe('ContractService', () => {
 
     await expect(contractService.invokeReadContract(
       'NeoFS',
-      'getContainerInfo',
-      ['containerId']
+      'getContainers',
+      ['ownerId']
     )).rejects.toThrow(ContractError);
   });
 

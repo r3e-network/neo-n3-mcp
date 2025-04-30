@@ -831,23 +831,29 @@ export class ContractService {
   }
 
   /**
-   * Invoke a write contract method that requires signing
+   * Invoke a contract method that requires signing (alias for invokeContract)
    * @param fromAccount Account to sign the transaction
    * @param contractName Name of the contract
    * @param operation Operation name
    * @param args Arguments for the operation
-   * @returns Transaction hash
+   * @param additionalScriptAttributes Additional script attributes
+   * @returns Object containing txid
    * @throws ContractError if contract execution fails
    */
   async invokeWriteContract(
     fromAccount: any,
     contractName: string,
     operation: string,
-    args: any[] = []
+    args: any[] = [],
+    additionalScriptAttributes: any[] = []
   ): Promise<{ txid: string }> {
     try {
-      // Use the invokeContract method to execute the write operation
-      const txid = await this.invokeContract(fromAccount, contractName, operation, args);
+      // Only pass additionalScriptAttributes if it's explicitly provided
+      const txid = args.length === 0 && additionalScriptAttributes.length === 0
+        ? await this.invokeContract(fromAccount, contractName, operation)
+        : additionalScriptAttributes.length === 0
+          ? await this.invokeContract(fromAccount, contractName, operation, args)
+          : await this.invokeContract(fromAccount, contractName, operation, args, additionalScriptAttributes);
 
       return { txid };
     } catch (error) {

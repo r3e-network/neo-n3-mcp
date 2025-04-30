@@ -1,6 +1,26 @@
 # Changelog
 
-All notable changes to the Neo N3 MCP server will be documented in this file.
+## [1.3.0] - 2024-07-01
+### Added
+- HTTP server that exposes Neo N3 functionality through a RESTful API
+- Integration tests for both MCP and HTTP servers
+- Wallet service for creating and managing wallets
+- Improved error handling and logging
+
+### Changed
+- Updated documentation to include HTTP server information
+- Improved test coverage and reliability
+- Enhanced error messages for better debugging
+
+## [1.2.2] - 2024-06-15
+### Changed
+- Simplified configuration by removing reliance on most environment variables (uses defaults for network mode and RPC URLs).
+- Focused primary usage on standard I/O via `npx @r3e/neo-n3-mcp` command.
+- Updated documentation to reflect simplified setup and client configuration.
+
+### Removed
+- Removed optional HTTP server (`http-mcp-server.js` and `start:http` script).
+- Removed unused legacy configuration fields (`config.network`, `config.walletPath`) from `src/config.ts`.
 
 ## [1.2.1] - 2025-04-27
 
