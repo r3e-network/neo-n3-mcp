@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/r3e-network-neo-n3-mcp-badge.png)](https://mseep.ai/app/r3e-network-neo-n3-mcp)
+
 # Neo N3 Model Context Protocol (MCP) v1.4.0
 
 The Neo N3 Model Context Protocol (MCP) provides a standardized interface for AI agents and applications to interact with the Neo N3 blockchain. This server implementation aims for simplicity and ease of use, running directly via `npx` without requiring manual environment configuration for standard usage.
