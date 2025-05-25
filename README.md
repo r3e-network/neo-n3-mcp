@@ -178,14 +178,48 @@ CMD ["node", "dist/index.js"]
 ## 🛠️ MCP Client Integration
 
 ### Claude Desktop
-Add to your Claude Desktop config:
+Add to your Claude Desktop config (`~/.cursor/mcp.json` or similar):
 
 ```json
 {
   "mcpServers": {
     "neo-n3": {
       "command": "npx",
-      "args": ["@r3e/neo-n3-mcp", "--network", "testnet"]
+      "args": [
+        "-y",
+        "@r3e/neo-n3-mcp",
+        "--network",
+        "testnet"
+      ],
+      "disabled": false,
+      "env": {
+        "NEO_NETWORK": "testnet",
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}
+```
+
+For mainnet configuration:
+```json
+{
+  "mcpServers": {
+    "neo-n3": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@r3e/neo-n3-mcp",
+        "--network",
+        "mainnet"
+      ],
+      "disabled": false,
+      "env": {
+        "NEO_NETWORK": "mainnet",
+        "NEO_MAINNET_RPC": "https://mainnet1.neo.coz.io:443",
+        "NEO_TESTNET_RPC": "https://testnet1.neo.coz.io:443",
+        "LOG_LEVEL": "info"
+      }
     }
   }
 }
