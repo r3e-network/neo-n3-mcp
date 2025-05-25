@@ -211,7 +211,8 @@ export function sanitizeString(input: string): string {
   // Remove control characters and trim whitespace
   return input
     .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')  // Control chars
-    .replace(/<[^>]*>/g, '')                        // Remove HTML tags
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags and content
+    .replace(/<[^>]*>/g, '')                        // Remove other HTML tags
     .trim();
 }
 
@@ -227,7 +228,12 @@ export function validateBoolean(value: boolean | string | number): boolean {
   }
 
   if (typeof value === 'string') {
-    const normalizedValue = value.toLowerCase().trim();
+    // Be strict - no whitespace allowed
+    if (value !== value.trim()) {
+      throw new ValidationError(`Invalid boolean value: ${value}. No whitespace allowed.`);
+    }
+    
+    const normalizedValue = value.toLowerCase();
     if (normalizedValue === 'true') return true;
     if (normalizedValue === 'false') return false;
     if (normalizedValue === '1') return true;

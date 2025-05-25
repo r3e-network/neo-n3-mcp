@@ -75,12 +75,33 @@ export class NeoService {
       // Use dedicated methods
       const height = await this.rpcClient.getBlockCount();
 
-      // Try to get validators using execute method instead of direct method call
+      // Try to get validators using multiple approaches
       let validators = [];
       try {
-        const validatorsResult = await this.rpcClient.execute('getvalidators', []);
-        if (validatorsResult && Array.isArray(validatorsResult)) {
-          validators = validatorsResult;
+        // Try direct getValidators method first
+        try {
+          const validatorsResult = await this.rpcClient.getValidators();
+          if (validatorsResult && Array.isArray(validatorsResult)) {
+            validators = validatorsResult;
+          }
+        } catch (directError) {
+          // Fallback to execute method
+          try {
+            const validatorsResult = await this.rpcClient.execute('getvalidators', []);
+            if (validatorsResult && Array.isArray(validatorsResult)) {
+              validators = validatorsResult;
+            }
+          } catch (executeError) {
+            // Last fallback - try getnextblockvalidators
+            try {
+              const validatorsResult = await this.rpcClient.execute('getnextblockvalidators', []);
+              if (validatorsResult && Array.isArray(validatorsResult)) {
+                validators = validatorsResult;
+              }
+            } catch (nextError) {
+              console.warn('All validator query methods failed, continuing without validators');
+            }
+          }
         }
       } catch (validatorError) {
         console.warn('Failed to get validators:', validatorError);

@@ -1,6 +1,6 @@
 {
   "name": "@r3e/neo-n3-mcp",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "MCP server and HTTP API for Neo N3 blockchain integration",
   "main": "dist/index.js",
   "scripts": {
@@ -8,11 +8,10 @@
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "test": "jest",
-    "test:core": "node tests/rpc-compatibility-test.js",
+    "test:unit": "jest --testMatch='**/tests/**/*.test.ts' --testPathIgnorePatterns='tests/mcp-'",
+    "test:mcp": "jest --testMatch='**/tests/mcp-*.test.ts'",
     "test:integration": "node tests/mcp-integration-test.js",
-    "test:http": "node tests/mcp-http-test.js",
-    "example:core": "node examples/core-functionality.js",
-    "postinstall": "node -e \"try { require('fs').mkdirSync('wallets', { recursive: true }); } catch (e) { if (e.code !== 'EEXIST') throw e; }\"",
+    "test:all": "npm run test:unit && npm run test:mcp",
     "prepublishOnly": "npm run build"
   },
   "bin": {
@@ -27,7 +26,8 @@
     "DEPLOYMENT.md",
     "ARCHITECTURE.md",
     "NETWORKS.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "PRODUCTION_READINESS_REPORT.md"
   ],
   "keywords": [
     "neo",
@@ -55,7 +55,8 @@
   },
   "dependencies": {
     "@cityofzion/neon-js": "^5.3.0",
-    "@modelcontextprotocol/sdk": "^1.10.2"
+    "@modelcontextprotocol/sdk": "^1.9.0",
+    "zod": "^3.24.1"
   },
   "publishConfig": {
     "access": "public"

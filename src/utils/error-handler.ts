@@ -210,6 +210,22 @@ export function createSuccessResponse(data: any): { result: any } {
 }
 
 /**
+ * Create a tool response in the correct MCP format
+ * @param data Data to include in the response
+ * @returns MCP-compatible tool response
+ */
+export function createToolResponse(data: any): { content: Array<{ type: string; text: string }> } {
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(data, null, 2)
+      }
+    ]
+  };
+}
+
+/**
  * Create an error response
  * @param message Error message
  * @param code Error code
@@ -221,5 +237,24 @@ export function createErrorResponse(message: string, code: ErrorCode = ErrorCode
       message,
       code
     }
+  };
+}
+
+/**
+ * Create a resource response in the correct MCP format
+ * @param uri Resource URI
+ * @param data Data to include in the response
+ * @param mimeType Optional MIME type (defaults to application/json)
+ * @returns MCP-compatible resource response
+ */
+export function createResourceResponse(uri: string, data: any, mimeType: string = 'application/json'): { contents: Array<{ uri: string; mimeType: string; text: string }> } {
+  return {
+    contents: [
+      {
+        uri,
+        mimeType,
+        text: JSON.stringify(data, null, 2)
+      }
+    ]
   };
 }
