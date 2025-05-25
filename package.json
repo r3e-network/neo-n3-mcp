@@ -15,7 +15,7 @@
     "prepublishOnly": "npm run build"
   },
   "bin": {
-    "neo-n3-mcp": "./dist/index.js"
+    "neo-n3-mcp": "dist/index.js"
   },
   "files": [
     "dist",
