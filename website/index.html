@@ -3,68 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neo N3 MCP • Next-Generation Blockchain Integration</title>
-    <meta name="description" content="Experience the future of Neo N3 blockchain development. Ultra-modern MCP server with 34 tools, enterprise security, and production-grade performance.">
-    <meta name="keywords" content="neo n3, blockchain, mcp, modern, enterprise, api, defi, smart contracts">
+    <title>Neo N3 MCP • Modern Blockchain Development Platform</title>
+    <meta name="description" content="The most advanced Neo N3 blockchain development platform. Build powerful dApps with our comprehensive MCP server featuring 34+ tools and enterprise-grade security.">
+    <meta name="keywords" content="neo n3, blockchain, mcp, development, smart contracts, defi, enterprise">
     
     <!-- Open Graph -->
-    <meta property="og:title" content="Neo N3 MCP • Next-Generation Blockchain Integration">
-    <meta property="og:description" content="Ultra-modern MCP server for Neo N3 blockchain. Enterprise-grade, secure, and developer-first.">
+    <meta property="og:title" content="Neo N3 MCP • Modern Blockchain Development Platform">
+    <meta property="og:description" content="Build the future of blockchain with our advanced Neo N3 MCP server. Enterprise-grade tools for modern developers.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://neo-n3-mcp.netlify.app">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    
-    <!-- Styles -->
-    <link rel="stylesheet" href="/assets/css/style.css">
-    <link rel="stylesheet" href="/assets/css/modern-enhancements.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     
     <style>
-        /* Comfortable Color System */
+        /* Modern Design System */
         :root {
-            --gradient-primary: linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%);
-            --gradient-secondary: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
-            --gradient-accent: linear-gradient(135deg, #f472b6 0%, #ec4899 100%);
-            --gradient-mesh: radial-gradient(circle at 20% 80%, rgba(96, 165, 250, 0.04) 0%, transparent 50%),
-                            radial-gradient(circle at 80% 20%, rgba(244, 114, 182, 0.03) 0%, transparent 50%),
-                            radial-gradient(circle at 40% 40%, rgba(74, 222, 128, 0.02) 0%, transparent 50%);
-            --neo-dark: #0f172a;
-            --neo-darker: #020617;
-            --neo-darkest: #0c1220;
-            --surface-glass: rgba(255, 255, 255, 0.03);
-            --surface-card: rgba(255, 255, 255, 0.05);
-            --border-glass: rgba(255, 255, 255, 0.08);
-            --border-soft: rgba(255, 255, 255, 0.05);
-            --text-primary: #f8fafc;
-            --text-secondary: rgba(248, 250, 252, 0.7);
-            --text-muted: rgba(248, 250, 252, 0.5);
-            --text-accent: #22c55e;
-            --shadow-glow: 0 0 30px rgba(74, 222, 128, 0.15);
-            --shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.2);
-            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.12);
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #06b6d4;
+            --accent: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #111111;
+            --bg-tertiary: #1a1a1a;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --bg-glass: rgba(255, 255, 255, 0.05);
+            
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.5);
+            
+            --border-primary: rgba(255, 255, 255, 0.1);
+            --border-secondary: rgba(255, 255, 255, 0.05);
+            
+            --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.15);
+            --shadow-lg: 0 16px 64px rgba(0, 0, 0, 0.2);
+            --shadow-glow: 0 0 32px rgba(99, 102, 241, 0.3);
+            
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --radius-full: 9999px;
+            
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--neo-darker);
+            background: var(--bg-primary);
             color: var(--text-primary);
             line-height: 1.6;
             overflow-x: hidden;
+            scroll-behavior: smooth;
         }
 
-        /* Improved Navigation */
+        /* Navigation */
         .nav {
             position: fixed;
             top: 0;
@@ -73,8 +79,15 @@
             z-index: 1000;
             padding: 1rem 0;
             backdrop-filter: blur(20px);
-            background: rgba(2, 6, 23, 0.85);
-            border-bottom: 1px solid var(--border-soft);
+            background: rgba(10, 10, 10, 0.9);
+            border-bottom: 1px solid var(--border-secondary);
+            transition: var(--transition);
+        }
+
+        .nav.scrolled {
+            padding: 0.75rem 0;
+            background: rgba(10, 10, 10, 0.95);
+            border-bottom-color: var(--border-primary);
         }
 
         .nav-container {
@@ -93,13 +106,15 @@
             font-family: 'Space Grotesk', sans-serif;
             font-weight: 700;
             font-size: 1.25rem;
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text-primary);
+            text-decoration: none;
         }
 
-        .nav-logo img { width: 32px; height: 32px; }
+        .nav-logo::before {
+            content: '◆';
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
 
         .nav-menu {
             display: flex;
@@ -111,40 +126,53 @@
             color: var(--text-secondary);
             text-decoration: none;
             font-weight: 500;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             position: relative;
-            padding: 0.5rem 0;
         }
 
         .nav-link:hover {
             color: var(--text-primary);
         }
 
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: var(--transition);
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
         .nav-cta {
-            background: var(--gradient-primary);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
             padding: 0.75rem 1.5rem;
-            border-radius: 100px;
+            border-radius: var(--radius-full);
             text-decoration: none;
             font-weight: 600;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             box-shadow: var(--shadow-glow);
         }
 
         .nav-cta:hover {
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-glow), 0 8px 25px rgba(74, 222, 128, 0.2);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow), var(--shadow-lg);
         }
 
-        /* Darker Hero Section */
+        /* Hero Section */
         .hero {
             min-height: 100vh;
             display: flex;
             align-items: center;
             position: relative;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
             overflow: hidden;
-            padding: 8rem 0 4rem;
-            background: linear-gradient(180deg, var(--neo-darkest) 0%, var(--neo-darker) 100%);
         }
 
         .hero::before {
@@ -154,14 +182,16 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: var(--gradient-mesh);
-            opacity: 0.3;
-            animation: meshFloat 12s ease-in-out infinite;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(16, 185, 129, 0.06) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
         }
 
-        @keyframes meshFloat {
+        @keyframes float {
             0%, 100% { transform: scale(1) rotate(0deg); }
-            50% { transform: scale(1.05) rotate(0.5deg); }
+            50% { transform: scale(1.1) rotate(1deg); }
         }
 
         .hero-container {
@@ -177,141 +207,133 @@
         }
 
         .hero-content {
-            max-width: 100%;
+            animation: fadeInUp 1s ease 0.2s both;
         }
 
         .hero-badge {
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            background: var(--surface-card);
-            border: 1px solid var(--border-glass);
-            backdrop-filter: blur(20px);
+            background: var(--bg-glass);
+            border: 1px solid var(--border-primary);
             padding: 0.5rem 1rem;
-            border-radius: 100px;
+            border-radius: var(--radius-full);
             font-size: 0.875rem;
             font-weight: 500;
             margin-bottom: 2rem;
-            animation: fadeInUp 1s ease 0.2s both;
+            backdrop-filter: blur(10px);
+        }
+
+        .hero-badge::before {
+            content: '🚀';
+            font-size: 1rem;
         }
 
         .hero-title {
             font-family: 'Space Grotesk', sans-serif;
-            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-size: clamp(3rem, 8vw, 5rem);
             font-weight: 800;
             line-height: 1.1;
             margin-bottom: 1.5rem;
-            animation: fadeInUp 1s ease 0.4s both;
-        }
-
-        .hero-gradient {
-            background: var(--gradient-primary);
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
-        .hero-description {
-            font-size: 1.125rem;
+        .hero-subtitle {
+            font-size: 1.25rem;
             color: var(--text-secondary);
             margin-bottom: 2rem;
-            line-height: 1.7;
-            animation: fadeInUp 1s ease 0.6s both;
+            line-height: 1.6;
         }
 
         .hero-actions {
             display: flex;
             gap: 1rem;
             margin-bottom: 3rem;
-            animation: fadeInUp 1s ease 0.8s both;
-            align-items: center;
         }
 
         .btn {
-            padding: 1rem 2rem;
-            border-radius: 100px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
+            padding: 1rem 2rem;
+            border-radius: var(--radius-full);
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
         }
 
         .btn-primary {
-            background: var(--gradient-primary);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
             box-shadow: var(--shadow-glow);
         }
 
-        .btn-secondary {
-            background: var(--surface-card);
-            color: var(--text-primary);
-            border: 1px solid var(--border-glass);
-            backdrop-filter: blur(20px);
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow), var(--shadow-lg);
         }
 
-        .btn:hover {
+        .btn-secondary {
+            background: var(--bg-glass);
+            color: var(--text-primary);
+            border: 1px solid var(--border-primary);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card);
             transform: translateY(-2px);
         }
 
         .hero-stats {
             display: flex;
             gap: 2rem;
-            animation: fadeInUp 1s ease 1s both;
         }
 
         .stat {
-            text-align: left;
+            text-align: center;
         }
 
         .stat-number {
-            display: block;
             font-family: 'Space Grotesk', sans-serif;
             font-size: 2rem;
             font-weight: 800;
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            line-height: 1;
+            color: var(--primary);
+            display: block;
         }
 
         .stat-label {
-            color: var(--text-secondary);
             font-size: 0.875rem;
+            color: var(--text-secondary);
             font-weight: 500;
-            margin-top: 0.25rem;
         }
 
-        /* Improved Hero Visual */
         .hero-visual {
             position: relative;
-            animation: fadeInRight 1s ease 0.6s both;
+            animation: fadeInRight 1s ease 0.4s both;
         }
 
         .code-window {
-            background: rgba(12, 18, 32, 0.95);
-            border: 1px solid var(--border-glass);
-            border-radius: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
             overflow: hidden;
-            backdrop-filter: blur(20px);
-            box-shadow: var(--shadow-card);
+            box-shadow: var(--shadow-lg);
         }
 
         .code-header {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border-soft);
             display: flex;
             align-items: center;
             gap: 0.5rem;
-        }
-
-        .code-dots {
-            display: flex;
-            gap: 0.5rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-secondary);
         }
 
         .code-dot {
@@ -320,15 +342,15 @@
             border-radius: 50%;
         }
 
-        .code-dot:nth-child(1) { background: #ef4444; }
-        .code-dot:nth-child(2) { background: #f59e0b; }
-        .code-dot:nth-child(3) { background: #22c55e; }
+        .code-dot:nth-child(1) { background: #ff5f57; }
+        .code-dot:nth-child(2) { background: #ffbd2e; }
+        .code-dot:nth-child(3) { background: #28ca42; }
 
         .code-body {
             padding: 1.5rem;
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.875rem;
-            line-height: 1.8;
+            line-height: 1.6;
         }
 
         .code-line {
@@ -345,45 +367,311 @@
             to { opacity: 1; transform: translateX(0); }
         }
 
-        .code-prompt { color: #22c55e; }
-        .code-command { color: #fbbf24; }
+        .code-prompt { color: var(--accent); }
+        .code-command { color: var(--warning); }
         .code-output { color: var(--text-secondary); }
-        .code-success { color: #22c55e; }
+        .code-success { color: var(--accent); }
 
-        /* Improved Floating Elements */
-        .floating-card {
+        /* Features Section */
+        .features {
+            padding: 8rem 0;
+            background: var(--bg-secondary);
+        }
+
+        .features-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .feature-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .feature-tag {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Examples Section */
+        .examples {
+            padding: 8rem 0;
+            background: var(--bg-primary);
+        }
+
+        .examples-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+        }
+
+        .example-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .example-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--secondary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .example-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-secondary);
+        }
+
+        .example-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .example-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .example-code {
+            background: var(--bg-tertiary);
+            padding: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.6;
+        }
+
+        /* CTA Section */
+        .cta {
+            padding: 8rem 0;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-tertiary) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta::before {
+            content: '';
             position: absolute;
-            background: rgba(12, 18, 32, 0.8);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--border-glass);
-            border-radius: 1rem;
-            padding: 1rem;
-            box-shadow: var(--shadow-card);
-            animation: float 4s ease-in-out infinite;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 30% 70%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
         }
 
-        .floating-card:nth-child(1) {
-            top: 10%;
-            right: -10%;
-            animation-delay: 0s;
+        .cta-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            text-align: center;
+            position: relative;
+            z-index: 2;
         }
 
-        .floating-card:nth-child(2) {
-            bottom: 20%;
-            left: -15%;
-            animation-delay: 2s;
+        .cta-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
+        .cta-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            line-height: 1.6;
         }
 
-        /* Improved Animations */
+        .cta-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 3rem;
+        }
+
+        .install-command {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            color: var(--text-primary);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--bg-tertiary);
+            border-top: 1px solid var(--border-primary);
+            padding: 4rem 0 2rem;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .footer-brand::before {
+            content: '◆';
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .footer-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .footer-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .footer-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .footer-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .footer-link:hover {
+            color: var(--text-primary);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid var(--border-secondary);
+            padding-top: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        /* Animations */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(30px);
             }
             to {
                 opacity: 1;
@@ -394,7 +682,7 @@
         @keyframes fadeInRight {
             from {
                 opacity: 0;
-                transform: translateX(20px);
+                transform: translateX(30px);
             }
             to {
                 opacity: 1;
@@ -403,68 +691,62 @@
         }
 
         /* Responsive */
-        @media (max-width: 1024px) {
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+            }
+
             .hero-container {
                 grid-template-columns: 1fr;
                 gap: 3rem;
                 text-align: center;
             }
-            
-            .hero-stats {
-                justify-content: center;
-            }
-        }
 
-        @media (max-width: 768px) {
-            .nav-menu {
-                display: none;
-            }
-            
             .hero-actions {
                 flex-direction: column;
                 align-items: center;
             }
-            
+
             .hero-stats {
+                justify-content: center;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .examples-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
                 gap: 2rem;
             }
-        }
 
-        .feature-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(74, 222, 128, 0.2);
-            box-shadow: var(--shadow-card);
-        }
+            .footer-bottom {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
 
-        .example-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(96, 165, 250, 0.2);
-            box-shadow: var(--shadow-card);
-        }
-
-        .doc-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(139, 92, 246, 0.2);
-            box-shadow: var(--shadow-card);
+            .cta-actions {
+                flex-direction: column;
+                align-items: center;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Ultra-Modern Navigation -->
-    <nav class="nav">
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
         <div class="nav-container">
-            <div class="nav-logo">
-                <img src="/assets/images/neo-logo.svg" alt="Neo N3">
-                Neo N3 MCP
-            </div>
+            <a href="#" class="nav-logo">Neo N3 MCP</a>
             <div class="nav-menu">
                 <a href="#features" class="nav-link">Features</a>
                 <a href="#examples" class="nav-link">Examples</a>
-                <a href="#documentation" class="nav-link">Documentation</a>
-                <a href="#technology" class="nav-link">Technology</a>
-                <a href="https://github.com/r3e-network/neo-n3-mcp" class="nav-cta" target="_blank">
-                    Get Started
-                </a>
+                <a href="/docs" class="nav-link">Documentation</a>
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="nav-cta" target="_blank">Get Started</a>
             </div>
         </div>
     </nav>
@@ -474,63 +756,52 @@
         <div class="hero-container">
             <div class="hero-content">
                 <div class="hero-badge">
-                    <span>🚀</span>
-                    <span>v1.5.0 • Production Ready</span>
+                    Production Ready v1.5.0
                 </div>
-                
                 <h1 class="hero-title">
-                    Next-Generation
-                    <br>
-                    <span class="hero-gradient">Blockchain</span>
-                    <br>
-                    Integration
+                    Build the Future of<br>
+                    Blockchain Development
                 </h1>
-                
-                <p class="hero-description">
-                    Experience the future of Neo N3 development with our comprehensive MCP server. 
-                    Enterprise-grade security, reliable functionality, and developer-first design.
+                <p class="hero-subtitle">
+                    The most advanced Neo N3 MCP server with 34+ powerful tools, enterprise-grade security, 
+                    and seamless integration for modern blockchain applications.
                 </p>
-                
                 <div class="hero-actions">
-                    <a href="#start" class="btn btn-primary">
-                        Start Building
+                    <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="btn btn-primary" target="_blank">
+                        🚀 Start Building
                     </a>
-                    <a href="/docs" class="btn btn-secondary">
-                        Explore Docs
+                    <a href="#features" class="btn btn-secondary">
+                        📖 Explore Features
                     </a>
                 </div>
-                
                 <div class="hero-stats">
                     <div class="stat">
-                        <span class="stat-number">34</span>
-                        <span class="stat-label">Power Tools</span>
+                        <span class="stat-number">34+</span>
+                        <span class="stat-label">Tools</span>
                     </div>
                     <div class="stat">
                         <span class="stat-number">90%+</span>
-                        <span class="stat-label">Test Coverage</span>
+                        <span class="stat-label">Coverage</span>
                     </div>
                     <div class="stat">
                         <span class="stat-number">6</span>
-                        <span class="stat-label">Famous Contracts</span>
+                        <span class="stat-label">Protocols</span>
                     </div>
                 </div>
             </div>
-            
             <div class="hero-visual">
                 <div class="code-window">
                     <div class="code-header">
-                        <div class="code-dots">
-                            <div class="code-dot"></div>
-                            <div class="code-dot"></div>
-                            <div class="code-dot"></div>
-                        </div>
+                        <div class="code-dot"></div>
+                        <div class="code-dot"></div>
+                        <div class="code-dot"></div>
                         <span style="margin-left: 1rem; color: var(--text-secondary); font-size: 0.875rem;">
                             neo-mcp-terminal
                         </span>
                     </div>
                     <div class="code-body">
                         <div class="code-line">
-                            <span class="code-prompt">→</span>
+                            <span class="code-prompt">$</span>
                             <span class="code-command"> npx @r3e/neo-n3-mcp</span>
                         </div>
                         <div class="code-line">
@@ -544,799 +815,329 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- Floating Cards -->
-                <div class="floating-card">
-                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Smart Contracts</div>
-                    <div style="font-weight: 600; color: #22c55e;">6 Protocols</div>
-                </div>
-                <div class="floating-card">
-                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Development</div>
-                    <div style="font-weight: 600; color: #60a5fa;">TypeScript Ready</div>
-                </div>
             </div>
         </div>
     </section>
 
     <!-- Features Section -->
-    <section id="features" style="padding: 6rem 0; position: relative;">
-        <div style="max-width: 1200px; margin: 0 auto; padding: 0 2rem;">
-            <div style="text-align: center; margin-bottom: 4rem;">
-                <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: clamp(2.5rem, 5vw, 3.5rem); font-weight: 700; margin-bottom: 1rem;">
-                    Powerful <span style="background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Features</span>
-                </h2>
-                <p style="font-size: 1.125rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto;">
-                    Everything you need for professional Neo N3 blockchain development
+    <section class="features" id="features">
+        <div class="features-container">
+            <div class="section-header">
+                <h2 class="section-title">Powerful Features</h2>
+                <p class="section-subtitle">
+                    Everything you need to build sophisticated blockchain applications with confidence and ease.
                 </p>
             </div>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.5rem; margin-bottom: 4rem;">
-                <!-- Feature 1: Blockchain Operations -->
-                <div style="background: var(--surface-card); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1.5rem; padding: 2rem; transition: all 0.3s ease; position: relative;" class="feature-card">
-                    <div style="width: 56px; height: 56px; background: var(--gradient-primary); border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; font-size: 1.25rem;">🔗</div>
-                    <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Complete Blockchain Operations</h3>
-                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">Access comprehensive blockchain data with advanced queries for blocks, transactions, balances, and network statistics.</p>
-                    <div style="background: var(--neo-dark); border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; border: 1px solid var(--border-soft);">
-                        <div style="color: #22c55e;">get_blockchain_info()</div>
-                        <div style="color: var(--text-secondary);">→ Network: MainNet</div>
-                        <div style="color: var(--text-secondary);">→ Block Height: 12,345,678</div>
-                        <div style="color: var(--text-secondary);">→ Status: Online</div>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <span style="background: rgba(74, 222, 128, 0.1); color: #22c55e; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 500;">Comprehensive</span>
-                        <span style="background: rgba(96, 165, 250, 0.1); color: #60a5fa; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 500;">15+ Tools</span>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔗</div>
+                    <h3 class="feature-title">Complete Blockchain Operations</h3>
+                    <p class="feature-description">
+                        Access comprehensive blockchain data with advanced queries for blocks, transactions, 
+                        balances, and network statistics through our robust API.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">15+ Tools</span>
+                        <span class="feature-tag">Comprehensive</span>
                     </div>
                 </div>
-                
-                <!-- Feature 2: Wallet Management -->
-                <div style="background: var(--surface-card); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1.5rem; padding: 2rem; transition: all 0.3s ease; position: relative;" class="feature-card">
-                    <div style="width: 56px; height: 56px; background: var(--gradient-secondary); border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; font-size: 1.25rem;">🔐</div>
-                    <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Secure Wallet Management</h3>
-                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">Enterprise-grade wallet operations with AES-256 encryption and comprehensive validation systems.</p>
-                    <div style="background: var(--neo-dark); border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; border: 1px solid var(--border-soft);">
-                        <div style="color: #60a5fa;">create_wallet(password)</div>
-                        <div style="color: var(--text-secondary);">→ Address: NZNos2WqTbu...</div>
-                        <div style="color: var(--text-secondary);">→ Encrypted: AES-256</div>
-                        <div style="color: #22c55e;">✓ Secure</div>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <span style="background: rgba(244, 114, 182, 0.1); color: #f472b6; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 500;">AES-256</span>
-                        <span style="background: rgba(74, 222, 128, 0.1); color: #22c55e; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 500;">Multi-Sig</span>
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3 class="feature-title">Enterprise Security</h3>
+                    <p class="feature-description">
+                        Military-grade encryption with AES-256, comprehensive validation systems, 
+                        and zero known vulnerabilities for production environments.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">AES-256</span>
+                        <span class="feature-tag">Zero CVEs</span>
                     </div>
                 </div>
-                
-                <!-- Feature 3: Smart Contracts -->
-                <div style="background: var(--surface-card); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1.5rem; padding: 2rem; transition: all 0.3s ease; position: relative;" class="feature-card">
-                    <div style="width: 56px; height: 56px; background: var(--gradient-accent); border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; font-size: 1.25rem;">⚡</div>
-                    <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Famous Contract Integration</h3>
-                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">Pre-built integrations for top Neo N3 protocols including Flamingo DeFi, NeoFS, and NeoBurger gaming.</p>
-                    <div style="background: var(--neo-dark); border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; border: 1px solid var(--border-soft);">
-                        <div style="color: #f472b6;">invoke_flamingo_swap()</div>
-                        <div style="color: var(--text-secondary);">→ Pool: NEO/GAS</div>
-                        <div style="color: var(--text-secondary);">→ Amount: 10 NEO</div>
-                        <div style="color: #22c55e;">✓ Success</div>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <span style="background: rgba(244, 114, 182, 0.1); color: #f472b6; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 500;">6 Protocols</span>
-                        <span style="background: rgba(74, 222, 128, 0.1); color: #22c55e; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 500;">DeFi Ready</span>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3 class="feature-title">Smart Contract Integration</h3>
+                    <p class="feature-description">
+                        Pre-built integrations for top Neo N3 protocols including Flamingo DeFi, 
+                        NeoFS storage, and NeoBurger gaming ecosystem.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">6 Protocols</span>
+                        <span class="feature-tag">DeFi Ready</span>
                     </div>
                 </div>
-                
-                <!-- Feature 4: Asset Transfers -->
-                <div style="background: var(--surface-card); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1.5rem; padding: 2rem; transition: all 0.3s ease; position: relative;" class="feature-card">
-                    <div style="width: 56px; height: 56px; background: linear-gradient(135deg, #06b6d4, #0891b2); border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; font-size: 1.25rem;">💰</div>
-                    <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Smart Asset Transfers</h3>
-                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">NEP-17 token transfers with intelligent fee estimation and support for all major tokens.</p>
-                    <div style="background: var(--neo-dark); border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; border: 1px solid var(--border-soft);">
-                        <div style="color: #06b6d4;">transfer_assets()</div>
-                        <div style="color: var(--text-secondary);">→ Token: GAS</div>
-                        <div style="color: var(--text-secondary);">→ Amount: 50.5</div>
-                        <div style="color: #22c55e;">✓ Confirmed</div>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <span style="background: rgba(6, 182, 212, 0.1); color: #06b6d4; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 500;">NEP-17</span>
-                        <span style="background: rgba(74, 222, 128, 0.1); color: #22c55e; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 500;">Reliable</span>
+                <div class="feature-card">
+                    <div class="feature-icon">💰</div>
+                    <h3 class="feature-title">Asset Management</h3>
+                    <p class="feature-description">
+                        Complete NEP-17 token support with intelligent fee estimation, 
+                        batch operations, and multi-signature wallet capabilities.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">NEP-17</span>
+                        <span class="feature-tag">Multi-Sig</span>
                     </div>
                 </div>
-                
-                <!-- Feature 5: Security -->
-                <div style="background: var(--surface-card); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1.5rem; padding: 2rem; transition: all 0.3s ease; position: relative;" class="feature-card">
-                    <div style="width: 56px; height: 56px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; font-size: 1.25rem;">🛡️</div>
-                    <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Enterprise Security</h3>
-                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">OWASP compliant security with comprehensive input validation and zero known vulnerabilities.</p>
-                    <div style="background: var(--neo-dark); border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; border: 1px solid var(--border-soft);">
-                        <div style="color: #8b5cf6;">security_audit()</div>
-                        <div style="color: var(--text-secondary);">→ Vulnerabilities: 0</div>
-                        <div style="color: var(--text-secondary);">→ OWASP: Compliant</div>
-                        <div style="color: #22c55e;">✓ Secure</div>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <span style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 500;">Zero CVEs</span>
-                        <span style="background: rgba(124, 58, 237, 0.1); color: #7c3aed; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 500;">Audited</span>
+                <div class="feature-card">
+                    <div class="feature-icon">🛠️</div>
+                    <h3 class="feature-title">Developer Experience</h3>
+                    <p class="feature-description">
+                        TypeScript-first development with comprehensive documentation, 
+                        zero-config setup, and intuitive APIs for maximum productivity.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">TypeScript</span>
+                        <span class="feature-tag">Zero Config</span>
                     </div>
                 </div>
-                
-                <!-- Feature 6: Production Ready -->
-                <div style="background: var(--surface-card); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1.5rem; padding: 2rem; transition: all 0.3s ease; position: relative;" class="feature-card">
-                    <div style="width: 56px; height: 56px; background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; font-size: 1.25rem;">🚀</div>
-                    <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Production Ready</h3>
-                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">Comprehensive test coverage with Docker support and enterprise monitoring capabilities.</p>
-                    <div style="background: var(--neo-dark); border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; border: 1px solid var(--border-soft);">
-                        <div style="color: #f59e0b;">docker run neo-n3-mcp</div>
-                        <div style="color: var(--text-secondary);">→ Tests: 395 passed</div>
-                        <div style="color: var(--text-secondary);">→ Coverage: 90.2%</div>
-                        <div style="color: #22c55e;">✓ Ready</div>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <span style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 500;">395 Tests</span>
-                        <span style="background: rgba(217, 119, 6, 0.1); color: #d97706; padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 500;">Docker</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Feature Stats -->
-            <div style="text-align: center; margin-top: 3rem;">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; max-width: 900px; margin: 0 auto;">
-                    <div style="background: var(--surface-card); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1rem; padding: 1.5rem; text-align: center;">
-                        <div style="font-size: 2rem; font-weight: 800; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">34</div>
-                        <div style="color: var(--text-secondary); font-weight: 500;">Powerful Tools</div>
-                    </div>
-                    <div style="background: var(--surface-card); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1rem; padding: 1.5rem; text-align: center;">
-                        <div style="font-size: 2rem; font-weight: 800; background: var(--gradient-secondary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">9</div>
-                        <div style="color: var(--text-secondary); font-weight: 500;">Data Resources</div>
-                    </div>
-                    <div style="background: var(--surface-card); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1rem; padding: 1.5rem; text-align: center;">
-                        <div style="font-size: 2rem; font-weight: 800; background: var(--gradient-accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">6</div>
-                        <div style="color: var(--text-secondary); font-weight: 500;">Famous Contracts</div>
-                    </div>
-                    <div style="background: var(--surface-card); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1rem; padding: 1.5rem; text-align: center;">
-                        <div style="font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #8b5cf6, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">90%+</div>
-                        <div style="color: var(--text-secondary); font-weight: 500;">Test Coverage</div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3 class="feature-title">Production Ready</h3>
+                    <p class="feature-description">
+                        Battle-tested with 90%+ test coverage, Docker support, 
+                        and enterprise monitoring for mission-critical applications.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">395 Tests</span>
+                        <span class="feature-tag">Docker</span>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Technology Section -->
-    <section id="technology" style="padding: 6rem 0; background: linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0.3) 100%); position: relative;">
-        <div style="max-width: 1200px; margin: 0 auto; padding: 0 2rem;">
-            <div style="text-align: center; margin-bottom: 4rem;">
-                <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: clamp(2.5rem, 5vw, 3.5rem); font-weight: 700; margin-bottom: 1rem;">
-                    Powered by <span style="background: var(--gradient-secondary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Innovation</span>
-                </h2>
-                <p style="font-size: 1.125rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto;">
-                    Built on cutting-edge technology stack with modern architecture patterns and best practices.
+    <!-- Examples Section -->
+    <section class="examples" id="examples">
+        <div class="examples-container">
+            <div class="section-header">
+                <h2 class="section-title">Code Examples</h2>
+                <p class="section-subtitle">
+                    See how easy it is to integrate Neo N3 blockchain functionality into your applications.
                 </p>
             </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center;">
-                <div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div style="background: var(--surface-card); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1rem; padding: 1.5rem; text-align: center;">
-                            <div style="font-size: 1.75rem; margin-bottom: 0.5rem;">🛠️</div>
-                            <div style="font-weight: 600; color: var(--text-primary); font-size: 1.25rem;">34 Tools</div>
-                            <div style="font-size: 0.875rem; color: var(--text-secondary);">Comprehensive API</div>
+            <div class="examples-grid">
+                <div class="example-card">
+                    <div class="example-header">
+                        <h3 class="example-title">Wallet Operations</h3>
+                        <p class="example-subtitle">Create and manage Neo N3 wallets</p>
+                    </div>
+                    <div class="example-code">
+                        <div style="color: var(--text-secondary);">// Create a new wallet</div>
+                        <div style="margin: 0.5rem 0;">
+                            <span style="color: #ff6b6b;">const</span> 
+                            <span style="color: var(--text-primary);"> wallet = </span>
+                            <span style="color: #feca57;">await</span>
+                            <span style="color: var(--text-primary);"> neo.</span>
+                            <span style="color: var(--accent);">callTool</span>
+                            <span style="color: var(--text-primary);">(</span>
                         </div>
-                        <div style="background: var(--surface-card); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1rem; padding: 1.5rem; text-align: center;">
-                            <div style="font-size: 1.75rem; margin-bottom: 0.5rem;">📚</div>
-                            <div style="font-weight: 600; color: var(--text-primary); font-size: 1.25rem;">9 Resources</div>
-                            <div style="font-size: 0.875rem; color: var(--text-secondary);">Rich Data Access</div>
+                        <div style="margin-left: 1rem;">
+                            <span style="color: #667eea;">'create_wallet'</span><span style="color: var(--text-primary);">,</span>
                         </div>
-                        <div style="background: var(--surface-card); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1rem; padding: 1.5rem; text-align: center;">
-                            <div style="font-size: 1.75rem; margin-bottom: 0.5rem;">🧪</div>
-                            <div style="font-weight: 600; color: var(--text-primary); font-size: 1.25rem;">395 Tests</div>
-                            <div style="font-size: 0.875rem; color: var(--text-secondary);">Battle Tested</div>
+                        <div style="margin-left: 1rem;">
+                            <span style="color: var(--text-primary);">{ </span>
+                            <span style="color: #ff77c6;">password</span>
+                            <span style="color: var(--text-primary);">: </span>
+                            <span style="color: #667eea;">'secure123!'</span>
+                            <span style="color: var(--text-primary);"> }</span>
                         </div>
-                        <div style="background: var(--surface-card); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1rem; padding: 1.5rem; text-align: center;">
-                            <div style="font-size: 1.75rem; margin-bottom: 0.5rem;">📈</div>
-                            <div style="font-weight: 600; color: var(--text-primary); font-size: 1.25rem;">90%+ Coverage</div>
-                            <div style="font-size: 0.875rem; color: var(--text-secondary);">Quality Assured</div>
-                        </div>
+                        <div><span style="color: var(--text-primary);">);</span></div>
                     </div>
                 </div>
-                
-                <div style="background: var(--surface-card); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1.5rem; padding: 2rem;">
-                    <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; color: var(--text-primary);">Modern Architecture</h3>
-                    <ul style="list-style: none; margin: 0; padding: 0;">
-                        <li style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-                            <span style="width: 8px; height: 8px; background: var(--gradient-primary); border-radius: 50%; flex-shrink: 0;"></span>
-                            <span style="color: var(--text-secondary);">TypeScript-first development</span>
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-                            <span style="width: 8px; height: 8px; background: var(--gradient-primary); border-radius: 50%; flex-shrink: 0;"></span>
-                            <span style="color: var(--text-secondary);">Model Context Protocol (MCP) v1.9.0</span>
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-                            <span style="width: 8px; height: 8px; background: var(--gradient-primary); border-radius: 50%; flex-shrink: 0;"></span>
-                            <span style="color: var(--text-secondary);">Microservices architecture</span>
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-                            <span style="width: 8px; height: 8px; background: var(--gradient-primary); border-radius: 50%; flex-shrink: 0;"></span>
-                            <span style="color: var(--text-secondary);">Docker & Kubernetes ready</span>
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 0.75rem;">
-                            <span style="width: 8px; height: 8px; background: var(--gradient-primary); border-radius: 50%; flex-shrink: 0;"></span>
-                            <span style="color: var(--text-secondary);">Enterprise monitoring & observability</span>
-                        </li>
-                    </ul>
+                <div class="example-card">
+                    <div class="example-header">
+                        <h3 class="example-title">Smart Contracts</h3>
+                        <p class="example-subtitle">Interact with Flamingo DeFi</p>
+                    </div>
+                    <div class="example-code">
+                        <div style="color: var(--text-secondary);">// Swap tokens on Flamingo</div>
+                        <div style="margin: 0.5rem 0;">
+                            <span style="color: #ff6b6b;">const</span> 
+                            <span style="color: var(--text-primary);"> result = </span>
+                            <span style="color: #feca57;">await</span>
+                            <span style="color: var(--text-primary);"> neo.</span>
+                            <span style="color: var(--accent);">callTool</span>
+                            <span style="color: var(--text-primary);">(</span>
+                        </div>
+                        <div style="margin-left: 1rem;">
+                            <span style="color: #667eea;">'invoke_flamingo_swap'</span><span style="color: var(--text-primary);">,</span>
+                        </div>
+                        <div style="margin-left: 1rem;">
+                            <span style="color: var(--text-primary);">{ </span>
+                            <span style="color: #ff77c6;">pool</span>
+                            <span style="color: var(--text-primary);">: </span>
+                            <span style="color: #667eea;">'NEO/GAS'</span>
+                            <span style="color: var(--text-primary);"> }</span>
+                        </div>
+                        <div><span style="color: var(--text-primary);">);</span></div>
+                    </div>
+                </div>
+                <div class="example-card">
+                    <div class="example-header">
+                        <h3 class="example-title">Asset Transfers</h3>
+                        <p class="example-subtitle">Send NEP-17 tokens</p>
+                    </div>
+                    <div class="example-code">
+                        <div style="color: var(--text-secondary);">// Transfer GAS tokens</div>
+                        <div style="margin: 0.5rem 0;">
+                            <span style="color: #ff6b6b;">const</span> 
+                            <span style="color: var(--text-primary);"> tx = </span>
+                            <span style="color: #feca57;">await</span>
+                            <span style="color: var(--text-primary);"> neo.</span>
+                            <span style="color: var(--accent);">callTool</span>
+                            <span style="color: var(--text-primary);">(</span>
+                        </div>
+                        <div style="margin-left: 1rem;">
+                            <span style="color: #667eea;">'transfer_assets'</span><span style="color: var(--text-primary);">,</span>
+                        </div>
+                        <div style="margin-left: 1rem;">
+                            <span style="color: var(--text-primary);">{ </span>
+                            <span style="color: #ff77c6;">asset</span>
+                            <span style="color: var(--text-primary);">: </span>
+                            <span style="color: #667eea;">'GAS'</span>
+                            <span style="color: var(--text-primary);"> }</span>
+                        </div>
+                        <div><span style="color: var(--text-primary);">);</span></div>
+                    </div>
+                </div>
+                <div class="example-card">
+                    <div class="example-header">
+                        <h3 class="example-title">Blockchain Data</h3>
+                        <p class="example-subtitle">Query network information</p>
+                    </div>
+                    <div class="example-code">
+                        <div style="color: var(--text-secondary);">// Get blockchain info</div>
+                        <div style="margin: 0.5rem 0;">
+                            <span style="color: #ff6b6b;">const</span> 
+                            <span style="color: var(--text-primary);"> info = </span>
+                            <span style="color: #feca57;">await</span>
+                            <span style="color: var(--text-primary);"> neo.</span>
+                            <span style="color: var(--accent);">callTool</span>
+                            <span style="color: var(--text-primary);">(</span>
+                        </div>
+                        <div style="margin-left: 1rem;">
+                            <span style="color: #667eea;">'get_blockchain_info'</span>
+                        </div>
+                        <div><span style="color: var(--text-primary);">);</span></div>
+                        <div style="margin-top: 0.5rem; color: var(--text-secondary);">
+                            // Returns network status & height
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- CTA Section -->
-    <section id="start" style="padding: 6rem 0; position: relative;">
-        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--gradient-mesh); opacity: 0.4;"></div>
-        <div style="max-width: 800px; margin: 0 auto; padding: 0 2rem; text-align: center; position: relative; z-index: 2;">
-            <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: clamp(2.5rem, 5vw, 3.5rem); font-weight: 700; margin-bottom: 1.5rem;">
-                Ready to Build the <span style="background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Future</span>?
-            </h2>
-            <p style="font-size: 1.125rem; color: var(--text-secondary); margin-bottom: 3rem; line-height: 1.6; max-width: 600px; margin-left: auto; margin-right: auto; margin-bottom: 3rem;">
-                Join thousands of developers building the next generation of blockchain applications with Neo N3 MCP.
+    <section class="cta">
+        <div class="cta-container">
+            <h2 class="cta-title">Ready to Build?</h2>
+            <p class="cta-subtitle">
+                Join thousands of developers building the next generation of blockchain applications 
+                with our comprehensive Neo N3 MCP platform.
             </p>
-            
-            <div style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 3rem; flex-wrap: wrap;">
-                <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" target="_blank" style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--gradient-primary); color: white; padding: 1rem 2rem; border-radius: 100px; text-decoration: none; font-weight: 600; transition: all 0.3s ease; box-shadow: var(--shadow-glow);">
-                    <span>🚀</span>
-                    Get Started Now
+            <div class="cta-actions">
+                <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="btn btn-primary" target="_blank">
+                    🚀 Get Started Now
                 </a>
-                <a href="/docs" style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--surface-card); color: var(--text-primary); padding: 1rem 2rem; border-radius: 100px; text-decoration: none; font-weight: 600; border: 1px solid var(--border-glass); backdrop-filter: blur(20px); transition: all 0.3s ease;">
-                    <span>📚</span>
-                    Explore Docs
+                <a href="/docs" class="btn btn-secondary">
+                    📚 View Documentation
                 </a>
             </div>
-            
-            <div style="background: var(--surface-card); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1rem; padding: 1.5rem; display: inline-block;">
-                <code style="font-family: 'JetBrains Mono', monospace; color: var(--text-primary); font-size: 1rem;">
-                    npx @r3e/neo-n3-mcp
-                </code>
-            </div>
-        </div>
-    </section>
-
-    <!-- Examples Section -->
-    <section id="examples" style="padding: 8rem 0; background: linear-gradient(180deg, transparent 0%, rgba(10, 14, 26, 0.3) 100%); position: relative;">
-        <div style="max-width: 1400px; margin: 0 auto; padding: 0 2rem;">
-            <div style="text-align: center; margin-bottom: 4rem;">
-                <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: clamp(2.5rem, 6vw, 4rem); font-weight: 700; margin-bottom: 1rem;">
-                    Real-World <span style="background: var(--gradient-secondary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Examples</span>
-                </h2>
-                <p style="font-size: 1.25rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto;">
-                    Learn by doing with practical, production-ready examples and implementations
-                </p>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; margin-bottom: 4rem;">
-                <!-- Example 1: Wallet Operations -->
-                <div style="background: var(--surface-glass); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1.5rem; overflow: hidden; transition: all 0.3s ease;" class="example-card">
-                    <div style="padding: 2rem; border-bottom: 1px solid var(--border-glass);">
-                        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-                            <div style="width: 50px; height: 50px; background: var(--gradient-primary); border-radius: 1rem; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">🔐</div>
-                            <div>
-                                <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 600; margin: 0;">Wallet Operations</h3>
-                                <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">Complete wallet management</p>
-                            </div>
-                        </div>
-                        <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
-                            Create, import, and manage Neo N3 wallets with enterprise security and multi-signature support.
-                        </p>
-                    </div>
-                    <div style="background: var(--neo-dark); padding: 1.5rem;">
-                        <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.6;">
-                            <div style="color: var(--text-secondary);">// Create a new wallet</div>
-                            <div style="margin: 0.5rem 0;">
-                                <span style="color: #ff6b6b;">const</span> 
-                                <span style="color: var(--text-primary);"> wallet = </span>
-                                <span style="color: #feca57;">await</span>
-                                <span style="color: var(--text-primary);"> neo.</span>
-                                <span style="color: #00ff88;">callTool</span>
-                                <span style="color: var(--text-primary);">(</span>
-                            </div>
-                            <div style="margin-left: 1rem;">
-                                <span style="color: #667eea;">'create_wallet'</span><span style="color: var(--text-primary);">,</span>
-                            </div>
-                            <div style="margin-left: 1rem;">
-                                <span style="color: var(--text-primary);">{ </span>
-                                <span style="color: #ff77c6;">password</span>
-                                <span style="color: var(--text-primary);">: </span>
-                                <span style="color: #667eea;">'secure123!'</span>
-                                <span style="color: var(--text-primary);"> }</span>
-                            </div>
-                            <div><span style="color: var(--text-primary);">);</span></div>
-                        </div>
-                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-glass);">
-                            <a href="/examples/wallet" style="color: var(--text-primary); text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; transition: color 0.3s ease;">
-                                View Complete Example →
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Example 2: Smart Contracts -->
-                <div style="background: var(--surface-glass); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1.5rem; overflow: hidden; transition: all 0.3s ease;" class="example-card">
-                    <div style="padding: 2rem; border-bottom: 1px solid var(--border-glass);">
-                        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-                            <div style="width: 50px; height: 50px; background: var(--gradient-secondary); border-radius: 1rem; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">⚡</div>
-                            <div>
-                                <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 600; margin: 0;">Smart Contracts</h3>
-                                <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">DeFi protocol integration</p>
-                            </div>
-                        </div>
-                        <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
-                            Interact with Flamingo, NeoFS, NeoBurger and other famous Neo N3 smart contracts.
-                        </p>
-                    </div>
-                    <div style="background: var(--neo-dark); padding: 1.5rem;">
-                        <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.6;">
-                            <div style="color: var(--text-secondary);">// Interact with Flamingo DeFi</div>
-                            <div style="margin: 0.5rem 0;">
-                                <span style="color: #ff6b6b;">const</span> 
-                                <span style="color: var(--text-primary);"> result = </span>
-                                <span style="color: #feca57;">await</span>
-                                <span style="color: var(--text-primary);"> neo.</span>
-                                <span style="color: #00ff88;">callTool</span>
-                                <span style="color: var(--text-primary);">(</span>
-                            </div>
-                            <div style="margin-left: 1rem;">
-                                <span style="color: #667eea;">'invoke_famous_contract'</span><span style="color: var(--text-primary);">,</span>
-                            </div>
-                            <div style="margin-left: 1rem;">
-                                <span style="color: var(--text-primary);">{ </span>
-                                <span style="color: #ff77c6;">contract</span>
-                                <span style="color: var(--text-primary);">: </span>
-                                <span style="color: #667eea;">'Flamingo'</span>
-                                <span style="color: var(--text-primary);">, </span>
-                                <span style="color: #ff77c6;">method</span>
-                                <span style="color: var(--text-primary);">: </span>
-                                <span style="color: #667eea;">'swap'</span>
-                                <span style="color: var(--text-primary);"> }</span>
-                            </div>
-                            <div><span style="color: var(--text-primary);">);</span></div>
-                        </div>
-                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-glass);">
-                            <a href="/examples/contracts" style="color: var(--text-primary); text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; transition: color 0.3s ease;">
-                                View Smart Contract Examples →
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Example 3: Blockchain Explorer -->
-                <div style="background: var(--surface-glass); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1.5rem; overflow: hidden; transition: all 0.3s ease;" class="example-card">
-                    <div style="padding: 2rem; border-bottom: 1px solid var(--border-glass);">
-                        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-                            <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #ff6b6b, #feca57); border-radius: 1rem; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">🔍</div>
-                            <div>
-                                <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 600; margin: 0;">Blockchain Explorer</h3>
-                                <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">Advanced data queries</p>
-                            </div>
-                        </div>
-                        <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
-                            Query blocks, transactions, and network data with comprehensive analytics and monitoring tools.
-                        </p>
-                    </div>
-                    <div style="background: var(--neo-dark); padding: 1.5rem;">
-                        <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.6;">
-                            <div style="color: var(--text-secondary);">// Get latest block info</div>
-                            <div style="margin: 0.5rem 0;">
-                                <span style="color: #ff6b6b;">const</span> 
-                                <span style="color: var(--text-primary);"> block = </span>
-                                <span style="color: #feca57;">await</span>
-                                <span style="color: var(--text-primary);"> neo.</span>
-                                <span style="color: #00ff88;">callTool</span>
-                                <span style="color: var(--text-primary);">(</span>
-                            </div>
-                            <div style="margin-left: 1rem;">
-                                <span style="color: #667eea;">'get_block'</span><span style="color: var(--text-primary);">,</span>
-                            </div>
-                            <div style="margin-left: 1rem;">
-                                <span style="color: var(--text-primary);">{ </span>
-                                <span style="color: #ff77c6;">height</span>
-                                <span style="color: var(--text-primary);">: </span>
-                                <span style="color: #feca57;">12345678</span>
-                                <span style="color: var(--text-primary);"> }</span>
-                            </div>
-                            <div><span style="color: var(--text-primary);">);</span></div>
-                        </div>
-                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-glass);">
-                            <a href="/examples/explorer" style="color: var(--text-primary); text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; transition: color 0.3s ease;">
-                                Explore Blockchain Data →
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Example 4: Asset Transfers -->
-                <div style="background: var(--surface-glass); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1.5rem; overflow: hidden; transition: all 0.3s ease;" class="example-card">
-                    <div style="padding: 2rem; border-bottom: 1px solid var(--border-glass);">
-                        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-                            <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #a8edea, #fed6e3); border-radius: 1rem; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">💸</div>
-                            <div>
-                                <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 600; margin: 0;">Asset Transfers</h3>
-                                <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">NEP-17 token operations</p>
-                            </div>
-                        </div>
-                        <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
-                            Transfer NEO, GAS, and custom tokens with smart fee estimation and batch operations.
-                        </p>
-                    </div>
-                    <div style="background: var(--neo-dark); padding: 1.5rem;">
-                        <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.6;">
-                            <div style="color: var(--text-secondary);">// Transfer GAS tokens</div>
-                            <div style="margin: 0.5rem 0;">
-                                <span style="color: #ff6b6b;">const</span> 
-                                <span style="color: var(--text-primary);"> tx = </span>
-                                <span style="color: #feca57;">await</span>
-                                <span style="color: var(--text-primary);"> neo.</span>
-                                <span style="color: #00ff88;">callTool</span>
-                                <span style="color: var(--text-primary);">(</span>
-                            </div>
-                            <div style="margin-left: 1rem;">
-                                <span style="color: #667eea;">'transfer_assets'</span><span style="color: var(--text-primary);">,</span>
-                            </div>
-                            <div style="margin-left: 1rem;">
-                                <span style="color: var(--text-primary);">{ </span>
-                                <span style="color: #ff77c6;">asset</span>
-                                <span style="color: var(--text-primary);">: </span>
-                                <span style="color: #667eea;">'GAS'</span>
-                                <span style="color: var(--text-primary);">, </span>
-                                <span style="color: #ff77c6;">amount</span>
-                                <span style="color: var(--text-primary);">: </span>
-                                <span style="color: #feca57;">50.5</span>
-                                <span style="color: var(--text-primary);"> }</span>
-                            </div>
-                            <div><span style="color: var(--text-primary);">);</span></div>
-                        </div>
-                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-glass);">
-                            <a href="/examples/wallet" style="color: var(--text-primary); text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; transition: color 0.3s ease;">
-                                View Transfer Examples →
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Quick Start Code -->
-            <div style="background: var(--surface-glass); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1.5rem; padding: 2rem; max-width: 800px; margin: 0 auto;">
-                <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; text-align: center;">
-                    Try It Now
-                </h3>
-                <p style="color: var(--text-secondary); text-align: center; margin-bottom: 2rem;">
-                    Get started with Neo N3 MCP in seconds
-                </p>
-                <div style="background: var(--neo-dark); border-radius: 1rem; padding: 2rem; margin-bottom: 2rem;">
-                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 1rem; line-height: 1.8; text-align: center;">
-                        <div style="color: var(--text-secondary); margin-bottom: 1rem;"># Install and run Neo N3 MCP</div>
-                        <div style="color: #00ff88; font-weight: 600;">npx @r3e/neo-n3-mcp</div>
-                    </div>
-                </div>
-                <div style="text-align: center;">
-                    <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" target="_blank" style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--gradient-primary); color: white; padding: 1rem 2rem; border-radius: 50px; text-decoration: none; font-weight: 600; transition: all 0.3s ease;">
-                        <span>🚀</span>
-                        Start Building Now
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Documentation Section -->
-    <section id="documentation" style="padding: 8rem 0; position: relative;">
-        <div style="max-width: 1400px; margin: 0 auto; padding: 0 2rem;">
-            <div style="text-align: center; margin-bottom: 4rem;">
-                <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: clamp(2.5rem, 6vw, 4rem); font-weight: 700; margin-bottom: 1rem;">
-                    Complete <span style="background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Documentation</span>
-                </h2>
-                <p style="font-size: 1.25rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto;">
-                    Everything you need to master Neo N3 blockchain development
-                </p>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 4rem;">
-                <!-- Quick Start Guide -->
-                <div style="background: var(--surface-glass); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1.5rem; padding: 2rem; transition: all 0.3s ease;" class="doc-card">
-                    <div style="width: 60px; height: 60px; background: var(--gradient-primary); border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; font-size: 1.5rem;">🚀</div>
-                    <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Quick Start</h3>
-                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">Get up and running with Neo N3 MCP in under 5 minutes with our step-by-step installation guide.</p>
-                    <ul style="list-style: none; margin-bottom: 1.5rem; padding: 0;">
-                        <li style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
-                            <span style="color: #00ff88;">✓</span> Installation & Setup
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
-                            <span style="color: #00ff88;">✓</span> First API Call
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
-                            <span style="color: #00ff88;">✓</span> Configuration
-                        </li>
-                    </ul>
-                    <a href="/docs/quick-start" style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-primary); text-decoration: none; font-weight: 500; transition: all 0.3s ease;">
-                        Start Building →
-                    </a>
-                </div>
-                
-                <!-- API Reference -->
-                <div style="background: var(--surface-glass); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1.5rem; padding: 2rem; transition: all 0.3s ease;" class="doc-card">
-                    <div style="width: 60px; height: 60px; background: var(--gradient-secondary); border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; font-size: 1.5rem;">📚</div>
-                    <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">API Reference</h3>
-                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">Complete documentation for all 34 tools and 9 resources with detailed parameters and examples.</p>
-                    <ul style="list-style: none; margin-bottom: 1.5rem; padding: 0;">
-                        <li style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
-                            <span style="color: #667eea;">✓</span> 34 Tools Documented
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
-                            <span style="color: #667eea;">✓</span> Code Examples
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
-                            <span style="color: #667eea;">✓</span> Response Schemas
-                        </li>
-                    </ul>
-                    <a href="/docs/api" style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-primary); text-decoration: none; font-weight: 500; transition: all 0.3s ease;">
-                        Browse API →
-                    </a>
-                </div>
-                
-                <!-- Tutorials -->
-                <div style="background: var(--surface-glass); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1.5rem; padding: 2rem; transition: all 0.3s ease;" class="doc-card">
-                    <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #ff6b6b, #feca57); border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; font-size: 1.5rem;">🎓</div>
-                    <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Tutorials</h3>
-                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">Step-by-step guides for building real applications with Neo N3 and integrating famous contracts.</p>
-                    <ul style="list-style: none; margin-bottom: 1.5rem; padding: 0;">
-                        <li style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
-                            <span style="color: #ff6b6b;">✓</span> DeFi Integration
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
-                            <span style="color: #ff6b6b;">✓</span> Wallet Applications
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
-                            <span style="color: #ff6b6b;">✓</span> Smart Contracts
-                        </li>
-                    </ul>
-                    <a href="/docs/tutorials" style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-primary); text-decoration: none; font-weight: 500; transition: all 0.3s ease;">
-                        Learn More →
-                    </a>
-                </div>
-                
-                <!-- Architecture -->
-                <div style="background: var(--surface-glass); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1.5rem; padding: 2rem; transition: all 0.3s ease;" class="doc-card">
-                    <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #a8edea, #fed6e3); border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; font-size: 1.5rem;">🏗️</div>
-                    <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Architecture</h3>
-                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">Deep dive into Neo N3 MCP's architecture, design patterns, and enterprise deployment strategies.</p>
-                    <ul style="list-style: none; margin-bottom: 1.5rem; padding: 0;">
-                        <li style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
-                            <span style="color: #a8edea;">✓</span> System Design
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
-                            <span style="color: #a8edea;">✓</span> Security Model
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
-                            <span style="color: #a8edea;">✓</span> Best Practices
-                        </li>
-                    </ul>
-                    <a href="/docs/architecture" style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-primary); text-decoration: none; font-weight: 500; transition: all 0.3s ease;">
-                        View Architecture →
-                    </a>
-                </div>
-                
-                <!-- Testing -->
-                <div style="background: var(--surface-glass); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1.5rem; padding: 2rem; transition: all 0.3s ease;" class="doc-card">
-                    <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; font-size: 1.5rem;">🧪</div>
-                    <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Testing</h3>
-                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">Comprehensive testing documentation with 395 tests and 90%+ coverage for production confidence.</p>
-                    <ul style="list-style: none; margin-bottom: 1.5rem; padding: 0;">
-                        <li style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
-                            <span style="color: #667eea;">✓</span> Test Strategies
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
-                            <span style="color: #667eea;">✓</span> Integration Tests
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
-                            <span style="color: #667eea;">✓</span> CI/CD Setup
-                        </li>
-                    </ul>
-                    <a href="/docs/testing" style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-primary); text-decoration: none; font-weight: 500; transition: all 0.3s ease;">
-                        Test Guide →
-                    </a>
-                </div>
-                
-                <!-- Deployment -->
-                <div style="background: var(--surface-glass); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1.5rem; padding: 2rem; transition: all 0.3s ease;" class="doc-card">
-                    <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #ff9a56, #ffad56); border-radius: 1rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; font-size: 1.5rem;">🚢</div>
-                    <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Deployment</h3>
-                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">Production deployment guides for Docker, Kubernetes, and cloud platforms with monitoring setup.</p>
-                    <ul style="list-style: none; margin-bottom: 1.5rem; padding: 0;">
-                        <li style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
-                            <span style="color: #ff9a56;">✓</span> Docker Setup
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
-                            <span style="color: #ff9a56;">✓</span> Kubernetes
-                        </li>
-                        <li style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
-                            <span style="color: #ff9a56;">✓</span> Monitoring
-                        </li>
-                    </ul>
-                    <a href="/docs/deployment" style="display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-primary); text-decoration: none; font-weight: 500; transition: all 0.3s ease;">
-                        Deploy Guide →
-                    </a>
-                </div>
-            </div>
-            
-            <!-- Documentation Stats & Resources -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center;">
-                <div>
-                    <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 2rem; font-weight: 700; margin-bottom: 1.5rem;">
-                        Comprehensive <span style="background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Resources</span>
-                    </h3>
-                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 2rem;">
-                        Our documentation covers every aspect of Neo N3 development, from basic concepts to advanced enterprise patterns.
-                    </p>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div style="text-align: center; padding: 1rem;">
-                            <div style="font-size: 2rem; font-weight: 800; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">50+</div>
-                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Guide Pages</div>
-                        </div>
-                        <div style="text-align: center; padding: 1rem;">
-                            <div style="font-size: 2rem; font-weight: 800; background: var(--gradient-secondary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">100+</div>
-                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Code Examples</div>
-                        </div>
-                        <div style="text-align: center; padding: 1rem;">
-                            <div style="font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #ff6b6b, #feca57); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">15+</div>
-                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Tutorials</div>
-                        </div>
-                        <div style="text-align: center; padding: 1rem;">
-                            <div style="font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">24/7</div>
-                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Community</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div style="background: var(--surface-glass); backdrop-filter: blur(20px); border: 1px solid var(--border-glass); border-radius: 1.5rem; padding: 2rem;">
-                    <h4 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem;">Quick Links</h4>
-                    <div style="display: flex; flex-direction: column; gap: 1rem;">
-                        <a href="/docs" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: rgba(255, 255, 255, 0.02); border-radius: 0.5rem; color: var(--text-primary); text-decoration: none; transition: all 0.3s ease;">
-                            <span>📖 Complete Documentation</span>
-                            <span style="color: var(--text-secondary);">→</span>
-                        </a>
-                        <a href="/docs/api" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: rgba(255, 255, 255, 0.02); border-radius: 0.5rem; color: var(--text-primary); text-decoration: none; transition: all 0.3s ease;">
-                            <span>🔧 API Reference</span>
-                            <span style="color: var(--text-secondary);">→</span>
-                        </a>
-                        <a href="/examples" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: rgba(255, 255, 255, 0.02); border-radius: 0.5rem; color: var(--text-primary); text-decoration: none; transition: all 0.3s ease;">
-                            <span>💻 Live Examples</span>
-                            <span style="color: var(--text-secondary);">→</span>
-                        </a>
-                        <a href="/docs/changelog" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: rgba(255, 255, 255, 0.02); border-radius: 0.5rem; color: var(--text-primary); text-decoration: none; transition: all 0.3s ease;">
-                            <span>📋 Changelog</span>
-                            <span style="color: var(--text-secondary);">→</span>
-                        </a>
-                    </div>
-                </div>
+            <div class="install-command">
+                npx @r3e/neo-n3-mcp
             </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer style="padding: 4rem 0 2rem; border-top: 1px solid var(--border-glass); background: rgba(2, 6, 23, 0.9);">
-        <div style="max-width: 1200px; margin: 0 auto; padding: 0 2rem;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 3rem; margin-bottom: 3rem;">
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-grid">
                 <div>
-                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-                        <img src="/assets/images/neo-logo.svg" alt="Neo N3" style="width: 32px; height: 32px;">
-                        <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.25rem; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Neo N3 MCP</span>
-                    </div>
-                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
-                        Next-generation blockchain integration for modern developers.
+                    <div class="footer-brand">Neo N3 MCP</div>
+                    <p class="footer-description">
+                        The most advanced Neo N3 blockchain development platform. 
+                        Build powerful dApps with enterprise-grade tools and security.
                     </p>
-                    <div style="display: flex; gap: 1rem;">
-                        <a href="https://github.com/r3e-network/neo-n3-mcp" target="_blank" style="width: 40px; height: 40px; background: var(--surface-card); border: 1px solid var(--border-glass); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); transition: all 0.3s ease; text-decoration: none;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                            </svg>
-                        </a>
-                        <a href="https://twitter.com/r3enetwork" target="_blank" style="width: 40px; height: 40px; background: var(--surface-card); border: 1px solid var(--border-glass); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); transition: all 0.3s ease; text-decoration: none;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-                            </svg>
-                        </a>
+                </div>
+                <div>
+                    <h4 class="footer-title">Product</h4>
+                    <div class="footer-links">
+                        <a href="/docs" class="footer-link">Documentation</a>
+                        <a href="/examples" class="footer-link">Examples</a>
+                        <a href="/changelog" class="footer-link">Changelog</a>
                     </div>
                 </div>
                 <div>
-                    <h4 style="font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Product</h4>
-                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                        <a href="/docs" style="color: var(--text-secondary); text-decoration: none; transition: color 0.3s ease;">Documentation</a>
-                        <a href="/examples" style="color: var(--text-secondary); text-decoration: none; transition: color 0.3s ease;">Examples</a>
-                        <a href="/changelog" style="color: var(--text-secondary); text-decoration: none; transition: color 0.3s ease;">Changelog</a>
+                    <h4 class="footer-title">Resources</h4>
+                    <div class="footer-links">
+                        <a href="https://docs.neo.org/" class="footer-link" target="_blank">Neo N3 Docs</a>
+                        <a href="https://modelcontextprotocol.io/" class="footer-link" target="_blank">MCP Protocol</a>
+                        <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="footer-link" target="_blank">NPM Package</a>
                     </div>
                 </div>
                 <div>
-                    <h4 style="font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Resources</h4>
-                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                        <a href="https://docs.neo.org/" target="_blank" style="color: var(--text-secondary); text-decoration: none; transition: color 0.3s ease;">Neo N3 Docs</a>
-                        <a href="https://modelcontextprotocol.io/" target="_blank" style="color: var(--text-secondary); text-decoration: none; transition: color 0.3s ease;">MCP Protocol</a>
-                        <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" target="_blank" style="color: var(--text-secondary); text-decoration: none; transition: color 0.3s ease;">NPM Package</a>
-                    </div>
-                </div>
-                <div>
-                    <h4 style="font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Community</h4>
-                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                        <a href="https://github.com/r3e-network/neo-n3-mcp/discussions" target="_blank" style="color: var(--text-secondary); text-decoration: none; transition: color 0.3s ease;">Discussions</a>
-                        <a href="https://github.com/r3e-network/neo-n3-mcp/issues" target="_blank" style="color: var(--text-secondary); text-decoration: none; transition: color 0.3s ease;">Issues</a>
-                        <a href="https://discord.gg/neo" target="_blank" style="color: var(--text-secondary); text-decoration: none; transition: color 0.3s ease;">Discord</a>
+                    <h4 class="footer-title">Community</h4>
+                    <div class="footer-links">
+                        <a href="https://github.com/r3e-network/neo-n3-mcp" class="footer-link" target="_blank">GitHub</a>
+                        <a href="https://github.com/r3e-network/neo-n3-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
+                        <a href="https://discord.gg/neo" class="footer-link" target="_blank">Discord</a>
                     </div>
                 </div>
             </div>
-            <div style="border-top: 1px solid var(--border-glass); padding-top: 2rem; display: flex; justify-content: space-between; align-items: center;">
-                <p style="color: var(--text-secondary); font-size: 0.875rem;">
-                    © 2024 Neo N3 MCP. Open source under MIT License.
-                </p>
-                <div style="display: flex; gap: 0.5rem;">
-                    <img src="https://img.shields.io/badge/MCP%20SDK-v1.9.0-blue?style=flat-square" alt="MCP SDK" style="height: 20px;">
-                    <img src="https://img.shields.io/badge/Neo%20N3-Compatible-22c55e?style=flat-square" alt="Neo N3" style="height: 20px;">
-                </div>
+            <div class="footer-bottom">
+                <p>© 2024 Neo N3 MCP. Open source under MIT License.</p>
+                <p>Built with ❤️ for the Neo ecosystem</p>
             </div>
         </div>
     </footer>
 
-    <style>
-        .feature-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(74, 222, 128, 0.2);
-            box-shadow: var(--shadow-card);
-        }
-
-        @media (max-width: 1024px) {
-            .hero-container {
-                grid-template-columns: 1fr;
-                gap: 3rem;
-                text-align: center;
-            }
-            
-            footer > div > div:first-child {
-                grid-template-columns: 1fr 1fr;
-                gap: 2rem;
-            }
-        }
-
-        @media (max-width: 768px) {
-            footer > div > div:first-child {
-                grid-template-columns: 1fr;
-                gap: 2rem;
-            }
-            
-            footer > div > div:last-child {
-                flex-direction: column;
-                gap: 1rem;
-                text-align: center;
-            }
-        }
-    </style>
-
-    <!-- Scripts -->
-    <script src="/assets/js/main.js"></script>
-    <script src="/assets/js/modern-interactions.js"></script>
-    
     <script>
-        // Comfortable scroll effects
+        // Navigation scroll effect
         window.addEventListener('scroll', () => {
-            const scrolled = window.pageYOffset;
-            const nav = document.querySelector('.nav');
-            
-            if (scrolled > 50) {
-                nav.style.background = 'rgba(2, 6, 23, 0.95)';
-                nav.style.borderBottom = '1px solid rgba(255, 255, 255, 0.08)';
+            const nav = document.getElementById('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
             } else {
-                nav.style.background = 'rgba(2, 6, 23, 0.85)';
-                nav.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
+                nav.classList.remove('scrolled');
             }
         });
 
-        // Gentle parallax effect for hero
-        window.addEventListener('scroll', () => {
-            const scrolled = window.pageYOffset;
-            const hero = document.querySelector('.hero');
-            if (hero) {
-                hero.style.transform = `translateY(${scrolled * 0.05}px)`;
-            }
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Intersection Observer for animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe feature cards
+        document.querySelectorAll('.feature-card, .example-card').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(card);
         });
     </script>
 </body>
