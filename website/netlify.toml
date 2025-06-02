@@ -87,7 +87,7 @@
 # GitHub repository redirect
 [[redirects]]
   from = "/github"
-  to = "https://github.com/your-repo/neo-n3-mcp"
+  to = "https://github.com/r3e-network/neo-n3-mcp"
   status = 301
 
 # NPM package redirect

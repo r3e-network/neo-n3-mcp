@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Explorer - Neo N3 MCP Examples</title>
+    <meta name="description" content="Learn to query Neo N3 blockchain data: blocks, transactions, addresses, and network information with MCP server.">
+    
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="/assets/images/neo-logo.svg" alt="Neo N3" class="logo-icon">
+                <span class="logo-text">Neo N3 MCP</span>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/#features" class="nav-link">Features</a>
+                <a href="/docs" class="nav-link">Docs</a>
+                <a href="/examples" class="nav-link">Examples</a>
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="nav-link" target="_blank">GitHub</a>
+                <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+            </div>
+            <div class="nav-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 1200px; margin: 100px auto; padding: 0 2rem;">
+        <div class="breadcrumb">
+            <a href="/examples">Examples</a> > Blockchain Explorer
+        </div>
+        
+        <header style="text-align: center; margin-bottom: 3rem;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">Blockchain Explorer</h1>
+            <p style="font-size: 1.2rem; color: var(--text-secondary);">
+                Query and explore Neo N3 blockchain data with comprehensive tools
+            </p>
+        </header>
+
+        <div class="example-section">
+            <h2>1. Blockchain Information</h2>
+            <p>Get current blockchain status and network information:</p>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Network Status</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-javascript">// Get blockchain information
+const blockchainInfo = await tools.get_blockchain_info();
+
+// Get current block count
+const blockCount = await tools.get_block_count();
+
+// Get network fee information
+const networkFee = await tools.get_network_fee();
+
+// Get version information
+const version = await tools.get_version();
+
+console.log("Network status:", {
+  blockchain: blockchainInfo,
+  blockCount: blockCount,
+  networkFee: networkFee,
+  version: version
+});
+
+// Output:
+// {
+//   "blockchain": {
+//     "network": "testnet",
+//     "blockHeight": 5678901,
+//     "blockHash": "0x1234567890abcdef...",
+//     "nextConsensus": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj"
+//   },
+//   "blockCount": 5678901,
+//   "networkFee": {
+//     "gasPerByte": "0.00001",
+//     "executionFee": "0.01"
+//   },
+//   "version": {
+//     "tcpPort": 10333,
+//     "wsPort": 10334,
+//     "nonce": 1234567890,
+//     "userAgent": "/Neo:3.6.0/"
+//   }
+// }</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>2. Block Information</h2>
+            <p>Query blocks by height or hash and explore block contents:</p>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Block Queries</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-javascript">// Get block by height
+const blockByHeight = await tools.get_block({
+  height: 5678900
+});
+
+// Get block by hash
+const blockByHash = await tools.get_block({
+  hash: "0x1234567890abcdef9876543210fedcba0123456789abcdef"
+});
+
+// Get latest block
+const latestBlock = await tools.get_latest_block();
+
+// Get block header only (faster)
+const blockHeader = await tools.get_block_header({
+  height: 5678900
+});
+
+console.log("Block information:", {
+  byHeight: blockByHeight,
+  byHash: blockByHash,
+  latest: latestBlock,
+  header: blockHeader
+});
+
+// Output:
+// {
+//   "byHeight": {
+//     "hash": "0x1234567890abcdef...",
+//     "size": 2048,
+//     "version": 0,
+//     "previousblockhash": "0xfedcba0987654321...",
+//     "merkleroot": "0xabcdef1234567890...",
+//     "time": 1640995200000,
+//     "index": 5678900,
+//     "nextconsensus": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
+//     "witnesses": [...],
+//     "tx": [
+//       {
+//         "hash": "0x9876543210fedcba...",
+//         "size": 256,
+//         "version": 0,
+//         "nonce": 1234567890,
+//         "sender": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
+//         "sysfee": "0.00234567",
+//         "netfee": "0.00012345",
+//         "validuntilblock": 5678910,
+//         "script": "0x110c14...",
+//         "witnesses": [...]
+//       }
+//     ],
+//     "confirmations": 1,
+//     "nextblockhash": "0x5432109876543210..."
+//   }
+// }</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>3. Transaction Queries</h2>
+            <p>Look up transaction details and track transaction status:</p>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Transaction Details</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-javascript">// Get transaction by hash
+const transaction = await tools.get_transaction({
+  txid: "0x9876543210fedcba0123456789abcdef1234567890"
+});
+
+// Get transaction with verbose output
+const verboseTransaction = await tools.get_transaction({
+  txid: "0x9876543210fedcba0123456789abcdef1234567890",
+  verbose: true
+});
+
+// Get application log for transaction
+const appLog = await tools.get_application_log({
+  txid: "0x9876543210fedcba0123456789abcdef1234567890"
+});
+
+// Check if transaction is confirmed
+const confirmations = await tools.get_transaction_confirmations({
+  txid: "0x9876543210fedcba0123456789abcdef1234567890"
+});
+
+console.log("Transaction information:", {
+  transaction: transaction,
+  verbose: verboseTransaction,
+  applicationLog: appLog,
+  confirmations: confirmations
+});
+
+// Output:
+// {
+//   "transaction": {
+//     "hash": "0x9876543210fedcba...",
+//     "size": 256,
+//     "version": 0,
+//     "nonce": 1234567890,
+//     "sender": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
+//     "sysfee": "0.00234567",
+//     "netfee": "0.00012345",
+//     "validuntilblock": 5678910,
+//     "signers": [...],
+//     "attributes": [],
+//     "script": "0x110c14...",
+//     "witnesses": [...]
+//   },
+//   "applicationLog": {
+//     "txid": "0x9876543210fedcba...",
+//     "executions": [
+//       {
+//         "trigger": "Application",
+//         "vmstate": "HALT",
+//         "gasconsumed": "2340000",
+//         "stack": [...],
+//         "notifications": [
+//           {
+//             "contract": "0xd2a4cff31913016155e38e474a2c06d08be276cf",
+//             "eventname": "Transfer",
+//             "state": {
+//               "type": "Array",
+//               "value": [...]
+//             }
+//           }
+//         ]
+//       }
+//     ]
+//   },
+//   "confirmations": 15
+// }</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>4. Address Analytics</h2>
+            <p>Analyze address activity and transaction history:</p>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Address Information</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-javascript">// Get address balance
+const balance = await tools.get_balance({
+  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj"
+});
+
+// Get address transaction history
+const txHistory = await tools.get_address_transactions({
+  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
+  limit: 50,
+  offset: 0
+});
+
+// Get NEP-17 transfers for address
+const nep17Transfers = await tools.get_nep17_transfers({
+  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
+  startTime: 1640995200000, // Timestamp
+  endTime: 1641081600000
+});
+
+// Get address UTXO (for NEO/GAS)
+const utxos = await tools.get_unspent({
+  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
+  asset: "NEO"
+});
+
+console.log("Address analytics:", {
+  balance: balance,
+  transactions: txHistory,
+  nep17Transfers: nep17Transfers,
+  utxos: utxos
+});
+
+// Output:
+// {
+//   "balance": {
+//     "NEO": "100",
+//     "GAS": "15.5234",
+//     "tokens": {
+//       "fWMP2dkWM": "1000.00"
+//     },
+//     "totalValueUSD": "1250.75"
+//   },
+//   "transactions": {
+//     "total": 156,
+//     "transactions": [
+//       {
+//         "txid": "0xabcdef1234567890...",
+//         "blockHeight": 5678901,
+//         "timestamp": 1640995200,
+//         "type": "NEP17Transfer",
+//         "amount": "10.00000000",
+//         "asset": "NEO",
+//         "from": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
+//         "to": "NYjzhdekseMYWvYpSoAeypqMiwMuEUDhKB"
+//       }
+//     ]
+//   },
+//   "nep17Transfers": {
+//     "sent": [...],
+//     "received": [...],
+//     "totalSent": "500.00",
+//     "totalReceived": "750.00"
+//   }
+// }</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>5. Smart Contract State</h2>
+            <p>Query smart contract storage and state information:</p>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Contract State Queries</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-javascript">// Get contract state
+const contractState = await tools.get_contract_state({
+  contractHash: "0xd2a4cff31913016155e38e474a2c06d08be276cf"
+});
+
+// Get contract storage value
+const storageValue = await tools.get_storage({
+  contractHash: "0xd2a4cff31913016155e38e474a2c06d08be276cf",
+  key: "746f74616c537570706c79" // hex encoded "totalSupply"
+});
+
+// Find storage values by prefix
+const storageItems = await tools.find_storage({
+  contractHash: "0xd2a4cff31913016155e38e474a2c06d08be276cf",
+  prefix: "62616c616e6365" // hex encoded "balance"
+});
+
+// Get all contract storage
+const allStorage = await tools.get_contract_storage({
+  contractHash: "0xd2a4cff31913016155e38e474a2c06d08be276cf"
+});
+
+// Test invoke contract method (read-only)
+const testInvoke = await tools.invoke_function({
+  contractHash: "0xd2a4cff31913016155e38e474a2c06d08be276cf",
+  method: "balanceOf",
+  parameters: [
+    {
+      type: "Hash160",
+      value: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj"
+    }
+  ]
+});
+
+console.log("Contract state:", {
+  state: contractState,
+  storage: storageValue,
+  storageItems: storageItems,
+  allStorage: allStorage,
+  testInvoke: testInvoke
+});
+
+// Output:
+// {
+//   "state": {
+//     "id": 5,
+//     "updatecounter": 1,
+//     "hash": "0xd2a4cff31913016155e38e474a2c06d08be276cf",
+//     "nef": {
+//       "magic": 860243278,
+//       "compiler": "neo-vm",
+//       "source": "",
+//       "tokens": [],
+//       "script": "0x110c14...",
+//       "checksum": 1234567890
+//     },
+//     "manifest": {
+//       "name": "FlamingoCoin",
+//       "groups": [],
+//       "features": {},
+//       "supportedstandards": ["NEP-17"],
+//       "abi": {
+//         "methods": [...],
+//         "events": [...]
+//       },
+//       "permissions": [...],
+//       "trusts": [],
+//       "extra": null
+//     }
+//   },
+//   "testInvoke": {
+//     "script": "0x110c14...",
+//     "state": "HALT",
+//     "gasconsumed": "2034810",
+//     "stack": [
+//       {
+//         "type": "Integer",
+//         "value": "100000000000"
+//       }
+//     ]
+//   }
+// }</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>6. Network Monitoring</h2>
+            <p>Monitor network health and consensus nodes:</p>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Network Health</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-javascript">// Get connected peers
+const peers = await tools.get_peers();
+
+// Get consensus nodes
+const validators = await tools.get_next_block_validators();
+
+// Get committee members
+const committee = await tools.get_committee();
+
+// Get memory pool
+const memPool = await tools.get_memory_pool();
+
+// Get node connection count
+const connectionCount = await tools.get_connection_count();
+
+console.log("Network monitoring:", {
+  peers: peers,
+  validators: validators,
+  committee: committee,
+  memoryPool: memPool,
+  connections: connectionCount
+});
+
+// Output:
+// {
+//   "peers": {
+//     "unconnected": [],
+//     "bad": [],
+//     "connected": [
+//       {
+//         "address": "192.168.1.100",
+//         "port": 10333
+//       }
+//     ]
+//   },
+//   "validators": [
+//     "03c6aa6e12638b36c...",
+//     "02ca0e27697b9c24..."
+//   ],
+//   "committee": [
+//     "03c6aa6e12638b36c...",
+//     "02ca0e27697b9c24...",
+//     "03d281aeb61c0d2b..."
+//   ],
+//   "memoryPool": {
+//     "height": 5678901,
+//     "verified": [
+//       "0x1234567890abcdef...",
+//       "0xfedcba0987654321..."
+//     ],
+//     "unverified": []
+//   },
+//   "connections": 8
+// }</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>7. Price and Market Data</h2>
+            <p>Get asset prices and market information:</p>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Market Data</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-javascript">// Get current asset prices
+const prices = await tools.get_asset_prices();
+
+// Get specific token price
+const neoPrice = await tools.get_asset_price({
+  asset: "NEO"
+});
+
+// Get price history
+const priceHistory = await tools.get_price_history({
+  asset: "NEO",
+  period: "1d",
+  limit: 30
+});
+
+// Get market statistics
+const marketStats = await tools.get_market_stats({
+  asset: "NEO"
+});
+
+// Get trading pairs
+const tradingPairs = await tools.get_trading_pairs();
+
+console.log("Market data:", {
+  prices: prices,
+  neoPrice: neoPrice,
+  priceHistory: priceHistory,
+  marketStats: marketStats,
+  tradingPairs: tradingPairs
+});
+
+// Output:
+// {
+//   "prices": {
+//     "NEO": "15.25",
+//     "GAS": "2.18",
+//     "FLM": "0.045"
+//   },
+//   "neoPrice": {
+//     "price": "15.25",
+//     "change24h": "+2.5%",
+//     "volume24h": "1250000",
+//     "marketCap": "1525000000"
+//   },
+//   "priceHistory": [
+//     {
+//       "timestamp": 1640995200,
+//       "open": "14.80",
+//       "high": "15.50",
+//       "low": "14.60",
+//       "close": "15.25",
+//       "volume": "125000"
+//     }
+//   ],
+//   "marketStats": {
+//     "price": "15.25",
+//     "marketCap": "1525000000",
+//     "volume24h": "1250000",
+//     "circulatingSupply": "100000000",
+//     "totalSupply": "100000000"
+//   }
+// }</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>8. Blockchain Explorer Class</h2>
+            <p>A comprehensive blockchain explorer implementation:</p>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Explorer Dashboard</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-javascript">class Neo3Explorer {
+  constructor(mcpTools) {
+    this.tools = mcpTools;
+    this.cache = new Map();
+    this.cacheTimeout = 30000; // 30 seconds
+  }
+
+  async getDashboardData() {
+    const dashboard = {
+      network: {},
+      blocks: [],
+      transactions: [],
+      prices: {},
+      stats: {}
+    };
+
+    // Get network information
+    dashboard.network = await this.tools.get_blockchain_info();
+    
+    // Get latest blocks
+    const latestBlock = await this.tools.get_latest_block();
+    dashboard.blocks = await this.getRecentBlocks(latestBlock.index, 10);
+    
+    // Get recent transactions from latest blocks
+    dashboard.transactions = this.extractRecentTransactions(dashboard.blocks, 20);
+    
+    // Get market data
+    dashboard.prices = await this.tools.get_asset_prices();
+    
+    // Calculate network statistics
+    dashboard.stats = await this.calculateNetworkStats();
+    
+    return dashboard;
+  }
+
+  async getRecentBlocks(currentHeight, count) {
+    const blocks = [];
+    for (let i = 0; i < count; i++) {
+      const height = currentHeight - i;
+      if (height >= 0) {
+        const block = await this.getBlockCached(height);
+        blocks.push({
+          height: block.index,
+          hash: block.hash,
+          time: new Date(block.time).toISOString(),
+          txCount: block.tx.length,
+          size: block.size,
+          gasConsumed: this.calculateBlockGasConsumed(block)
+        });
+      }
+    }
+    return blocks;
+  }
+
+  extractRecentTransactions(blocks, count) {
+    const transactions = [];
+    for (const block of blocks) {
+      if (transactions.length >= count) break;
+      
+      const fullBlock = this.cache.get(`block_${block.height}`);
+      if (fullBlock && fullBlock.tx) {
+        for (const tx of fullBlock.tx) {
+          if (transactions.length >= count) break;
+          
+          transactions.push({
+            hash: tx.hash,
+            blockHeight: block.height,
+            time: block.time,
+            sender: tx.sender,
+            gasConsumed: tx.sysfee,
+            fee: tx.netfee,
+            type: this.determineTransactionType(tx)
+          });
+        }
+      }
+    }
+    return transactions;
+  }
+
+  async getBlockCached(height) {
+    const cacheKey = `block_${height}`;
+    const cached = this.cache.get(cacheKey);
+    
+    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+      return cached.data;
+    }
+    
+    const block = await this.tools.get_block({ height });
+    this.cache.set(cacheKey, {
+      data: block,
+      timestamp: Date.now()
+    });
+    
+    return block;
+  }
+
+  calculateBlockGasConsumed(block) {
+    return block.tx.reduce((total, tx) => {
+      return total + parseFloat(tx.sysfee || 0);
+    }, 0).toFixed(8);
+  }
+
+  determineTransactionType(tx) {
+    if (tx.script) {
+      // Simple heuristic to determine transaction type
+      if (tx.script.includes('transfer')) return 'Transfer';
+      if (tx.script.includes('invoke')) return 'Contract Call';
+      if (tx.script.includes('deploy')) return 'Contract Deploy';
+    }
+    return 'Unknown';
+  }
+
+  async calculateNetworkStats() {
+    const blockCount = await this.tools.get_block_count();
+    const memPool = await this.tools.get_memory_pool();
+    const connectionCount = await this.tools.get_connection_count();
+    const validators = await this.tools.get_next_block_validators();
+    
+    // Calculate average block time (last 100 blocks)
+    const avgBlockTime = await this.calculateAverageBlockTime(100);
+    
+    return {
+      totalBlocks: blockCount,
+      pendingTransactions: memPool.verified.length,
+      networkNodes: connectionCount,
+      validators: validators.length,
+      averageBlockTime: avgBlockTime,
+      networkHashRate: this.estimateHashRate(avgBlockTime)
+    };
+  }
+
+  async calculateAverageBlockTime(blockCount) {
+    const currentHeight = await this.tools.get_block_count();
+    const startHeight = Math.max(0, currentHeight - blockCount);
+    
+    const startBlock = await this.getBlockCached(startHeight);
+    const endBlock = await this.getBlockCached(currentHeight - 1);
+    
+    const timeDiff = endBlock.time - startBlock.time;
+    const blockDiff = currentHeight - 1 - startHeight;
+    
+    return blockDiff > 0 ? (timeDiff / blockDiff / 1000).toFixed(1) : 0; // seconds
+  }
+
+  estimateHashRate(avgBlockTime) {
+    // Simplified hash rate estimation
+    const targetBlockTime = 15; // Neo N3 target block time in seconds
+    const difficulty = targetBlockTime / parseFloat(avgBlockTime);
+    return (difficulty * 1000).toFixed(0); // Simplified metric
+  }
+
+  async searchAddress(address) {
+    const [balance, transactions, nep17Transfers] = await Promise.all([
+      this.tools.get_balance({ address }),
+      this.tools.get_address_transactions({ address, limit: 50 }),
+      this.tools.get_nep17_transfers({ address })
+    ]);
+
+    return {
+      address,
+      balance,
+      transactionCount: transactions.total,
+      recentTransactions: transactions.transactions,
+      nep17Activity: nep17Transfers,
+      firstSeen: transactions.transactions.length > 0 
+        ? new Date(transactions.transactions[transactions.transactions.length - 1].timestamp * 1000)
+        : null,
+      lastActivity: transactions.transactions.length > 0
+        ? new Date(transactions.transactions[0].timestamp * 1000)
+        : null
+    };
+  }
+
+  async searchTransaction(txid) {
+    const [transaction, appLog] = await Promise.all([
+      this.tools.get_transaction({ txid, verbose: true }),
+      this.tools.get_application_log({ txid }).catch(() => null)
+    ]);
+
+    return {
+      transaction,
+      applicationLog: appLog,
+      confirmations: await this.tools.get_transaction_confirmations({ txid }),
+      block: transaction.blockhash 
+        ? await this.tools.get_block({ hash: transaction.blockhash })
+        : null
+    };
+  }
+
+  async getTopAddresses(limit = 100) {
+    // This would require additional indexing in a real implementation
+    // For now, return placeholder data
+    return {
+      message: "Top addresses require additional indexing service",
+      recommendation: "Use dedicated blockchain analytics services for this data"
+    };
+  }
+}
+
+// Usage example
+const explorer = new Neo3Explorer(mcpTools);
+
+// Get dashboard overview
+const dashboardData = await explorer.getDashboardData();
+console.log("Explorer dashboard:", dashboardData);
+
+// Search for address
+const addressData = await explorer.searchAddress("NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj");
+console.log("Address information:", addressData);
+
+// Search for transaction
+const txData = await explorer.searchTransaction("0x1234567890abcdef...");
+console.log("Transaction details:", txData);</code></pre>
+            </div>
+        </div>
+
+        <div class="next-steps">
+            <h2>Next Steps</h2>
+            <div class="step-cards">
+                <a href="/examples/wallet" class="step-card">
+                    <h3>Wallet Operations</h3>
+                    <p>Learn wallet creation and asset management</p>
+                </a>
+                <a href="/examples/contracts" class="step-card">
+                    <h3>Smart Contract Interaction</h3>
+                    <p>Interact with Neo N3 smart contracts and DeFi protocols</p>
+                </a>
+                <a href="/docs/api" class="step-card">
+                    <h3>Full API Reference</h3>
+                    <p>Complete documentation of all available tools</p>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="/assets/js/main.js"></script>
+</body>
+</html> 

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet Operations - Neo N3 MCP Examples</title>
+    <meta name="description" content="Learn wallet operations with Neo N3 MCP Server: create wallets, check balances, and transfer assets.">
+    
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="/assets/images/neo-logo.svg" alt="Neo N3" class="logo-icon">
+                <span class="logo-text">Neo N3 MCP</span>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/#features" class="nav-link">Features</a>
+                <a href="/docs" class="nav-link">Docs</a>
+                <a href="/examples" class="nav-link">Examples</a>
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="nav-link" target="_blank">GitHub</a>
+                <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+            </div>
+            <div class="nav-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 1200px; margin: 100px auto; padding: 0 2rem;">
+        <div class="breadcrumb">
+            <a href="/examples">Examples</a> > Wallet Operations
+        </div>
+        
+        <header style="text-align: center; margin-bottom: 3rem;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">Wallet Operations</h1>
+            <p style="font-size: 1.2rem; color: var(--text-secondary);">
+                Complete guide to wallet management with Neo N3 MCP Server
+            </p>
+        </header>
+
+        <div class="example-section">
+            <h2>1. Creating a New Wallet</h2>
+            <p>Create a secure wallet with encrypted private key storage:</p>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Create Wallet</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-javascript">// Using MCP Tools
+const result = await tools.create_wallet({
+  password: "secure_password_123",
+  name: "MyWallet"
+});
+
+console.log("Wallet created:", result);
+// Output:
+// {
+//   "address": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
+//   "publicKey": "03c6aa6e12638b36c....",
+//   "encrypted": true,
+//   "name": "MyWallet"
+// }</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>2. Importing an Existing Wallet</h2>
+            <p>Import a wallet using WIF (Wallet Import Format) or private key:</p>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Import Wallet</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-javascript">// Import from WIF
+const walletFromWIF = await tools.import_wallet({
+  wif: "KxDgvEKzgSBPPfuVfw67oPQBSjidEiqTHURKSDL1R7yGaGYAeYnr",
+  password: "new_password_123",
+  name: "ImportedWallet"
+});
+
+// Import from private key
+const walletFromKey = await tools.import_wallet({
+  privateKey: "1dd37fba80fec4e6a6f13fd708d8dcb3b29def768017052f6c930fa1c5d90bbb",
+  password: "secure_password",
+  name: "ImportedFromKey"
+});</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>3. Checking Wallet Balance</h2>
+            <p>Get comprehensive balance information for NEO, GAS, and NEP-17 tokens:</p>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Check Balance</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-javascript">// Get balance for specific address
+const balance = await tools.get_balance({
+  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj"
+});
+
+console.log("Wallet balance:", balance);
+// Output:
+// {
+//   "NEO": "100",
+//   "GAS": "15.5234",
+//   "tokens": {
+//     "fWMP2dkWM": "1000.00", // Flamingo token
+//     "d2a4cFF31": "50.25"    // Other NEP-17 token
+//   },
+//   "totalValueUSD": "1250.75"
+// }</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>4. Transferring Assets</h2>
+            <p>Send NEO, GAS, or NEP-17 tokens to other addresses:</p>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Transfer NEO</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-javascript">// Transfer NEO tokens
+const neoTransfer = await tools.transfer_neo({
+  fromAddress: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
+  toAddress: "NYjzhdekseMYWvYpSoAeypqMiwMuEUDhKB",
+  amount: "10",
+  password: "wallet_password"
+});
+
+// Transfer GAS tokens
+const gasTransfer = await tools.transfer_gas({
+  fromAddress: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj", 
+  toAddress: "NYjzhdekseMYWvYpSoAeypqMiwMuEUDhKB",
+  amount: "5.5",
+  password: "wallet_password"
+});
+
+console.log("Transfer completed:", gasTransfer);
+// Output:
+// {
+//   "txid": "0x1234567890abcdef...",
+//   "gasConsumed": "0.0234567",
+//   "confirmations": 1,
+//   "success": true
+// }</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>5. NEP-17 Token Operations</h2>
+            <p>Work with custom NEP-17 tokens:</p>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">NEP-17 Token Transfer</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-javascript">// Get token information
+const tokenInfo = await tools.get_nep17_token_info({
+  contractHash: "0xd2a4cff31913016155e38e474a2c06d08be276cf"
+});
+
+// Transfer NEP-17 tokens
+const tokenTransfer = await tools.transfer_nep17({
+  fromAddress: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
+  toAddress: "NYjzhdekseMYWvYpSoAeypqMiwMuEUDhKB", 
+  contractHash: "0xd2a4cff31913016155e38e474a2c06d08be276cf",
+  amount: "100.5",
+  password: "wallet_password"
+});
+
+console.log("Token info:", tokenInfo);
+// Output:
+// {
+//   "symbol": "FLM",
+//   "decimals": 8,
+//   "totalSupply": "150000000.00000000",
+//   "name": "Flamingo"
+// }</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>6. Transaction History</h2>
+            <p>Get transaction history for wallet addresses:</p>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Get Transaction History</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-javascript">// Get recent transactions
+const history = await tools.get_address_transactions({
+  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
+  limit: 10
+});
+
+console.log("Transaction history:", history);
+// Output:
+// {
+//   "transactions": [
+//     {
+//       "txid": "0xabcdef1234567890...",
+//       "blockHeight": 5678901,
+//       "timestamp": 1640995200,
+//       "type": "NEP17Transfer",
+//       "amount": "10.00000000",
+//       "asset": "NEO",
+//       "from": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
+//       "to": "NYjzhdekseMYWvYpSoAeypqMiwMuEUDhKB"
+//     }
+//   ]
+// }</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>7. Complete Wallet Manager Example</h2>
+            <p>A comprehensive wallet management class:</p>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Wallet Manager Class</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-javascript">class NeoWalletManager {
+  constructor(mcpTools) {
+    this.tools = mcpTools;
+    this.wallets = new Map();
+  }
+
+  async createWallet(name, password) {
+    try {
+      const wallet = await this.tools.create_wallet({
+        name,
+        password
+      });
+      
+      this.wallets.set(name, wallet);
+      console.log(`✅ Wallet "${name}" created successfully`);
+      return wallet;
+    } catch (error) {
+      console.error("❌ Failed to create wallet:", error);
+      throw error;
+    }
+  }
+
+  async getPortfolioValue(address) {
+    const balance = await this.tools.get_balance({ address });
+    const prices = await this.tools.get_asset_prices();
+    
+    let totalValue = 0;
+    totalValue += parseFloat(balance.NEO || 0) * prices.NEO;
+    totalValue += parseFloat(balance.GAS || 0) * prices.GAS;
+    
+    // Calculate token values
+    for (const [token, amount] of Object.entries(balance.tokens || {})) {
+      if (prices[token]) {
+        totalValue += parseFloat(amount) * prices[token];
+      }
+    }
+    
+    return {
+      totalValueUSD: totalValue.toFixed(2),
+      breakdown: {
+        NEO: (parseFloat(balance.NEO || 0) * prices.NEO).toFixed(2),
+        GAS: (parseFloat(balance.GAS || 0) * prices.GAS).toFixed(2),
+        tokens: balance.tokens
+      }
+    };
+  }
+
+  async transferWithConfirmation(from, to, asset, amount, password) {
+    console.log(`🔄 Initiating transfer: ${amount} ${asset}`);
+    
+    // Estimate fees first
+    const feeEstimate = await this.tools.estimate_transfer_fee({
+      fromAddress: from,
+      toAddress: to,
+      asset,
+      amount
+    });
+    
+    console.log(`💰 Estimated fee: ${feeEstimate.fee} GAS`);
+    
+    // Execute transfer
+    let result;
+    if (asset === 'NEO') {
+      result = await this.tools.transfer_neo({
+        fromAddress: from,
+        toAddress: to,
+        amount,
+        password
+      });
+    } else if (asset === 'GAS') {
+      result = await this.tools.transfer_gas({
+        fromAddress: from,
+        toAddress: to,
+        amount,
+        password
+      });
+    }
+    
+    console.log(`✅ Transfer completed: ${result.txid}`);
+    return result;
+  }
+}
+
+// Usage example
+const walletManager = new NeoWalletManager(mcpTools);
+
+// Create and manage wallets
+await walletManager.createWallet("MainWallet", "secure123");
+const portfolio = await walletManager.getPortfolioValue("NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj");
+console.log("Portfolio value:", portfolio);</code></pre>
+            </div>
+        </div>
+
+        <div class="next-steps">
+            <h2>Next Steps</h2>
+            <div class="step-cards">
+                <a href="/examples/contracts" class="step-card">
+                    <h3>Smart Contract Interaction</h3>
+                    <p>Learn to interact with Neo N3 smart contracts</p>
+                </a>
+                <a href="/examples/explorer" class="step-card">
+                    <h3>Blockchain Explorer</h3>
+                    <p>Query blockchain data and transaction details</p>
+                </a>
+                <a href="/docs/api" class="step-card">
+                    <h3>Full API Reference</h3>
+                    <p>Complete documentation of all available tools</p>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="/assets/js/main.js"></script>
+</body>
+</html> 
