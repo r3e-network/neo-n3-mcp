@@ -31,11 +31,12 @@
             --gradient-primary: linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%);
             --gradient-secondary: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
             --gradient-accent: linear-gradient(135deg, #f472b6 0%, #ec4899 100%);
-            --gradient-mesh: radial-gradient(circle at 20% 80%, rgba(96, 165, 250, 0.1) 0%, transparent 50%),
-                            radial-gradient(circle at 80% 20%, rgba(244, 114, 182, 0.08) 0%, transparent 50%),
-                            radial-gradient(circle at 40% 40%, rgba(74, 222, 128, 0.06) 0%, transparent 50%);
+            --gradient-mesh: radial-gradient(circle at 20% 80%, rgba(96, 165, 250, 0.04) 0%, transparent 50%),
+                            radial-gradient(circle at 80% 20%, rgba(244, 114, 182, 0.03) 0%, transparent 50%),
+                            radial-gradient(circle at 40% 40%, rgba(74, 222, 128, 0.02) 0%, transparent 50%);
             --neo-dark: #0f172a;
             --neo-darker: #020617;
+            --neo-darkest: #0c1220;
             --surface-glass: rgba(255, 255, 255, 0.03);
             --surface-card: rgba(255, 255, 255, 0.05);
             --border-glass: rgba(255, 255, 255, 0.08);
@@ -135,7 +136,7 @@
             box-shadow: var(--shadow-glow), 0 8px 25px rgba(74, 222, 128, 0.2);
         }
 
-        /* Improved Hero Section */
+        /* Darker Hero Section */
         .hero {
             min-height: 100vh;
             display: flex;
@@ -143,6 +144,7 @@
             position: relative;
             overflow: hidden;
             padding: 8rem 0 4rem;
+            background: linear-gradient(180deg, var(--neo-darkest) 0%, var(--neo-darker) 100%);
         }
 
         .hero::before {
@@ -153,7 +155,7 @@
             right: 0;
             bottom: 0;
             background: var(--gradient-mesh);
-            opacity: 0.8;
+            opacity: 0.3;
             animation: meshFloat 12s ease-in-out infinite;
         }
 
@@ -291,7 +293,7 @@
         }
 
         .code-window {
-            background: rgba(15, 23, 42, 0.9);
+            background: rgba(12, 18, 32, 0.95);
             border: 1px solid var(--border-glass);
             border-radius: 1rem;
             overflow: hidden;
@@ -351,7 +353,7 @@
         /* Improved Floating Elements */
         .floating-card {
             position: absolute;
-            background: var(--surface-card);
+            background: rgba(12, 18, 32, 0.8);
             backdrop-filter: blur(20px);
             border: 1px solid var(--border-glass);
             border-radius: 1rem;
