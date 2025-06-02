@@ -57,25 +57,62 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Redirects for SPA-like behavior and clean URLs
+# Documentation redirects
 [[redirects]]
   from = "/docs"
   to = "/docs/index.html"
   status = 200
 
 [[redirects]]
-  from = "/docs/*"
-  to = "/docs/:splat"
+  from = "/docs/api"
+  to = "/docs/api.html"
   status = 200
 
+[[redirects]]
+  from = "/docs/architecture"
+  to = "/docs/architecture.html"
+  status = 200
+
+[[redirects]]
+  from = "/docs/deployment"
+  to = "/docs/deployment.html"
+  status = 200
+
+[[redirects]]
+  from = "/docs/testing"
+  to = "/docs/testing.html"
+  status = 200
+
+[[redirects]]
+  from = "/docs/getting-started"
+  to = "/docs/getting-started.html"
+  status = 200
+
+# Examples redirects
 [[redirects]]
   from = "/examples"
   to = "/examples/index.html"
   status = 200
 
 [[redirects]]
-  from = "/examples/*"
-  to = "/examples/:splat"
+  from = "/examples/wallet"
+  to = "/examples/wallet.html"
+  status = 200
+
+[[redirects]]
+  from = "/examples/contracts"
+  to = "/examples/contracts.html"
+  status = 200
+
+[[redirects]]
+  from = "/examples/explorer"
+  to = "/examples/explorer.html"
+  status = 200
+
+# Changelog redirect
+[[redirects]]
+  from = "/changelog"
+  to = "/changelog.html"
   status = 200
 
 # API redirects (if needed for documentation)
@@ -117,6 +154,17 @@
   from = "/documentation/*"
   to = "/docs/:splat"
   status = 301
+
+# Catch-all for other docs and examples (with .html extension)
+[[redirects]]
+  from = "/docs/*"
+  to = "/docs/:splat.html"
+  status = 200
+
+[[redirects]]
+  from = "/examples/*"
+  to = "/examples/:splat.html"
+  status = 200
 
 # 404 fallback
 [[redirects]]
