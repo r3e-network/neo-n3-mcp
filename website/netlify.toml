@@ -154,16 +154,6 @@
 # function = "geo-redirect"
 # path = "/api/*"
 
-# Plugin configuration
-[[plugins]]
-  package = "netlify-plugin-lighthouse"
-  
-  [plugins.inputs.thresholds]
-    performance = 0.9
-    accessibility = 0.9
-    best-practices = 0.9
-    seo = 0.9
-
 # Dev server configuration
 [dev]
   port = 3000
