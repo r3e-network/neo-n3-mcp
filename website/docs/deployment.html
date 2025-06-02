@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production Deployment - Neo N3 MCP Server</title>
+    <meta name="description" content="Complete production deployment guide for Neo N3 MCP Server. Learn Docker deployment, scaling, monitoring, and best practices.">
+    <meta name="keywords" content="neo, blockchain, mcp, deployment, production, docker, kubernetes">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/modern-enhancements.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="/assets/images/neo-logo.svg" alt="Neo N3" class="logo-icon">
+                <span class="logo-text">Neo N3 MCP</span>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/#features" class="nav-link">Features</a>
+                <a href="/docs" class="nav-link">Docs</a>
+                <a href="/examples" class="nav-link">Examples</a>
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="nav-link" target="_blank">GitHub</a>
+                <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+            </div>
+            <div class="nav-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 1200px; margin: 100px auto; padding: 0 2rem;">
+        <div class="breadcrumb">
+            <a href="/docs">Documentation</a> > Production Deployment
+        </div>
+        
+        <header style="text-align: center; margin-bottom: 3rem;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">Production Deployment</h1>
+            <p style="font-size: 1.2rem; color: var(--text-secondary);">
+                Deploy and scale Neo N3 MCP Server for production workloads
+            </p>
+        </header>
+
+        <div class="example-section">
+            <h2>🐳 Docker Deployment</h2>
+            <p>The recommended way to deploy Neo N3 MCP Server in production using Docker containers.</p>
+            
+            <h3>Basic Docker Deployment</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Docker Run</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-bash"># Pull the latest production image
+docker pull r3e/neo-n3-mcp:latest
+
+# Run in production mode
+docker run -d \
+  --name neo-n3-mcp \
+  --restart unless-stopped \
+  -p 3000:3000 \
+  -e NEO_NETWORK=mainnet \
+  -e LOG_LEVEL=info \
+  -e ENABLE_CONFIRMATION=true \
+  -v /opt/neo-mcp/wallets:/app/wallets \
+  -v /opt/neo-mcp/logs:/app/logs \
+  r3e/neo-n3-mcp:latest</code></pre>
+            </div>
+
+            <h3>Docker Compose Deployment</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">docker-compose.yml</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-yaml">version: '3.8'
+
+services:
+  neo-mcp:
+    image: r3e/neo-n3-mcp:latest
+    container_name: neo-n3-mcp
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEO_NETWORK=mainnet
+      - LOG_LEVEL=info
+      - ENABLE_CONFIRMATION=true
+      - CACHE_TTL=300
+      - MAX_CONCURRENT_REQUESTS=50
+      - RATE_LIMIT_WINDOW=60000
+      - RATE_LIMIT_MAX=100
+    volumes:
+      - ./data/wallets:/app/wallets
+      - ./data/logs:/app/logs
+      - ./data/cache:/app/cache
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: neo-mcp-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - neo-network
+    command: redis-server --appendonly yes
+
+  # Optional: Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: neo-mcp-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    networks:
+      - neo-network
+    depends_on:
+      - neo-mcp
+
+networks:
+  neo-network:
+    driver: bridge</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>⚙️ Environment Configuration</h2>
+            
+            <h3>Production Environment Variables</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">.env.production</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-bash"># Network Configuration
+NEO_NETWORK=mainnet
+NEO_RPC_URL=https://mainnet1.neo.coz.io:443
+NEO_RPC_BACKUP_URLS=https://mainnet2.neo.coz.io:443,https://mainnet3.neo.coz.io:443
+
+# Security Settings
+ENABLE_CONFIRMATION=true
+MAX_REQUEST_SIZE=1048576
+ENABLE_RATE_LIMITING=true
+RATE_LIMIT_WINDOW=60000
+RATE_LIMIT_MAX=100
+
+# Performance Settings
+CACHE_TTL=300
+MAX_CONCURRENT_REQUESTS=50
+CONNECTION_POOL_SIZE=10
+REQUEST_TIMEOUT=30000
+
+# Logging Configuration
+LOG_LEVEL=info
+LOG_FORMAT=json
+LOG_MAX_FILES=30
+LOG_MAX_SIZE=100mb
+
+# Monitoring
+ENABLE_METRICS=true
+METRICS_PORT=9090
+HEALTH_CHECK_PORT=3001
+
+# Database (if using external storage)
+DATABASE_URL=postgresql://user:pass@localhost:5432/neo_mcp
+REDIS_URL=redis://localhost:6379
+
+# SSL/TLS
+SSL_ENABLED=true
+SSL_CERT_PATH=/app/ssl/cert.pem
+SSL_KEY_PATH=/app/ssl/key.pem</code></pre>
+            </div>
+
+            <h3>Security Configuration</h3>
+            <div class="info-box">
+                <div class="info-title">🔒 Security Best Practices</div>
+                <ul>
+                    <li>Always use <code>ENABLE_CONFIRMATION=true</code> in production</li>
+                    <li>Set up proper rate limiting to prevent abuse</li>
+                    <li>Use SSL/TLS encryption for all communications</li>
+                    <li>Store sensitive data in encrypted volumes</li>
+                    <li>Regularly rotate API keys and certificates</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>🌐 Reverse Proxy Setup</h2>
+            
+            <h3>Nginx Configuration</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">nginx.conf</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-nginx">events {
+    worker_connections 1024;
+}
+
+http {
+    upstream neo_mcp_backend {
+        server neo-mcp:3000;
+        # Add more servers for load balancing
+        # server neo-mcp-2:3000;
+        # server neo-mcp-3:3000;
+    }
+
+    # Rate limiting
+    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+
+    server {
+        listen 80;
+        server_name your-domain.com;
+        return 301 https://$server_name$request_uri;
+    }
+
+    server {
+        listen 443 ssl http2;
+        server_name your-domain.com;
+
+        # SSL Configuration
+        ssl_certificate /etc/nginx/ssl/cert.pem;
+        ssl_certificate_key /etc/nginx/ssl/key.pem;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512;
+        ssl_prefer_server_ciphers off;
+
+        # Security Headers
+        add_header X-Frame-Options DENY;
+        add_header X-Content-Type-Options nosniff;
+        add_header X-XSS-Protection "1; mode=block";
+        add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
+
+        # API Endpoints
+        location /mcp {
+            limit_req zone=api burst=20 nodelay;
+            
+            proxy_pass http://neo_mcp_backend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            
+            # Timeouts
+            proxy_connect_timeout 30s;
+            proxy_send_timeout 30s;
+            proxy_read_timeout 30s;
+        }
+
+        # Health Check
+        location /health {
+            proxy_pass http://neo_mcp_backend;
+            access_log off;
+        }
+
+        # Metrics (restrict access)
+        location /metrics {
+            allow 10.0.0.0/8;
+            allow 172.16.0.0/12;
+            allow 192.168.0.0/16;
+            deny all;
+            
+            proxy_pass http://neo_mcp_backend;
+        }
+    }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>☸️ Kubernetes Deployment</h2>
+            
+            <h3>Kubernetes Manifests</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">k8s-deployment.yaml</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neo-n3-mcp
+  labels:
+    app: neo-n3-mcp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: neo-n3-mcp
+  template:
+    metadata:
+      labels:
+        app: neo-n3-mcp
+    spec:
+      containers:
+      - name: neo-mcp
+        image: r3e/neo-n3-mcp:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NEO_NETWORK
+          value: "mainnet"
+        - name: LOG_LEVEL
+          value: "info"
+        - name: ENABLE_CONFIRMATION
+          value: "true"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: wallet-storage
+          mountPath: /app/wallets
+        - name: log-storage
+          mountPath: /app/logs
+      volumes:
+      - name: wallet-storage
+        persistentVolumeClaim:
+          claimName: neo-mcp-wallets
+      - name: log-storage
+        persistentVolumeClaim:
+          claimName: neo-mcp-logs
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: neo-n3-mcp-service
+spec:
+  selector:
+    app: neo-n3-mcp
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 3000
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: neo-n3-mcp-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+spec:
+  tls:
+  - hosts:
+    - your-domain.com
+    secretName: neo-mcp-tls
+  rules:
+  - host: your-domain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: neo-n3-mcp-service
+            port:
+              number: 80</code></pre>
+            </div>
+
+            <h3>Persistent Storage</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">k8s-storage.yaml</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-yaml">apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: neo-mcp-wallets
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: fast-ssd
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: neo-mcp-logs
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: standard</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>📊 Monitoring & Observability</h2>
+            
+            <h3>Prometheus Configuration</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">prometheus.yml</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-yaml">global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'neo-n3-mcp'
+    static_configs:
+      - targets: ['neo-mcp:9090']
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  - job_name: 'neo-n3-mcp-health'
+    static_configs:
+      - targets: ['neo-mcp:3000']
+    metrics_path: /health
+    scrape_interval: 10s
+
+rule_files:
+  - "alert_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093</code></pre>
+            </div>
+
+            <h3>Alert Rules</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">alert_rules.yml</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-yaml">groups:
+- name: neo-n3-mcp
+  rules:
+  - alert: ServiceDown
+    expr: up{job="neo-n3-mcp"} == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Neo N3 MCP Service is down"
+      
+  - alert: HighErrorRate
+    expr: rate(neo_mcp_errors_total[5m]) > 0.1
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High error rate detected"
+      
+  - alert: HighLatency
+    expr: histogram_quantile(0.95, rate(neo_mcp_request_duration_seconds_bucket[5m])) > 2
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High request latency detected"
+      
+  - alert: LowCacheHitRate
+    expr: neo_mcp_cache_hit_rate < 0.8
+    for: 10m
+    labels:
+      severity: info
+    annotations:
+      summary: "Cache hit rate is low"</code></pre>
+            </div>
+
+            <h3>Grafana Dashboard</h3>
+            <div class="info-box">
+                <div class="info-title">📈 Key Metrics to Monitor</div>
+                <ul>
+                    <li><strong>Request Rate:</strong> Requests per second</li>
+                    <li><strong>Error Rate:</strong> Percentage of failed requests</li>
+                    <li><strong>Latency:</strong> P50, P95, P99 response times</li>
+                    <li><strong>Cache Hit Rate:</strong> Cache effectiveness</li>
+                    <li><strong>Network Health:</strong> Neo N3 network connectivity</li>
+                    <li><strong>Resource Usage:</strong> CPU, memory, disk usage</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>🔄 CI/CD Pipeline</h2>
+            
+            <h3>GitHub Actions Workflow</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">.github/workflows/deploy.yml</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-yaml">name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    - run: npm ci
+    - run: npm test
+    - run: npm run lint
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: docker/setup-buildx-action@v2
+    - uses: docker/login-action@v2
+      with:
+        registry: docker.io
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: r3e/neo-n3-mcp
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+    
+    - uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+    - name: Deploy to production
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.PROD_HOST }}
+        username: ${{ secrets.PROD_USER }}
+        key: ${{ secrets.PROD_SSH_KEY }}
+        script: |
+          cd /opt/neo-n3-mcp
+          docker-compose pull
+          docker-compose up -d
+          docker system prune -f</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>🔧 Production Checklist</h2>
+            
+            <h3>Pre-Deployment Checklist</h3>
+            <div class="warning-box">
+                <div class="warning-title">⚠️ Critical Steps</div>
+                <ul>
+                    <li>✅ SSL certificates configured and valid</li>
+                    <li>✅ Environment variables properly set</li>
+                    <li>✅ Persistent storage configured</li>
+                    <li>✅ Backup strategy implemented</li>
+                    <li>✅ Monitoring and alerting set up</li>
+                    <li>✅ Rate limiting configured</li>
+                    <li>✅ Security headers enabled</li>
+                    <li>✅ Health checks working</li>
+                    <li>✅ Log aggregation configured</li>
+                    <li>✅ Emergency runbook prepared</li>
+                </ul>
+            </div>
+
+            <h3>Performance Tuning</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Recommended Production Settings</span>
+                </div>
+                <pre><code class="language-bash"># Resource Limits
+MAX_CONCURRENT_REQUESTS=50
+CONNECTION_POOL_SIZE=10
+CACHE_TTL=300
+
+# Timeouts
+REQUEST_TIMEOUT=30000
+CONNECTION_TIMEOUT=5000
+IDLE_TIMEOUT=60000
+
+# Memory Management
+NODE_OPTIONS="--max-old-space-size=2048"
+HEAP_DUMP_ON_OOM=true
+
+# Logging
+LOG_LEVEL=info
+LOG_ROTATION=daily
+LOG_MAX_SIZE=100mb
+LOG_MAX_FILES=30</code></pre>
+            </div>
+
+            <h3>Scaling Guidelines</h3>
+            <div class="info-box">
+                <div class="info-title">📈 Scaling Recommendations</div>
+                <ul>
+                    <li><strong>Horizontal Scaling:</strong> Add more instances behind a load balancer</li>
+                    <li><strong>Database Scaling:</strong> Use read replicas for wallet data</li>
+                    <li><strong>Cache Scaling:</strong> Implement Redis cluster for distributed caching</li>
+                    <li><strong>Network Optimization:</strong> Use multiple Neo N3 RPC endpoints</li>
+                    <li><strong>Geographic Distribution:</strong> Deploy in multiple regions</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>🆘 Troubleshooting</h2>
+            
+            <h3>Common Issues</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Health Check Commands</span>
+                </div>
+                <pre><code class="language-bash"># Check service health
+curl -f http://localhost:3000/health
+
+# Check metrics
+curl http://localhost:9090/metrics
+
+# View logs
+docker logs neo-n3-mcp --tail 100 -f
+
+# Check Neo network connectivity
+docker exec neo-n3-mcp npx @r3e/neo-n3-mcp health
+
+# Test API endpoint
+curl -X POST http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"name": "get_network_mode"}'</code></pre>
+            </div>
+
+            <h3>Emergency Procedures</h3>
+            <div class="warning-box">
+                <div class="warning-title">🚨 Emergency Response</div>
+                <ul>
+                    <li><strong>Service Down:</strong> Check health endpoints, restart containers</li>
+                    <li><strong>High Error Rate:</strong> Check Neo network status, validate RPC endpoints</li>
+                    <li><strong>Memory Leaks:</strong> Restart service, check for stuck processes</li>
+                    <li><strong>Network Issues:</strong> Switch to backup RPC endpoints</li>
+                    <li><strong>Security Breach:</strong> Rotate keys, review access logs</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="next-steps">
+            <h2>Next Steps</h2>
+            <div class="step-cards">
+                <a href="/docs/architecture" class="step-card">
+                    <h3>System Architecture</h3>
+                    <p>Understand the underlying architecture and design</p>
+                </a>
+                <a href="/docs/testing" class="step-card">
+                    <h3>Testing Guide</h3>
+                    <p>Learn about testing strategies and validation</p>
+                </a>
+                <a href="/examples" class="step-card">
+                    <h3>Examples</h3>
+                    <p>See real-world usage examples and implementations</p>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="/assets/js/main.js"></script>
+</body>
+</html> 

@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture - Neo N3 MCP Server</title>
+    <meta name="description" content="System architecture and design of Neo N3 MCP Server. Learn about components, data flow, and architectural decisions.">
+    <meta name="keywords" content="neo, blockchain, mcp, architecture, design, system">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/modern-enhancements.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="/assets/images/neo-logo.svg" alt="Neo N3" class="logo-icon">
+                <span class="logo-text">Neo N3 MCP</span>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/#features" class="nav-link">Features</a>
+                <a href="/docs" class="nav-link">Docs</a>
+                <a href="/examples" class="nav-link">Examples</a>
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="nav-link" target="_blank">GitHub</a>
+                <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+            </div>
+            <div class="nav-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 1200px; margin: 100px auto; padding: 0 2rem;">
+        <div class="breadcrumb">
+            <a href="/docs">Documentation</a> > Architecture
+        </div>
+        
+        <header style="text-align: center; margin-bottom: 3rem;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">System Architecture</h1>
+            <p style="font-size: 1.2rem; color: var(--text-secondary);">
+                Deep dive into the Neo N3 MCP Server architecture and design principles
+            </p>
+        </header>
+
+        <div class="example-section">
+            <h2>🏗️ Overview</h2>
+            <p>The Neo N3 MCP Server is built on a modular, scalable architecture designed for production use. It follows the Model Context Protocol (MCP) specification while providing comprehensive Neo N3 blockchain integration.</p>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">High-Level Architecture</span>
+                </div>
+                <pre><code>┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Client Apps   │    │   MCP Protocol  │    │  Neo N3 Network │
+│                 │    │                 │    │                 │
+│ • Claude Desktop│◄──►│ • Request Router│◄──►│ • MainNet       │
+│ • Custom Apps   │    │ • Tool Handler  │    │ • TestNet       │
+│ • API Clients   │    │ • Validation    │    │ • RPC Nodes     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                               │
+                       ┌───────▼───────┐
+                       │  Core Services │
+                       │                │
+                       │ • Wallet Mgmt  │
+                       │ • Asset Ops    │
+                       │ • Contract Svc │
+                       │ • Security     │
+                       └────────────────┘</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>🔧 Core Components</h2>
+            
+            <h3>1. MCP Protocol Layer</h3>
+            <p>Implements the Model Context Protocol specification for seamless integration with AI agents and tools.</p>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">MCP Protocol Implementation</span>
+                </div>
+                <pre><code class="language-typescript">interface MCPServer {
+  // Tools: Executable functions
+  listTools(): Tool[]
+  callTool(name: string, args: object): ToolResult
+  
+  // Resources: Read-only data access
+  listResources(): Resource[]
+  readResource(uri: string): ResourceContent
+  
+  // Protocol management
+  initialize(params: InitializeParams): InitializeResult
+  shutdown(): void
+}</code></pre>
+            </div>
+
+            <h3>2. Request Router</h3>
+            <p>Central routing system that directs requests to appropriate handlers with validation and error handling.</p>
+            
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Router Architecture</span>
+                </div>
+                <pre><code class="language-typescript">class RequestRouter {
+  private handlers: Map<string, ToolHandler>
+  private validators: ValidationChain[]
+  private middleware: Middleware[]
+  
+  async route(request: MCPRequest): Promise<MCPResponse> {
+    // 1. Validate request
+    await this.validateRequest(request)
+    
+    // 2. Apply middleware
+    request = await this.applyMiddleware(request)
+    
+    // 3. Route to handler
+    const handler = this.getHandler(request.tool)
+    
+    // 4. Execute with error handling
+    return await this.executeWithErrorHandling(handler, request)
+  }
+}</code></pre>
+            </div>
+
+            <h3>3. Service Layer</h3>
+            <p>Modular services handling specific blockchain operations with clear separation of concerns.</p>
+        </div>
+
+        <div class="example-section">
+            <h2>🏢 Service Architecture</h2>
+            
+            <h3>Neo Service</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Neo Blockchain Service</span>
+                </div>
+                <pre><code class="language-typescript">class NeoService {
+  private rpcClient: NeoRpcClient
+  private networkConfig: NetworkConfig
+  
+  // Blockchain queries
+  async getBlockchainInfo(): Promise<BlockchainInfo>
+  async getBlock(height: number): Promise<Block>
+  async getTransaction(txid: string): Promise<Transaction>
+  
+  // Network management
+  async switchNetwork(network: 'mainnet' | 'testnet'): Promise<void>
+  async validateConnection(): Promise<boolean>
+}</code></pre>
+            </div>
+
+            <h3>Wallet Service</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Wallet Management Service</span>
+                </div>
+                <pre><code class="language-typescript">class WalletService {
+  private encryption: EncryptionService
+  private storage: SecureStorage
+  
+  // Wallet lifecycle
+  async createWallet(password: string): Promise<Wallet>
+  async importWallet(key: string, password: string): Promise<Wallet>
+  async exportWallet(address: string, password: string): Promise<string>
+  
+  // Balance and transactions
+  async getBalance(address: string): Promise<Balance>
+  async getTransactionHistory(address: string): Promise<Transaction[]>
+}</code></pre>
+            </div>
+
+            <h3>Contract Service</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Smart Contract Service</span>
+                </div>
+                <pre><code class="language-typescript">class ContractService {
+  private famousContracts: Map<string, ContractConfig>
+  private abiCache: Map<string, ContractABI>
+  
+  // Contract interactions
+  async invokeRead(contract: string, method: string, args: any[]): Promise<any>
+  async invokeWrite(contract: string, method: string, args: any[], signer: string): Promise<TransactionResult>
+  
+  // Famous contracts
+  async getFamousContract(name: string): Promise<ContractConfig>
+  async listFamousContracts(): Promise<ContractInfo[]>
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>🔐 Security Architecture</h2>
+            
+            <h3>Multi-Layer Security</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Security Layers</span>
+                </div>
+                <pre><code>┌─────────────────────────────────────────────────────────────┐
+│                    Input Validation Layer                     │
+├─────────────────────────────────────────────────────────────┤
+│ • Request sanitization  • Parameter validation             │
+│ • XSS prevention       • SQL injection protection         │
+└─────────────────────────────────────────────────────────────┘
+                                │
+┌─────────────────────────────────────────────────────────────┐
+│                   Authorization Layer                       │
+├─────────────────────────────────────────────────────────────┤
+│ • Confirmation requirements • Rate limiting                │
+│ • Permission checks        • Access control               │
+└─────────────────────────────────────────────────────────────┘
+                                │
+┌─────────────────────────────────────────────────────────────┐
+│                   Encryption Layer                          │
+├─────────────────────────────────────────────────────────────┤
+│ • Private key encryption   • Data at rest encryption      │
+│ • TLS for data in transit  • Secure key derivation       │
+└─────────────────────────────────────────────────────────────┘</code></pre>
+            </div>
+
+            <h3>Key Security Features</h3>
+            <ul>
+                <li><strong>Confirmation Requirements:</strong> Critical operations require explicit confirmation</li>
+                <li><strong>Input Sanitization:</strong> All inputs are validated and sanitized</li>
+                <li><strong>Encrypted Storage:</strong> Private keys are encrypted at rest</li>
+                <li><strong>Network Isolation:</strong> Separate mainnet/testnet configurations</li>
+                <li><strong>Rate Limiting:</strong> Protection against abuse and DoS attacks</li>
+            </ul>
+        </div>
+
+        <div class="example-section">
+            <h2>⚡ Performance Architecture</h2>
+            
+            <h3>Caching Strategy</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Multi-Level Caching</span>
+                </div>
+                <pre><code class="language-typescript">class CacheManager {
+  private l1Cache: MemoryCache     // Hot data, millisecond access
+  private l2Cache: RedisCache      // Warm data, sub-second access
+  private l3Cache: FileCache       // Cold data, persistent storage
+  
+  async get<T>(key: string): Promise<T | null> {
+    // Check L1 first (memory)
+    let result = await this.l1Cache.get<T>(key)
+    if (result) return result
+    
+    // Check L2 (Redis)
+    result = await this.l2Cache.get<T>(key)
+    if (result) {
+      await this.l1Cache.set(key, result, '5m')
+      return result
+    }
+    
+    // Check L3 (file system)
+    result = await this.l3Cache.get<T>(key)
+    if (result) {
+      await this.l2Cache.set(key, result, '1h')
+      await this.l1Cache.set(key, result, '5m')
+    }
+    
+    return result
+  }
+}</code></pre>
+            </div>
+
+            <h3>Connection Pooling</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">RPC Connection Pool</span>
+                </div>
+                <pre><code class="language-typescript">class ConnectionPool {
+  private pool: NeoRpcClient[]
+  private maxConnections: number = 10
+  private currentIndex: number = 0
+  
+  async getConnection(): Promise<NeoRpcClient> {
+    // Round-robin load balancing
+    const connection = this.pool[this.currentIndex]
+    this.currentIndex = (this.currentIndex + 1) % this.pool.length
+    
+    // Health check
+    if (!await connection.isHealthy()) {
+      await this.replaceConnection(this.currentIndex)
+    }
+    
+    return connection
+  }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>🔄 Data Flow</h2>
+            
+            <h3>Request Processing Flow</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Request Lifecycle</span>
+                </div>
+                <pre><code>1. Client Request
+   │
+   ▼
+2. MCP Protocol Parsing
+   │
+   ▼
+3. Input Validation & Sanitization
+   │
+   ▼
+4. Authentication & Authorization
+   │
+   ▼
+5. Rate Limiting Check
+   │
+   ▼
+6. Cache Lookup
+   │
+   ▼
+7. Service Layer Execution
+   │
+   ▼
+8. Neo N3 Network Call
+   │
+   ▼
+9. Response Processing
+   │
+   ▼
+10. Cache Update
+   │
+   ▼
+11. Response Formatting
+   │
+   ▼
+12. Client Response</code></pre>
+            </div>
+
+            <h3>Error Handling Flow</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Error Recovery</span>
+                </div>
+                <pre><code class="language-typescript">class ErrorHandler {
+  async handleError(error: Error, context: RequestContext): Promise<MCPResponse> {
+    // 1. Classify error type
+    const errorType = this.classifyError(error)
+    
+    // 2. Apply retry logic for transient errors
+    if (errorType === ErrorType.TRANSIENT) {
+      return await this.retryWithBackoff(context)
+    }
+    
+    // 3. Fallback for network errors
+    if (errorType === ErrorType.NETWORK) {
+      return await this.fallbackToCache(context)
+    }
+    
+    // 4. Sanitize and return user-friendly error
+    return this.formatUserError(error, context)
+  }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>📊 Monitoring & Observability</h2>
+            
+            <h3>Metrics Collection</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Telemetry System</span>
+                </div>
+                <pre><code class="language-typescript">class TelemetryService {
+  // Performance metrics
+  recordRequestDuration(tool: string, duration: number): void
+  recordCacheHitRate(layer: string, hitRate: number): void
+  recordNetworkLatency(network: string, latency: number): void
+  
+  // Business metrics
+  recordToolUsage(tool: string, success: boolean): void
+  recordNetworkSwitches(from: string, to: string): void
+  recordWalletOperations(operation: string, network: string): void
+  
+  // Error tracking
+  recordError(error: Error, context: RequestContext): void
+  recordRetryAttempts(tool: string, attempts: number): void
+}</code></pre>
+            </div>
+
+            <h3>Health Checks</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">System Health Monitoring</span>
+                </div>
+                <pre><code class="language-typescript">interface HealthCheck {
+  name: string
+  check(): Promise<HealthStatus>
+}
+
+class HealthMonitor {
+  private checks: HealthCheck[] = [
+    new NeoNetworkHealthCheck(),
+    new DatabaseHealthCheck(),
+    new CacheHealthCheck(),
+    new SecurityHealthCheck()
+  ]
+  
+  async getSystemHealth(): Promise<SystemHealth> {
+    const results = await Promise.all(
+      this.checks.map(check => check.check())
+    )
+    
+    return {
+      status: this.aggregateStatus(results),
+      checks: results,
+      timestamp: new Date().toISOString()
+    }
+  }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>🚀 Deployment Architecture</h2>
+            
+            <h3>Container Strategy</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Docker Deployment</span>
+                </div>
+                <pre><code class="language-yaml"># docker-compose.yml
+version: '3.8'
+services:
+  neo-mcp:
+    image: r3e/neo-n3-mcp:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - NEO_NETWORK=mainnet
+      - LOG_LEVEL=info
+      - CACHE_TTL=300
+    volumes:
+      - ./wallets:/app/wallets
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3</code></pre>
+            </div>
+
+            <h3>Scaling Considerations</h3>
+            <ul>
+                <li><strong>Stateless Design:</strong> All services are stateless for horizontal scaling</li>
+                <li><strong>Database Replication:</strong> Read replicas for wallet and cache data</li>
+                <li><strong>Load Balancing:</strong> Round-robin distribution across instances</li>
+                <li><strong>Auto-scaling:</strong> Container orchestration with health-based scaling</li>
+            </ul>
+        </div>
+
+        <div class="next-steps">
+            <h2>Next Steps</h2>
+            <div class="step-cards">
+                <a href="/docs/deployment" class="step-card">
+                    <h3>Production Deployment</h3>
+                    <p>Deploy and scale the server for production workloads</p>
+                </a>
+                <a href="/docs/api" class="step-card">
+                    <h3>API Reference</h3>
+                    <p>Complete documentation of all available tools</p>
+                </a>
+                <a href="/examples" class="step-card">
+                    <h3>Implementation Examples</h3>
+                    <p>See the architecture in action with real examples</p>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="/assets/js/main.js"></script>
+</body>
+</html> 
