@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Reference - Neo N3 MCP Server</title>
+    <meta name="description" content="Complete API reference for Neo N3 MCP Server with 34 tools and 9 resources for blockchain integration.">
+    <meta name="keywords" content="neo, blockchain, mcp, api, reference, tools, resources">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    
+    <style>
+        .api-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 100px var(--spacing-lg) var(--spacing-3xl);
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: var(--spacing-3xl);
+        }
+        
+        .api-sidebar {
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+            background: var(--surface-elevated);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            border: 1px solid var(--border-light);
+        }
+        
+        .api-nav {
+            list-style: none;
+        }
+        
+        .api-nav-section {
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .api-nav-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-md);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .api-nav-link {
+            display: block;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: var(--spacing-sm) 0;
+            font-size: 0.9rem;
+            transition: var(--transition-fast);
+            border-left: 2px solid transparent;
+            padding-left: var(--spacing-md);
+            margin-left: -var(--spacing-md);
+        }
+        
+        .api-nav-link:hover,
+        .api-nav-link.active {
+            color: var(--primary);
+            border-left-color: var(--primary);
+        }
+        
+        .api-content {
+            min-width: 0;
+        }
+        
+        .api-header {
+            margin-bottom: var(--spacing-3xl);
+        }
+        
+        .api-title {
+            font-size: clamp(2rem, 4vw, 2.5rem);
+            font-weight: 700;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+        }
+        
+        .api-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .api-stats {
+            display: flex;
+            gap: var(--spacing-xl);
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .api-stat {
+            text-align: center;
+            padding: var(--spacing-lg);
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+        }
+        
+        .api-stat-number {
+            display: block;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .api-stat-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .api-search {
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            transition: var(--transition-fast);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+        }
+        
+        .api-section {
+            margin-bottom: var(--spacing-3xl);
+        }
+        
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: var(--spacing-md);
+        }
+        
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-2xl);
+        }
+        
+        .tool-card {
+            background: var(--surface-elevated);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            border: 1px solid var(--border-light);
+            transition: var(--transition-normal);
+        }
+        
+        .tool-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+        
+        .tool-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: var(--spacing-sm);
+            font-family: var(--font-mono);
+        }
+        
+        .tool-description {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-md);
+            line-height: 1.6;
+        }
+        
+        .tool-params {
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .tool-params-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .param-list {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+        }
+        
+        .tool-example {
+            background: var(--neo-dark);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-top: var(--spacing-md);
+        }
+        
+        .example-label {
+            color: var(--dark-text-secondary);
+            font-size: 0.8rem;
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .example-code {
+            color: var(--dark-text-primary);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+        
+        .resource-card {
+            background: var(--surface-elevated);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            border: 1px solid var(--border-light);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .resource-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: var(--spacing-sm);
+            font-family: var(--font-mono);
+        }
+        
+        .quick-reference {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-2xl);
+        }
+        
+        .quick-ref-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-primary);
+        }
+        
+        .quick-ref-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+        }
+        
+        .quick-ref-item {
+            padding: var(--spacing-md);
+            background: var(--surface-elevated);
+            border-radius: var(--radius-md);
+            text-align: center;
+        }
+        
+        .quick-ref-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .quick-ref-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        @media (max-width: 1024px) {
+            .api-container {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-xl);
+            }
+            
+            .api-sidebar {
+                position: static;
+                order: 2;
+            }
+            
+            .tool-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="/assets/images/neo-logo.svg" alt="Neo N3" class="logo-icon">
+                <span class="logo-text">Neo N3 MCP</span>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/#features" class="nav-link">Features</a>
+                <a href="/docs" class="nav-link">Docs</a>
+                <a href="/examples" class="nav-link">Examples</a>
+                <a href="https://github.com/your-repo/neo-n3-mcp" class="nav-link" target="_blank">GitHub</a>
+                <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+            </div>
+            <div class="nav-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- API Container -->
+    <div class="api-container">
+        <!-- Sidebar Navigation -->
+        <aside class="api-sidebar">
+            <nav class="api-nav">
+                <div class="api-nav-section">
+                    <div class="api-nav-title">Overview</div>
+                    <a href="#overview" class="api-nav-link active">Quick Reference</a>
+                    <a href="#request-format" class="api-nav-link">Request Format</a>
+                    <a href="#response-format" class="api-nav-link">Response Format</a>
+                </div>
+                <div class="api-nav-section">
+                    <div class="api-nav-title">Tools (34)</div>
+                    <a href="#blockchain-tools" class="api-nav-link">Blockchain Operations</a>
+                    <a href="#wallet-tools" class="api-nav-link">Wallet Management</a>
+                    <a href="#asset-tools" class="api-nav-link">Asset Operations</a>
+                    <a href="#contract-tools" class="api-nav-link">Contract Interactions</a>
+                    <a href="#network-tools" class="api-nav-link">Network Tools</a>
+                </div>
+                <div class="api-nav-section">
+                    <div class="api-nav-title">Resources (9)</div>
+                    <a href="#network-resources" class="api-nav-link">Network Resources</a>
+                    <a href="#blockchain-resources" class="api-nav-link">Blockchain Resources</a>
+                    <a href="#contract-resources" class="api-nav-link">Contract Resources</a>
+                </div>
+                <div class="api-nav-section">
+                    <div class="api-nav-title">Reference</div>
+                    <a href="#error-codes" class="api-nav-link">Error Codes</a>
+                    <a href="#examples" class="api-nav-link">Examples</a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="api-content">
+            <!-- Header -->
+            <header class="api-header" id="overview">
+                <h1 class="api-title">API Reference</h1>
+                <p class="api-subtitle">Complete documentation for all 34 tools and 9 resources</p>
+                
+                <!-- Stats -->
+                <div class="api-stats">
+                    <div class="api-stat">
+                        <span class="api-stat-number">34</span>
+                        <span class="api-stat-label">Tools Available</span>
+                    </div>
+                    <div class="api-stat">
+                        <span class="api-stat-number">9</span>
+                        <span class="api-stat-label">Resources</span>
+                    </div>
+                    <div class="api-stat">
+                        <span class="api-stat-number">2</span>
+                        <span class="api-stat-label">Networks</span>
+                    </div>
+                </div>
+
+                <!-- Search -->
+                <div class="api-search">
+                    <div class="search-box">
+                        <input type="text" class="search-input" placeholder="Search tools and resources..." id="api-search">
+                    </div>
+                </div>
+            </header>
+
+            <!-- Quick Reference -->
+            <section class="quick-reference">
+                <h2 class="quick-ref-title">Quick Reference</h2>
+                <div class="quick-ref-grid">
+                    <div class="quick-ref-item">
+                        <div class="quick-ref-number">5</div>
+                        <div class="quick-ref-label">Blockchain Tools</div>
+                    </div>
+                    <div class="quick-ref-item">
+                        <div class="quick-ref-number">8</div>
+                        <div class="quick-ref-label">Wallet Tools</div>
+                    </div>
+                    <div class="quick-ref-item">
+                        <div class="quick-ref-number">12</div>
+                        <div class="quick-ref-label">Asset Tools</div>
+                    </div>
+                    <div class="quick-ref-item">
+                        <div class="quick-ref-number">9</div>
+                        <div class="quick-ref-label">Contract Tools</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Request/Response Format -->
+            <section class="api-section" id="request-format">
+                <h2 class="section-title">Request Format</h2>
+                <p>All requests should be made as HTTP POST to the MCP endpoint with JSON payload:</p>
+                <div class="tool-example">
+                    <div class="example-label">Example Request</div>
+                    <pre class="example-code">{
+  "name": "tool_name",
+  "arguments": {
+    "param1": "value1",
+    "param2": "value2"
+  }
+}</pre>
+                </div>
+            </section>
+
+            <section class="api-section" id="response-format">
+                <h2 class="section-title">Response Format</h2>
+                <p>All successful responses follow this format:</p>
+                <div class="tool-example">
+                    <div class="example-label">Success Response</div>
+                    <pre class="example-code">{
+  "result": {
+    // Tool-specific result data
+  }
+}</pre>
+                </div>
+                <div class="tool-example">
+                    <div class="example-label">Error Response</div>
+                    <pre class="example-code">{
+  "error": {
+    "message": "Error description",
+    "code": "ERROR_CODE"
+  }
+}</pre>
+                </div>
+            </section>
+
+            <!-- Blockchain Tools -->
+            <section class="api-section" id="blockchain-tools">
+                <h2 class="section-title">Blockchain Operations</h2>
+                <div class="tool-grid">
+                    <div class="tool-card">
+                        <h3 class="tool-name">get_blockchain_info</h3>
+                        <p class="tool-description">Get general information about the Neo N3 blockchain including height, validators, and network status.</p>
+                        <div class="tool-params">
+                            <div class="tool-params-title">Parameters:</div>
+                            <div class="param-list">network?: string (optional)</div>
+                        </div>
+                        <div class="tool-example">
+                            <div class="example-label">Example</div>
+                            <pre class="example-code">{
+  "name": "get_blockchain_info",
+  "arguments": {
+    "network": "mainnet"
+  }
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="tool-card">
+                        <h3 class="tool-name">get_block_count</h3>
+                        <p class="tool-description">Get the current block height of the Neo N3 blockchain.</p>
+                        <div class="tool-params">
+                            <div class="tool-params-title">Parameters:</div>
+                            <div class="param-list">network?: string (optional)</div>
+                        </div>
+                        <div class="tool-example">
+                            <div class="example-label">Example</div>
+                            <pre class="example-code">{
+  "name": "get_block_count",
+  "arguments": {}
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="tool-card">
+                        <h3 class="tool-name">get_block</h3>
+                        <p class="tool-description">Get detailed information about a specific block by height or hash.</p>
+                        <div class="tool-params">
+                            <div class="tool-params-title">Parameters:</div>
+                            <div class="param-list">hashOrHeight: string|number (required)<br>network?: string (optional)</div>
+                        </div>
+                        <div class="tool-example">
+                            <div class="example-label">Example</div>
+                            <pre class="example-code">{
+  "name": "get_block",
+  "arguments": {
+    "hashOrHeight": 12345678
+  }
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="tool-card">
+                        <h3 class="tool-name">get_transaction</h3>
+                        <p class="tool-description">Get detailed information about a specific transaction by hash.</p>
+                        <div class="tool-params">
+                            <div class="tool-params-title">Parameters:</div>
+                            <div class="param-list">txid: string (required)<br>network?: string (optional)</div>
+                        </div>
+                        <div class="tool-example">
+                            <div class="example-label">Example</div>
+                            <pre class="example-code">{
+  "name": "get_transaction",
+  "arguments": {
+    "txid": "0xabc123..."
+  }
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="tool-card">
+                        <h3 class="tool-name">get_network_mode</h3>
+                        <p class="tool-description">Get the current network mode and available networks.</p>
+                        <div class="tool-params">
+                            <div class="tool-params-title">Parameters:</div>
+                            <div class="param-list">None</div>
+                        </div>
+                        <div class="tool-example">
+                            <div class="example-label">Example</div>
+                            <pre class="example-code">{
+  "name": "get_network_mode",
+  "arguments": {}
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Wallet Tools -->
+            <section class="api-section" id="wallet-tools">
+                <h2 class="section-title">Wallet Management</h2>
+                <div class="tool-grid">
+                    <div class="tool-card">
+                        <h3 class="tool-name">create_wallet</h3>
+                        <p class="tool-description">Create a new Neo N3 wallet with encrypted private key storage.</p>
+                        <div class="tool-params">
+                            <div class="tool-params-title">Parameters:</div>
+                            <div class="param-list">password: string (required)<br>network?: string (optional)</div>
+                        </div>
+                        <div class="tool-example">
+                            <div class="example-label">Example</div>
+                            <pre class="example-code">{
+  "name": "create_wallet",
+  "arguments": {
+    "password": "secure-password-123"
+  }
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="tool-card">
+                        <h3 class="tool-name">import_wallet</h3>
+                        <p class="tool-description">Import an existing wallet using private key, WIF, or encrypted key.</p>
+                        <div class="tool-params">
+                            <div class="tool-params-title">Parameters:</div>
+                            <div class="param-list">key: string (required)<br>password?: string (optional)<br>network?: string (optional)</div>
+                        </div>
+                        <div class="tool-example">
+                            <div class="example-label">Example</div>
+                            <pre class="example-code">{
+  "name": "import_wallet",
+  "arguments": {
+    "key": "KweTw...",
+    "password": "password123"
+  }
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="tool-card">
+                        <h3 class="tool-name">get_balance</h3>
+                        <p class="tool-description">Get the balance of NEP-17 tokens for a specific address.</p>
+                        <div class="tool-params">
+                            <div class="tool-params-title">Parameters:</div>
+                            <div class="param-list">address: string (required)<br>asset?: string (optional)<br>network?: string (optional)</div>
+                        </div>
+                        <div class="tool-example">
+                            <div class="example-label">Example</div>
+                            <pre class="example-code">{
+  "name": "get_balance",
+  "arguments": {
+    "address": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj"
+  }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Asset Tools -->
+            <section class="api-section" id="asset-tools">
+                <h2 class="section-title">Asset Operations</h2>
+                <div class="tool-grid">
+                    <div class="tool-card">
+                        <h3 class="tool-name">transfer_assets</h3>
+                        <p class="tool-description">Transfer NEP-17 tokens between addresses with confirmation tracking.</p>
+                        <div class="tool-params">
+                            <div class="tool-params-title">Parameters:</div>
+                            <div class="param-list">fromWIF: string (required)<br>toAddress: string (required)<br>asset: string (required)<br>amount: string (required)<br>confirm: boolean (required)<br>network?: string (optional)</div>
+                        </div>
+                        <div class="tool-example">
+                            <div class="example-label">Example</div>
+                            <pre class="example-code">{
+  "name": "transfer_assets",
+  "arguments": {
+    "fromWIF": "KweTw...",
+    "toAddress": "NZNos2...",
+    "asset": "GAS",
+    "amount": "10.5",
+    "confirm": true
+  }
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="tool-card">
+                        <h3 class="tool-name">estimate_transfer_fees</h3>
+                        <p class="tool-description">Estimate network and system fees for asset transfers.</p>
+                        <div class="tool-params">
+                            <div class="tool-params-title">Parameters:</div>
+                            <div class="param-list">fromAddress: string (required)<br>toAddress: string (required)<br>asset: string (required)<br>amount: string (required)<br>network?: string (optional)</div>
+                        </div>
+                        <div class="tool-example">
+                            <div class="example-label">Example</div>
+                            <pre class="example-code">{
+  "name": "estimate_transfer_fees",
+  "arguments": {
+    "fromAddress": "NZNos2...",
+    "toAddress": "NZNos2...",
+    "asset": "NEO",
+    "amount": "1"
+  }
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="tool-card">
+                        <h3 class="tool-name">claim_gas</h3>
+                        <p class="tool-description">Claim unclaimed GAS from NEO holdings.</p>
+                        <div class="tool-params">
+                            <div class="tool-params-title">Parameters:</div>
+                            <div class="param-list">fromWIF: string (required)<br>network?: string (optional)</div>
+                        </div>
+                        <div class="tool-example">
+                            <div class="example-label">Example</div>
+                            <pre class="example-code">{
+  "name": "claim_gas",
+  "arguments": {
+    "fromWIF": "KweTw..."
+  }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contract Tools -->
+            <section class="api-section" id="contract-tools">
+                <h2 class="section-title">Contract Interactions</h2>
+                <div class="tool-grid">
+                    <div class="tool-card">
+                        <h3 class="tool-name">list_famous_contracts</h3>
+                        <p class="tool-description">List all supported famous contracts and their availability.</p>
+                        <div class="tool-params">
+                            <div class="tool-params-title">Parameters:</div>
+                            <div class="param-list">network?: string (optional)</div>
+                        </div>
+                        <div class="tool-example">
+                            <div class="example-label">Example</div>
+                            <pre class="example-code">{
+  "name": "list_famous_contracts",
+  "arguments": {}
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="tool-card">
+                        <h3 class="tool-name">get_contract_info</h3>
+                        <p class="tool-description">Get detailed information about a specific famous contract.</p>
+                        <div class="tool-params">
+                            <div class="tool-params-title">Parameters:</div>
+                            <div class="param-list">contractName: string (required)<br>network?: string (optional)</div>
+                        </div>
+                        <div class="tool-example">
+                            <div class="example-label">Example</div>
+                            <pre class="example-code">{
+  "name": "get_contract_info",
+  "arguments": {
+    "contractName": "NeoFS"
+  }
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="tool-card">
+                        <h3 class="tool-name">invoke_read_contract</h3>
+                        <p class="tool-description">Invoke read-only contract methods without state changes.</p>
+                        <div class="tool-params">
+                            <div class="tool-params-title">Parameters:</div>
+                            <div class="param-list">contractName: string (required)<br>operation: string (required)<br>args?: array (optional)<br>network?: string (optional)</div>
+                        </div>
+                        <div class="tool-example">
+                            <div class="example-label">Example</div>
+                            <pre class="example-code">{
+  "name": "invoke_read_contract",
+  "arguments": {
+    "contractName": "NeoFS",
+    "operation": "getContainers",
+    "args": ["owner-id"]
+  }
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="tool-card">
+                        <h3 class="tool-name">invoke_write_contract</h3>
+                        <p class="tool-description">Invoke contract methods that modify blockchain state.</p>
+                        <div class="tool-params">
+                            <div class="tool-params-title">Parameters:</div>
+                            <div class="param-list">fromWIF: string (required)<br>contractName: string (required)<br>operation: string (required)<br>args?: array (optional)<br>confirm: boolean (required)<br>network?: string (optional)</div>
+                        </div>
+                        <div class="tool-example">
+                            <div class="example-label">Example</div>
+                            <pre class="example-code">{
+  "name": "invoke_write_contract",
+  "arguments": {
+    "fromWIF": "KweTw...",
+    "contractName": "NeoFS",
+    "operation": "createContainer",
+    "args": ["owner-id", []],
+    "confirm": true
+  }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Resources -->
+            <section class="api-section" id="network-resources">
+                <h2 class="section-title">Resources</h2>
+                <p>Resources provide read-only access to blockchain data through URI-based endpoints.</p>
+                
+                <div class="resource-card">
+                    <h3 class="resource-name">neo://network/status</h3>
+                    <p class="tool-description">Current network status and blockchain information for the default network.</p>
+                </div>
+
+                <div class="resource-card">
+                    <h3 class="resource-name">neo://mainnet/status</h3>
+                    <p class="tool-description">Mainnet-specific blockchain status and information.</p>
+                </div>
+
+                <div class="resource-card">
+                    <h3 class="resource-name">neo://testnet/status</h3>
+                    <p class="tool-description">Testnet-specific blockchain status and information.</p>
+                </div>
+
+                <div class="resource-card">
+                    <h3 class="resource-name">neo://mainnet/contracts</h3>
+                    <p class="tool-description">List of famous contracts available on mainnet.</p>
+                </div>
+
+                <div class="resource-card">
+                    <h3 class="resource-name">neo://testnet/contracts</h3>
+                    <p class="tool-description">List of famous contracts available on testnet.</p>
+                </div>
+
+                <div class="resource-card">
+                    <h3 class="resource-name">neo://mainnet/assets</h3>
+                    <p class="tool-description">Information about NEP-17 assets on mainnet.</p>
+                </div>
+
+                <div class="resource-card">
+                    <h3 class="resource-name">neo://testnet/assets</h3>
+                    <p class="tool-description">Information about NEP-17 assets on testnet.</p>
+                </div>
+
+                <div class="resource-card">
+                    <h3 class="resource-name">neo://mainnet/blockchain</h3>
+                    <p class="tool-description">Mainnet blockchain data and statistics.</p>
+                </div>
+
+                <div class="resource-card">
+                    <h3 class="resource-name">neo://testnet/blockchain</h3>
+                    <p class="tool-description">Testnet blockchain data and statistics.</p>
+                </div>
+            </section>
+
+            <!-- Error Codes -->
+            <section class="api-section" id="error-codes">
+                <h2 class="section-title">Error Codes</h2>
+                <div class="tool-grid">
+                    <div class="tool-card">
+                        <h3 class="tool-name">-32600</h3>
+                        <p class="tool-description">Invalid Request - The JSON sent is not a valid Request object.</p>
+                    </div>
+                    <div class="tool-card">
+                        <h3 class="tool-name">-32601</h3>
+                        <p class="tool-description">Method not found - The method does not exist or is not available.</p>
+                    </div>
+                    <div class="tool-card">
+                        <h3 class="tool-name">-32602</h3>
+                        <p class="tool-description">Invalid params - Invalid method parameter(s).</p>
+                    </div>
+                    <div class="tool-card">
+                        <h3 class="tool-name">-32603</h3>
+                        <p class="tool-description">Internal error - Internal server error.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/assets/js/main.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script>
+        // API Search functionality
+        document.getElementById('api-search').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            const toolCards = document.querySelectorAll('.tool-card');
+            const resourceCards = document.querySelectorAll('.resource-card');
+            
+            [...toolCards, ...resourceCards].forEach(card => {
+                const name = card.querySelector('.tool-name, .resource-name').textContent.toLowerCase();
+                const description = card.querySelector('.tool-description').textContent.toLowerCase();
+                
+                if (name.includes(query) || description.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('.api-nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    // Update active link
+                    document.querySelectorAll('.api-nav-link').forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+
+        // Update active navigation on scroll
+        window.addEventListener('scroll', function() {
+            const sections = document.querySelectorAll('.api-section');
+            const navLinks = document.querySelectorAll('.api-nav-link');
+            
+            let currentSection = '';
+            sections.forEach(section => {
+                const sectionTop = section.getBoundingClientRect().top;
+                if (sectionTop <= 150) {
+                    currentSection = section.id;
+                }
+            });
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + currentSection) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

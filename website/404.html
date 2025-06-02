@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found - Neo N3 MCP Server</title>
+    <meta name="description" content="The page you're looking for could not be found.">
+    <meta name="robots" content="noindex, nofollow">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/assets/css/style.css">
+    
+    <style>
+        .error-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-xl);
+            background: linear-gradient(135deg, var(--background) 0%, var(--surface) 50%, var(--background) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .error-page::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 30% 20%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 80%, rgba(0, 102, 255, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .error-content {
+            text-align: center;
+            max-width: 600px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .error-code {
+            font-size: clamp(4rem, 12vw, 8rem);
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: var(--spacing-md);
+            text-shadow: 0 4px 8px rgba(0, 255, 136, 0.2);
+        }
+        
+        .error-title {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            font-weight: 600;
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-primary);
+        }
+        
+        .error-description {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-2xl);
+            line-height: 1.6;
+        }
+        
+        .error-actions {
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: var(--spacing-2xl);
+        }
+        
+        .error-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+            margin-top: var(--spacing-xl);
+        }
+        
+        .error-link {
+            background: var(--surface-elevated);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            text-decoration: none;
+            color: inherit;
+            transition: var(--transition-normal);
+            border: 1px solid var(--border-light);
+        }
+        
+        .error-link:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+        
+        .error-link-title {
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+        
+        .error-link-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .search-form {
+            max-width: 400px;
+            margin: var(--spacing-xl) auto 0;
+            position: relative;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            transition: var(--transition-fast);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .error-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .error-links {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-page">
+        <div class="error-content">
+            <div class="error-code">404</div>
+            <h1 class="error-title">Page Not Found</h1>
+            <p class="error-description">
+                The page you're looking for doesn't exist or has been moved. 
+                Let's get you back to exploring the Neo N3 MCP ecosystem.
+            </p>
+            
+            <div class="error-actions">
+                <a href="/" class="btn btn-primary btn-large">Go Home</a>
+                <a href="/docs" class="btn btn-secondary btn-large">Documentation</a>
+            </div>
+            
+            <div class="search-form">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    placeholder="Search documentation..."
+                    onkeypress="handleSearch(event)"
+                >
+            </div>
+            
+            <div class="error-links">
+                <a href="/docs/api" class="error-link">
+                    <div class="error-link-title">API Reference</div>
+                    <div class="error-link-description">Complete documentation for all 34 tools and 9 resources</div>
+                </a>
+                
+                <a href="/#quick-start" class="error-link">
+                    <div class="error-link-title">Quick Start</div>
+                    <div class="error-link-description">Get up and running with Neo N3 MCP in minutes</div>
+                </a>
+                
+                <a href="/examples" class="error-link">
+                    <div class="error-link-title">Examples</div>
+                    <div class="error-link-description">Real-world usage examples and tutorials</div>
+                </a>
+                
+                <a href="https://github.com/your-repo/neo-n3-mcp" class="error-link" target="_blank">
+                    <div class="error-link-title">GitHub Repository</div>
+                    <div class="error-link-description">Source code, issues, and contributions</div>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function handleSearch(event) {
+            if (event.key === 'Enter') {
+                const query = event.target.value.trim();
+                if (query) {
+                    // Redirect to documentation search (you can implement this)
+                    window.location.href = `/docs?search=${encodeURIComponent(query)}`;
+                }
+            }
+        }
+        
+        // Add some interactive animations
+        document.addEventListener('DOMContentLoaded', () => {
+            const errorCode = document.querySelector('.error-code');
+            const content = document.querySelector('.error-content');
+            
+            // Animate the 404 code
+            setTimeout(() => {
+                errorCode.style.animation = 'pulse 2s ease-in-out infinite alternate';
+            }, 500);
+            
+            // Add fade-in animation to content
+            content.style.opacity = '0';
+            content.style.transform = 'translateY(30px)';
+            content.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            
+            setTimeout(() => {
+                content.style.opacity = '1';
+                content.style.transform = 'translateY(0)';
+            }, 100);
+        });
+    </script>
+    
+    <style>
+        @keyframes pulse {
+            from {
+                transform: scale(1);
+            }
+            to {
+                transform: scale(1.05);
+            }
+        }
+    </style>
+</body>
+</html> 

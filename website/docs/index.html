@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - Neo N3 MCP Server</title>
+    <meta name="description" content="Complete documentation hub for Neo N3 MCP Server. Access API reference, guides, tutorials, and examples for blockchain development.">
+    <meta name="keywords" content="neo, blockchain, mcp, documentation, api, guides, tutorials">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/assets/css/style.css">
+    
+    <style>
+        .docs-hub-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 100px var(--spacing-lg) var(--spacing-3xl);
+        }
+        
+        .docs-hero {
+            text-align: center;
+            margin-bottom: var(--spacing-3xl);
+        }
+        
+        .docs-hero-title {
+            font-size: clamp(2.5rem, 6vw, 3.5rem);
+            font-weight: 700;
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-primary);
+        }
+        
+        .docs-hero-subtitle {
+            font-size: 1.4rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xl);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+        
+        .quick-links {
+            display: flex;
+            justify-content: center;
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-3xl);
+            flex-wrap: wrap;
+        }
+        
+        .quick-link {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md) var(--spacing-xl);
+            background: var(--surface-elevated);
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            text-decoration: none;
+            color: var(--text-primary);
+            font-weight: 500;
+            transition: var(--transition-fast);
+        }
+        
+        .quick-link:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .quick-link-icon {
+            font-size: 1.2rem;
+        }
+        
+        .docs-sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: var(--spacing-xl);
+            margin-bottom: var(--spacing-3xl);
+        }
+        
+        .docs-section {
+            background: var(--surface-elevated);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-2xl);
+            border: 1px solid var(--border-light);
+            transition: var(--transition-normal);
+        }
+        
+        .docs-section:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--primary);
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .section-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .section-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .section-links {
+            list-style: none;
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .section-link {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm) 0;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: var(--transition-fast);
+        }
+        
+        .section-link:hover {
+            color: var(--primary);
+            padding-left: var(--spacing-sm);
+        }
+        
+        .section-link::before {
+            content: "→";
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        .section-cta {
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            color: var(--text-primary);
+            font-weight: 500;
+            transition: var(--transition-fast);
+            display: inline-block;
+        }
+        
+        .section-cta:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .featured-content {
+            background: linear-gradient(135deg, var(--surface-elevated), var(--surface));
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-2xl);
+            margin-bottom: var(--spacing-3xl);
+            border: 1px solid var(--border-light);
+        }
+        
+        .featured-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-primary);
+            text-align: center;
+        }
+        
+        .featured-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+        }
+        
+        .featured-item {
+            text-align: center;
+            padding: var(--spacing-lg);
+            background: white;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+        }
+        
+        .featured-item-icon {
+            font-size: 2.5rem;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .featured-item-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+        
+        .featured-item-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .resources-section {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-2xl);
+            text-align: center;
+        }
+        
+        .resources-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-primary);
+        }
+        
+        .resources-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+        }
+        
+        .resource-card {
+            background: var(--surface-elevated);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            border: 1px solid var(--border-light);
+            transition: var(--transition-fast);
+            text-decoration: none;
+            display: block;
+        }
+        
+        .resource-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary);
+        }
+        
+        .resource-icon {
+            font-size: 2rem;
+            margin-bottom: var(--spacing-md);
+            color: var(--primary);
+        }
+        
+        .resource-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+        
+        .resource-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .stats-banner {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-2xl);
+            text-align: center;
+            color: white;
+            margin-bottom: var(--spacing-3xl);
+        }
+        
+        .stats-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--spacing-lg);
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        @media (max-width: 768px) {
+            .quick-links {
+                gap: var(--spacing-md);
+            }
+            
+            .quick-link {
+                padding: var(--spacing-sm) var(--spacing-lg);
+            }
+            
+            .docs-sections {
+                grid-template-columns: 1fr;
+            }
+            
+            .featured-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .resources-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="/assets/images/neo-logo.svg" alt="Neo N3" class="logo-icon">
+                <span class="logo-text">Neo N3 MCP</span>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/#features" class="nav-link">Features</a>
+                <a href="/docs" class="nav-link active">Docs</a>
+                <a href="/examples" class="nav-link">Examples</a>
+                <a href="https://github.com/your-repo/neo-n3-mcp" class="nav-link" target="_blank">GitHub</a>
+                <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+            </div>
+            <div class="nav-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="docs-hub-container">
+        <!-- Hero Section -->
+        <header class="docs-hero">
+            <h1 class="docs-hero-title">Documentation Hub</h1>
+            <p class="docs-hero-subtitle">Everything you need to build powerful blockchain applications with Neo N3 MCP Server. From quick start guides to advanced integrations.</p>
+            
+            <!-- Quick Links -->
+            <div class="quick-links">
+                <a href="/docs/getting-started" class="quick-link">
+                    <span class="quick-link-icon">🚀</span>
+                    <span>Quick Start</span>
+                </a>
+                <a href="/docs/api" class="quick-link">
+                    <span class="quick-link-icon">📖</span>
+                    <span>API Reference</span>
+                </a>
+                <a href="/examples" class="quick-link">
+                    <span class="quick-link-icon">💡</span>
+                    <span>Examples</span>
+                </a>
+                <a href="https://github.com/your-repo/neo-n3-mcp" class="quick-link" target="_blank">
+                    <span class="quick-link-icon">⭐</span>
+                    <span>GitHub</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- Statistics Banner -->
+        <div class="stats-banner">
+            <h2 class="stats-title">Production-Ready Neo N3 MCP Server</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number">34</div>
+                    <div class="stat-label">Tools Available</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">9</div>
+                    <div class="stat-label">Resources</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">90%+</div>
+                    <div class="stat-label">Test Coverage</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">2</div>
+                    <div class="stat-label">Networks</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation Sections -->
+        <div class="docs-sections">
+            <!-- Getting Started -->
+            <div class="docs-section">
+                <div class="section-header">
+                    <div class="section-icon">🚀</div>
+                    <h2 class="section-title">Getting Started</h2>
+                </div>
+                <p class="section-description">Start your blockchain development journey with step-by-step installation guides and your first successful API calls.</p>
+                
+                <ul class="section-links">
+                    <li><a href="/docs/getting-started#installation" class="section-link">Installation Guide</a></li>
+                    <li><a href="/docs/getting-started#configuration" class="section-link">Configuration</a></li>
+                    <li><a href="/docs/getting-started#first-steps" class="section-link">First API Calls</a></li>
+                    <li><a href="/docs/getting-started#examples" class="section-link">Basic Examples</a></li>
+                </ul>
+                
+                <a href="/docs/getting-started" class="section-cta">Start Building →</a>
+            </div>
+
+            <!-- API Reference -->
+            <div class="docs-section">
+                <div class="section-header">
+                    <div class="section-icon">📖</div>
+                    <h2 class="section-title">API Reference</h2>
+                </div>
+                <p class="section-description">Comprehensive documentation for all 34 tools and 9 resources, with interactive examples and response formats.</p>
+                
+                <ul class="section-links">
+                    <li><a href="/docs/api#blockchain-tools" class="section-link">Blockchain Operations</a></li>
+                    <li><a href="/docs/api#wallet-tools" class="section-link">Wallet Management</a></li>
+                    <li><a href="/docs/api#asset-tools" class="section-link">Asset Operations</a></li>
+                    <li><a href="/docs/api#contract-tools" class="section-link">Smart Contracts</a></li>
+                    <li><a href="/docs/api#network-resources" class="section-link">Resources</a></li>
+                </ul>
+                
+                <a href="/docs/api" class="section-cta">Browse API →</a>
+            </div>
+
+            <!-- Examples & Tutorials -->
+            <div class="docs-section">
+                <div class="section-header">
+                    <div class="section-icon">💡</div>
+                    <h2 class="section-title">Examples & Tutorials</h2>
+                </div>
+                <p class="section-description">Real-world examples and use cases, from basic blockchain queries to complex DeFi integrations.</p>
+                
+                <ul class="section-links">
+                    <li><a href="/examples#basic" class="section-link">Basic Operations</a></li>
+                    <li><a href="/examples#wallet" class="section-link">Wallet Management</a></li>
+                    <li><a href="/examples#contract" class="section-link">Smart Contracts</a></li>
+                    <li><a href="/examples#defi" class="section-link">DeFi Integration</a></li>
+                    <li><a href="/examples#advanced" class="section-link">Advanced Examples</a></li>
+                </ul>
+                
+                <a href="/examples" class="section-cta">View Examples →</a>
+            </div>
+
+            <!-- Architecture & Design -->
+            <div class="docs-section">
+                <div class="section-header">
+                    <div class="section-icon">🏗️</div>
+                    <h2 class="section-title">Architecture</h2>
+                </div>
+                <p class="section-description">Deep dive into the server architecture, design patterns, and best practices for scalable blockchain applications.</p>
+                
+                <ul class="section-links">
+                    <li><a href="#" class="section-link">System Architecture</a></li>
+                    <li><a href="#" class="section-link">Security Model</a></li>
+                    <li><a href="#" class="section-link">Performance Optimization</a></li>
+                    <li><a href="#" class="section-link">Error Handling</a></li>
+                    <li><a href="#" class="section-link">Testing Strategy</a></li>
+                </ul>
+                
+                <a href="#" class="section-cta">Learn Architecture →</a>
+            </div>
+
+            <!-- Deployment & Production -->
+            <div class="docs-section">
+                <div class="section-header">
+                    <div class="section-icon">🚀</div>
+                    <h2 class="section-title">Production Guide</h2>
+                </div>
+                <p class="section-description">Deploy and scale your applications with Docker, monitoring, security best practices, and performance tuning.</p>
+                
+                <ul class="section-links">
+                    <li><a href="#" class="section-link">Docker Deployment</a></li>
+                    <li><a href="#" class="section-link">Environment Configuration</a></li>
+                    <li><a href="#" class="section-link">Monitoring & Logging</a></li>
+                    <li><a href="#" class="section-link">Security Checklist</a></li>
+                    <li><a href="#" class="section-link">Performance Tuning</a></li>
+                </ul>
+                
+                <a href="#" class="section-cta">Deploy Now →</a>
+            </div>
+
+            <!-- Troubleshooting -->
+            <div class="docs-section">
+                <div class="section-header">
+                    <div class="section-icon">🔧</div>
+                    <h2 class="section-title">Troubleshooting</h2>
+                </div>
+                <p class="section-description">Common issues, debugging guides, and solutions to help you resolve problems quickly and efficiently.</p>
+                
+                <ul class="section-links">
+                    <li><a href="#" class="section-link">Common Issues</a></li>
+                    <li><a href="#" class="section-link">Error Messages</a></li>
+                    <li><a href="#" class="section-link">Network Problems</a></li>
+                    <li><a href="#" class="section-link">Performance Issues</a></li>
+                    <li><a href="#" class="section-link">Debug Tools</a></li>
+                </ul>
+                
+                <a href="#" class="section-cta">Get Help →</a>
+            </div>
+        </div>
+
+        <!-- Featured Content -->
+        <div class="featured-content">
+            <h2 class="featured-title">Featured Capabilities</h2>
+            <div class="featured-grid">
+                <div class="featured-item">
+                    <div class="featured-item-icon">⚡</div>
+                    <h3 class="featured-item-title">High Performance</h3>
+                    <p class="featured-item-description">Optimized for speed with connection pooling, caching, and async operations</p>
+                </div>
+                
+                <div class="featured-item">
+                    <div class="featured-item-icon">🔒</div>
+                    <h3 class="featured-item-title">Enterprise Security</h3>
+                    <p class="featured-item-description">Comprehensive validation, XSS prevention, and confirmation requirements</p>
+                </div>
+                
+                <div class="featured-item">
+                    <div class="featured-item-icon">🌐</div>
+                    <h3 class="featured-item-title">Multi-Network</h3>
+                    <p class="featured-item-description">Seamless support for both mainnet and testnet environments</p>
+                </div>
+                
+                <div class="featured-item">
+                    <div class="featured-item-icon">🏗️</div>
+                    <h3 class="featured-item-title">Famous Contracts</h3>
+                    <p class="featured-item-description">Built-in support for NeoFS, Flamingo, NeoBurger, and other popular contracts</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resources Section -->
+        <div class="resources-section">
+            <h2 class="resources-title">Additional Resources</h2>
+            <div class="resources-grid">
+                <a href="https://github.com/your-repo/neo-n3-mcp" class="resource-card" target="_blank">
+                    <div class="resource-icon">📦</div>
+                    <h3 class="resource-title">Source Code</h3>
+                    <p class="resource-description">Browse the complete source code, contribute, and report issues</p>
+                </a>
+                
+                <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="resource-card" target="_blank">
+                    <div class="resource-icon">📥</div>
+                    <h3 class="resource-title">NPM Package</h3>
+                    <p class="resource-description">Install and manage versions through the npm registry</p>
+                </a>
+                
+                <a href="https://neo.org" class="resource-card" target="_blank">
+                    <div class="resource-icon">🌐</div>
+                    <h3 class="resource-title">Neo N3 Docs</h3>
+                    <p class="resource-description">Official Neo N3 blockchain documentation and resources</p>
+                </a>
+                
+                <a href="https://discord.gg/neo" class="resource-card" target="_blank">
+                    <div class="resource-icon">💬</div>
+                    <h3 class="resource-title">Community</h3>
+                    <p class="resource-description">Join the Neo community for support and discussions</p>
+                </a>
+                
+                <a href="https://mcp.ai" class="resource-card" target="_blank">
+                    <div class="resource-icon">🤖</div>
+                    <h3 class="resource-title">MCP Protocol</h3>
+                    <p class="resource-description">Learn about the Model Context Protocol specification</p>
+                </a>
+                
+                <a href="#" class="resource-card">
+                    <div class="resource-icon">📊</div>
+                    <h3 class="resource-title">Changelog</h3>
+                    <p class="resource-description">Track new features, improvements, and bug fixes</p>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/assets/js/main.js"></script>
+    <script>
+        // Add smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add animation on scroll for sections
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.docs-section, .featured-item, .resource-card').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html> 

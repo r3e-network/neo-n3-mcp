@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examples - Neo N3 MCP Server</title>
+    <meta name="description" content="Real-world examples and use cases for Neo N3 MCP Server. Learn through practical implementations and interactive code samples.">
+    <meta name="keywords" content="neo, blockchain, mcp, examples, tutorials, use cases">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    
+    <style>
+        .examples-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 100px var(--spacing-lg) var(--spacing-3xl);
+        }
+        
+        .examples-header {
+            text-align: center;
+            margin-bottom: var(--spacing-3xl);
+        }
+        
+        .examples-title {
+            font-size: clamp(2.5rem, 5vw, 3rem);
+            font-weight: 700;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+        }
+        
+        .examples-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xl);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .examples-nav {
+            display: flex;
+            justify-content: center;
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-3xl);
+            flex-wrap: wrap;
+        }
+        
+        .nav-filter {
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: var(--surface);
+            border: 2px solid transparent;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        .nav-filter.active,
+        .nav-filter:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: var(--spacing-xl);
+            margin-bottom: var(--spacing-3xl);
+        }
+        
+        .example-card {
+            background: var(--surface-elevated);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            border: 1px solid var(--border-light);
+            transition: var(--transition-normal);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .example-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--primary);
+        }
+        
+        .example-header {
+            padding: var(--spacing-xl);
+            border-bottom: 1px solid var(--border-light);
+        }
+        
+        .example-category {
+            display: inline-block;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--primary);
+            color: white;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .example-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+        
+        .example-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .example-features {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+        
+        .feature-tag {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--surface);
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        .example-content {
+            flex: 1;
+            padding: var(--spacing-xl);
+        }
+        
+        .code-container {
+            position: relative;
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .code-tabs {
+            display: flex;
+            background: var(--surface);
+            border-radius: var(--radius-md) var(--radius-md) 0 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .code-tab {
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .code-tab.active {
+            background: var(--neo-dark);
+            color: var(--dark-text-primary);
+        }
+        
+        .code-block {
+            background: var(--neo-dark);
+            border-radius: 0 0 var(--radius-md) var(--radius-md);
+            padding: var(--spacing-lg);
+            position: relative;
+            overflow-x: auto;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: var(--spacing-md);
+            right: var(--spacing-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: var(--radius-sm);
+            color: var(--dark-text-secondary);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            font-size: 0.8rem;
+        }
+        
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .copy-btn.copied {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .code-content {
+            color: var(--dark-text-primary);
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin: 0;
+            white-space: pre-wrap;
+        }
+        
+        .example-actions {
+            padding: var(--spacing-lg) var(--spacing-xl);
+            border-top: 1px solid var(--border-light);
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .action-btn {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            border: none;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: 0.9rem;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+        
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--surface-elevated);
+            color: var(--text-primary);
+        }
+        
+        .difficulty-badge {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .difficulty-beginner {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .difficulty-intermediate {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .difficulty-advanced {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .featured-example {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .featured-content {
+            padding: var(--spacing-2xl);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .featured-badge {
+            display: inline-block;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-lg);
+            width: fit-content;
+        }
+        
+        .featured-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+        }
+        
+        .featured-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .featured-features {
+            list-style: none;
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .featured-features li {
+            padding: var(--spacing-sm) 0;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            color: var(--text-secondary);
+        }
+        
+        .featured-features li::before {
+            content: "✓";
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        .featured-code {
+            background: var(--neo-dark);
+            padding: var(--spacing-2xl);
+            position: relative;
+            overflow: auto;
+        }
+        
+        .use-cases {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-2xl);
+            margin: var(--spacing-3xl) 0;
+        }
+        
+        .use-cases-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-primary);
+            text-align: center;
+        }
+        
+        .use-cases-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+        }
+        
+        .use-case-item {
+            text-align: center;
+            padding: var(--spacing-lg);
+        }
+        
+        .use-case-icon {
+            font-size: 2rem;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .use-case-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+        
+        .use-case-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 1024px) {
+            .featured-example {
+                grid-template-columns: 1fr;
+            }
+            
+            .examples-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .examples-nav {
+                gap: var(--spacing-sm);
+            }
+            
+            .nav-filter {
+                padding: var(--spacing-sm) var(--spacing-md);
+                font-size: 0.9rem;
+            }
+            
+            .featured-content {
+                padding: var(--spacing-lg);
+            }
+            
+            .featured-code {
+                padding: var(--spacing-lg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="/assets/images/neo-logo.svg" alt="Neo N3" class="logo-icon">
+                <span class="logo-text">Neo N3 MCP</span>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/#features" class="nav-link">Features</a>
+                <a href="/docs" class="nav-link">Docs</a>
+                <a href="/examples" class="nav-link active">Examples</a>
+                <a href="https://github.com/your-repo/neo-n3-mcp" class="nav-link" target="_blank">GitHub</a>
+                <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+            </div>
+            <div class="nav-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="examples-container">
+        <!-- Header -->
+        <header class="examples-header">
+            <h1 class="examples-title">Examples & Use Cases</h1>
+            <p class="examples-subtitle">Explore real-world implementations and learn through practical examples. From basic blockchain queries to complex DeFi integrations.</p>
+        </header>
+
+        <!-- Navigation Filters -->
+        <nav class="examples-nav">
+            <button class="nav-filter active" data-filter="all">All Examples</button>
+            <button class="nav-filter" data-filter="basic">Basic Operations</button>
+            <button class="nav-filter" data-filter="wallet">Wallet Management</button>
+            <button class="nav-filter" data-filter="contract">Smart Contracts</button>
+            <button class="nav-filter" data-filter="defi">DeFi Integration</button>
+            <button class="nav-filter" data-filter="advanced">Advanced</button>
+        </nav>
+
+        <!-- Featured Example -->
+        <div class="example-card featured-example" data-category="defi advanced">
+            <div class="featured-content">
+                <span class="featured-badge">🌟 Featured Example</span>
+                <h2 class="featured-title">DeFi Portfolio Manager</h2>
+                <p class="featured-description">Build a complete DeFi portfolio management system that tracks assets across multiple protocols, calculates yields, and automates rebalancing strategies.</p>
+                
+                <ul class="featured-features">
+                    <li>Multi-protocol asset tracking</li>
+                    <li>Real-time yield calculations</li>
+                    <li>Automated rebalancing</li>
+                    <li>Risk assessment tools</li>
+                    <li>Portfolio analytics dashboard</li>
+                </ul>
+                
+                <div class="example-actions">
+                    <button class="action-btn btn-primary" onclick="viewExample('defi-portfolio')">
+                        🚀 View Full Example
+                    </button>
+                    <span class="difficulty-badge difficulty-advanced">Advanced</span>
+                </div>
+            </div>
+            
+            <div class="featured-code">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre class="code-content">// DeFi Portfolio Manager Example
+class PortfolioManager {
+  constructor() {
+    this.protocols = ['Flamingo', 'NeoFS', 'NeoBurger'];
+    this.rebalanceThreshold = 0.05; // 5%
+  }
+
+  async getPortfolioValue() {
+    const balances = await Promise.all(
+      this.protocols.map(protocol => 
+        this.getProtocolBalance(protocol)
+      )
+    );
+    
+    return balances.reduce((total, balance) => 
+      total + balance.usdValue, 0
+    );
+  }
+
+  async rebalancePortfolio() {
+    const currentAllocation = await this.getCurrentAllocation();
+    const targetAllocation = this.getTargetAllocation();
+    
+    for (const protocol of this.protocols) {
+      const diff = Math.abs(
+        currentAllocation[protocol] - targetAllocation[protocol]
+      );
+      
+      if (diff > this.rebalanceThreshold) {
+        await this.executeRebalance(protocol, diff);
+      }
+    }
+  }
+}</pre>
+            </div>
+        </div>
+
+        <!-- Examples Grid -->
+        <div class="examples-grid">
+            <!-- Basic Operations -->
+            <div class="example-card" data-category="basic">
+                <div class="example-header">
+                    <span class="example-category">Basic Operations</span>
+                    <h3 class="example-title">Blockchain Explorer</h3>
+                    <p class="example-description">Query blockchain data including blocks, transactions, and network statistics. Perfect starting point for Neo N3 development.</p>
+                    <div class="example-features">
+                        <span class="feature-tag">Block Data</span>
+                        <span class="feature-tag">Transactions</span>
+                        <span class="feature-tag">Network Stats</span>
+                    </div>
+                </div>
+                
+                <div class="example-content">
+                    <div class="code-container">
+                        <div class="code-tabs">
+                            <button class="code-tab active" data-tab="request">Request</button>
+                            <button class="code-tab" data-tab="response">Response</button>
+                        </div>
+                        
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre class="code-content" data-tab-content="request">{
+  "name": "get_blockchain_info",
+  "arguments": {
+    "network": "mainnet"
+  }
+}</pre>
+                            <pre class="code-content" data-tab-content="response" style="display: none;">{
+  "result": {
+    "network": "mainnet",
+    "blockHeight": 12345678,
+    "validators": 7,
+    "blockTime": 15000,
+    "status": "online"
+  }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="example-actions">
+                    <button class="action-btn btn-primary" onclick="runExample('blockchain-info')">
+                        ▶️ Try it
+                    </button>
+                    <span class="difficulty-badge difficulty-beginner">Beginner</span>
+                </div>
+            </div>
+
+            <!-- Wallet Management -->
+            <div class="example-card" data-category="wallet">
+                <div class="example-header">
+                    <span class="example-category">Wallet Management</span>
+                    <h3 class="example-title">Multi-Wallet Manager</h3>
+                    <p class="example-description">Create, import, and manage multiple Neo N3 wallets with balance tracking and transaction history.</p>
+                    <div class="example-features">
+                        <span class="feature-tag">Wallet Creation</span>
+                        <span class="feature-tag">Balance Tracking</span>
+                        <span class="feature-tag">Transaction History</span>
+                    </div>
+                </div>
+                
+                <div class="example-content">
+                    <div class="code-container">
+                        <div class="code-tabs">
+                            <button class="code-tab active" data-tab="create">Create Wallet</button>
+                            <button class="code-tab" data-tab="balance">Check Balance</button>
+                        </div>
+                        
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre class="code-content" data-tab-content="create">{
+  "name": "create_wallet",
+  "arguments": {
+    "password": "secure-password-123",
+    "network": "testnet"
+  }
+}</pre>
+                            <pre class="code-content" data-tab-content="balance" style="display: none;">{
+  "name": "get_balance",
+  "arguments": {
+    "address": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
+    "asset": "all"
+  }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="example-actions">
+                    <button class="action-btn btn-primary" onclick="runExample('wallet-manager')">
+                        ▶️ Try it
+                    </button>
+                    <span class="difficulty-badge difficulty-beginner">Beginner</span>
+                </div>
+            </div>
+
+            <!-- Smart Contract Interaction -->
+            <div class="example-card" data-category="contract">
+                <div class="example-header">
+                    <span class="example-category">Smart Contracts</span>
+                    <h3 class="example-title">NeoFS Container Manager</h3>
+                    <p class="example-description">Interact with NeoFS contracts to create containers, manage permissions, and store decentralized data.</p>
+                    <div class="example-features">
+                        <span class="feature-tag">Container Creation</span>
+                        <span class="feature-tag">Permission Management</span>
+                        <span class="feature-tag">Data Storage</span>
+                    </div>
+                </div>
+                
+                <div class="example-content">
+                    <div class="code-container">
+                        <div class="code-tabs">
+                            <button class="code-tab active" data-tab="create-container">Create Container</button>
+                            <button class="code-tab" data-tab="list-containers">List Containers</button>
+                        </div>
+                        
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre class="code-content" data-tab-content="create-container">{
+  "name": "invoke_write_contract",
+  "arguments": {
+    "fromWIF": "your-private-key",
+    "contractName": "NeoFS",
+    "operation": "createContainer",
+    "args": [
+      "owner-address",
+      "container-policy",
+      []
+    ],
+    "confirm": true
+  }
+}</pre>
+                            <pre class="code-content" data-tab-content="list-containers" style="display: none;">{
+  "name": "invoke_read_contract",
+  "arguments": {
+    "contractName": "NeoFS",
+    "operation": "listContainers",
+    "args": ["owner-address"]
+  }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="example-actions">
+                    <button class="action-btn btn-primary" onclick="runExample('neofs-manager')">
+                        ▶️ Try it
+                    </button>
+                    <span class="difficulty-badge difficulty-intermediate">Intermediate</span>
+                </div>
+            </div>
+
+            <!-- Asset Transfer -->
+            <div class="example-card" data-category="basic wallet">
+                <div class="example-header">
+                    <span class="example-category">Asset Transfer</span>
+                    <h3 class="example-title">Bulk Asset Transfer</h3>
+                    <p class="example-description">Send assets to multiple recipients in a single transaction, with fee estimation and confirmation tracking.</p>
+                    <div class="example-features">
+                        <span class="feature-tag">Batch Transfers</span>
+                        <span class="feature-tag">Fee Estimation</span>
+                        <span class="feature-tag">Confirmation Tracking</span>
+                    </div>
+                </div>
+                
+                <div class="example-content">
+                    <div class="code-container">
+                        <div class="code-tabs">
+                            <button class="code-tab active" data-tab="estimate">Estimate Fees</button>
+                            <button class="code-tab" data-tab="transfer">Execute Transfer</button>
+                        </div>
+                        
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre class="code-content" data-tab-content="estimate">{
+  "name": "estimate_transfer_fees",
+  "arguments": {
+    "fromAddress": "sender-address",
+    "toAddress": "recipient-address",
+    "asset": "GAS",
+    "amount": "10.5"
+  }
+}</pre>
+                            <pre class="code-content" data-tab-content="transfer" style="display: none;">{
+  "name": "transfer_assets",
+  "arguments": {
+    "fromWIF": "sender-private-key",
+    "toAddress": "recipient-address",
+    "asset": "GAS",
+    "amount": "10.5",
+    "confirm": true,
+    "network": "testnet"
+  }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="example-actions">
+                    <button class="action-btn btn-primary" onclick="runExample('bulk-transfer')">
+                        ▶️ Try it
+                    </button>
+                    <span class="difficulty-badge difficulty-intermediate">Intermediate</span>
+                </div>
+            </div>
+
+            <!-- DeFi Integration -->
+            <div class="example-card" data-category="defi">
+                <div class="example-header">
+                    <span class="example-category">DeFi Integration</span>
+                    <h3 class="example-title">Flamingo DEX Trading</h3>
+                    <p class="example-description">Automate trading strategies on Flamingo DEX with price monitoring, liquidity analysis, and swap execution.</p>
+                    <div class="example-features">
+                        <span class="feature-tag">Price Monitoring</span>
+                        <span class="feature-tag">Liquidity Analysis</span>
+                        <span class="feature-tag">Automated Trading</span>
+                    </div>
+                </div>
+                
+                <div class="example-content">
+                    <div class="code-container">
+                        <div class="code-tabs">
+                            <button class="code-tab active" data-tab="get-price">Get Price</button>
+                            <button class="code-tab" data-tab="swap">Execute Swap</button>
+                        </div>
+                        
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre class="code-content" data-tab-content="get-price">{
+  "name": "invoke_read_contract",
+  "arguments": {
+    "contractName": "Flamingo",
+    "operation": "getPrice",
+    "args": ["NEO", "GAS"]
+  }
+}</pre>
+                            <pre class="code-content" data-tab-content="swap" style="display: none;">{
+  "name": "invoke_write_contract",
+  "arguments": {
+    "fromWIF": "trader-private-key",
+    "contractName": "Flamingo",
+    "operation": "swapTokensForExactTokens",
+    "args": [
+      "100000000", // amount out
+      "110000000", // max amount in
+      ["NEO", "GAS"], // path
+      "recipient-address",
+      "deadline"
+    ],
+    "confirm": true
+  }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="example-actions">
+                    <button class="action-btn btn-primary" onclick="runExample('flamingo-trading')">
+                        ▶️ Try it
+                    </button>
+                    <span class="difficulty-badge difficulty-advanced">Advanced</span>
+                </div>
+            </div>
+
+            <!-- NFT Operations -->
+            <div class="example-card" data-category="contract advanced">
+                <div class="example-header">
+                    <span class="example-category">NFT Operations</span>
+                    <h3 class="example-title">NFT Marketplace</h3>
+                    <p class="example-description">Build a complete NFT marketplace with minting, trading, and royalty management on Neo N3.</p>
+                    <div class="example-features">
+                        <span class="feature-tag">NFT Minting</span>
+                        <span class="feature-tag">Marketplace Trading</span>
+                        <span class="feature-tag">Royalty Management</span>
+                    </div>
+                </div>
+                
+                <div class="example-content">
+                    <div class="code-container">
+                        <div class="code-tabs">
+                            <button class="code-tab active" data-tab="mint">Mint NFT</button>
+                            <button class="code-tab" data-tab="transfer">Transfer NFT</button>
+                        </div>
+                        
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre class="code-content" data-tab-content="mint">{
+  "name": "invoke_write_contract",
+  "arguments": {
+    "fromWIF": "creator-private-key",
+    "contractName": "CustomNFT",
+    "operation": "mint",
+    "args": [
+      "recipient-address",
+      "token-metadata-uri",
+      "royalty-percentage"
+    ],
+    "confirm": true
+  }
+}</pre>
+                            <pre class="code-content" data-tab-content="transfer" style="display: none;">{
+  "name": "invoke_write_contract",
+  "arguments": {
+    "fromWIF": "owner-private-key",
+    "contractName": "CustomNFT", 
+    "operation": "transfer",
+    "args": [
+      "current-owner",
+      "new-owner",
+      "token-id",
+      "transfer-data"
+    ],
+    "confirm": true
+  }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="example-actions">
+                    <button class="action-btn btn-primary" onclick="runExample('nft-marketplace')">
+                        ▶️ Try it
+                    </button>
+                    <span class="difficulty-badge difficulty-advanced">Advanced</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Use Cases Section -->
+        <section class="use-cases">
+            <h2 class="use-cases-title">Popular Use Cases</h2>
+            <div class="use-cases-grid">
+                <div class="use-case-item">
+                    <div class="use-case-icon">💼</div>
+                    <h3 class="use-case-title">Portfolio Management</h3>
+                    <p class="use-case-description">Track and manage crypto portfolios across multiple protocols and networks.</p>
+                </div>
+                
+                <div class="use-case-item">
+                    <div class="use-case-icon">🏦</div>
+                    <h3 class="use-case-title">DeFi Automation</h3>
+                    <p class="use-case-description">Automate yield farming, lending, and trading strategies with smart contracts.</p>
+                </div>
+                
+                <div class="use-case-item">
+                    <div class="use-case-icon">🎨</div>
+                    <h3 class="use-case-title">NFT Platforms</h3>
+                    <p class="use-case-description">Build marketplaces, galleries, and gaming platforms with NFT integration.</p>
+                </div>
+                
+                <div class="use-case-item">
+                    <div class="use-case-icon">🔗</div>
+                    <h3 class="use-case-title">Cross-Chain Integration</h3>
+                    <p class="use-case-description">Connect Neo N3 with other blockchains for seamless asset transfers.</p>
+                </div>
+                
+                <div class="use-case-item">
+                    <div class="use-case-icon">📊</div>
+                    <h3 class="use-case-title">Analytics Dashboards</h3>
+                    <p class="use-case-description">Create real-time blockchain analytics and monitoring systems.</p>
+                </div>
+                
+                <div class="use-case-item">
+                    <div class="use-case-icon">🤖</div>
+                    <h3 class="use-case-title">Trading Bots</h3>
+                    <p class="use-case-description">Develop automated trading systems with advanced market analysis.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/assets/js/main.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script>
+        // Filter functionality
+        document.querySelectorAll('.nav-filter').forEach(filter => {
+            filter.addEventListener('click', function() {
+                const filterValue = this.dataset.filter;
+                
+                // Update active filter
+                document.querySelectorAll('.nav-filter').forEach(f => f.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Filter examples
+                document.querySelectorAll('.example-card').forEach(card => {
+                    const categories = card.dataset.category || '';
+                    
+                    if (filterValue === 'all' || categories.includes(filterValue)) {
+                        card.style.display = 'flex';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        });
+        
+        // Code tab switching
+        document.querySelectorAll('.code-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const container = this.closest('.code-container');
+                const targetTab = this.dataset.tab;
+                
+                // Update active tab
+                container.querySelectorAll('.code-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Show corresponding content
+                container.querySelectorAll('[data-tab-content]').forEach(content => {
+                    if (content.dataset.tabContent === targetTab) {
+                        content.style.display = 'block';
+                    } else {
+                        content.style.display = 'none';
+                    }
+                });
+            });
+        });
+        
+        // Copy code functionality
+        function copyCode(button) {
+            const codeBlock = button.parentNode;
+            const activeCode = codeBlock.querySelector('[data-tab-content]:not([style*="display: none"])');
+            const code = activeCode ? activeCode.textContent : codeBlock.querySelector('.code-content').textContent;
+            
+            navigator.clipboard.writeText(code).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+        
+        // Example runners
+        function runExample(type) {
+            console.log(`Running ${type} example...`);
+            alert(`🚀 Running ${type} example!\n\nThis would execute the actual request in a real implementation. Check the console for details.`);
+        }
+        
+        function viewExample(type) {
+            console.log(`Viewing ${type} example...`);
+            alert(`📖 Opening ${type} detailed example!\n\nThis would navigate to a dedicated example page with complete implementation.`);
+        }
+        
+        // Initialize syntax highlighting
+        if (window.Prism) {
+            Prism.highlightAll();
+        }
+    </script>
+</body>
+</html> 

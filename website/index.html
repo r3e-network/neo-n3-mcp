@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neo N3 MCP Server - Blockchain Integration Made Simple</title>
+    <meta name="description" content="Production-ready MCP server for Neo N3 blockchain integration with 34 tools and 9 resources for wallet management, asset transfers, and smart contracts.">
+    <meta name="keywords" content="neo, blockchain, mcp, n3, modelcontextprotocol, api, smart contracts">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Neo N3 MCP Server">
+    <meta property="og:description" content="Production-ready MCP server for Neo N3 blockchain integration">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://neo-n3-mcp.netlify.app">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Neo N3 MCP Server">
+    <meta name="twitter:description" content="Production-ready MCP server for Neo N3 blockchain integration">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/assets/css/style.css">
+    
+    <!-- Prism.js for syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="/assets/images/neo-logo.svg" alt="Neo N3" class="logo-icon">
+                <span class="logo-text">Neo N3 MCP</span>
+            </div>
+            <div class="nav-menu">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#documentation" class="nav-link">Docs</a>
+                <a href="#examples" class="nav-link">Examples</a>
+                <a href="https://github.com/your-repo/neo-n3-mcp" class="nav-link" target="_blank">GitHub</a>
+                <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+            </div>
+            <div class="nav-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="badge">v1.5.0</span>
+                    <span class="badge-text">Production Ready</span>
+                </div>
+                <h1 class="hero-title">
+                    Neo N3 Blockchain Integration
+                    <span class="hero-highlight">Made Simple</span>
+                </h1>
+                <p class="hero-description">
+                    Production-ready MCP server providing seamless Neo N3 blockchain integration with 34 tools and 9 resources for wallet management, asset transfers, and smart contract interactions.
+                </p>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-number">34</span>
+                        <span class="stat-label">Tools</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">9</span>
+                        <span class="stat-label">Resources</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">90%+</span>
+                        <span class="stat-label">Test Coverage</span>
+                    </div>
+                </div>
+                <div class="hero-actions">
+                    <a href="#quick-start" class="btn btn-primary btn-large">Quick Start</a>
+                    <a href="/docs" class="btn btn-secondary btn-large">Documentation</a>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="terminal-window">
+                    <div class="terminal-header">
+                        <div class="terminal-buttons">
+                            <span class="btn-close"></span>
+                            <span class="btn-minimize"></span>
+                            <span class="btn-maximize"></span>
+                        </div>
+                        <span class="terminal-title">neo-n3-mcp</span>
+                    </div>
+                    <div class="terminal-body">
+                        <div class="terminal-line">
+                            <span class="prompt">$</span>
+                            <span class="command">npx @r3e/neo-n3-mcp</span>
+                        </div>
+                        <div class="terminal-line output">
+                            <span class="success">✅ Neo N3 MCP Server started</span>
+                        </div>
+                        <div class="terminal-line output">
+                            <span class="info">🚀 34 tools available</span>
+                        </div>
+                        <div class="terminal-line output">
+                            <span class="info">📚 9 resources ready</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="prompt">$</span>
+                            <span class="cursor">_</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Powerful Features</h2>
+                <p class="section-description">Everything you need for Neo N3 blockchain integration</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27,6.96 12,12.01 20.73,6.96"></polyline>
+                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Blockchain Operations</h3>
+                    <p class="feature-description">Complete blockchain queries including blocks, transactions, balances, and network information with real-time data access.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="10" rx="2" ry="2"></rect>
+                            <circle cx="12" cy="16" r="1"></circle>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Wallet Management</h3>
+                    <p class="feature-description">Secure wallet creation, import, and management with encrypted private key storage and comprehensive validation.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14.828 14.828a4 4 0 0 1-5.656 0M9 10h1.01M15 10h1.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Asset Transfers</h3>
+                    <p class="feature-description">NEP-17 token transfers with fee estimation, confirmation tracking, and support for NEO, GAS, and custom tokens.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 18 22 12 16 6"></polyline>
+                            <polyline points="8 6 2 12 8 18"></polyline>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Smart Contracts</h3>
+                    <p class="feature-description">Interact with famous Neo N3 contracts including NeoFS, NeoBurger, Flamingo, and more with read/write operations.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Security First</h3>
+                    <p class="feature-description">Comprehensive input validation, XSS prevention, confirmation requirements, and secure private key handling.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polygon points="10,8 16,12 10,16 10,8"></polygon>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Production Ready</h3>
+                    <p class="feature-description">90%+ test coverage, comprehensive error handling, performance optimization, and Docker deployment support.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start Section -->
+    <section id="quick-start" class="quick-start">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Quick Start</h2>
+                <p class="section-description">Get up and running in minutes</p>
+            </div>
+            <div class="quick-start-content">
+                <div class="installation-methods">
+                    <div class="method-tabs">
+                        <button class="tab-button active" data-tab="npm">NPM</button>
+                        <button class="tab-button" data-tab="docker">Docker</button>
+                        <button class="tab-button" data-tab="claude">Claude Desktop</button>
+                    </div>
+                    
+                    <div class="tab-content active" data-tab="npm">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">Install and Run</span>
+                                <button class="copy-button" data-copy="npm install -g @r3e/neo-n3-mcp&#10;neo-n3-mcp --network testnet">Copy</button>
+                            </div>
+                            <pre><code class="language-bash"># Install globally
+npm install -g @r3e/neo-n3-mcp
+
+# Run with testnet
+neo-n3-mcp --network testnet
+
+# Or run directly
+npx @r3e/neo-n3-mcp</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" data-tab="docker">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">Docker Run</span>
+                                <button class="copy-button" data-copy="docker run -p 3000:3000 r3e/neo-n3-mcp:1.5.0">Copy</button>
+                            </div>
+                            <pre><code class="language-bash"># Run with Docker
+docker run -p 3000:3000 \
+  -e NEO_NETWORK=testnet \
+  r3e/neo-n3-mcp:1.5.0
+
+# With persistent storage
+docker run -p 3000:3000 \
+  -v $(pwd)/wallets:/app/wallets \
+  r3e/neo-n3-mcp:1.5.0</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" data-tab="claude">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">Claude Desktop Configuration</span>
+                                <button class="copy-button" data-copy='{"mcpServers": {"neo-n3": {"command": "npx", "args": ["-y", "@r3e/neo-n3-mcp", "--network", "testnet"]}}}'>Copy</button>
+                            </div>
+                            <pre><code class="language-json">{
+  "mcpServers": {
+    "neo-n3": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@r3e/neo-n3-mcp",
+        "--network",
+        "testnet"
+      ],
+      "disabled": false,
+      "env": {
+        "NEO_NETWORK": "testnet",
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="example-usage">
+                    <h3>Example Usage</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">Basic Operations</span>
+                            <button class="copy-button" data-copy="# Get blockchain info&#10;curl -X POST http://localhost:3000/mcp &#92;&#10;  -d '{\"name\": \"get_blockchain_info\"}'&#10;&#10;# Create a wallet&#10;curl -X POST http://localhost:3000/mcp &#92;&#10;  -d '{\"name\": \"create_wallet\", \"arguments\": {\"password\": \"secure123\"}}'">Copy</button>
+                        </div>
+                        <pre><code class="language-bash"># Get blockchain info
+curl -X POST http://localhost:3000/mcp \
+  -d '{"name": "get_blockchain_info"}'
+
+# Create a wallet
+curl -X POST http://localhost:3000/mcp \
+  -d '{"name": "create_wallet", "arguments": {"password": "secure123"}}'
+
+# Check balance
+curl -X POST http://localhost:3000/mcp \
+  -d '{"name": "get_balance", "arguments": {"address": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj"}}'</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Examples Section -->
+    <section id="examples" class="examples">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Examples</h2>
+                <p class="section-description">Real-world usage examples</p>
+            </div>
+            <div class="examples-grid">
+                <div class="example-card">
+                    <h3 class="example-title">Wallet Operations</h3>
+                    <p class="example-description">Create wallets, check balances, and transfer assets</p>
+                    <a href="/examples/wallet" class="example-link">View Example →</a>
+                </div>
+                <div class="example-card">
+                    <h3 class="example-title">Smart Contract Interaction</h3>
+                    <p class="example-description">Interact with NeoFS, NeoBurger, and other famous contracts</p>
+                    <a href="/examples/contracts" class="example-link">View Example →</a>
+                </div>
+                <div class="example-card">
+                    <h3 class="example-title">Blockchain Explorer</h3>
+                    <p class="example-description">Query blocks, transactions, and network information</p>
+                    <a href="/examples/explorer" class="example-link">View Example →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Documentation Section -->
+    <section id="documentation" class="documentation">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Documentation</h2>
+                <p class="section-description">Comprehensive guides and API reference</p>
+            </div>
+            <div class="docs-grid">
+                <a href="/docs/api" class="doc-card">
+                    <div class="doc-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14,2 14,8 20,8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10,9 9,9 8,9"></polyline>
+                        </svg>
+                    </div>
+                    <h3 class="doc-title">API Reference</h3>
+                    <p class="doc-description">Complete documentation for all 34 tools and 9 resources</p>
+                </a>
+                <a href="/docs/architecture" class="doc-card">
+                    <div class="doc-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <rect x="7" y="7" width="3" height="9"></rect>
+                            <rect x="14" y="7" width="3" height="5"></rect>
+                        </svg>
+                    </div>
+                    <h3 class="doc-title">Architecture</h3>
+                    <p class="doc-description">System design, components, and data flow</p>
+                </a>
+                <a href="/docs/deployment" class="doc-card">
+                    <div class="doc-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                            <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                            <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                        </svg>
+                    </div>
+                    <h3 class="doc-title">Deployment</h3>
+                    <p class="doc-description">Production deployment guides and best practices</p>
+                </a>
+                <a href="/docs/testing" class="doc-card">
+                    <div class="doc-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"></polyline>
+                        </svg>
+                    </div>
+                    <h3 class="doc-title">Testing</h3>
+                    <p class="doc-description">Testing strategies and validation procedures</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <img src="/assets/images/neo-logo.svg" alt="Neo N3" class="footer-logo">
+                    <span class="footer-title">Neo N3 MCP</span>
+                    <p class="footer-description">Production-ready MCP server for Neo N3 blockchain integration</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-section">
+                        <h4 class="footer-heading">Product</h4>
+                        <a href="/docs" class="footer-link">Documentation</a>
+                        <a href="/examples" class="footer-link">Examples</a>
+                        <a href="/changelog" class="footer-link">Changelog</a>
+                    </div>
+                    <div class="footer-section">
+                        <h4 class="footer-heading">Resources</h4>
+                        <a href="https://docs.neo.org/" class="footer-link" target="_blank">Neo N3 Docs</a>
+                        <a href="https://modelcontextprotocol.io/" class="footer-link" target="_blank">MCP Protocol</a>
+                        <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="footer-link" target="_blank">NPM Package</a>
+                    </div>
+                    <div class="footer-section">
+                        <h4 class="footer-heading">Community</h4>
+                        <a href="https://github.com/your-repo/neo-n3-mcp" class="footer-link" target="_blank">GitHub</a>
+                        <a href="https://github.com/your-repo/neo-n3-mcp/issues" class="footer-link" target="_blank">Issues</a>
+                        <a href="https://github.com/your-repo/neo-n3-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p class="footer-copyright">&copy; 2024 Neo N3 MCP Server. Licensed under MIT.</p>
+                <div class="footer-badges">
+                    <img src="https://img.shields.io/badge/MCP%20SDK-1.9.0-blue" alt="MCP SDK">
+                    <img src="https://img.shields.io/badge/Neo%20N3-Compatible-green" alt="Neo N3">
+                    <img src="https://img.shields.io/badge/NPM-@r3e/neo--n3--mcp-red" alt="NPM">
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="/assets/js/main.js"></script>
+</body>
+</html> 
