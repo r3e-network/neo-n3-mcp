@@ -13,159 +13,19 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://neo-n3-mcp.netlify.app">
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     
+    <!-- Modern Theme -->
+    <link rel="stylesheet" href="/assets/css/modern-theme.css">
+    
     <style>
-        /* Modern Design System */
-        :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #06b6d4;
-            --accent: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            
-            --bg-primary: #0a0a0a;
-            --bg-secondary: #111111;
-            --bg-tertiary: #1a1a1a;
-            --bg-card: rgba(255, 255, 255, 0.03);
-            --bg-glass: rgba(255, 255, 255, 0.05);
-            
-            --text-primary: #ffffff;
-            --text-secondary: rgba(255, 255, 255, 0.7);
-            --text-muted: rgba(255, 255, 255, 0.5);
-            
-            --border-primary: rgba(255, 255, 255, 0.1);
-            --border-secondary: rgba(255, 255, 255, 0.05);
-            
-            --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.1);
-            --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.15);
-            --shadow-lg: 0 16px 64px rgba(0, 0, 0, 0.2);
-            --shadow-glow: 0 0 32px rgba(99, 102, 241, 0.3);
-            
-            --radius-sm: 8px;
-            --radius-md: 12px;
-            --radius-lg: 16px;
-            --radius-xl: 24px;
-            --radius-full: 9999px;
-            
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
-            overflow-x: hidden;
-            scroll-behavior: smooth;
-        }
-
-        /* Navigation */
-        .nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            padding: 1rem 0;
-            backdrop-filter: blur(20px);
-            background: rgba(10, 10, 10, 0.9);
-            border-bottom: 1px solid var(--border-secondary);
-            transition: var(--transition);
-        }
-
-        .nav.scrolled {
-            padding: 0.75rem 0;
-            background: rgba(10, 10, 10, 0.95);
-            border-bottom-color: var(--border-primary);
-        }
-
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .nav-logo {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 1.25rem;
-            color: var(--text-primary);
-            text-decoration: none;
-        }
-
-        .nav-logo::before {
-            content: '◆';
-            color: var(--primary);
-            font-size: 1.5rem;
-        }
-
-        .nav-menu {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-        }
-
-        .nav-link {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-weight: 500;
-            transition: var(--transition);
-            position: relative;
-        }
-
-        .nav-link:hover {
-            color: var(--text-primary);
-        }
-
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: var(--primary);
-            transition: var(--transition);
-        }
-
-        .nav-link:hover::after {
-            width: 100%;
-        }
-
-        .nav-cta {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--radius-full);
-            text-decoration: none;
-            font-weight: 600;
-            transition: var(--transition);
-            box-shadow: var(--shadow-glow);
-        }
-
-        .nav-cta:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-glow), var(--shadow-lg);
-        }
-
-        /* Hero Section */
+        /* Homepage-specific styles only */
         .hero {
             min-height: 100vh;
             display: flex;
@@ -230,7 +90,7 @@
         }
 
         .hero-title {
-            font-family: 'Space Grotesk', sans-serif;
+            font-family: var(--font-heading);
             font-size: clamp(3rem, 8vw, 5rem);
             font-weight: 800;
             line-height: 1.1;
@@ -254,43 +114,6 @@
             margin-bottom: 3rem;
         }
 
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 1rem 2rem;
-            border-radius: var(--radius-full);
-            text-decoration: none;
-            font-weight: 600;
-            transition: var(--transition);
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            box-shadow: var(--shadow-glow);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-glow), var(--shadow-lg);
-        }
-
-        .btn-secondary {
-            background: var(--bg-glass);
-            color: var(--text-primary);
-            border: 1px solid var(--border-primary);
-            backdrop-filter: blur(10px);
-        }
-
-        .btn-secondary:hover {
-            background: var(--bg-card);
-            transform: translateY(-2px);
-        }
-
         .hero-stats {
             display: flex;
             gap: 2rem;
@@ -301,7 +124,7 @@
         }
 
         .stat-number {
-            font-family: 'Space Grotesk', sans-serif;
+            font-family: var(--font-heading);
             font-size: 2rem;
             font-weight: 800;
             color: var(--primary);
@@ -317,40 +140,6 @@
         .hero-visual {
             position: relative;
             animation: fadeInRight 1s ease 0.4s both;
-        }
-
-        .code-window {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-primary);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            box-shadow: var(--shadow-lg);
-        }
-
-        .code-header {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 1rem;
-            background: var(--bg-tertiary);
-            border-bottom: 1px solid var(--border-secondary);
-        }
-
-        .code-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-
-        .code-dot:nth-child(1) { background: #ff5f57; }
-        .code-dot:nth-child(2) { background: #ffbd2e; }
-        .code-dot:nth-child(3) { background: #28ca42; }
-
-        .code-body {
-            padding: 1.5rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.875rem;
-            line-height: 1.6;
         }
 
         .code-line {
@@ -387,24 +176,6 @@
         .section-header {
             text-align: center;
             margin-bottom: 4rem;
-        }
-
-        .section-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: clamp(2.5rem, 6vw, 4rem);
-            font-weight: 700;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .section-subtitle {
-            font-size: 1.25rem;
-            color: var(--text-secondary);
-            max-width: 600px;
-            margin: 0 auto;
         }
 
         .features-grid {
@@ -449,7 +220,7 @@
         }
 
         .feature-title {
-            font-family: 'Space Grotesk', sans-serif;
+            font-family: var(--font-heading);
             font-size: 1.25rem;
             font-weight: 600;
             margin-bottom: 1rem;
@@ -501,6 +272,7 @@
             border-radius: var(--radius-lg);
             overflow: hidden;
             transition: var(--transition);
+            backdrop-filter: blur(10px);
             animation: fadeInUp 0.6s ease both;
         }
 
@@ -511,242 +283,142 @@
 
         .example-card:hover {
             transform: translateY(-4px);
-            border-color: var(--secondary);
+            border-color: var(--primary);
             box-shadow: var(--shadow-md);
         }
 
         .example-header {
-            padding: 1.5rem;
+            padding: 2rem;
             border-bottom: 1px solid var(--border-secondary);
         }
 
+        .example-badge {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
         .example-title {
-            font-family: 'Space Grotesk', sans-serif;
+            font-family: var(--font-heading);
             font-size: 1.25rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
             color: var(--text-primary);
         }
 
-        .example-subtitle {
+        .example-description {
             color: var(--text-secondary);
-            font-size: 0.9rem;
+            line-height: 1.6;
         }
 
-        .example-code {
-            background: var(--bg-tertiary);
-            padding: 1.5rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-            line-height: 1.6;
+        .example-content {
+            padding: 2rem;
         }
 
         /* CTA Section */
         .cta {
             padding: 8rem 0;
-            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-tertiary) 100%);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .cta::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 30% 70%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 70% 30%, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            text-align: center;
         }
 
         .cta-container {
             max-width: 800px;
             margin: 0 auto;
             padding: 0 2rem;
-            text-align: center;
-            position: relative;
-            z-index: 2;
         }
 
         .cta-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-family: var(--font-heading);
+            font-size: clamp(2rem, 5vw, 3rem);
             font-weight: 700;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
         }
 
-        .cta-subtitle {
+        .cta-description {
             font-size: 1.25rem;
             color: var(--text-secondary);
             margin-bottom: 3rem;
             line-height: 1.6;
-        }
-
-        .cta-actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin-bottom: 3rem;
         }
 
         .install-command {
-            background: var(--bg-card);
-            border: 1px solid var(--border-primary);
-            border-radius: var(--radius-md);
-            padding: 1.5rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1rem;
-            color: var(--text-primary);
-            backdrop-filter: blur(10px);
-        }
-
-        /* Footer */
-        .footer {
             background: var(--bg-tertiary);
-            border-top: 1px solid var(--border-primary);
-            padding: 4rem 0 2rem;
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin: 2rem 0;
+            position: relative;
         }
 
-        .footer-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
-        .footer-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
-            gap: 3rem;
-            margin-bottom: 3rem;
-        }
-
-        .footer-brand {
+        .install-header {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
-            font-size: 1.25rem;
-            color: var(--text-primary);
-            margin-bottom: 1rem;
-        }
-
-        .footer-brand::before {
-            content: '◆';
-            color: var(--primary);
-            font-size: 1.5rem;
-        }
-
-        .footer-description {
-            color: var(--text-secondary);
-            line-height: 1.6;
-            margin-bottom: 2rem;
-        }
-
-        .footer-title {
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: var(--text-primary);
-        }
-
-        .footer-links {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .footer-link {
-            color: var(--text-secondary);
-            text-decoration: none;
-            transition: var(--transition);
-        }
-
-        .footer-link:hover {
-            color: var(--text-primary);
-        }
-
-        .footer-bottom {
-            border-top: 1px solid var(--border-secondary);
-            padding-top: 2rem;
-            display: flex;
             justify-content: space-between;
-            align-items: center;
-            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .install-title {
+            font-family: var(--font-heading);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .copy-btn {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-primary);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
             font-size: 0.875rem;
         }
 
-        /* Animations */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .copy-btn:hover {
+            background: var(--primary);
+            color: white;
         }
 
-        @keyframes fadeInRight {
-            from {
-                opacity: 0;
-                transform: translateX(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+        .install-code {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            color: var(--text-primary);
+            background: var(--bg-primary);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-secondary);
         }
 
         /* Responsive */
         @media (max-width: 768px) {
-            .nav-menu {
-                display: none;
-            }
-
             .hero-container {
                 grid-template-columns: 1fr;
-                gap: 3rem;
+                gap: 2rem;
                 text-align: center;
             }
-
-            .hero-actions {
-                flex-direction: column;
-                align-items: center;
-            }
-
+            
             .hero-stats {
                 justify-content: center;
             }
-
+            
+            .hero-actions {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
             .features-grid {
                 grid-template-columns: 1fr;
             }
-
+            
             .examples-grid {
                 grid-template-columns: 1fr;
-            }
-
-            .footer-grid {
-                grid-template-columns: 1fr;
-                gap: 2rem;
-            }
-
-            .footer-bottom {
-                flex-direction: column;
-                gap: 1rem;
-                text-align: center;
-            }
-
-            .cta-actions {
-                flex-direction: column;
-                align-items: center;
             }
         }
     </style>
@@ -755,12 +427,12 @@
     <!-- Navigation -->
     <nav class="nav" id="nav">
         <div class="nav-container">
-            <a href="#" class="nav-logo">Neo N3 MCP</a>
+            <a href="/" class="nav-logo">Neo N3 MCP</a>
             <div class="nav-menu">
-                <a href="#features" class="nav-link">Features</a>
-                <a href="#examples" class="nav-link">Examples</a>
+                <a href="/#features" class="nav-link">Features</a>
+                <a href="/examples" class="nav-link">Examples</a>
                 <a href="/docs" class="nav-link">Documentation</a>
-                <a href="https://github.com/r3e-network/neo-n3-mcp" class="nav-cta" target="_blank">Get Started</a>
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
             </div>
         </div>
     </nav>
@@ -769,63 +441,63 @@
     <section class="hero">
         <div class="hero-container">
             <div class="hero-content">
-                <div class="hero-badge">
-                    Production Ready v1.5.0
-                </div>
-                <h1 class="hero-title">
-                    Build the Future of<br>
-                    Blockchain Development
-                </h1>
+                <div class="hero-badge">Enterprise-Grade Neo N3 Development</div>
+                <h1 class="hero-title">Build the Future of Blockchain Development</h1>
                 <p class="hero-subtitle">
-                    The most advanced Neo N3 MCP server with 34+ powerful tools, enterprise-grade security, 
-                    and seamless integration for modern blockchain applications.
+                    The most advanced Neo N3 MCP server with 34+ tools, enterprise security, 
+                    and seamless DeFi integrations. Zero configuration, maximum power.
                 </p>
+                
                 <div class="hero-actions">
-                    <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="btn btn-primary" target="_blank">
-                        🚀 Start Building
+                    <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary btn-large" target="_blank">
+                        🚀 Get Started
                     </a>
-                    <a href="#features" class="btn btn-secondary">
-                        📖 Explore Features
+                    <a href="/docs" class="btn btn-secondary btn-large">
+                        📚 Documentation
                     </a>
                 </div>
+                
                 <div class="hero-stats">
                     <div class="stat">
                         <span class="stat-number">34+</span>
                         <span class="stat-label">Tools</span>
                     </div>
                     <div class="stat">
+                        <span class="stat-number">9</span>
+                        <span class="stat-label">Resources</span>
+                    </div>
+                    <div class="stat">
                         <span class="stat-number">90%+</span>
                         <span class="stat-label">Coverage</span>
                     </div>
                     <div class="stat">
-                        <span class="stat-number">6</span>
-                        <span class="stat-label">Protocols</span>
+                        <span class="stat-number">0</span>
+                        <span class="stat-label">CVEs</span>
                     </div>
                 </div>
             </div>
+            
             <div class="hero-visual">
                 <div class="code-window">
                     <div class="code-header">
                         <div class="code-dot"></div>
                         <div class="code-dot"></div>
                         <div class="code-dot"></div>
-                        <span style="margin-left: 1rem; color: var(--text-secondary); font-size: 0.875rem;">
-                            neo-mcp-terminal
-                        </span>
                     </div>
                     <div class="code-body">
                         <div class="code-line">
                             <span class="code-prompt">$</span>
-                            <span class="code-command"> npx @r3e/neo-n3-mcp</span>
+                            <span class="code-command"> npm install @r3e/neo-n3-mcp</span>
                         </div>
                         <div class="code-line">
-                            <span class="code-success">✓ Neo N3 MCP v1.5.0 initialized</span>
+                            <span class="code-output">✓ Neo N3 MCP Server installed</span>
                         </div>
                         <div class="code-line">
-                            <span class="code-output">🔧 34 tools loaded • 9 resources ready</span>
+                            <span class="code-prompt">$</span>
+                            <span class="code-command"> neo-mcp start</span>
                         </div>
                         <div class="code-line">
-                            <span class="code-success">🎉 Ready for blockchain development!</span>
+                            <span class="code-success">🚀 Server running with 34 tools ready</span>
                         </div>
                     </div>
                 </div>
@@ -839,80 +511,92 @@
             <div class="section-header">
                 <h2 class="section-title">Powerful Features</h2>
                 <p class="section-subtitle">
-                    Everything you need to build sophisticated blockchain applications with confidence and ease.
+                    Everything you need to build production-ready blockchain applications
                 </p>
             </div>
+            
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">🔗</div>
                     <h3 class="feature-title">Complete Blockchain Operations</h3>
                     <p class="feature-description">
-                        Access comprehensive blockchain data with advanced queries for blocks, transactions, 
-                        balances, and network statistics through our robust API.
+                        Access all Neo N3 blockchain functionality with 34+ tools covering transactions, 
+                        smart contracts, asset management, and network operations.
                     </p>
                     <div class="feature-tags">
-                        <span class="feature-tag">15+ Tools</span>
-                        <span class="feature-tag">Comprehensive</span>
+                        <span class="feature-tag">34+ Tools</span>
+                        <span class="feature-tag">Full Coverage</span>
+                        <span class="feature-tag">Production Ready</span>
                     </div>
                 </div>
+                
                 <div class="feature-card">
                     <div class="feature-icon">🔐</div>
                     <h3 class="feature-title">Enterprise Security</h3>
                     <p class="feature-description">
-                        Military-grade encryption with AES-256, comprehensive validation systems, 
-                        and zero known vulnerabilities for production environments.
+                        AES-256 encryption, secure key management, and comprehensive input validation. 
+                        Zero known vulnerabilities with 90%+ test coverage.
                     </p>
                     <div class="feature-tags">
                         <span class="feature-tag">AES-256</span>
                         <span class="feature-tag">Zero CVEs</span>
+                        <span class="feature-tag">90%+ Tests</span>
                     </div>
                 </div>
+                
                 <div class="feature-card">
-                    <div class="feature-icon">⚡</div>
+                    <div class="feature-icon">💎</div>
                     <h3 class="feature-title">Smart Contract Integration</h3>
                     <p class="feature-description">
-                        Pre-built integrations for top Neo N3 protocols including Flamingo DeFi, 
-                        NeoFS storage, and NeoBurger gaming ecosystem.
+                        Deploy, invoke, and manage smart contracts with advanced parameter handling 
+                        and comprehensive result parsing.
                     </p>
                     <div class="feature-tags">
-                        <span class="feature-tag">6 Protocols</span>
-                        <span class="feature-tag">DeFi Ready</span>
+                        <span class="feature-tag">Deploy</span>
+                        <span class="feature-tag">Invoke</span>
+                        <span class="feature-tag">Monitor</span>
                     </div>
                 </div>
+                
                 <div class="feature-card">
                     <div class="feature-icon">💰</div>
-                    <h3 class="feature-title">Asset Management</h3>
+                    <h3 class="feature-title">Advanced Asset Management</h3>
                     <p class="feature-description">
-                        Complete NEP-17 token support with intelligent fee estimation, 
-                        batch operations, and multi-signature wallet capabilities.
+                        Complete NEP-17 token support with batch operations, multi-signature wallets, 
+                        and automated fee estimation.
                     </p>
                     <div class="feature-tags">
                         <span class="feature-tag">NEP-17</span>
                         <span class="feature-tag">Multi-Sig</span>
+                        <span class="feature-tag">Batch Ops</span>
                     </div>
                 </div>
+                
                 <div class="feature-card">
-                    <div class="feature-icon">🛠️</div>
+                    <div class="feature-icon">⚡</div>
                     <h3 class="feature-title">Developer Experience</h3>
                     <p class="feature-description">
-                        TypeScript-first development with comprehensive documentation, 
-                        zero-config setup, and intuitive APIs for maximum productivity.
+                        Zero-configuration setup, TypeScript support, comprehensive documentation, 
+                        and interactive examples for rapid development.
                     </p>
                     <div class="feature-tags">
-                        <span class="feature-tag">TypeScript</span>
                         <span class="feature-tag">Zero Config</span>
+                        <span class="feature-tag">TypeScript</span>
+                        <span class="feature-tag">Examples</span>
                     </div>
                 </div>
+                
                 <div class="feature-card">
                     <div class="feature-icon">🚀</div>
                     <h3 class="feature-title">Production Ready</h3>
                     <p class="feature-description">
-                        Battle-tested with 90%+ test coverage, Docker support, 
-                        and enterprise monitoring for mission-critical applications.
+                        Docker support, monitoring tools, comprehensive logging, and proven scalability 
+                        for enterprise deployments.
                     </p>
                     <div class="feature-tags">
-                        <span class="feature-tag">395 Tests</span>
                         <span class="feature-tag">Docker</span>
+                        <span class="feature-tag">Monitoring</span>
+                        <span class="feature-tag">Scalable</span>
                     </div>
                 </div>
             </div>
@@ -920,120 +604,110 @@
     </section>
 
     <!-- Examples Section -->
-    <section class="examples" id="examples">
+    <section class="examples">
         <div class="examples-container">
             <div class="section-header">
                 <h2 class="section-title">Code Examples</h2>
                 <p class="section-subtitle">
-                    See how easy it is to integrate Neo N3 blockchain functionality into your applications.
+                    See Neo N3 MCP in action with real-world examples
                 </p>
             </div>
+            
             <div class="examples-grid">
                 <div class="example-card">
                     <div class="example-header">
-                        <h3 class="example-title">Wallet Operations</h3>
-                        <p class="example-subtitle">Create and manage Neo N3 wallets</p>
+                        <div class="example-badge">Wallet Operations</div>
+                        <h3 class="example-title">Wallet Management</h3>
+                        <p class="example-description">
+                            Create wallets, check balances, and manage assets with enterprise-grade security.
+                        </p>
                     </div>
-                    <div class="example-code">
-                        <div style="color: var(--text-secondary);">// Create a new wallet</div>
-                        <div style="margin: 0.5rem 0;">
-                            <span style="color: #ff6b6b;">const</span> 
-                            <span style="color: var(--text-primary);"> wallet = </span>
-                            <span style="color: #feca57;">await</span>
-                            <span style="color: var(--text-primary);"> neo.</span>
-                            <span style="color: var(--accent);">callTool</span>
-                            <span style="color: var(--text-primary);">(</span>
+                    <div class="example-content">
+                        <div class="code-window">
+                            <div class="code-content">
+                                <pre><span class="code-comment">// Create and manage wallets</span>
+<span class="code-keyword">const</span> wallet = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'create_wallet'</span>);
+<span class="code-keyword">const</span> balance = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'get_balance'</span>, {
+  address: wallet.address
+});
+
+console.<span class="code-method">log</span>(<span class="code-string">'NEO:'</span>, balance.NEO);
+console.<span class="code-method">log</span>(<span class="code-string">'GAS:'</span>, balance.GAS);</pre>
+                            </div>
                         </div>
-                        <div style="margin-left: 1rem;">
-                            <span style="color: #667eea;">'create_wallet'</span><span style="color: var(--text-primary);">,</span>
-                        </div>
-                        <div style="margin-left: 1rem;">
-                            <span style="color: var(--text-primary);">{ </span>
-                            <span style="color: #ff77c6;">password</span>
-                            <span style="color: var(--text-primary);">: </span>
-                            <span style="color: #667eea;">'secure123!'</span>
-                            <span style="color: var(--text-primary);"> }</span>
-                        </div>
-                        <div><span style="color: var(--text-primary);">);</span></div>
                     </div>
                 </div>
+                
                 <div class="example-card">
                     <div class="example-header">
-                        <h3 class="example-title">Smart Contracts</h3>
-                        <p class="example-subtitle">Interact with Flamingo DeFi</p>
+                        <div class="example-badge">Smart Contracts</div>
+                        <h3 class="example-title">Contract Interaction</h3>
+                        <p class="example-description">
+                            Invoke smart contract methods with advanced parameter handling and result parsing.
+                        </p>
                     </div>
-                    <div class="example-code">
-                        <div style="color: var(--text-secondary);">// Swap tokens on Flamingo</div>
-                        <div style="margin: 0.5rem 0;">
-                            <span style="color: #ff6b6b;">const</span> 
-                            <span style="color: var(--text-primary);"> result = </span>
-                            <span style="color: #feca57;">await</span>
-                            <span style="color: var(--text-primary);"> neo.</span>
-                            <span style="color: var(--accent);">callTool</span>
-                            <span style="color: var(--text-primary);">(</span>
+                    <div class="example-content">
+                        <div class="code-window">
+                            <div class="code-content">
+                                <pre><span class="code-comment">// Invoke smart contracts</span>
+<span class="code-keyword">const</span> result = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'invoke_contract'</span>, {
+  contract_hash: <span class="code-string">'0xd2a4cff31913016155e38e474a2c06d08be276cf'</span>,
+  method: <span class="code-string">'transfer'</span>,
+  parameters: [fromAddr, toAddr, amount]
+});
+
+console.<span class="code-method">log</span>(<span class="code-string">'Success:'</span>, result.state === <span class="code-string">'HALT'</span>);</pre>
+                            </div>
                         </div>
-                        <div style="margin-left: 1rem;">
-                            <span style="color: #667eea;">'invoke_flamingo_swap'</span><span style="color: var(--text-primary);">,</span>
-                        </div>
-                        <div style="margin-left: 1rem;">
-                            <span style="color: var(--text-primary);">{ </span>
-                            <span style="color: #ff77c6;">pool</span>
-                            <span style="color: var(--text-primary);">: </span>
-                            <span style="color: #667eea;">'NEO/GAS'</span>
-                            <span style="color: var(--text-primary);"> }</span>
-                        </div>
-                        <div><span style="color: var(--text-primary);">);</span></div>
                     </div>
                 </div>
+                
                 <div class="example-card">
                     <div class="example-header">
-                        <h3 class="example-title">Asset Transfers</h3>
-                        <p class="example-subtitle">Send NEP-17 tokens</p>
+                        <div class="example-badge">Asset Transfers</div>
+                        <h3 class="example-title">Token Operations</h3>
+                        <p class="example-description">
+                            Transfer NEP-17 tokens with automatic fee estimation and transaction confirmation.
+                        </p>
                     </div>
-                    <div class="example-code">
-                        <div style="color: var(--text-secondary);">// Transfer GAS tokens</div>
-                        <div style="margin: 0.5rem 0;">
-                            <span style="color: #ff6b6b;">const</span> 
-                            <span style="color: var(--text-primary);"> tx = </span>
-                            <span style="color: #feca57;">await</span>
-                            <span style="color: var(--text-primary);"> neo.</span>
-                            <span style="color: var(--accent);">callTool</span>
-                            <span style="color: var(--text-primary);">(</span>
+                    <div class="example-content">
+                        <div class="code-window">
+                            <div class="code-content">
+                                <pre><span class="code-comment">// Transfer assets</span>
+<span class="code-keyword">const</span> transfer = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'transfer_assets'</span>, {
+  from_address: fromAddr,
+  to_address: toAddr,
+  asset: <span class="code-string">'NEO'</span>,
+  amount: <span class="code-string">'1'</span>,
+  fee_estimate: <span class="code-keyword">true</span>
+});
+
+console.<span class="code-method">log</span>(<span class="code-string">'TX ID:'</span>, transfer.txid);</pre>
+                            </div>
                         </div>
-                        <div style="margin-left: 1rem;">
-                            <span style="color: #667eea;">'transfer_assets'</span><span style="color: var(--text-primary);">,</span>
-                        </div>
-                        <div style="margin-left: 1rem;">
-                            <span style="color: var(--text-primary);">{ </span>
-                            <span style="color: #ff77c6;">asset</span>
-                            <span style="color: var(--text-primary);">: </span>
-                            <span style="color: #667eea;">'GAS'</span>
-                            <span style="color: var(--text-primary);"> }</span>
-                        </div>
-                        <div><span style="color: var(--text-primary);">);</span></div>
                     </div>
                 </div>
+                
                 <div class="example-card">
                     <div class="example-header">
-                        <h3 class="example-title">Blockchain Data</h3>
-                        <p class="example-subtitle">Query network information</p>
+                        <div class="example-badge">Blockchain Data</div>
+                        <h3 class="example-title">Network Information</h3>
+                        <p class="example-description">
+                            Access comprehensive blockchain data including blocks, transactions, and network status.
+                        </p>
                     </div>
-                    <div class="example-code">
-                        <div style="color: var(--text-secondary);">// Get blockchain info</div>
-                        <div style="margin: 0.5rem 0;">
-                            <span style="color: #ff6b6b;">const</span> 
-                            <span style="color: var(--text-primary);"> info = </span>
-                            <span style="color: #feca57;">await</span>
-                            <span style="color: var(--text-primary);"> neo.</span>
-                            <span style="color: var(--accent);">callTool</span>
-                            <span style="color: var(--text-primary);">(</span>
-                        </div>
-                        <div style="margin-left: 1rem;">
-                            <span style="color: #667eea;">'get_blockchain_info'</span>
-                        </div>
-                        <div><span style="color: var(--text-primary);">);</span></div>
-                        <div style="margin-top: 0.5rem; color: var(--text-secondary);">
-                            // Returns network status & height
+                    <div class="example-content">
+                        <div class="code-window">
+                            <div class="code-content">
+                                <pre><span class="code-comment">// Get blockchain info</span>
+<span class="code-keyword">const</span> info = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'get_blockchain_info'</span>);
+<span class="code-keyword">const</span> block = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'get_block'</span>, {
+  block_identifier: <span class="code-string">'latest'</span>
+});
+
+console.<span class="code-method">log</span>(<span class="code-string">'Height:'</span>, info.blockcount);
+console.<span class="code-method">log</span>(<span class="code-string">'Hash:'</span>, block.hash);</pre>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1045,20 +719,25 @@
     <section class="cta">
         <div class="cta-container">
             <h2 class="cta-title">Ready to Build?</h2>
-            <p class="cta-subtitle">
-                Join thousands of developers building the next generation of blockchain applications 
-                with our comprehensive Neo N3 MCP platform.
+            <p class="cta-description">
+                Get started with Neo N3 MCP in minutes. Zero configuration required.
             </p>
-            <div class="cta-actions">
-                <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="btn btn-primary" target="_blank">
-                    🚀 Get Started Now
-                </a>
-                <a href="/docs" class="btn btn-secondary">
-                    📚 View Documentation
-                </a>
-            </div>
+            
             <div class="install-command">
-                npx @r3e/neo-n3-mcp
+                <div class="install-header">
+                    <span class="install-title">Quick Install</span>
+                    <button class="copy-btn" onclick="copyInstallCommand()">Copy</button>
+                </div>
+                <div class="install-code">npm install @r3e/neo-n3-mcp</div>
+            </div>
+            
+            <div class="hero-actions">
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary btn-large" target="_blank">
+                    ⭐ Star on GitHub
+                </a>
+                <a href="/docs" class="btn btn-secondary btn-large">
+                    📖 Read Documentation
+                </a>
             </div>
         </div>
     </section>
@@ -1116,6 +795,18 @@
                 nav.classList.remove('scrolled');
             }
         });
+
+        // Copy install command
+        function copyInstallCommand() {
+            const command = 'npm install @r3e/neo-n3-mcp';
+            navigator.clipboard.writeText(command).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                }, 2000);
+            });
+        }
 
         // Smooth scrolling for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {

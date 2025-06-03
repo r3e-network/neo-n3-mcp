@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="/assets/css/modern-theme.css">
     
     <style>
+        /* Examples page specific styles only */
         .examples-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -28,26 +29,6 @@
         .examples-header {
             text-align: center;
             margin-bottom: var(--spacing-3xl);
-        }
-        
-        .examples-title {
-            font-family: var(--font-heading);
-            font-size: clamp(2.5rem, 6vw, 4rem);
-            font-weight: 700;
-            margin-bottom: 1rem;
-            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .examples-subtitle {
-            font-size: 1.25rem;
-            color: var(--text-secondary);
-            margin-bottom: var(--spacing-xl);
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
         }
         
         .examples-nav {
@@ -84,20 +65,8 @@
         }
         
         .example-card {
-            background: var(--bg-card);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            border: 1px solid var(--border-primary);
-            transition: var(--transition);
             display: flex;
             flex-direction: column;
-            backdrop-filter: blur(10px);
-        }
-        
-        .example-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-xl);
-            border-color: var(--primary);
         }
         
         .example-header {
@@ -149,73 +118,6 @@
             padding: var(--spacing-xl);
         }
         
-        .code-container {
-            position: relative;
-            margin-bottom: var(--spacing-lg);
-        }
-        
-        .code-tabs {
-            display: flex;
-            background: var(--bg-secondary);
-            border-radius: var(--radius-md) var(--radius-md) 0 0;
-            border-bottom: 1px solid var(--border-primary);
-        }
-        
-        .code-tab {
-            padding: var(--spacing-sm) var(--spacing-md);
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            transition: var(--transition);
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-        
-        .code-tab.active {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-        }
-        
-        .code-block {
-            background: var(--bg-tertiary);
-            border-radius: 0 0 var(--radius-md) var(--radius-md);
-            padding: var(--spacing-lg);
-            position: relative;
-            overflow-x: auto;
-        }
-        
-        .copy-btn {
-            position: absolute;
-            top: var(--spacing-md);
-            right: var(--spacing-md);
-            padding: var(--spacing-sm) var(--spacing-md);
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            border-radius: var(--radius-sm);
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: var(--transition);
-            font-size: 0.8rem;
-        }
-        
-        .copy-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-        
-        .copy-btn.copied {
-            background: var(--primary);
-            color: white;
-        }
-        
-        .code-content {
-            color: var(--text-primary);
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            line-height: 1.6;
-            margin: 0;
-            white-space: pre-wrap;
-        }
-        
         .example-actions {
             padding: var(--spacing-lg) var(--spacing-xl);
             border-top: 1px solid var(--border-primary);
@@ -246,17 +148,6 @@
         
         .btn-primary:hover {
             background: var(--primary-dark);
-        }
-        
-        .btn-secondary {
-            background: var(--bg-secondary);
-            color: var(--text-secondary);
-            border: 1px solid var(--border-primary);
-        }
-        
-        .btn-secondary:hover {
-            background: var(--bg-card);
-            color: var(--text-primary);
         }
         
         .difficulty-badge {
@@ -444,8 +335,8 @@
     <div class="examples-container">
         <!-- Header -->
         <header class="examples-header">
-            <h1 class="examples-title">Examples & Use Cases</h1>
-            <p class="examples-subtitle">Explore real-world implementations and learn through practical examples. From basic blockchain queries to complex DeFi integrations.</p>
+            <h1 class="section-title">Examples & Use Cases</h1>
+            <p class="section-subtitle">Explore real-world implementations and learn through practical examples. From basic blockchain queries to complex DeFi integrations.</p>
         </header>
 
         <!-- Navigation Filters -->
@@ -459,7 +350,7 @@
         </nav>
 
         <!-- Featured Example -->
-        <div class="example-card featured-example" data-category="defi advanced">
+        <div class="card featured-example" data-category="defi advanced">
             <div class="featured-content">
                 <span class="featured-badge">🌟 Featured Example</span>
                 <h2 class="featured-title">DeFi Portfolio Manager</h2>
@@ -522,7 +413,7 @@ class PortfolioManager {
         <!-- Examples Grid -->
         <div class="examples-grid">
             <!-- Basic Operations Example -->
-            <div class="example-card" data-category="basic">
+            <div class="card example-card" data-category="basic">
                 <div class="example-header">
                     <span class="example-category">Basic</span>
                     <h3 class="example-title">Blockchain Information</h3>
@@ -535,10 +426,10 @@ class PortfolioManager {
                 </div>
                 
                 <div class="example-content">
-                    <div class="code-container">
-                        <div class="code-block">
+                    <div class="code-window">
+                        <div class="code-content">
                             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                            <pre class="code-content">// Get blockchain information
+                            <pre>// Get blockchain information
 const blockchainInfo = await neo.callTool('get_blockchain_info');
 
 console.log('Current block height:', blockchainInfo.blockcount);
@@ -565,7 +456,7 @@ console.log('Transactions:', block.tx.length);</pre>
             </div>
 
             <!-- Wallet Management Example -->
-            <div class="example-card" data-category="wallet">
+            <div class="card example-card" data-category="wallet">
                 <div class="example-header">
                     <span class="example-category">Wallet</span>
                     <h3 class="example-title">Wallet Operations</h3>
@@ -578,10 +469,10 @@ console.log('Transactions:', block.tx.length);</pre>
                 </div>
                 
                 <div class="example-content">
-                    <div class="code-container">
-                        <div class="code-block">
+                    <div class="code-window">
+                        <div class="code-content">
                             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                            <pre class="code-content">// Create a new wallet
+                            <pre>// Create a new wallet
 const wallet = await neo.callTool('create_wallet', {
   password: 'securePassword123!'
 });
@@ -617,7 +508,7 @@ allBalances.forEach(token => {
             </div>
 
             <!-- Smart Contract Example -->
-            <div class="example-card" data-category="contract">
+            <div class="card example-card" data-category="contract">
                 <div class="example-header">
                     <span class="example-category">Smart Contract</span>
                     <h3 class="example-title">Contract Interaction</h3>
@@ -630,10 +521,10 @@ allBalances.forEach(token => {
                 </div>
                 
                 <div class="example-content">
-                    <div class="code-container">
-                        <div class="code-block">
+                    <div class="code-window">
+                        <div class="code-content">
                             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                            <pre class="code-content">// Invoke a smart contract method
+                            <pre>// Invoke a smart contract method
 const result = await neo.callTool('invoke_contract', {
   contract_hash: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
   method: 'symbol',
@@ -668,7 +559,7 @@ console.log('Transfer successful:', transferResult.state === 'HALT');</pre>
             </div>
 
             <!-- DeFi Integration Example -->
-            <div class="example-card" data-category="defi">
+            <div class="card example-card" data-category="defi">
                 <div class="example-header">
                     <span class="example-category">DeFi</span>
                     <h3 class="example-title">Flamingo DEX Trading</h3>
@@ -681,10 +572,10 @@ console.log('Transfer successful:', transferResult.state === 'HALT');</pre>
                 </div>
                 
                 <div class="example-content">
-                    <div class="code-container">
-                        <div class="code-block">
+                    <div class="code-window">
+                        <div class="code-content">
                             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                            <pre class="code-content">// Swap tokens on Flamingo DEX
+                            <pre>// Swap tokens on Flamingo DEX
 const swapResult = await neo.callTool('invoke_flamingo_swap', {
   from_token: 'NEO',
   to_token: 'GAS',
@@ -725,7 +616,7 @@ console.log('Pool APY:', poolInfo.apy);</pre>
             </div>
 
             <!-- Asset Transfer Example -->
-            <div class="example-card" data-category="basic wallet">
+            <div class="card example-card" data-category="basic wallet">
                 <div class="example-header">
                     <span class="example-category">Asset Transfer</span>
                     <h3 class="example-title">Token Transfers</h3>
@@ -738,10 +629,10 @@ console.log('Pool APY:', poolInfo.apy);</pre>
                 </div>
                 
                 <div class="example-content">
-                    <div class="code-container">
-                        <div class="code-block">
+                    <div class="code-window">
+                        <div class="code-content">
                             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                            <pre class="code-content">// Transfer NEO tokens
+                            <pre>// Transfer NEO tokens
 const transferResult = await neo.callTool('transfer_assets', {
   from_address: 'NdUL5oDPD159KeFpD5A9zw5xNF1xLX6nLT',
   to_address: 'NNLi44dJNXtDNSBkofB48aTVYtb1zZrNEs',
@@ -781,7 +672,7 @@ console.log('Transaction confirmed:', txStatus.confirmed);</pre>
             </div>
 
             <!-- Advanced Multi-sig Example -->
-            <div class="example-card" data-category="advanced wallet">
+            <div class="card example-card" data-category="advanced wallet">
                 <div class="example-header">
                     <span class="example-category">Advanced</span>
                     <h3 class="example-title">Multi-Signature Wallet</h3>
@@ -794,10 +685,10 @@ console.log('Transaction confirmed:', txStatus.confirmed);</pre>
                 </div>
                 
                 <div class="example-content">
-                    <div class="code-container">
-                        <div class="code-block">
+                    <div class="code-window">
+                        <div class="code-content">
                             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                            <pre class="code-content">// Create multi-signature wallet
+                            <pre>// Create multi-signature wallet
 const multiSigWallet = await neo.callTool('create_multisig_wallet', {
   public_keys: [
     '03aa052fbfb608d3635a4cb4c2a6060e7b16f19501c0e86a0b2b1cc1fa25ac5c55',

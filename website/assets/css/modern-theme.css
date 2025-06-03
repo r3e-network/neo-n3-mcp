@@ -296,7 +296,50 @@ h1, h2, h3, h4, h5, h6 {
     line-height: 1.6;
     color: var(--text-primary);
     background: var(--bg-tertiary);
+    position: relative;
 }
+
+.code-content pre {
+    margin: 0;
+    white-space: pre-wrap;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+/* Copy Button */
+.copy-btn {
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.copy-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+}
+
+.copy-btn.copied {
+    background: var(--primary);
+    color: white;
+}
+
+/* Code Syntax Highlighting */
+.code-comment { color: var(--text-muted); }
+.code-keyword { color: var(--primary); }
+.code-string { color: var(--accent); }
+.code-method { color: var(--secondary); }
+.code-number { color: var(--warning); }
 
 /* Animations */
 @keyframes fadeInUp {
