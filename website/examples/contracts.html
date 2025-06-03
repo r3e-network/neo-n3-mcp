@@ -5,60 +5,122 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Contract Interaction - Neo N3 MCP Examples</title>
     <meta name="description" content="Learn to interact with famous Neo N3 smart contracts: NeoFS, NeoBurger, Flamingo, NeoCompound, and more.">
+    <meta name="keywords" content="neo, blockchain, mcp, smart contracts, examples">
     
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/style.css">
-    <link rel="stylesheet" href="/assets/css/modern-enhancements.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Modern Theme -->
+    <link rel="stylesheet" href="/assets/css/modern-theme.css">
+    
+    <style>
+        .breadcrumb {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .breadcrumb a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .example-section {
+            margin-bottom: var(--spacing-3xl);
+        }
+        
+        .example-section h2 {
+            font-family: var(--font-heading);
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-primary);
+        }
+        
+        .next-steps {
+            margin-top: var(--spacing-3xl);
+            text-align: center;
+        }
+        
+        .step-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+            margin-top: var(--spacing-xl);
+        }
+        
+        .step-card {
+            background: var(--bg-card);
+            padding: var(--spacing-xl);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-primary);
+            text-decoration: none;
+            color: inherit;
+            transition: var(--transition);
+        }
+        
+        .step-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary);
+        }
+        
+        .step-card h3 {
+            font-family: var(--font-heading);
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+        
+        .step-card p {
+            color: var(--text-secondary);
+            margin: 0;
+        }
+    </style>
 </head>
 <body>
-    <nav class="navbar">
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
         <div class="nav-container">
-            <div class="nav-logo">
-                <img src="/assets/images/neo-logo.svg" alt="Neo N3" class="logo-icon">
-                <span class="logo-text">Neo N3 MCP</span>
-            </div>
+            <a href="/" class="nav-logo">Neo N3 MCP</a>
             <div class="nav-menu">
                 <a href="/" class="nav-link">Home</a>
                 <a href="/#features" class="nav-link">Features</a>
                 <a href="/docs" class="nav-link">Docs</a>
-                <a href="/examples" class="nav-link">Examples</a>
-                <a href="https://github.com/r3e-network/neo-n3-mcp" class="nav-link" target="_blank">GitHub</a>
-                <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
-            </div>
-            <div class="nav-toggle">
-                <span></span>
-                <span></span>
-                <span></span>
+                <a href="/examples" class="nav-link active">Examples</a>
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
             </div>
         </div>
     </nav>
 
-    <div class="container" style="max-width: 1200px; margin: 100px auto; padding: 0 2rem;">
+    <div class="page-container">
         <div class="breadcrumb">
             <a href="/examples">Examples</a> > Smart Contract Interaction
         </div>
         
         <header style="text-align: center; margin-bottom: 3rem;">
-            <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">Smart Contract Interaction</h1>
-            <p style="font-size: 1.2rem; color: var(--text-secondary);">
+            <h1 class="section-title">Smart Contract Interaction</h1>
+            <p class="section-subtitle">
                 Interact with famous Neo N3 smart contracts and build DeFi applications
             </p>
         </header>
 
         <div class="example-section">
-            <h2>1. Flamingo DeFi Protocol</h2>
+            <h2>🔥 Flamingo DeFi Protocol</h2>
             <p>Interact with Flamingo DEX for token swaps and liquidity provision:</p>
             
-            <div class="code-block">
+            <div class="code-window">
                 <div class="code-header">
-                    <span class="code-title">Flamingo Token Swap</span>
-                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                    <span class="code-lang">Flamingo Token Swap</span>
                 </div>
-                <pre><code class="language-javascript">// Get Flamingo exchange rates
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <div class="code-content">
+                    <pre>// Get Flamingo exchange rates
 const rates = await tools.flamingo_get_exchange_rate({
   fromToken: "NEO",
   toToken: "GAS",
@@ -83,20 +145,22 @@ console.log("Swap executed:", swapResult);
 //   "toAmount": "46.25340000",
 //   "fee": "0.00234567",
 //   "success": true
-// }</code></pre>
+// }</pre>
+                </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>2. NeoFS Decentralized Storage</h2>
+            <h2>📁 NeoFS Decentralized Storage</h2>
             <p>Store and retrieve files using NeoFS distributed storage network:</p>
             
-            <div class="code-block">
+            <div class="code-window">
                 <div class="code-header">
-                    <span class="code-title">NeoFS File Operations</span>
-                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                    <span class="code-lang">NeoFS File Operations</span>
                 </div>
-                <pre><code class="language-javascript">// Upload file to NeoFS
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <div class="code-content">
+                    <pre>// Upload file to NeoFS
 const uploadResult = await tools.neofs_upload_file({
   address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
   filename: "document.pdf",
@@ -133,20 +197,22 @@ console.log("File operations:", {
 //     "owner": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
 //     "created": "2024-01-15T10:30:00Z"
 //   }
-// }</code></pre>
+// }</pre>
+                </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>3. NeoBurger Gaming Integration</h2>
+            <h2>🍔 NeoBurger Gaming Integration</h2>
             <p>Interact with NeoBurger gaming ecosystem and NFT marketplace:</p>
             
-            <div class="code-block">
+            <div class="code-window">
                 <div class="code-header">
-                    <span class="code-title">NeoBurger NFT Operations</span>
-                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                    <span class="code-lang">NeoBurger NFT Operations</span>
                 </div>
-                <pre><code class="language-javascript">// Get user's NeoBurger NFTs
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <div class="code-content">
+                    <pre>// Get user's NeoBurger NFTs
 const userNFTs = await tools.neoburger_get_user_nfts({
   address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj"
 });
@@ -179,20 +245,22 @@ console.log("NeoBurger operations:", {
   marketplace: marketplaceItems,
   purchase: purchaseResult,
   stake: stakeResult
-});</code></pre>
+});</pre>
+                </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>4. NeoCompound Lending Protocol</h2>
+            <h2>💰 NeoCompound Lending Protocol</h2>
             <p>Lend and borrow assets using NeoCompound DeFi protocol:</p>
             
-            <div class="code-block">
+            <div class="code-window">
                 <div class="code-header">
-                    <span class="code-title">Lending and Borrowing</span>
-                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                    <span class="code-lang">Lending and Borrowing</span>
                 </div>
-                <pre><code class="language-javascript">// Get current lending rates
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <div class="code-content">
+                    <pre>// Get current lending rates
 const rates = await tools.neocompound_get_rates();
 
 // Supply assets to earn interest
@@ -231,20 +299,22 @@ console.log("Lending protocol:", {
   supply: supplyBalance,
   borrow: borrowResult,
   repay: repayResult
-});</code></pre>
+});</pre>
+                </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>5. GrandShare Investment Platform</h2>
+            <h2>📊 GrandShare Investment Platform</h2>
             <p>Participate in investment pools and receive dividends:</p>
             
-            <div class="code-block">
+            <div class="code-window">
                 <div class="code-header">
-                    <span class="code-title">Investment Pool Operations</span>
-                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                    <span class="code-lang">Investment Pool Operations</span>
                 </div>
-                <pre><code class="language-javascript">// Get available investment pools
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <div class="code-content">
+                    <pre>// Get available investment pools
 const pools = await tools.grandshare_get_pools();
 
 // Join an investment pool
@@ -280,325 +350,8 @@ console.log("Investment operations:", {
   positions: positions,
   claim: claimResult,
   exit: exitResult
-});</code></pre>
-            </div>
-        </div>
-
-        <div class="example-section">
-            <h2>6. GhostMarket NFT Marketplace</h2>
-            <p>Trade NFTs on the GhostMarket cross-chain marketplace:</p>
-            
-            <div class="code-block">
-                <div class="code-header">
-                    <span class="code-title">NFT Marketplace Operations</span>
-                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+});</pre>
                 </div>
-                <pre><code class="language-javascript">// Browse NFT collections
-const collections = await tools.ghostmarket_get_collections({
-  category: "art",
-  blockchain: "neo3"
-});
-
-// Get NFT details
-const nftDetails = await tools.ghostmarket_get_nft({
-  contractHash: "0x577a51f7d39162c9de1db12a6b319c848e4b6f1d",
-  tokenId: "123"
-});
-
-// List NFT for sale
-const listResult = await tools.ghostmarket_list_nft({
-  ownerAddress: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  contractHash: "0x577a51f7d39162c9de1db12a6b319c848e4b6f1d",
-  tokenId: "123",
-  price: "15.5",
-  currency: "GAS",
-  password: "wallet_password"
-});
-
-// Purchase NFT
-const buyResult = await tools.ghostmarket_buy_nft({
-  buyerAddress: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  contractHash: "0x577a51f7d39162c9de1db12a6b319c848e4b6f1d",
-  tokenId: "123",
-  price: "15.5",
-  password: "wallet_password"
-});
-
-// Make offer on NFT
-const offerResult = await tools.ghostmarket_make_offer({
-  buyerAddress: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  contractHash: "0x577a51f7d39162c9de1db12a6b319c848e4b6f1d",
-  tokenId: "456",
-  offerPrice: "12.0",
-  currency: "GAS",
-  expiration: 7, // days
-  password: "wallet_password"
-});
-
-console.log("NFT marketplace:", {
-  collections: collections,
-  nft: nftDetails,
-  list: listResult,
-  buy: buyResult,
-  offer: offerResult
-});</code></pre>
-            </div>
-        </div>
-
-        <div class="example-section">
-            <h2>7. Custom Smart Contract Interaction</h2>
-            <p>Interact with any Neo N3 smart contract using generic tools:</p>
-            
-            <div class="code-block">
-                <div class="code-header">
-                    <span class="code-title">Generic Contract Calls</span>
-                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
-                </div>
-                <pre><code class="language-javascript">// Read from smart contract (view method)
-const contractData = await tools.invoke_contract_function({
-  contractHash: "0xd2a4cff31913016155e38e474a2c06d08be276cf",
-  method: "symbol",
-  parameters: []
-});
-
-// Write to smart contract (state-changing method)
-const writeResult = await tools.invoke_contract_function({
-  contractHash: "0xd2a4cff31913016155e38e474a2c06d08be276cf",
-  method: "transfer",
-  parameters: [
-    {
-      type: "Hash160",
-      value: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj"
-    },
-    {
-      type: "Hash160", 
-      value: "NYjzhdekseMYWvYpSoAeypqMiwMuEUDhKB"
-    },
-    {
-      type: "Integer",
-      value: "1000000000" // 10 tokens with 8 decimals
-    },
-    {
-      type: "Any",
-      value: null
-    }
-  ],
-  signers: ["NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj"],
-  password: "wallet_password"
-});
-
-// Get contract manifest and ABI
-const manifest = await tools.get_contract_manifest({
-  contractHash: "0xd2a4cff31913016155e38e474a2c06d08be276cf"
-});
-
-// Estimate gas costs for contract call
-const gasEstimate = await tools.estimate_gas({
-  contractHash: "0xd2a4cff31913016155e38e474a2c06d08be276cf",
-  method: "transfer",
-  parameters: [
-    { type: "Hash160", value: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj" },
-    { type: "Hash160", value: "NYjzhdekseMYWvYpSoAeypqMiwMuEUDhKB" },
-    { type: "Integer", value: "1000000000" },
-    { type: "Any", value: null }
-  ]
-});
-
-console.log("Contract interaction:", {
-  read: contractData,
-  write: writeResult,
-  manifest: manifest,
-  gasEstimate: gasEstimate
-});</code></pre>
-            </div>
-        </div>
-
-        <div class="example-section">
-            <h2>8. DeFi Portfolio Manager</h2>
-            <p>Build a comprehensive DeFi portfolio management system:</p>
-            
-            <div class="code-block">
-                <div class="code-header">
-                    <span class="code-title">Portfolio Manager Class</span>
-                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
-                </div>
-                <pre><code class="language-javascript">class DeFiPortfolioManager {
-  constructor(mcpTools) {
-    this.tools = mcpTools;
-    this.protocols = {
-      flamingo: 'DEX',
-      neocompound: 'Lending',
-      grandshare: 'Investment',
-      ghostmarket: 'NFT',
-      neoburger: 'Gaming',
-      neofs: 'Storage'
-    };
-  }
-
-  async getCompletePortfolio(address) {
-    const portfolio = {
-      totalValue: 0,
-      positions: {},
-      nfts: [],
-      yields: {},
-      risks: {}
-    };
-
-    // Get wallet balance
-    const balance = await this.tools.get_balance({ address });
-    portfolio.positions.wallet = balance;
-
-    // Get Flamingo LP positions
-    const flamingoPositions = await this.tools.flamingo_get_positions({ address });
-    portfolio.positions.flamingo = flamingoPositions;
-
-    // Get lending positions
-    const lendingPositions = await this.tools.neocompound_get_supply_balance({
-      address,
-      asset: "all"
-    });
-    portfolio.positions.lending = lendingPositions;
-
-    // Get investment pool positions
-    const investmentPositions = await this.tools.grandshare_get_positions({ address });
-    portfolio.positions.investments = investmentPositions;
-
-    // Get NFT holdings
-    const nfts = await this.tools.ghostmarket_get_user_nfts({ address });
-    const gameNfts = await this.tools.neoburger_get_user_nfts({ address });
-    portfolio.nfts = [...nfts, ...gameNfts];
-
-    // Calculate total portfolio value
-    portfolio.totalValue = this.calculateTotalValue(portfolio);
-
-    return portfolio;
-  }
-
-  async rebalancePortfolio(address, targetAllocations, password) {
-    const currentPortfolio = await this.getCompletePortfolio(address);
-    const rebalanceActions = this.calculateRebalanceActions(
-      currentPortfolio, 
-      targetAllocations
-    );
-
-    const results = [];
-    for (const action of rebalanceActions) {
-      try {
-        let result;
-        switch (action.protocol) {
-          case 'flamingo':
-            result = await this.tools.flamingo_swap_tokens({
-              fromAddress: address,
-              fromToken: action.fromAsset,
-              toToken: action.toAsset,
-              amount: action.amount,
-              password
-            });
-            break;
-          
-          case 'neocompound':
-            if (action.type === 'supply') {
-              result = await this.tools.neocompound_supply({
-                address,
-                asset: action.asset,
-                amount: action.amount,
-                password
-              });
-            }
-            break;
-          
-          case 'grandshare':
-            result = await this.tools.grandshare_join_pool({
-              address,
-              poolId: action.poolId,
-              amount: action.amount,
-              password
-            });
-            break;
-        }
-        
-        results.push({
-          action,
-          result,
-          success: true
-        });
-      } catch (error) {
-        results.push({
-          action,
-          error: error.message,
-          success: false
-        });
-      }
-    }
-
-    return {
-      rebalanceActions,
-      results,
-      newPortfolio: await this.getCompletePortfolio(address)
-    };
-  }
-
-  calculateTotalValue(portfolio) {
-    // Implement portfolio valuation logic
-    let total = 0;
-    
-    // Add wallet balance value
-    if (portfolio.positions.wallet) {
-      total += parseFloat(portfolio.positions.wallet.totalValueUSD || 0);
-    }
-    
-    // Add other protocol positions
-    // Implementation would include price lookups and calculations
-    
-    return total;
-  }
-
-  calculateRebalanceActions(current, target) {
-    // Implement rebalancing logic
-    const actions = [];
-    
-    // Compare current vs target allocations
-    // Generate necessary trades and moves
-    
-    return actions;
-  }
-
-  async getYieldFarming opportunities() {
-    return {
-      flamingo: await this.tools.flamingo_get_farming_pools(),
-      neocompound: await this.tools.neocompound_get_rates(),
-      grandshare: await this.tools.grandshare_get_pools()
-    };
-  }
-}
-
-// Usage example
-const portfolioManager = new DeFiPortfolioManager(mcpTools);
-
-// Get complete portfolio overview
-const portfolio = await portfolioManager.getCompletePortfolio(
-  "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj"
-);
-
-// Set target allocations (percentages)
-const targetAllocations = {
-  cash: 20,        // Hold in wallet
-  defi: 50,        // DeFi protocols
-  nfts: 20,        // NFT investments  
-  storage: 10      // NeoFS storage
-};
-
-// Execute rebalancing
-const rebalanceResult = await portfolioManager.rebalancePortfolio(
-  "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  targetAllocations,
-  "wallet_password"
-);
-
-console.log("Portfolio management:", {
-  portfolio,
-  rebalance: rebalanceResult
-});</code></pre>
             </div>
         </div>
 
@@ -607,7 +360,7 @@ console.log("Portfolio management:", {
             <div class="step-cards">
                 <a href="/examples/wallet" class="step-card">
                     <h3>Wallet Operations</h3>
-                    <p>Learn wallet creation and asset management</p>
+                    <p>Learn wallet management and asset transfers</p>
                 </a>
                 <a href="/examples/explorer" class="step-card">
                     <h3>Blockchain Explorer</h3>
@@ -621,8 +374,71 @@ console.log("Portfolio management:", {
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
-    <script src="/assets/js/main.js"></script>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div>
+                    <div class="footer-brand">Neo N3 MCP</div>
+                    <p class="footer-description">
+                        The most advanced Neo N3 blockchain development platform. 
+                        Build powerful dApps with enterprise-grade tools and security.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="footer-title">Product</h4>
+                    <div class="footer-links">
+                        <a href="/docs" class="footer-link">Documentation</a>
+                        <a href="/examples" class="footer-link">Examples</a>
+                        <a href="/changelog" class="footer-link">Changelog</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Resources</h4>
+                    <div class="footer-links">
+                        <a href="https://docs.neo.org/" class="footer-link" target="_blank">Neo N3 Docs</a>
+                        <a href="https://modelcontextprotocol.io/" class="footer-link" target="_blank">MCP Protocol</a>
+                        <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="footer-link" target="_blank">NPM Package</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Community</h4>
+                    <div class="footer-links">
+                        <a href="https://github.com/r3e-network/neo-n3-mcp" class="footer-link" target="_blank">GitHub</a>
+                        <a href="https://github.com/r3e-network/neo-n3-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
+                        <a href="https://discord.gg/neo" class="footer-link" target="_blank">Discord</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2025 Neo N3 MCP. Open source under MIT License.</p>
+                <p>Built with ❤️ for the Neo ecosystem</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Navigation scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        function copyCode(button) {
+            const codeBlock = button.nextElementSibling.querySelector('pre');
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copied!';
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                }, 2000);
+            });
+        }
+    </script>
 </body>
 </html> 

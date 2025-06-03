@@ -5,60 +5,122 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wallet Operations - Neo N3 MCP Examples</title>
     <meta name="description" content="Learn wallet operations with Neo N3 MCP Server: create wallets, check balances, and transfer assets.">
+    <meta name="keywords" content="neo, blockchain, mcp, wallet, examples">
     
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/style.css">
-    <link rel="stylesheet" href="/assets/css/modern-enhancements.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Modern Theme -->
+    <link rel="stylesheet" href="/assets/css/modern-theme.css">
+    
+    <style>
+        .breadcrumb {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .breadcrumb a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .example-section {
+            margin-bottom: var(--spacing-3xl);
+        }
+        
+        .example-section h2 {
+            font-family: var(--font-heading);
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-primary);
+        }
+        
+        .next-steps {
+            margin-top: var(--spacing-3xl);
+            text-align: center;
+        }
+        
+        .step-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+            margin-top: var(--spacing-xl);
+        }
+        
+        .step-card {
+            background: var(--bg-card);
+            padding: var(--spacing-xl);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-primary);
+            text-decoration: none;
+            color: inherit;
+            transition: var(--transition);
+        }
+        
+        .step-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary);
+        }
+        
+        .step-card h3 {
+            font-family: var(--font-heading);
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+        
+        .step-card p {
+            color: var(--text-secondary);
+            margin: 0;
+        }
+    </style>
 </head>
 <body>
-    <nav class="navbar">
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
         <div class="nav-container">
-            <div class="nav-logo">
-                <img src="/assets/images/neo-logo.svg" alt="Neo N3" class="logo-icon">
-                <span class="logo-text">Neo N3 MCP</span>
-            </div>
+            <a href="/" class="nav-logo">Neo N3 MCP</a>
             <div class="nav-menu">
                 <a href="/" class="nav-link">Home</a>
                 <a href="/#features" class="nav-link">Features</a>
                 <a href="/docs" class="nav-link">Docs</a>
-                <a href="/examples" class="nav-link">Examples</a>
-                <a href="https://github.com/r3e-network/neo-n3-mcp" class="nav-link" target="_blank">GitHub</a>
-                <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
-            </div>
-            <div class="nav-toggle">
-                <span></span>
-                <span></span>
-                <span></span>
+                <a href="/examples" class="nav-link active">Examples</a>
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
             </div>
         </div>
     </nav>
 
-    <div class="container" style="max-width: 1200px; margin: 100px auto; padding: 0 2rem;">
+    <div class="page-container">
         <div class="breadcrumb">
             <a href="/examples">Examples</a> > Wallet Operations
         </div>
         
         <header style="text-align: center; margin-bottom: 3rem;">
-            <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">Wallet Operations</h1>
-            <p style="font-size: 1.2rem; color: var(--text-secondary);">
+            <h1 class="section-title">Wallet Operations</h1>
+            <p class="section-subtitle">
                 Complete guide to wallet management with Neo N3 MCP Server
             </p>
         </header>
 
         <div class="example-section">
-            <h2>1. Creating a New Wallet</h2>
+            <h2>🆕 Creating a New Wallet</h2>
             <p>Create a secure wallet with encrypted private key storage:</p>
             
-            <div class="code-block">
+            <div class="code-window">
                 <div class="code-header">
-                    <span class="code-title">Create Wallet</span>
-                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                    <span class="code-lang">Create Wallet</span>
                 </div>
-                <pre><code class="language-javascript">// Using MCP Tools
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <div class="code-content">
+                    <pre>// Using MCP Tools
 const result = await tools.create_wallet({
   password: "secure_password_123",
   name: "MyWallet"
@@ -71,20 +133,22 @@ console.log("Wallet created:", result);
 //   "publicKey": "03c6aa6e12638b36c....",
 //   "encrypted": true,
 //   "name": "MyWallet"
-// }</code></pre>
+// }</pre>
+                </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>2. Importing an Existing Wallet</h2>
+            <h2>📥 Importing an Existing Wallet</h2>
             <p>Import a wallet using WIF (Wallet Import Format) or private key:</p>
             
-            <div class="code-block">
+            <div class="code-window">
                 <div class="code-header">
-                    <span class="code-title">Import Wallet</span>
-                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                    <span class="code-lang">Import Wallet</span>
                 </div>
-                <pre><code class="language-javascript">// Import from WIF
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <div class="code-content">
+                    <pre>// Import from WIF
 const walletFromWIF = await tools.import_wallet({
   wif: "KxDgvEKzgSBPPfuVfw67oPQBSjidEiqTHURKSDL1R7yGaGYAeYnr",
   password: "new_password_123",
@@ -96,20 +160,22 @@ const walletFromKey = await tools.import_wallet({
   privateKey: "1dd37fba80fec4e6a6f13fd708d8dcb3b29def768017052f6c930fa1c5d90bbb",
   password: "secure_password",
   name: "ImportedFromKey"
-});</code></pre>
+});</pre>
+                </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>3. Checking Wallet Balance</h2>
+            <h2>💰 Checking Wallet Balance</h2>
             <p>Get comprehensive balance information for NEO, GAS, and NEP-17 tokens:</p>
             
-            <div class="code-block">
+            <div class="code-window">
                 <div class="code-header">
-                    <span class="code-title">Check Balance</span>
-                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                    <span class="code-lang">Check Balance</span>
                 </div>
-                <pre><code class="language-javascript">// Get balance for specific address
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <div class="code-content">
+                    <pre>// Get balance for specific address
 const balance = await tools.get_balance({
   address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj"
 });
@@ -124,20 +190,22 @@ console.log("Wallet balance:", balance);
 //     "d2a4cFF31": "50.25"    // Other NEP-17 token
 //   },
 //   "totalValueUSD": "1250.75"
-// }</code></pre>
+// }</pre>
+                </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>4. Transferring Assets</h2>
+            <h2>💸 Transferring Assets</h2>
             <p>Send NEO, GAS, or NEP-17 tokens to other addresses:</p>
             
-            <div class="code-block">
+            <div class="code-window">
                 <div class="code-header">
-                    <span class="code-title">Transfer NEO</span>
-                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                    <span class="code-lang">Transfer NEO</span>
                 </div>
-                <pre><code class="language-javascript">// Transfer NEO tokens
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <div class="code-content">
+                    <pre>// Transfer NEO tokens
 const neoTransfer = await tools.transfer_neo({
   fromAddress: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
   toAddress: "NYjzhdekseMYWvYpSoAeypqMiwMuEUDhKB",
@@ -160,20 +228,22 @@ console.log("Transfer completed:", gasTransfer);
 //   "gasConsumed": "0.0234567",
 //   "confirmations": 1,
 //   "success": true
-// }</code></pre>
+// }</pre>
+                </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>5. NEP-17 Token Operations</h2>
+            <h2>🪙 NEP-17 Token Operations</h2>
             <p>Work with custom NEP-17 tokens:</p>
             
-            <div class="code-block">
+            <div class="code-window">
                 <div class="code-header">
-                    <span class="code-title">NEP-17 Token Transfer</span>
-                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                    <span class="code-lang">NEP-17 Token Transfer</span>
                 </div>
-                <pre><code class="language-javascript">// Get token information
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <div class="code-content">
+                    <pre>// Get token information
 const tokenInfo = await tools.get_nep17_token_info({
   contractHash: "0xd2a4cff31913016155e38e474a2c06d08be276cf"
 });
@@ -194,20 +264,22 @@ console.log("Token info:", tokenInfo);
 //   "decimals": 8,
 //   "totalSupply": "150000000.00000000",
 //   "name": "Flamingo"
-// }</code></pre>
+// }</pre>
+                </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>6. Transaction History</h2>
+            <h2>📜 Transaction History</h2>
             <p>Get transaction history for wallet addresses:</p>
             
-            <div class="code-block">
+            <div class="code-window">
                 <div class="code-header">
-                    <span class="code-title">Get Transaction History</span>
-                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                    <span class="code-lang">Get Transaction History</span>
                 </div>
-                <pre><code class="language-javascript">// Get recent transactions
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <div class="code-content">
+                    <pre>// Get recent transactions
 const history = await tools.get_address_transactions({
   address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
   limit: 10
@@ -228,20 +300,22 @@ console.log("Transaction history:", history);
 //       "to": "NYjzhdekseMYWvYpSoAeypqMiwMuEUDhKB"
 //     }
 //   ]
-// }</code></pre>
+// }</pre>
+                </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>7. Complete Wallet Manager Example</h2>
+            <h2>🏗️ Complete Wallet Manager Example</h2>
             <p>A comprehensive wallet management class:</p>
             
-            <div class="code-block">
+            <div class="code-window">
                 <div class="code-header">
-                    <span class="code-title">Wallet Manager Class</span>
-                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                    <span class="code-lang">Wallet Manager Class</span>
                 </div>
-                <pre><code class="language-javascript">class NeoWalletManager {
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <div class="code-content">
+                    <pre>class NeoWalletManager {
   constructor(mcpTools) {
     this.tools = mcpTools;
     this.wallets = new Map();
@@ -330,7 +404,8 @@ const walletManager = new NeoWalletManager(mcpTools);
 // Create and manage wallets
 await walletManager.createWallet("MainWallet", "secure123");
 const portfolio = await walletManager.getPortfolioValue("NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj");
-console.log("Portfolio value:", portfolio);</code></pre>
+console.log("Portfolio value:", portfolio);</pre>
+                </div>
             </div>
         </div>
 
@@ -353,8 +428,71 @@ console.log("Portfolio value:", portfolio);</code></pre>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
-    <script src="/assets/js/main.js"></script>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div>
+                    <div class="footer-brand">Neo N3 MCP</div>
+                    <p class="footer-description">
+                        The most advanced Neo N3 blockchain development platform. 
+                        Build powerful dApps with enterprise-grade tools and security.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="footer-title">Product</h4>
+                    <div class="footer-links">
+                        <a href="/docs" class="footer-link">Documentation</a>
+                        <a href="/examples" class="footer-link">Examples</a>
+                        <a href="/changelog" class="footer-link">Changelog</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Resources</h4>
+                    <div class="footer-links">
+                        <a href="https://docs.neo.org/" class="footer-link" target="_blank">Neo N3 Docs</a>
+                        <a href="https://modelcontextprotocol.io/" class="footer-link" target="_blank">MCP Protocol</a>
+                        <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="footer-link" target="_blank">NPM Package</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Community</h4>
+                    <div class="footer-links">
+                        <a href="https://github.com/r3e-network/neo-n3-mcp" class="footer-link" target="_blank">GitHub</a>
+                        <a href="https://github.com/r3e-network/neo-n3-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
+                        <a href="https://discord.gg/neo" class="footer-link" target="_blank">Discord</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2025 Neo N3 MCP. Open source under MIT License.</p>
+                <p>Built with ❤️ for the Neo ecosystem</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Navigation scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        function copyCode(button) {
+            const codeBlock = button.nextElementSibling.querySelector('pre');
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copied!';
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                }, 2000);
+            });
+        }
+    </script>
 </body>
 </html> 
