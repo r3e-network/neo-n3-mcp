@@ -20,6 +20,16 @@
     
     <style>
         /* API page specific styles */
+        .breadcrumb {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .breadcrumb a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
         .api-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -309,6 +319,11 @@
 
     <!-- API Container -->
     <div class="api-container">
+        <!-- Breadcrumb Navigation -->
+        <div class="breadcrumb" style="grid-column: 1 / -1; margin-bottom: var(--spacing-lg);">
+            <a href="/docs">Documentation</a> > API Reference
+        </div>
+        
         <!-- Sidebar Navigation -->
         <aside class="api-sidebar">
             <nav class="api-nav">
@@ -835,7 +850,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>© 2024 Neo N3 MCP. Open source under MIT License.</p>
+                <p>© 2025 Neo N3 MCP. Open source under MIT License.</p>
                 <p>Built with ❤️ for the Neo ecosystem</p>
             </div>
         </div>
