@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Documentation - Neo N3 MCP Server</title>
+    <title>Documentation - Neo N3 MCP</title>
     <meta name="description" content="Complete documentation hub for Neo N3 MCP Server. Access API reference, guides, tutorials, and examples for blockchain development.">
     <meta name="keywords" content="neo, blockchain, mcp, documentation, api, guides, tutorials">
     
@@ -13,18 +13,16 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     
-    <!-- Styles -->
-    <link rel="stylesheet" href="/assets/css/style.css">
-    <link rel="stylesheet" href="/assets/css/modern-enhancements.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <!-- Modern Theme -->
+    <link rel="stylesheet" href="/assets/css/modern-theme.css">
     
     <style>
         .docs-hub-container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 100px var(--spacing-lg) var(--spacing-3xl);
+            padding: 100px 2rem 4rem;
         }
         
         .docs-hero {
@@ -33,14 +31,18 @@
         }
         
         .docs-hero-title {
-            font-size: clamp(2.5rem, 6vw, 3.5rem);
+            font-family: var(--font-heading);
+            font-size: clamp(2.5rem, 6vw, 4rem);
             font-weight: 700;
-            margin-bottom: var(--spacing-lg);
-            color: var(--text-primary);
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .docs-hero-subtitle {
-            font-size: 1.4rem;
+            font-size: 1.25rem;
             color: var(--text-secondary);
             margin-bottom: var(--spacing-xl);
             max-width: 600px;
@@ -62,13 +64,14 @@
             align-items: center;
             gap: var(--spacing-sm);
             padding: var(--spacing-md) var(--spacing-xl);
-            background: var(--surface-elevated);
-            border: 2px solid var(--border-light);
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
             border-radius: var(--radius-lg);
             text-decoration: none;
             color: var(--text-primary);
             font-weight: 500;
-            transition: var(--transition-fast);
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
         }
         
         .quick-link:hover {
@@ -91,11 +94,12 @@
         }
         
         .docs-section {
-            background: var(--surface-elevated);
+            background: var(--bg-card);
             border-radius: var(--radius-lg);
             padding: var(--spacing-2xl);
-            border: 1px solid var(--border-light);
-            transition: var(--transition-normal);
+            border: 1px solid var(--border-primary);
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
         }
         
         .docs-section:hover {
@@ -114,7 +118,7 @@
         .section-icon {
             width: 48px;
             height: 48px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             border-radius: var(--radius-md);
             display: flex;
             align-items: center;
@@ -124,6 +128,7 @@
         }
         
         .section-title {
+            font-family: var(--font-heading);
             font-size: 1.5rem;
             font-weight: 600;
             color: var(--text-primary);
@@ -147,7 +152,7 @@
             padding: var(--spacing-sm) 0;
             color: var(--text-secondary);
             text-decoration: none;
-            transition: var(--transition-fast);
+            transition: var(--transition);
         }
         
         .section-link:hover {
@@ -163,13 +168,13 @@
         
         .section-cta {
             padding: var(--spacing-md) var(--spacing-lg);
-            background: var(--surface);
-            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
             border-radius: var(--radius-md);
             text-decoration: none;
             color: var(--text-primary);
             font-weight: 500;
-            transition: var(--transition-fast);
+            transition: var(--transition);
             display: inline-block;
         }
         
@@ -180,14 +185,15 @@
         }
         
         .featured-content {
-            background: linear-gradient(135deg, var(--surface-elevated), var(--surface));
+            background: linear-gradient(135deg, var(--bg-card), var(--bg-secondary));
             border-radius: var(--radius-lg);
             padding: var(--spacing-2xl);
             margin-bottom: var(--spacing-3xl);
-            border: 1px solid var(--border-light);
+            border: 1px solid var(--border-primary);
         }
         
         .featured-title {
+            font-family: var(--font-heading);
             font-size: 1.75rem;
             font-weight: 600;
             margin-bottom: var(--spacing-lg);
@@ -204,9 +210,9 @@
         .featured-item {
             text-align: center;
             padding: var(--spacing-lg);
-            background: white;
+            background: var(--bg-card);
             border-radius: var(--radius-md);
-            border: 1px solid var(--border-light);
+            border: 1px solid var(--border-primary);
         }
         
         .featured-item-icon {
@@ -215,6 +221,7 @@
         }
         
         .featured-item-title {
+            font-family: var(--font-heading);
             font-size: 1.2rem;
             font-weight: 600;
             margin-bottom: var(--spacing-sm);
@@ -228,13 +235,14 @@
         }
         
         .resources-section {
-            background: var(--surface);
+            background: var(--bg-secondary);
             border-radius: var(--radius-lg);
             padding: var(--spacing-2xl);
             text-align: center;
         }
         
         .resources-title {
+            font-family: var(--font-heading);
             font-size: 1.75rem;
             font-weight: 600;
             margin-bottom: var(--spacing-lg);
@@ -248,11 +256,11 @@
         }
         
         .resource-card {
-            background: var(--surface-elevated);
+            background: var(--bg-card);
             border-radius: var(--radius-md);
             padding: var(--spacing-lg);
-            border: 1px solid var(--border-light);
-            transition: var(--transition-fast);
+            border: 1px solid var(--border-primary);
+            transition: var(--transition);
             text-decoration: none;
             display: block;
         }
@@ -270,6 +278,7 @@
         }
         
         .resource-title {
+            font-family: var(--font-heading);
             font-size: 1.1rem;
             font-weight: 600;
             margin-bottom: var(--spacing-sm);
@@ -291,6 +300,7 @@
         }
         
         .stats-title {
+            font-family: var(--font-heading);
             font-size: 1.5rem;
             font-weight: 600;
             margin-bottom: var(--spacing-lg);
@@ -307,6 +317,7 @@
         }
         
         .stat-number {
+            font-family: var(--font-heading);
             font-size: 2.5rem;
             font-weight: 700;
             margin-bottom: var(--spacing-sm);
@@ -342,24 +353,15 @@
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar">
+    <nav class="nav" id="nav">
         <div class="nav-container">
-            <div class="nav-logo">
-                <img src="/assets/images/neo-logo.svg" alt="Neo N3" class="logo-icon">
-                <span class="logo-text">Neo N3 MCP</span>
-            </div>
+            <a href="/" class="nav-logo">Neo N3 MCP</a>
             <div class="nav-menu">
                 <a href="/" class="nav-link">Home</a>
                 <a href="/#features" class="nav-link">Features</a>
                 <a href="/docs" class="nav-link active">Docs</a>
                 <a href="/examples" class="nav-link">Examples</a>
-                <a href="https://github.com/your-repo/neo-n3-mcp" class="nav-link" target="_blank">GitHub</a>
-                <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
-            </div>
-            <div class="nav-toggle">
-                <span></span>
-                <span></span>
-                <span></span>
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
             </div>
         </div>
     </nav>
@@ -385,7 +387,7 @@
                     <span class="quick-link-icon">💡</span>
                     <span>Examples</span>
                 </a>
-                <a href="https://github.com/your-repo/neo-n3-mcp" class="quick-link" target="_blank">
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="quick-link" target="_blank">
                     <span class="quick-link-icon">⭐</span>
                     <span>GitHub</span>
                 </a>
@@ -397,7 +399,7 @@
             <h2 class="stats-title">Production-Ready Neo N3 MCP Server</h2>
             <div class="stats-grid">
                 <div class="stat-item">
-                    <div class="stat-number">34</div>
+                    <div class="stat-number">34+</div>
                     <div class="stat-label">Tools Available</div>
                 </div>
                 <div class="stat-item">
@@ -409,8 +411,8 @@
                     <div class="stat-label">Test Coverage</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number">2</div>
-                    <div class="stat-label">Networks</div>
+                    <div class="stat-number">6</div>
+                    <div class="stat-label">Protocols</div>
                 </div>
             </div>
         </div>
@@ -482,14 +484,14 @@
                 <p class="section-description">Deep dive into the server architecture, design patterns, and best practices for scalable blockchain applications.</p>
                 
                 <ul class="section-links">
-                    <li><a href="#" class="section-link">System Architecture</a></li>
-                    <li><a href="#" class="section-link">Security Model</a></li>
-                    <li><a href="#" class="section-link">Performance Optimization</a></li>
-                    <li><a href="#" class="section-link">Error Handling</a></li>
-                    <li><a href="#" class="section-link">Testing Strategy</a></li>
+                    <li><a href="/docs/architecture#system" class="section-link">System Architecture</a></li>
+                    <li><a href="/docs/architecture#security" class="section-link">Security Model</a></li>
+                    <li><a href="/docs/architecture#performance" class="section-link">Performance Optimization</a></li>
+                    <li><a href="/docs/architecture#errors" class="section-link">Error Handling</a></li>
+                    <li><a href="/docs/architecture#testing" class="section-link">Testing Strategy</a></li>
                 </ul>
                 
-                <a href="#" class="section-cta">Learn Architecture →</a>
+                <a href="/docs/architecture" class="section-cta">Learn Architecture →</a>
             </div>
 
             <!-- Deployment & Production -->
@@ -498,116 +500,167 @@
                     <div class="section-icon">🚀</div>
                     <h2 class="section-title">Production Guide</h2>
                 </div>
-                <p class="section-description">Deploy and scale your applications with Docker, monitoring, security best practices, and performance tuning.</p>
+                <p class="section-description">Deploy and scale your Neo N3 MCP server for production environments with Docker, monitoring, and best practices.</p>
                 
                 <ul class="section-links">
-                    <li><a href="#" class="section-link">Docker Deployment</a></li>
-                    <li><a href="#" class="section-link">Environment Configuration</a></li>
-                    <li><a href="#" class="section-link">Monitoring & Logging</a></li>
-                    <li><a href="#" class="section-link">Security Checklist</a></li>
-                    <li><a href="#" class="section-link">Performance Tuning</a></li>
+                    <li><a href="/docs/deployment#docker" class="section-link">Docker Deployment</a></li>
+                    <li><a href="/docs/deployment#monitoring" class="section-link">Monitoring & Logging</a></li>
+                    <li><a href="/docs/deployment#scaling" class="section-link">Scaling Strategies</a></li>
+                    <li><a href="/docs/deployment#security" class="section-link">Security Hardening</a></li>
+                    <li><a href="/docs/deployment#troubleshooting" class="section-link">Troubleshooting</a></li>
                 </ul>
                 
-                <a href="#" class="section-cta">Deploy Now →</a>
+                <a href="/docs/deployment" class="section-cta">Deploy Now →</a>
             </div>
 
-            <!-- Troubleshooting -->
+            <!-- Testing -->
             <div class="docs-section">
                 <div class="section-header">
-                    <div class="section-icon">🔧</div>
-                    <h2 class="section-title">Troubleshooting</h2>
+                    <div class="section-icon">🧪</div>
+                    <h2 class="section-title">Testing</h2>
                 </div>
-                <p class="section-description">Common issues, debugging guides, and solutions to help you resolve problems quickly and efficiently.</p>
+                <p class="section-description">Comprehensive testing strategies and tools for ensuring your blockchain applications work reliably.</p>
                 
                 <ul class="section-links">
-                    <li><a href="#" class="section-link">Common Issues</a></li>
-                    <li><a href="#" class="section-link">Error Messages</a></li>
-                    <li><a href="#" class="section-link">Network Problems</a></li>
-                    <li><a href="#" class="section-link">Performance Issues</a></li>
-                    <li><a href="#" class="section-link">Debug Tools</a></li>
+                    <li><a href="/docs/testing#unit" class="section-link">Unit Testing</a></li>
+                    <li><a href="/docs/testing#integration" class="section-link">Integration Testing</a></li>
+                    <li><a href="/docs/testing#e2e" class="section-link">End-to-End Testing</a></li>
+                    <li><a href="/docs/testing#mocking" class="section-link">Mocking & Fixtures</a></li>
+                    <li><a href="/docs/testing#ci" class="section-link">CI/CD Testing</a></li>
                 </ul>
                 
-                <a href="#" class="section-cta">Get Help →</a>
+                <a href="/docs/testing" class="section-cta">Test Setup →</a>
             </div>
         </div>
 
         <!-- Featured Content -->
         <div class="featured-content">
-            <h2 class="featured-title">Featured Capabilities</h2>
+            <h2 class="featured-title">🌟 Popular Features</h2>
             <div class="featured-grid">
                 <div class="featured-item">
-                    <div class="featured-item-icon">⚡</div>
-                    <h3 class="featured-item-title">High Performance</h3>
-                    <p class="featured-item-description">Optimized for speed with connection pooling, caching, and async operations</p>
+                    <div class="featured-item-icon">🔗</div>
+                    <h3 class="featured-item-title">Blockchain Integration</h3>
+                    <p class="featured-item-description">Complete Neo N3 blockchain access with 34+ tools for all your development needs</p>
                 </div>
                 
                 <div class="featured-item">
-                    <div class="featured-item-icon">🔒</div>
+                    <div class="featured-item-icon">🔐</div>
                     <h3 class="featured-item-title">Enterprise Security</h3>
-                    <p class="featured-item-description">Comprehensive validation, XSS prevention, and confirmation requirements</p>
+                    <p class="featured-item-description">AES-256 encryption and zero vulnerabilities for production-ready applications</p>
                 </div>
                 
                 <div class="featured-item">
-                    <div class="featured-item-icon">🌐</div>
-                    <h3 class="featured-item-title">Multi-Network</h3>
-                    <p class="featured-item-description">Seamless support for both mainnet and testnet environments</p>
+                    <div class="featured-item-icon">⚡</div>
+                    <h3 class="featured-item-title">DeFi Protocols</h3>
+                    <p class="featured-item-description">Pre-built integrations with Flamingo, NeoFS, NeoBurger, and more</p>
                 </div>
                 
                 <div class="featured-item">
-                    <div class="featured-item-icon">🏗️</div>
-                    <h3 class="featured-item-title">Famous Contracts</h3>
-                    <p class="featured-item-description">Built-in support for NeoFS, Flamingo, NeoBurger, and other popular contracts</p>
+                    <div class="featured-item-icon">🛠️</div>
+                    <h3 class="featured-item-title">Developer Tools</h3>
+                    <p class="featured-item-description">TypeScript support, comprehensive testing, and zero-config setup</p>
                 </div>
             </div>
         </div>
 
-        <!-- Resources Section -->
+        <!-- Additional Resources -->
         <div class="resources-section">
             <h2 class="resources-title">Additional Resources</h2>
             <div class="resources-grid">
-                <a href="https://github.com/your-repo/neo-n3-mcp" class="resource-card" target="_blank">
-                    <div class="resource-icon">📦</div>
-                    <h3 class="resource-title">Source Code</h3>
-                    <p class="resource-description">Browse the complete source code, contribute, and report issues</p>
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="resource-card" target="_blank">
+                    <div class="resource-icon">⭐</div>
+                    <h3 class="resource-title">GitHub Repository</h3>
+                    <p class="resource-description">Source code, issues, and contributions</p>
                 </a>
                 
                 <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="resource-card" target="_blank">
-                    <div class="resource-icon">📥</div>
+                    <div class="resource-icon">📦</div>
                     <h3 class="resource-title">NPM Package</h3>
-                    <p class="resource-description">Install and manage versions through the npm registry</p>
+                    <p class="resource-description">Install and manage via npm</p>
                 </a>
                 
-                <a href="https://neo.org" class="resource-card" target="_blank">
-                    <div class="resource-icon">🌐</div>
+                <a href="https://docs.neo.org/" class="resource-card" target="_blank">
+                    <div class="resource-icon">📚</div>
                     <h3 class="resource-title">Neo N3 Docs</h3>
-                    <p class="resource-description">Official Neo N3 blockchain documentation and resources</p>
+                    <p class="resource-description">Official Neo N3 documentation</p>
+                </a>
+                
+                <a href="https://modelcontextprotocol.io/" class="resource-card" target="_blank">
+                    <div class="resource-icon">🔗</div>
+                    <h3 class="resource-title">MCP Protocol</h3>
+                    <p class="resource-description">Learn about MCP specifications</p>
+                </a>
+                
+                <a href="/changelog" class="resource-card">
+                    <div class="resource-icon">📝</div>
+                    <h3 class="resource-title">Changelog</h3>
+                    <p class="resource-description">Track updates and releases</p>
                 </a>
                 
                 <a href="https://discord.gg/neo" class="resource-card" target="_blank">
                     <div class="resource-icon">💬</div>
                     <h3 class="resource-title">Community</h3>
-                    <p class="resource-description">Join the Neo community for support and discussions</p>
-                </a>
-                
-                <a href="https://mcp.ai" class="resource-card" target="_blank">
-                    <div class="resource-icon">🤖</div>
-                    <h3 class="resource-title">MCP Protocol</h3>
-                    <p class="resource-description">Learn about the Model Context Protocol specification</p>
-                </a>
-                
-                <a href="#" class="resource-card">
-                    <div class="resource-icon">📊</div>
-                    <h3 class="resource-title">Changelog</h3>
-                    <p class="resource-description">Track new features, improvements, and bug fixes</p>
+                    <p class="resource-description">Join the Neo community</p>
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="/assets/js/main.js"></script>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div>
+                    <div class="footer-brand">Neo N3 MCP</div>
+                    <p class="footer-description">
+                        The most advanced Neo N3 blockchain development platform. 
+                        Build powerful dApps with enterprise-grade tools and security.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="footer-title">Product</h4>
+                    <div class="footer-links">
+                        <a href="/docs" class="footer-link">Documentation</a>
+                        <a href="/examples" class="footer-link">Examples</a>
+                        <a href="/changelog" class="footer-link">Changelog</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Resources</h4>
+                    <div class="footer-links">
+                        <a href="https://docs.neo.org/" class="footer-link" target="_blank">Neo N3 Docs</a>
+                        <a href="https://modelcontextprotocol.io/" class="footer-link" target="_blank">MCP Protocol</a>
+                        <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="footer-link" target="_blank">NPM Package</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Community</h4>
+                    <div class="footer-links">
+                        <a href="https://github.com/r3e-network/neo-n3-mcp" class="footer-link" target="_blank">GitHub</a>
+                        <a href="https://github.com/r3e-network/neo-n3-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
+                        <a href="https://discord.gg/neo" class="footer-link" target="_blank">Discord</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2024 Neo N3 MCP. Open source under MIT License.</p>
+                <p>Built with ❤️ for the Neo ecosystem</p>
+            </div>
+        </div>
+    </footer>
+
     <script>
-        // Add smooth scrolling for anchor links
+        // Navigation scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // Smooth scrolling for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
@@ -619,28 +672,6 @@
                     });
                 }
             });
-        });
-
-        // Add animation on scroll for sections
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
-            });
-        }, observerOptions);
-
-        document.querySelectorAll('.docs-section, .featured-item, .resource-card').forEach(el => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(20px)';
-            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-            observer.observe(el);
         });
     </script>
 </body>
