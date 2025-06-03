@@ -420,7 +420,15 @@
             padding: 2rem;
             transition: var(--transition);
             backdrop-filter: blur(10px);
+            animation: fadeInUp 0.6s ease both;
         }
+
+        .feature-card:nth-child(1) { animation-delay: 0.1s; }
+        .feature-card:nth-child(2) { animation-delay: 0.2s; }
+        .feature-card:nth-child(3) { animation-delay: 0.3s; }
+        .feature-card:nth-child(4) { animation-delay: 0.4s; }
+        .feature-card:nth-child(5) { animation-delay: 0.5s; }
+        .feature-card:nth-child(6) { animation-delay: 0.6s; }
 
         .feature-card:hover {
             transform: translateY(-4px);
@@ -493,7 +501,13 @@
             border-radius: var(--radius-lg);
             overflow: hidden;
             transition: var(--transition);
+            animation: fadeInUp 0.6s ease both;
         }
+
+        .example-card:nth-child(1) { animation-delay: 0.1s; }
+        .example-card:nth-child(2) { animation-delay: 0.2s; }
+        .example-card:nth-child(3) { animation-delay: 0.3s; }
+        .example-card:nth-child(4) { animation-delay: 0.4s; }
 
         .example-card:hover {
             transform: translateY(-4px);
@@ -1115,29 +1129,6 @@
                     });
                 }
             });
-        });
-
-        // Intersection Observer for animations
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
-            });
-        }, observerOptions);
-
-        // Observe feature cards
-        document.querySelectorAll('.feature-card, .example-card').forEach(card => {
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(30px)';
-            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-            observer.observe(card);
         });
     </script>
 </body>
