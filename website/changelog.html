@@ -1,1 +1,427 @@
- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Changelog - Neo N3 MCP</title>
+    <meta name="description" content="Track the latest updates, features, and improvements to Neo N3 MCP Server.">
+    <meta name="keywords" content="neo, blockchain, mcp, changelog, updates, releases">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Modern Theme -->
+    <link rel="stylesheet" href="/assets/css/modern-theme.css">
+    
+    <style>
+        .changelog-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 100px 2rem 4rem;
+        }
+        
+        .changelog-header {
+            text-align: center;
+            margin-bottom: var(--spacing-3xl);
+        }
+        
+        .changelog-title {
+            font-family: var(--font-heading);
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .changelog-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .version-section {
+            margin-bottom: var(--spacing-3xl);
+        }
+        
+        .version-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 2px solid var(--border-primary);
+        }
+        
+        .version-number {
+            font-family: var(--font-heading);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .version-date {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .version-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge-latest {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+        
+        .badge-stable {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .change-category {
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .category-title {
+            font-family: var(--font-heading);
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-md);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+        
+        .category-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+        
+        .icon-new {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .icon-improved {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .icon-fixed {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .icon-security {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .change-list {
+            list-style: none;
+            margin-left: var(--spacing-lg);
+        }
+        
+        .change-item {
+            position: relative;
+            padding: var(--spacing-sm) 0;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        .change-item::before {
+            content: "•";
+            position: absolute;
+            left: -1rem;
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        .code-mention {
+            background: var(--bg-card);
+            padding: 0.2rem 0.4rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--primary);
+            border: 1px solid var(--border-primary);
+        }
+        
+        .migration-note {
+            background: var(--bg-card);
+            border: 1px solid var(--warning);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            margin: var(--spacing-lg) 0;
+        }
+        
+        .migration-title {
+            color: var(--warning);
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+        
+        .migration-content {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        @media (max-width: 768px) {
+            .changelog-container {
+                padding: 80px 1rem 2rem;
+            }
+            
+            .version-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--spacing-sm);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">Neo N3 MCP</a>
+            <div class="nav-menu">
+                <a href="/#features" class="nav-link">Features</a>
+                <a href="/examples" class="nav-link">Examples</a>
+                <a href="/docs" class="nav-link">Documentation</a>
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="changelog-container">
+        <!-- Header -->
+        <header class="changelog-header">
+            <h1 class="changelog-title">Changelog</h1>
+            <p class="changelog-subtitle">
+                Track the latest updates, features, and improvements to Neo N3 MCP Server.
+            </p>
+        </header>
+
+        <!-- Version 1.5.0 -->
+        <section class="version-section">
+            <div class="version-header">
+                <span class="version-number">v1.5.0</span>
+                <span class="version-badge badge-latest">Latest</span>
+                <span class="version-date">December 2024</span>
+            </div>
+
+            <div class="change-category">
+                <h3 class="category-title">
+                    <span class="category-icon icon-new">✨</span>
+                    New Features
+                </h3>
+                <ul class="change-list">
+                    <li class="change-item">Added complete <span class="code-mention">Flamingo DeFi</span> integration with swap and liquidity tools</li>
+                    <li class="change-item">Introduced <span class="code-mention">NeoBurger</span> gaming protocol support</li>
+                    <li class="change-item">New batch operation tools for efficient multi-transaction processing</li>
+                    <li class="change-item">Enhanced wallet management with multi-signature support</li>
+                    <li class="change-item">Added comprehensive test suite with 90%+ coverage</li>
+                </ul>
+            </div>
+
+            <div class="change-category">
+                <h3 class="category-title">
+                    <span class="category-icon icon-improved">⚡</span>
+                    Improvements
+                </h3>
+                <ul class="change-list">
+                    <li class="change-item">Significantly improved error handling and validation</li>
+                    <li class="change-item">Enhanced TypeScript support with better type definitions</li>
+                    <li class="change-item">Optimized memory usage and reduced startup time</li>
+                    <li class="change-item">Updated documentation with interactive examples</li>
+                    <li class="change-item">Improved Docker configuration for production deployments</li>
+                </ul>
+            </div>
+
+            <div class="change-category">
+                <h3 class="category-title">
+                    <span class="category-icon icon-security">🔒</span>
+                    Security
+                </h3>
+                <ul class="change-list">
+                    <li class="change-item">Implemented AES-256 encryption for sensitive data</li>
+                    <li class="change-item">Added comprehensive input validation and sanitization</li>
+                    <li class="change-item">Enhanced key management and secure storage</li>
+                    <li class="change-item">Zero known security vulnerabilities</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Version 1.4.0 -->
+        <section class="version-section">
+            <div class="version-header">
+                <span class="version-number">v1.4.0</span>
+                <span class="version-badge badge-stable">Stable</span>
+                <span class="version-date">November 2024</span>
+            </div>
+
+            <div class="change-category">
+                <h3 class="category-title">
+                    <span class="category-icon icon-new">✨</span>
+                    New Features
+                </h3>
+                <ul class="change-list">
+                    <li class="change-item">Added <span class="code-mention">NeoFS</span> storage protocol integration</li>
+                    <li class="change-item">Introduced advanced transaction monitoring tools</li>
+                    <li class="change-item">New smart contract deployment utilities</li>
+                    <li class="change-item">Enhanced asset transfer capabilities</li>
+                </ul>
+            </div>
+
+            <div class="change-category">
+                <h3 class="category-title">
+                    <span class="category-icon icon-fixed">🐛</span>
+                    Bug Fixes
+                </h3>
+                <ul class="change-list">
+                    <li class="change-item">Fixed race condition in concurrent transaction processing</li>
+                    <li class="change-item">Resolved memory leak in long-running operations</li>
+                    <li class="change-item">Fixed edge case in balance calculation for multi-asset wallets</li>
+                    <li class="change-item">Corrected timestamp handling for network synchronization</li>
+                </ul>
+            </div>
+
+            <div class="migration-note">
+                <div class="migration-title">
+                    ⚠️ Migration Notice
+                </div>
+                <div class="migration-content">
+                    Users upgrading from v1.3.x should update their configuration files to include the new NeoFS settings. 
+                    See the <a href="/docs/getting-started#migration" style="color: var(--primary);">migration guide</a> for details.
+                </div>
+            </div>
+        </section>
+
+        <!-- Version 1.3.0 -->
+        <section class="version-section">
+            <div class="version-header">
+                <span class="version-number">v1.3.0</span>
+                <span class="version-date">October 2024</span>
+            </div>
+
+            <div class="change-category">
+                <h3 class="category-title">
+                    <span class="category-icon icon-new">✨</span>
+                    New Features
+                </h3>
+                <ul class="change-list">
+                    <li class="change-item">Initial MCP (Model Context Protocol) implementation</li>
+                    <li class="change-item">Core blockchain operation tools (15+ tools)</li>
+                    <li class="change-item">Basic wallet management functionality</li>
+                    <li class="change-item">Asset query and transfer capabilities</li>
+                    <li class="change-item">Network resource monitoring</li>
+                </ul>
+            </div>
+
+            <div class="change-category">
+                <h3 class="category-title">
+                    <span class="category-icon icon-improved">⚡</span>
+                    Infrastructure
+                </h3>
+                <ul class="change-list">
+                    <li class="change-item">Established CI/CD pipeline with automated testing</li>
+                    <li class="change-item">Docker containerization for easy deployment</li>
+                    <li class="change-item">Comprehensive documentation website</li>
+                    <li class="change-item">NPM package distribution</li>
+                </ul>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div>
+                    <div class="footer-brand">Neo N3 MCP</div>
+                    <p class="footer-description">
+                        The most advanced Neo N3 blockchain development platform. 
+                        Build powerful dApps with enterprise-grade tools and security.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="footer-title">Product</h4>
+                    <div class="footer-links">
+                        <a href="/docs" class="footer-link">Documentation</a>
+                        <a href="/examples" class="footer-link">Examples</a>
+                        <a href="/changelog" class="footer-link">Changelog</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Resources</h4>
+                    <div class="footer-links">
+                        <a href="https://docs.neo.org/" class="footer-link" target="_blank">Neo N3 Docs</a>
+                        <a href="https://modelcontextprotocol.io/" class="footer-link" target="_blank">MCP Protocol</a>
+                        <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="footer-link" target="_blank">NPM Package</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Community</h4>
+                    <div class="footer-links">
+                        <a href="https://github.com/r3e-network/neo-n3-mcp" class="footer-link" target="_blank">GitHub</a>
+                        <a href="https://github.com/r3e-network/neo-n3-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
+                        <a href="https://discord.gg/neo" class="footer-link" target="_blank">Discord</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2024 Neo N3 MCP. Open source under MIT License.</p>
+                <p>Built with ❤️ for the Neo ecosystem</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Navigation scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html> 
