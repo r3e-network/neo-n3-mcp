@@ -32,7 +32,7 @@ class NeoN3McpServer {
     // Create McpServer with high-level API
     this.server = new McpServer({
       name: 'neo-n3-mcp-server',
-      version: '1.5.0',
+      version: '1.6.0',
     });
 
     // Initialize service maps

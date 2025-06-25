@@ -1,6 +1,6 @@
 # Neo N3 MCP Server
 
-**MCP Server for Neo N3 Blockchain Integration** | Version 1.5.0
+**MCP Server for Neo N3 Blockchain Integration** | Version 1.6.0
 
 [![MCP SDK](https://img.shields.io/badge/MCP%20SDK-1.9.0-blue)](https://github.com/modelcontextprotocol/typescript-sdk)
 [![Neo N3](https://img.shields.io/badge/Neo%20N3-Compatible-green)](https://neo.org/)
@@ -69,7 +69,7 @@ Create a `neo-mcp-config.json` file:
   },
   "server": {
     "name": "neo-n3-mcp-server",
-    "version": "1.5.0"
+    "version": "1.6.0"
   },
   "wallets": {
     "directory": "./wallets"
@@ -87,7 +87,7 @@ neo-n3-mcp --config ./neo-mcp-config.json
 #### Using Docker Hub Image
 ```bash
 # Basic run
-docker run -p 3000:3000 r3e/neo-n3-mcp:1.5.0
+docker run -p 3000:3000 r3e/neo-n3-mcp:1.6.0
 
 # With environment variables
 docker run -p 3000:3000 \
@@ -95,14 +95,14 @@ docker run -p 3000:3000 \
   -e NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443 \
   -e NEO_TESTNET_RPC=https://testnet1.neo.coz.io:443 \
   -e LOG_LEVEL=info \
-  r3e/neo-n3-mcp:1.5.0
+  r3e/neo-n3-mcp:1.6.0
 
 # With volume for persistent data
 docker run -p 3000:3000 \
   -v $(pwd)/wallets:/app/wallets \
   -v $(pwd)/logs:/app/logs \
   -e NEO_NETWORK=testnet \
-  r3e/neo-n3-mcp:1.5.0
+  r3e/neo-n3-mcp:1.6.0
 ```
 
 #### Docker Compose
@@ -112,7 +112,7 @@ Create a `docker-compose.yml`:
 version: '3.8'
 services:
   neo-mcp:
-    image: r3e/neo-n3-mcp:1.5.0
+    image: r3e/neo-n3-mcp:1.6.0
     ports:
       - "3000:3000"
     environment:
@@ -152,7 +152,7 @@ npm run docker:up:dev
 #### Production Docker Setup
 ```bash
 # Build production image
-./scripts/docker-build.sh --tag v1.5.0
+./scripts/docker-build.sh --tag v1.6.0
 
 # Run with custom configuration
 docker run -d \
@@ -160,7 +160,7 @@ docker run -d \
   -p 3000:3000 \
   -e NEO_NETWORK=mainnet \
   -v neo-mcp-logs:/app/logs \
-  neo-n3-mcp:v1.5.0
+  neo-n3-mcp:v1.6.0
 ```
 
 #### Development Docker Setup
@@ -295,6 +295,35 @@ await client.connect(transport);
 - **Network Resilience**: Automatic fallback mechanisms for RPC calls
 - **Production Ready**: Systemd service configuration and monitoring support
 
+## 🔄 Version Management
+
+### Current Version: 1.6.0
+
+This project follows [Semantic Versioning](https://semver.org/). See our [Version Management Guide](./docs/VERSION_MANAGEMENT.md) for detailed information about our release process.
+
+#### Quick Version Commands
+```bash
+# Check current version
+npm run version:check
+
+# Prepare release (automated)
+./scripts/prepare-release.sh --type minor
+
+# Manual version bumps
+npm run version:patch  # 1.6.0 → 1.6.1
+npm run version:minor  # 1.6.0 → 1.7.0
+npm run version:major  # 1.6.0 → 2.0.0
+```
+
+#### Latest Changes (v1.6.0)
+- ✨ **Enterprise CI/CD Pipeline**: Complete GitHub Actions workflow
+- 🐳 **Docker Infrastructure**: Production and development environments
+- 📁 **Project Organization**: Structured folders (docker/, docs/, scripts/)
+- 🔧 **Automated Publishing**: NPM and Docker Hub integration
+- 📚 **Comprehensive Documentation**: Guides for all deployment scenarios
+
+See [CHANGELOG.md](./docs/CHANGELOG.md) for complete version history.
+
 ## 📚 Documentation
 
 - **[API Reference](./docs/API.md)** - Complete API documentation
@@ -305,6 +334,9 @@ await client.connect(transport);
 - **[Deployment](./docs/DEPLOYMENT.md)** - Deployment configuration
 - **[Testing](./docs/TESTING.md)** - Testing and validation
 - **[Networks](./docs/NETWORKS.md)** - Network configuration details
+- **[Version Management](./docs/VERSION_MANAGEMENT.md)** - Release process and versioning
+- **[Workflow Guide](./docs/WORKFLOW.md)** - CI/CD pipeline documentation
+- **[Changelog](./docs/CHANGELOG.md)** - Version history and changes
 
 ## 📄 License
 
