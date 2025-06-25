@@ -76,10 +76,10 @@ echo -e "Build type: ${YELLOW}$BUILD_TYPE${NC}"
 # Build the image
 if [ "$BUILD_TYPE" = "development" ]; then
     echo -e "${GREEN}Building development image...${NC}"
-    docker build -f Dockerfile.dev -t "$FULL_IMAGE_NAME" --target development .
+    docker build -f docker/Dockerfile.dev -t "$FULL_IMAGE_NAME" --target development .
 else
     echo -e "${GREEN}Building production image...${NC}"
-    docker build -f Dockerfile -t "$FULL_IMAGE_NAME" --target production .
+    docker build -f docker/Dockerfile -t "$FULL_IMAGE_NAME" --target production .
 fi
 
 if [ $? -eq 0 ]; then

@@ -139,7 +139,7 @@ docker-compose up -d
 # Quick start with Docker Compose
 git clone https://github.com/r3e-network/neo-n3-mcp.git
 cd neo-n3-mcp
-docker-compose up -d
+docker-compose -f docker/docker-compose.yml up -d
 
 # Or build and run manually
 npm run docker:build
@@ -169,7 +169,7 @@ docker run -d \
 ./scripts/docker-build.sh --dev
 
 # Run with hot reload and debugging
-docker-compose -f docker-compose.dev.yml up -d
+docker-compose -f docker/docker-compose.dev.yml up -d
 ```
 
 ## 🔧 Configuration Options
@@ -297,14 +297,14 @@ await client.connect(transport);
 
 ## 📚 Documentation
 
-- **[API Reference](./API.md)** - Complete API documentation
-- **[Architecture](./ARCHITECTURE.md)** - System design and components
-- **[Examples](./EXAMPLES.md)** - Practical usage examples and best practices
-- **[Docker Guide](./DOCKER.md)** - Comprehensive Docker deployment guide
-- **[Production Checklist](./PRODUCTION_CHECKLIST.md)** - Production deployment guide
-- **[Deployment](./DEPLOYMENT.md)** - Deployment configuration
-- **[Testing](./TESTING.md)** - Testing and validation
-- **[Networks](./NETWORKS.md)** - Network configuration details
+- **[API Reference](./docs/API.md)** - Complete API documentation
+- **[Architecture](./docs/ARCHITECTURE.md)** - System design and components
+- **[Examples](./docs/EXAMPLES.md)** - Practical usage examples and best practices
+- **[Docker Guide](./docs/DOCKER.md)** - Comprehensive Docker deployment guide
+- **[Production Checklist](./docs/PRODUCTION_CHECKLIST.md)** - Production deployment guide
+- **[Deployment](./docs/DEPLOYMENT.md)** - Deployment configuration
+- **[Testing](./docs/TESTING.md)** - Testing and validation
+- **[Networks](./docs/NETWORKS.md)** - Network configuration details
 
 ## 📄 License
 
