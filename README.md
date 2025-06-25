@@ -133,23 +133,43 @@ Run with:
 docker-compose up -d
 ```
 
-#### Custom Dockerfile
-```dockerfile
-FROM node:18-alpine
+### 🐳 Docker Quick Start
 
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
+```bash
+# Quick start with Docker Compose
+git clone https://github.com/r3e-network/neo-n3-mcp.git
+cd neo-n3-mcp
+docker-compose up -d
 
-COPY dist/ ./dist/
-COPY config/ ./config/
+# Or build and run manually
+npm run docker:build
+npm run docker:run
 
-# Create necessary directories
-RUN mkdir -p wallets logs
+# Development mode
+npm run docker:up:dev
+```
 
-EXPOSE 3000
+#### Production Docker Setup
+```bash
+# Build production image
+./scripts/docker-build.sh --tag v1.5.0
 
-CMD ["node", "dist/index.js"]
+# Run with custom configuration
+docker run -d \
+  --name neo-mcp-prod \
+  -p 3000:3000 \
+  -e NEO_NETWORK=mainnet \
+  -v neo-mcp-logs:/app/logs \
+  neo-n3-mcp:v1.5.0
+```
+
+#### Development Docker Setup
+```bash
+# Build development image
+./scripts/docker-build.sh --dev
+
+# Run with hot reload and debugging
+docker-compose -f docker-compose.dev.yml up -d
 ```
 
 ## 🔧 Configuration Options
@@ -280,6 +300,7 @@ await client.connect(transport);
 - **[API Reference](./API.md)** - Complete API documentation
 - **[Architecture](./ARCHITECTURE.md)** - System design and components
 - **[Examples](./EXAMPLES.md)** - Practical usage examples and best practices
+- **[Docker Guide](./DOCKER.md)** - Comprehensive Docker deployment guide
 - **[Production Checklist](./PRODUCTION_CHECKLIST.md)** - Production deployment guide
 - **[Deployment](./DEPLOYMENT.md)** - Deployment configuration
 - **[Testing](./TESTING.md)** - Testing and validation

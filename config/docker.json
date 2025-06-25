@@ -1,0 +1,29 @@
+{
+  "network": "mainnet",
+  "rpc": {
+    "mainnet": "https://mainnet1.neo.coz.io:443",
+    "testnet": "https://testnet1.neo.coz.io:443"
+  },
+  "logging": {
+    "level": "info",
+    "file": "/app/logs/neo-mcp.log",
+    "console": true
+  },
+  "rateLimiting": {
+    "enabled": true,
+    "maxRequestsPerMinute": 60,
+    "maxRequestsPerHour": 1000
+  },
+  "server": {
+    "name": "neo-n3-mcp-server",
+    "version": "1.5.0",
+    "port": 3000
+  },
+  "wallets": {
+    "directory": "/app/wallets"
+  },
+  "security": {
+    "requireConfirmation": true,
+    "validateInputs": true
+  }
+}
