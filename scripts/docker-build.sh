@@ -76,7 +76,16 @@ echo -e "Build type: ${YELLOW}$BUILD_TYPE${NC}"
 # Build the image
 if [ "$BUILD_TYPE" = "development" ]; then
     echo -e "${GREEN}Building development image...${NC}"
+    # Copy development .dockerignore temporarily
+    cp docker/.dockerignore .dockerignore.dev
+    mv .dockerignore .dockerignore.prod
+    mv .dockerignore.dev .dockerignore
+    
     docker build -f docker/Dockerfile.dev -t "$FULL_IMAGE_NAME" --target development .
+    
+    # Restore original .dockerignore
+    mv .dockerignore .dockerignore.dev
+    mv .dockerignore.prod .dockerignore
 else
     echo -e "${GREEN}Building production image...${NC}"
     docker build -f docker/Dockerfile -t "$FULL_IMAGE_NAME" --target production .

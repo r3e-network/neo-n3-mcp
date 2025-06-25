@@ -97,7 +97,14 @@ jobs:
       
     - name: Build development image
       run: |
+        # Use development .dockerignore that allows tests
+        cp docker/.dockerignore .dockerignore.temp
+        cp .dockerignore .dockerignore.prod
+        cp .dockerignore.temp .dockerignore
         docker build -f docker/Dockerfile.dev -t neo-n3-mcp:dev .
+        # Restore original .dockerignore
+        cp .dockerignore.prod .dockerignore
+        rm .dockerignore.temp .dockerignore.prod
         
     - name: Build production image
       run: |
