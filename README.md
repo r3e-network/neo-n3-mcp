@@ -265,12 +265,23 @@ await client.connect(transport);
 - **Confirmation Required**: Sensitive operations require explicit confirmation
 - **Private Key Security**: Keys encrypted and stored securely
 - **Network Isolation**: Separate configurations for mainnet/testnet
+- **Rate Limiting**: Configurable rate limiting for production deployments
+- **Secure Logging**: No sensitive data exposed in logs
+
+## ⚡ Performance & Reliability
+
+- **Rate Limiting**: Built-in rate limiting with configurable thresholds
+- **Error Handling**: Comprehensive error handling with proper MCP error codes
+- **Network Resilience**: Automatic fallback mechanisms for RPC calls
+- **Production Ready**: Systemd service configuration and monitoring support
 
 ## 📚 Documentation
 
 - **[API Reference](./API.md)** - Complete API documentation
 - **[Architecture](./ARCHITECTURE.md)** - System design and components
-- **[Deployment](./DEPLOYMENT.md)** - Production deployment guide
+- **[Examples](./EXAMPLES.md)** - Practical usage examples and best practices
+- **[Production Checklist](./PRODUCTION_CHECKLIST.md)** - Production deployment guide
+- **[Deployment](./DEPLOYMENT.md)** - Deployment configuration
 - **[Testing](./TESTING.md)** - Testing and validation
 - **[Networks](./NETWORKS.md)** - Network configuration details
 

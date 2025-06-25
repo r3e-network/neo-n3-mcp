@@ -732,14 +732,15 @@ export class NeoService {
     }
 
     // Asset hashes for different networks
+    // Note: In Neo N3, NEO and GAS use the same contract hashes on both mainnet and testnet
     const assets: Record<NeoNetwork, Record<string, string>> = {
       [NeoNetwork.MAINNET]: {
         NEO: '0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5',
         GAS: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
       },
       [NeoNetwork.TESTNET]: {
-        NEO: '0x8c23f196d8a1bfd103a9dcb1f9ccf0c611377d3b',  // Testnet NEO hash
-        GAS: '0xd2a4cff31913016155e38e474a2c06d08be276cf',  // Testnet GAS hash
+        NEO: '0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5',  // Same as mainnet in Neo N3
+        GAS: '0xd2a4cff31913016155e38e474a2c06d08be276cf',  // Same as mainnet in Neo N3
       }
     };
 
