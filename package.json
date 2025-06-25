@@ -21,11 +21,11 @@
     "docker:build:dev": "./scripts/docker-build.sh --dev",
     "docker:run": "./scripts/docker-run.sh",
     "docker:run:dev": "./scripts/docker-run.sh --image neo-n3-mcp:dev --network testnet",
-    "docker:up": "docker-compose -f docker/docker-compose.yml up -d",
-    "docker:up:dev": "docker-compose -f docker/docker-compose.dev.yml up -d",
-    "docker:down": "docker-compose -f docker/docker-compose.yml down",
-    "docker:logs": "docker-compose -f docker/docker-compose.yml logs -f",
-    "docker:test": "docker-compose -f docker/docker-compose.dev.yml run --rm neo-mcp-test"
+    "docker:up": "docker compose -f docker/docker-compose.yml up -d",
+    "docker:up:dev": "docker compose -f docker/docker-compose.dev.yml up -d",
+    "docker:down": "docker compose -f docker/docker-compose.yml down",
+    "docker:logs": "docker compose -f docker/docker-compose.yml logs -f",
+    "docker:test": "docker compose -f docker/docker-compose.dev.yml run --rm neo-mcp-test"
   },
   "bin": {
     "neo-n3-mcp": "dist/index.js"

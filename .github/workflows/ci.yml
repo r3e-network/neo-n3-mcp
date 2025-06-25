@@ -121,10 +121,10 @@ jobs:
     - name: Test Docker Compose
       run: |
         # Test development compose
-        docker-compose -f docker/docker-compose.dev.yml config
+        docker compose -f docker/docker-compose.dev.yml config
         
         # Test production compose
-        docker-compose -f docker/docker-compose.yml config
+        docker compose -f docker/docker-compose.yml config
 
   security:
     name: Security Audit
