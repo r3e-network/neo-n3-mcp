@@ -295,34 +295,128 @@ await client.connect(transport);
 - **Network Resilience**: Automatic fallback mechanisms for RPC calls
 - **Production Ready**: Systemd service configuration and monitoring support
 
-## 🔄 Version Management
+## 🔄 Version Management & Release Process
 
 ### Current Version: 1.6.0
 
-This project follows [Semantic Versioning](https://semver.org/). See our [Version Management Guide](./docs/VERSION_MANAGEMENT.md) for detailed information about our release process.
+This project follows [Semantic Versioning](https://semver.org/) with automated CI/CD pipeline for releases. See our [Version Management Guide](./docs/VERSION_MANAGEMENT.md) for detailed information.
 
-#### Quick Version Commands
+### 🚀 How to Trigger Next Version Release
+
+#### **Method 1: Automated Release Script (Recommended)**
+```bash
+# 1. First, do a dry run to see what will happen
+./scripts/prepare-release.sh --type minor --dry-run
+
+# 2. If everything looks good, run the actual release preparation
+./scripts/prepare-release.sh --type minor
+
+# 3. Push the changes (script will guide you)
+git push
+
+# 4. Create GitHub release (triggers full CI/CD pipeline)
+gh release create v1.7.0 --generate-notes
+```
+
+#### **Method 2: Manual NPM Version Commands**
 ```bash
 # Check current version
 npm run version:check
 
-# Prepare release (automated)
-./scripts/prepare-release.sh --type minor
+# Bump version manually
+npm run version:patch   # 1.6.0 → 1.6.1 (bug fixes)
+npm run version:minor   # 1.6.0 → 1.7.0 (new features)
+npm run version:major   # 1.6.0 → 2.0.0 (breaking changes)
 
-# Manual version bumps
-npm run version:patch  # 1.6.0 → 1.6.1
-npm run version:minor  # 1.6.0 → 1.7.0
-npm run version:major  # 1.6.0 → 2.0.0
+# Then commit and push
+git add . && git commit -m "chore: bump version to 1.7.0"
+git push
 ```
 
-#### Latest Changes (v1.6.0)
+#### **Method 3: GitHub Release (Direct)**
+```bash
+# Using GitHub CLI
+gh release create v1.7.0 --generate-notes
+
+# Or manually through GitHub web interface:
+# 1. Go to https://github.com/r3e-network/neo-n3-mcp/releases
+# 2. Click "Create a new release"
+# 3. Tag: v1.7.0, Title: "Release v1.7.0"
+# 4. Auto-generate release notes
+# 5. Publish release
+```
+
+### 🔄 What Happens When You Create a Release
+
+The automated CI/CD pipeline triggers the following workflow:
+
+#### **Phase 1: Testing & Validation** ⚡
+- ✅ **Multi-version testing**: Node.js 18.x, 20.x, 22.x on ubuntu-latest
+- ✅ **Code quality**: Linting and type checking
+- ✅ **Unit tests**: Core functionality validation
+- ✅ **Coverage reporting**: Automatic upload to Codecov
+
+#### **Phase 2: Build & Docker** 🔨
+- ✅ **TypeScript compilation**: Build validation
+- ✅ **Docker builds**: Both development and production images
+- ✅ **Container testing**: Docker functionality validation
+- ✅ **Compose validation**: Configuration testing
+
+#### **Phase 3: Security & Audit** 🔒
+- ✅ **Security audit**: npm audit for vulnerabilities
+- ✅ **Dependency check**: audit-ci for security issues
+- ✅ **Package updates**: Check for outdated dependencies
+
+#### **Phase 4: Publishing** 📦 (Only on release)
+- 🚀 **NPM Publishing**: Automatic package publishing to npm registry
+- 🐳 **Docker Publishing**: Multi-tag image publishing to Docker Hub
+- 📋 **Versioned tags**: Semantic versioning with proper tagging
+
+#### **Phase 5: Deployment** 🌐 (Only on release)
+- 🎯 **Production deployment**: Automated deployment notification
+- 📊 **Release tracking**: Version monitoring and validation
+
+### 📋 Release Types
+
+| Type | Version Change | Use Case | Example |
+|------|---------------|----------|---------|
+| **patch** | 1.6.0 → 1.6.1 | Bug fixes, security patches | `./scripts/prepare-release.sh --type patch` |
+| **minor** | 1.6.0 → 1.7.0 | New features, enhancements | `./scripts/prepare-release.sh --type minor` |
+| **major** | 1.6.0 → 2.0.0 | Breaking changes | `./scripts/prepare-release.sh --type major` |
+
+### 🎯 Quick Release Commands
+
+```bash
+# For next minor release (recommended for new features)
+./scripts/prepare-release.sh --type minor
+
+# For patch release (bug fixes)
+./scripts/prepare-release.sh --type patch
+
+# For major release (breaking changes)
+./scripts/prepare-release.sh --type major
+
+# Test what would happen (dry run)
+./scripts/prepare-release.sh --type minor --dry-run
+```
+
+### 📊 Latest Changes (v1.6.0)
 - ✨ **Enterprise CI/CD Pipeline**: Complete GitHub Actions workflow
 - 🐳 **Docker Infrastructure**: Production and development environments
 - 📁 **Project Organization**: Structured folders (docker/, docs/, scripts/)
 - 🔧 **Automated Publishing**: NPM and Docker Hub integration
 - 📚 **Comprehensive Documentation**: Guides for all deployment scenarios
+- 🔄 **Version Management**: Automated release preparation and validation
 
-See [CHANGELOG.md](./docs/CHANGELOG.md) for complete version history.
+### 📚 Release Documentation
+- **[CHANGELOG.md](./docs/CHANGELOG.md)** - Complete version history
+- **[VERSION_MANAGEMENT.md](./docs/VERSION_MANAGEMENT.md)** - Detailed release process
+- **[WORKFLOW.md](./docs/WORKFLOW.md)** - CI/CD pipeline documentation
+
+### 🔐 Required Secrets (Already Configured)
+- ✅ `NPM_TOKEN` - For NPM registry publishing
+- ✅ `DOCKER_USERNAME` - Docker Hub username
+- ✅ `DOCKER_PASSWORD` - Docker Hub access token
 
 ## 📚 Documentation
 
@@ -335,6 +429,7 @@ See [CHANGELOG.md](./docs/CHANGELOG.md) for complete version history.
 - **[Testing](./docs/TESTING.md)** - Testing and validation
 - **[Networks](./docs/NETWORKS.md)** - Network configuration details
 - **[Version Management](./docs/VERSION_MANAGEMENT.md)** - Release process and versioning
+- **[Release Guide](./docs/RELEASE_GUIDE.md)** - Quick reference for triggering releases
 - **[Workflow Guide](./docs/WORKFLOW.md)** - CI/CD pipeline documentation
 - **[Changelog](./docs/CHANGELOG.md)** - Version history and changes
 
