@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: production
-    image: neo-n3-mcp:latest
+    image: r3enetwork/neo-n3-mcp:latest
     container_name: neo-n3-mcp-server
     restart: unless-stopped
     ports:

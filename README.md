@@ -87,7 +87,7 @@ neo-n3-mcp --config ./neo-mcp-config.json
 #### Using Docker Hub Image
 ```bash
 # Basic run
-docker run -p 3000:3000 r3e/neo-n3-mcp:1.6.0
+docker run -p 3000:3000 r3enetwork/neo-n3-mcp:1.6.0
 
 # With environment variables
 docker run -p 3000:3000 \
@@ -95,14 +95,14 @@ docker run -p 3000:3000 \
   -e NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443 \
   -e NEO_TESTNET_RPC=https://testnet1.neo.coz.io:443 \
   -e LOG_LEVEL=info \
-  r3e/neo-n3-mcp:1.6.0
+  r3enetwork/neo-n3-mcp:1.6.0
 
 # With volume for persistent data
 docker run -p 3000:3000 \
   -v $(pwd)/wallets:/app/wallets \
   -v $(pwd)/logs:/app/logs \
   -e NEO_NETWORK=testnet \
-  r3e/neo-n3-mcp:1.6.0
+  r3enetwork/neo-n3-mcp:1.6.0
 ```
 
 #### Docker Compose
@@ -112,7 +112,7 @@ Create a `docker-compose.yml`:
 version: '3.8'
 services:
   neo-mcp:
-    image: r3e/neo-n3-mcp:1.6.0
+    image: r3enetwork/neo-n3-mcp:1.6.0
     ports:
       - "3000:3000"
     environment:

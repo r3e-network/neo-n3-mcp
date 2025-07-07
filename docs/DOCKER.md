@@ -55,10 +55,10 @@ docker logs -f neo-n3-mcp-server
 
 ```bash
 # Build production image
-docker build -t neo-n3-mcp:latest .
+docker build -t r3enetwork/neo-n3-mcp:latest .
 
 # Or use the build script
-./scripts/docker-build.sh --tag v1.5.0
+./scripts/docker-build.sh --tag v1.6.0 --registry r3enetwork
 ```
 
 ### Development Image
@@ -69,10 +69,10 @@ docker build -t neo-n3-mcp:latest .
 
 ```bash
 # Build development image
-docker build -f Dockerfile.dev -t neo-n3-mcp:dev .
+docker build -f Dockerfile.dev -t r3enetwork/neo-n3-mcp:dev .
 
 # Or use the build script
-./scripts/docker-build.sh --dev --tag dev
+./scripts/docker-build.sh --dev --tag dev --registry r3enetwork
 ```
 
 ## Configuration
@@ -114,7 +114,7 @@ services:
 cp config/docker.json config/custom.json
 
 # Mount custom config
-docker run -v ./config/custom.json:/app/config/docker.json neo-n3-mcp:latest
+docker run -v ./config/custom.json:/app/config/docker.json r3enetwork/neo-n3-mcp:latest
 ```
 
 ## Development
@@ -179,7 +179,7 @@ curl http://localhost:3000/metrics
 
 ```bash
 # Build optimized image
-./scripts/docker-build.sh --tag production
+./scripts/docker-build.sh --tag production --registry r3enetwork
 
 # Run with custom configuration
 docker run -d \
@@ -189,7 +189,7 @@ docker run -d \
   -v neo-mcp-logs:/app/logs \
   -v neo-mcp-wallets:/app/wallets \
   --restart unless-stopped \
-  neo-n3-mcp:production
+  r3enetwork/neo-n3-mcp:production
 ```
 
 ### Docker Swarm Deployment
@@ -199,7 +199,7 @@ docker run -d \
 version: '3.8'
 services:
   neo-mcp:
-    image: neo-n3-mcp:latest
+    image: r3enetwork/neo-n3-mcp:latest
     ports:
       - "3000:3000"
     environment:
@@ -242,7 +242,7 @@ spec:
     spec:
       containers:
       - name: neo-mcp
-        image: neo-n3-mcp:latest
+        image: r3enetwork/neo-n3-mcp:latest
         ports:
         - containerPort: 3000
         env:
@@ -316,10 +316,10 @@ curl http://localhost:3000/health
 docker logs neo-n3-mcp-server
 
 # Check configuration
-docker run --rm neo-n3-mcp:latest cat /app/config/docker.json
+docker run --rm r3enetwork/neo-n3-mcp:latest cat /app/config/docker.json
 
 # Validate environment
-docker run --rm neo-n3-mcp:latest env | grep NEO_
+docker run --rm r3enetwork/neo-n3-mcp:latest env | grep NEO_
 ```
 
 #### Network Connectivity Issues
