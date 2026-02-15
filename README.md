@@ -1,3 +1,6 @@
+
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/r3e-network-neo-n3-mcp-badge.png)](https://mseep.ai/app/r3e-network-neo-n3-mcp)
+
 # Neo N3 MCP Server
 
 **MCP Server for Neo N3 Blockchain Integration** | Version 1.6.0
