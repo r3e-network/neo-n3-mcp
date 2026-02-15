@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testing Guide - Neo N3 MCP Server</title>
+    <meta name="description" content="Comprehensive testing guide for Neo N3 MCP Server. Learn testing strategies, validation procedures, and quality assurance practices.">
+    <meta name="keywords" content="neo, blockchain, mcp, testing, validation, quality assurance">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Modern Theme -->
+    <link rel="stylesheet" href="/assets/css/modern-theme.css">
+    
+    <style>
+        .breadcrumb {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .breadcrumb a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .example-section {
+            margin-bottom: var(--spacing-3xl);
+        }
+        
+        .example-section h2 {
+            font-family: var(--font-heading);
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-primary);
+        }
+        
+        .example-section h3 {
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: var(--spacing-xl) 0 var(--spacing-lg) 0;
+            color: var(--text-primary);
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.1));
+            border-left: 4px solid var(--primary);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            margin: var(--spacing-lg) 0;
+        }
+        
+        .info-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .code-block {
+            margin: var(--spacing-lg) 0;
+        }
+        
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md) var(--radius-md) 0 0;
+            border-bottom: 1px solid var(--border-primary);
+        }
+        
+        .code-title {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
+        .copy-button {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-primary);
+            color: var(--text-secondary);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.8rem;
+        }
+        
+        .copy-button:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .code-block pre {
+            background: var(--bg-tertiary);
+            border-radius: 0 0 var(--radius-md) var(--radius-md);
+            padding: var(--spacing-lg);
+            margin: 0;
+            overflow-x: auto;
+        }
+        
+        .code-block code {
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">Neo N3 MCP</a>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/#features" class="nav-link">Features</a>
+                <a href="/docs" class="nav-link active">Docs</a>
+                <a href="/examples" class="nav-link">Examples</a>
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-container">
+        <div class="breadcrumb">
+            <a href="/docs">Documentation</a> > Testing Guide
+        </div>
+        
+        <header style="text-align: center; margin-bottom: 3rem;">
+            <h1 class="section-title">Testing Guide</h1>
+            <p class="section-subtitle">
+                Comprehensive testing strategies and validation procedures for Neo N3 MCP Server
+            </p>
+        </header>
+
+        <div class="example-section">
+            <h2>🧪 Testing Overview</h2>
+            <p>Neo N3 MCP Server maintains 90%+ test coverage through a comprehensive testing strategy that includes unit tests, integration tests, security validation, and performance testing.</p>
+            
+            <div class="info-box">
+                <div class="info-title">📊 Test Coverage Stats</div>
+                <ul>
+                    <li><strong>395 Tests:</strong> Comprehensive test suite coverage</li>
+                    <li><strong>90%+ Coverage:</strong> High code coverage across all modules</li>
+                    <li><strong>34 Tools Tested:</strong> Every tool has dedicated test cases</li>
+                    <li><strong>9 Resources Tested:</strong> All resources validated</li>
+                    <li><strong>Security Tests:</strong> Extensive security validation</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>🔧 Running Tests</h2>
+            
+            <h3>Development Testing</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">NPM Scripts</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-bash"># Run all tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run specific test suite
+npm run test:unit
+npm run test:integration
+npm run test:security
+
+# Run tests with detailed output
+npm run test:verbose
+
+# Run performance tests
+npm run test:performance</code></pre>
+            </div>
+
+            <h3>Docker Testing</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Docker Test Environment</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-bash"># Build test image
+docker build -t neo-n3-mcp:test --target test .
+
+# Run tests in container
+docker run --rm neo-n3-mcp:test npm test
+
+# Run with test network
+docker-compose -f docker-compose.test.yml up --abort-on-container-exit
+
+# Interactive test environment
+docker run -it --rm neo-n3-mcp:test bash</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>🎯 Unit Testing</h2>
+            
+            <h3>Tool Testing Framework</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Example: Wallet Tool Tests</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-typescript">import { describe, it, expect, beforeEach, afterEach } from '@jest/globals'
+import { WalletService } from '../src/services/wallet-service'
+import { MockNeoRpcClient } from './mocks/neo-rpc-client'
+
+describe('WalletService', () => {
+  let walletService: WalletService
+  let mockRpcClient: MockNeoRpcClient
+
+  beforeEach(() => {
+    mockRpcClient = new MockNeoRpcClient()
+    walletService = new WalletService(mockRpcClient)
+  })
+
+  afterEach(() => {
+    jest.clearAllMocks()
+  })
+
+  describe('createWallet', () => {
+    it('should create a new wallet with valid password', async () => {
+      const result = await walletService.createWallet('secure-password-123')
+      
+      expect(result).toHaveProperty('address')
+      expect(result).toHaveProperty('publicKey')
+      expect(result.address).toMatch(/^N[A-Za-z0-9]{33}$/)
+      expect(result.encrypted).toBe(true)
+    })
+
+    it('should reject weak passwords', async () => {
+      await expect(walletService.createWallet('123'))
+        .rejects.toThrow('Password too weak')
+    })
+
+    it('should handle network errors gracefully', async () => {
+      mockRpcClient.setNetworkError(true)
+      
+      await expect(walletService.createWallet('secure-password-123'))
+        .rejects.toThrow('Network connection failed')
+    })
+  })
+
+  describe('getBalance', () => {
+    it('should return balance for valid address', async () => {
+      const address = 'NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj'
+      mockRpcClient.setBalance(address, { NEO: '100', GAS: '50.5' })
+      
+      const balance = await walletService.getBalance(address)
+      
+      expect(balance.NEO).toBe('100')
+      expect(balance.GAS).toBe('50.5')
+    })
+
+    it('should validate address format', async () => {
+      await expect(walletService.getBalance('invalid-address'))
+        .rejects.toThrow('Invalid address format')
+    })
+  })
+})</code></pre>
+            </div>
+
+            <h3>Contract Testing</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Famous Contracts Tests</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-typescript">describe('ContractService', () => {
+  describe('Famous Contracts', () => {
+    it('should list all supported contracts', async () => {
+      const contracts = await contractService.listFamousContracts()
+      
+      expect(contracts).toHaveLength(6)
+      expect(contracts.map(c => c.name)).toEqual([
+        'NeoFS', 'NeoBurger', 'Flamingo', 
+        'NeoCompound', 'GrandShare', 'GhostMarket'
+      ])
+    })
+
+    it('should get contract information', async () => {
+      const contract = await contractService.getFamousContract('NeoFS')
+      
+      expect(contract).toHaveProperty('hash')
+      expect(contract).toHaveProperty('name', 'NeoFS')
+      expect(contract).toHaveProperty('description')
+      expect(contract.methods).toBeInstanceOf(Array)
+    })
+
+    it('should invoke read-only contract methods', async () => {
+      const result = await contractService.invokeRead(
+        'NeoFS', 
+        'totalSupply', 
+        []
+      )
+      
+      expect(result).toHaveProperty('type', 'Integer')
+      expect(result).toHaveProperty('value')
+    })
+  })
+})</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>🔗 Integration Testing</h2>
+            
+            <h3>End-to-End MCP Protocol Testing</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">MCP Protocol Integration</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-typescript">describe('MCP Protocol Integration', () => {
+  let mcpServer: MCPServer
+
+  beforeAll(async () => {
+    mcpServer = new MCPServer()
+    await mcpServer.initialize()
+  })
+
+  afterAll(async () => {
+    await mcpServer.shutdown()
+  })
+
+  describe('Tools', () => {
+    it('should list all available tools', async () => {
+      const tools = await mcpServer.listTools()
+      
+      expect(tools).toHaveLength(34)
+      expect(tools.every(tool => tool.name && tool.description)).toBe(true)
+    })
+
+    it('should execute blockchain tools', async () => {
+      const result = await mcpServer.callTool('get_blockchain_info', {})
+      
+      expect(result.isError).toBe(false)
+      expect(result.content).toHaveProperty('network')
+      expect(result.content).toHaveProperty('blockHeight')
+    })
+
+    it('should handle tool execution errors', async () => {
+      const result = await mcpServer.callTool('get_balance', {
+        address: 'invalid-address'
+      })
+      
+      expect(result.isError).toBe(true)
+      expect(result.content).toContain('Invalid address format')
+    })
+  })
+
+  describe('Resources', () => {
+    it('should list all available resources', async () => {
+      const resources = await mcpServer.listResources()
+      
+      expect(resources).toHaveLength(9)
+      expect(resources.every(resource => resource.uri && resource.name)).toBe(true)
+    })
+
+    it('should read network status resource', async () => {
+      const content = await mcpServer.readResource('neo://network/status')
+      
+      expect(content).toHaveProperty('mimeType', 'application/json')
+      expect(content.text).toBeTruthy()
+      
+      const data = JSON.parse(content.text)
+      expect(data).toHaveProperty('network')
+      expect(data).toHaveProperty('status')
+    })
+  })
+})</code></pre>
+            </div>
+
+            <h3>Network Integration Tests</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Neo N3 Network Integration</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-typescript">describe('Neo N3 Network Integration', () => {
+  describe('Testnet Integration', () => {
+    it('should connect to testnet', async () => {
+      const neoService = new NeoService('testnet')
+      await neoService.initialize()
+      
+      const info = await neoService.getBlockchainInfo()
+      expect(info.network).toBe('testnet')
+      expect(info.blockHeight).toBeGreaterThan(0)
+    })
+
+    it('should retrieve real block data', async () => {
+      const block = await neoService.getBlock(1)
+      
+      expect(block).toHaveProperty('hash')
+      expect(block).toHaveProperty('index', 1)
+      expect(block).toHaveProperty('previousblockhash')
+      expect(block.tx).toBeInstanceOf(Array)
+    })
+
+    it('should handle network timeouts', async () => {
+      const neoService = new NeoService('testnet', {
+        timeout: 1 // Very short timeout
+      })
+      
+      await expect(neoService.getBlockchainInfo())
+        .rejects.toThrow(/timeout/i)
+    })
+  })
+
+  describe('Famous Contracts Integration', () => {
+    it('should interact with real NeoFS contract', async () => {
+      const result = await contractService.invokeRead(
+        'NeoFS',
+        'symbol',
+        []
+      )
+      
+      expect(result.value).toBe('FS')
+    })
+
+    it('should retrieve Flamingo token information', async () => {
+      const result = await contractService.invokeRead(
+        'Flamingo',
+        'totalSupply',
+        []
+      )
+      
+      expect(parseInt(result.value)).toBeGreaterThan(0)
+    })
+  })
+})</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>🛡️ Security Testing</h2>
+            
+            <h3>Input Validation Tests</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Security Validation</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-typescript">describe('Security Validation', () => {
+  describe('Input Sanitization', () => {
+    const maliciousInputs = [
+      '<script>alert("xss")</script>',
+      'javascript:alert("xss")',
+      '../../etc/passwd',
+      'DROP TABLE users;',
+      '${process.env.SECRET}',
+      '\x00\x01\x02',
+      'A'.repeat(10000) // Large input
+    ]
+
+    maliciousInputs.forEach(input => {
+      it(`should sanitize malicious input: ${input.substring(0, 20)}...`, async () => {
+        await expect(mcpServer.callTool('get_balance', {
+          address: input
+        })).rejects.toThrow(/Invalid address format|Input validation failed/)
+      })
+    })
+  })
+
+  describe('Rate Limiting', () => {
+    it('should enforce rate limits', async () => {
+      const promises = Array(150).fill(0).map(() => 
+        mcpServer.callTool('get_blockchain_info', {})
+      )
+      
+      const results = await Promise.allSettled(promises)
+      const rejected = results.filter(r => r.status === 'rejected')
+      
+      expect(rejected.length).toBeGreaterThan(0)
+      expect(rejected.some(r => 
+        r.reason.message.includes('Rate limit exceeded')
+      )).toBe(true)
+    })
+  })
+
+  describe('Confirmation Requirements', () => {
+    it('should require confirmation for write operations', async () => {
+      await expect(mcpServer.callTool('transfer_assets', {
+        fromWIF: 'test-key',
+        toAddress: 'test-address',
+        asset: 'GAS',
+        amount: '1',
+        confirm: false // Missing confirmation
+      })).rejects.toThrow('Confirmation required')
+    })
+  })
+
+  describe('Private Key Security', () => {
+    it('should never log private keys', async () => {
+      const consoleSpy = jest.spyOn(console, 'log')
+      const errorSpy = jest.spyOn(console, 'error')
+      
+      try {
+        await mcpServer.callTool('import_wallet', {
+          key: 'KxDgvEKzgSBPPfuVfw67oPQBSjidEiqTHURKSDL1R7yGaGYAeYnr',
+          password: 'test'
+        })
+      } catch (e) {
+        // Expected to fail in test environment
+      }
+      
+      const allLogs = [
+        ...consoleSpy.mock.calls.flat(),
+        ...errorSpy.mock.calls.flat()
+      ].join(' ')
+      
+      expect(allLogs).not.toContain('KxDgvEKzgSBPPfuVfw67oPQBSjidEiqTHURKSDL1R7yGaGYAeYnr')
+      
+      consoleSpy.mockRestore()
+      errorSpy.mockRestore()
+    })
+  })
+})</code></pre>
+            </div>
+
+            <h3>Network Security Tests</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Network Isolation</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-typescript">describe('Network Security', () => {
+  it('should isolate mainnet and testnet operations', async () => {
+    const mainnetService = new NeoService('mainnet')
+    const testnetService = new NeoService('testnet')
+    
+    const mainnetInfo = await mainnetService.getBlockchainInfo()
+    const testnetInfo = await testnetService.getBlockchainInfo()
+    
+    expect(mainnetInfo.network).toBe('mainnet')
+    expect(testnetInfo.network).toBe('testnet')
+    expect(mainnetInfo.magic).not.toBe(testnetInfo.magic)
+  })
+
+  it('should validate RPC endpoint certificates', async () => {
+    const neoService = new NeoService('mainnet', {
+      rpcUrl: 'https://invalid-certificate.example.com'
+    })
+    
+    await expect(neoService.getBlockchainInfo())
+      .rejects.toThrow(/certificate|SSL|TLS/)
+  })
+})</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>⚡ Performance Testing</h2>
+            
+            <h3>Load Testing</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Performance Benchmarks</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-typescript">describe('Performance Tests', () => {
+  describe('Throughput', () => {
+    it('should handle 100 concurrent requests', async () => {
+      const startTime = Date.now()
+      
+      const promises = Array(100).fill(0).map((_, i) => 
+        mcpServer.callTool('get_blockchain_info', {})
+      )
+      
+      const results = await Promise.all(promises)
+      const endTime = Date.now()
+      
+      const duration = endTime - startTime
+      const requestsPerSecond = 100 / (duration / 1000)
+      
+      expect(results.every(r => !r.isError)).toBe(true)
+      expect(requestsPerSecond).toBeGreaterThan(10) // At least 10 RPS
+      expect(duration).toBeLessThan(30000) // Under 30 seconds
+    })
+  })
+
+  describe('Response Times', () => {
+    const tools = [
+      'get_blockchain_info',
+      'get_network_mode',
+      'list_famous_contracts'
+    ]
+
+    tools.forEach(toolName => {
+      it(`should respond to ${toolName} within 2 seconds`, async () => {
+        const startTime = Date.now()
+        
+        const result = await mcpServer.callTool(toolName, {})
+        
+        const duration = Date.now() - startTime
+        
+        expect(result.isError).toBe(false)
+        expect(duration).toBeLessThan(2000) // Under 2 seconds
+      })
+    })
+  })
+
+  describe('Memory Usage', () => {
+    it('should not leak memory under load', async () => {
+      const initialMemory = process.memoryUsage().heapUsed
+      
+      // Perform many operations
+      for (let i = 0; i < 1000; i++) {
+        await mcpServer.callTool('get_blockchain_info', {})
+        
+        if (i % 100 === 0) {
+          global.gc && global.gc() // Force garbage collection if available
+        }
+      }
+      
+      const finalMemory = process.memoryUsage().heapUsed
+      const memoryIncrease = finalMemory - initialMemory
+      
+      // Memory should not increase by more than 50MB
+      expect(memoryIncrease).toBeLessThan(50 * 1024 * 1024)
+    })
+  })
+})</code></pre>
+            </div>
+
+            <h3>Cache Performance</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Cache Efficiency Tests</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-typescript">describe('Cache Performance', () => {
+  it('should improve response times with caching', async () => {
+    // Clear cache
+    await cacheService.clear()
+    
+    // First request (cache miss)
+    const start1 = Date.now()
+    await mcpServer.callTool('get_blockchain_info', {})
+    const time1 = Date.now() - start1
+    
+    // Second request (cache hit)
+    const start2 = Date.now()
+    await mcpServer.callTool('get_blockchain_info', {})
+    const time2 = Date.now() - start2
+    
+    // Cache hit should be significantly faster
+    expect(time2).toBeLessThan(time1 * 0.5)
+  })
+
+  it('should maintain high cache hit rate', async () => {
+    const operations = Array(100).fill(0).map(() => 
+      mcpServer.callTool('get_blockchain_info', {})
+    )
+    
+    await Promise.all(operations)
+    
+    const cacheStats = await cacheService.getStats()
+    expect(cacheStats.hitRate).toBeGreaterThan(0.8) // 80% hit rate
+  })
+})</code></pre>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>🤖 Automated Testing</h2>
+            
+            <h3>CI/CD Testing Pipeline</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">GitHub Actions Test Workflow</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-yaml">name: Test Suite
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20]
+    
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - run: npm ci
+    - run: npm run test:unit
+    - run: npm run test:coverage
+    
+    - uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage/lcov.info
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+    
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        cache: 'npm'
+    
+    - run: npm ci
+    - run: npm run test:integration
+      env:
+        NEO_NETWORK: testnet
+        REDIS_URL: redis://localhost:6379
+
+  security-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        cache: 'npm'
+    
+    - run: npm ci
+    - run: npm run test:security
+    - run: npm audit --audit-level moderate
+
+  performance-tests:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        cache: 'npm'
+    
+    - run: npm ci
+    - run: npm run test:performance
+    
+    - name: Performance regression check
+      run: |
+        node scripts/check-performance-regression.js</code></pre>
+            </div>
+
+            <h3>Quality Gates</h3>
+            <div class="info-box">
+                <div class="info-title">✅ Quality Requirements</div>
+                <ul>
+                    <li><strong>Test Coverage:</strong> Minimum 90% line coverage</li>
+                    <li><strong>Security Tests:</strong> All security tests must pass</li>
+                    <li><strong>Performance:</strong> No regression in key metrics</li>
+                    <li><strong>Integration:</strong> All Neo N3 integrations working</li>
+                    <li><strong>Code Quality:</strong> ESLint and TypeScript checks</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <h2>📋 Testing Checklist</h2>
+            
+            <h3>Pre-Release Testing</h3>
+            <div class="warning-box">
+                <div class="warning-title">🔍 Manual Testing Checklist</div>
+                <ul>
+                    <li>✅ All 34 tools execute successfully</li>
+                    <li>✅ All 9 resources return valid data</li>
+                    <li>✅ Famous contracts integration working</li>
+                    <li>✅ Wallet operations secure and functional</li>
+                    <li>✅ Network switching (mainnet/testnet) works</li>
+                    <li>✅ Error handling and validation proper</li>
+                    <li>✅ Performance within acceptable ranges</li>
+                    <li>✅ Security measures functioning</li>
+                    <li>✅ Documentation examples verified</li>
+                    <li>✅ Docker deployment tested</li>
+                </ul>
+            </div>
+
+            <h3>Test Data Management</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-title">Test Environment Setup</span>
+                    <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code class="language-bash"># Setup test environment
+npm run test:setup
+
+# Generate test wallets
+npm run test:generate-wallets
+
+# Setup test contracts
+npm run test:deploy-contracts
+
+# Cleanup test data
+npm run test:cleanup
+
+# Reset test environment
+npm run test:reset</code></pre>
+            </div>
+        </div>
+
+        <div class="next-steps">
+            <h2>Next Steps</h2>
+            <div class="step-cards">
+                <a href="/docs/architecture" class="step-card">
+                    <h3>System Architecture</h3>
+                    <p>Understand the system design and testing implications</p>
+                </a>
+                <a href="/docs/deployment" class="step-card">
+                    <h3>Production Deployment</h3>
+                    <p>Deploy with confidence using validated configurations</p>
+                </a>
+                <a href="/examples" class="step-card">
+                    <h3>Examples</h3>
+                    <p>See tested examples and implementations in action</p>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div>
+                    <div class="footer-brand">Neo N3 MCP</div>
+                    <p class="footer-description">
+                        The most advanced Neo N3 blockchain development platform. 
+                        Build powerful dApps with enterprise-grade tools and security.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="footer-title">Product</h4>
+                    <div class="footer-links">
+                        <a href="/docs" class="footer-link">Documentation</a>
+                        <a href="/examples" class="footer-link">Examples</a>
+                        <a href="/changelog" class="footer-link">Changelog</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Resources</h4>
+                    <div class="footer-links">
+                        <a href="https://docs.neo.org/" class="footer-link" target="_blank">Neo N3 Docs</a>
+                        <a href="https://modelcontextprotocol.io/" class="footer-link" target="_blank">MCP Protocol</a>
+                        <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="footer-link" target="_blank">NPM Package</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Community</h4>
+                    <div class="footer-links">
+                        <a href="https://github.com/r3e-network/neo-n3-mcp" class="footer-link" target="_blank">GitHub</a>
+                        <a href="https://github.com/r3e-network/neo-n3-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
+                        <a href="https://discord.gg/neo" class="footer-link" target="_blank">Discord</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2025 Neo N3 MCP. Open source under MIT License.</p>
+                <p>Built with ❤️ for the Neo ecosystem</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Navigation scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        function copyCode(button) {
+            const codeBlock = button.closest('.code-block').querySelector('code');
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copied!';
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html> 

@@ -8,12 +8,10 @@
 const { Client } = require('@modelcontextprotocol/sdk/client/index.js');
 const { StdioClientTransport } = require('@modelcontextprotocol/sdk/client/stdio.js');
 const path = require('path');
-const { spawn } = require('child_process');
 
 class McpIntegrationTest {
   constructor() {
     this.client = null;
-    this.serverProcess = null;
     this.results = {
       passed: 0,
       failed: 0,
@@ -27,12 +25,6 @@ class McpIntegrationTest {
   async startServer() {
     console.log('Starting Neo N3 MCP server...');
 
-    // Start the server as a separate process
-    const serverPath = path.join(__dirname, '../dist/index.js');
-    this.serverProcess = spawn('node', [serverPath], {
-      stdio: ['pipe', 'pipe', 'pipe']
-    });
-
     // Create a client
     this.client = new Client(
       { name: 'Neo N3 MCP Integration Test', version: '1.0.0' },
@@ -40,20 +32,16 @@ class McpIntegrationTest {
     );
 
     // Create a transport that connects to the server
+    const serverPath = path.join(__dirname, '../dist/index.js');
     const transport = new StdioClientTransport({
-      stdin: this.serverProcess.stdin,
-      stdout: this.serverProcess.stdout,
-      stderr: this.serverProcess.stderr,
-      encoding: 'utf-8'
+      command: 'node',
+      args: [serverPath]
     });
 
     // Connect to the server
     console.log('Connecting to server...');
     await this.client.connect(transport);
 
-    // Initialize the connection
-    console.log('Initializing connection...');
-    await this.client.initialize();
     console.log('Connection established successfully');
   }
 
@@ -65,12 +53,6 @@ class McpIntegrationTest {
       console.log('Closing client connection...');
       await this.client.close();
       this.client = null;
-    }
-
-    if (this.serverProcess) {
-      console.log('Stopping server...');
-      this.serverProcess.kill();
-      this.serverProcess = null;
     }
   }
 

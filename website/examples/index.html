@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examples - Neo N3 MCP</title>
+    <meta name="description" content="Real-world examples and use cases for Neo N3 MCP Server. Learn through practical implementations and interactive code samples.">
+    <meta name="keywords" content="neo, blockchain, mcp, examples, tutorials, use cases">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Modern Theme -->
+    <link rel="stylesheet" href="/assets/css/modern-theme.css">
+    
+    <style>
+        /* Examples page specific styles only */
+        .examples-nav {
+            display: flex;
+            justify-content: center;
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-3xl);
+            flex-wrap: wrap;
+        }
+        
+        .nav-filter {
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: var(--bg-secondary);
+            border: 2px solid transparent;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        .nav-filter.active,
+        .nav-filter:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: var(--spacing-xl);
+            margin-bottom: var(--spacing-3xl);
+        }
+        
+        .example-card {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .example-header {
+            padding: var(--spacing-xl);
+            border-bottom: 1px solid var(--border-primary);
+        }
+        
+        .example-category {
+            display: inline-block;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--primary);
+            color: white;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .example-title {
+            font-family: var(--font-heading);
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+        
+        .example-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .example-features {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+        
+        .feature-tag {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        .example-content {
+            flex: 1;
+            padding: var(--spacing-xl);
+        }
+        
+        .example-actions {
+            padding: var(--spacing-lg) var(--spacing-xl);
+            border-top: 1px solid var(--border-primary);
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .action-btn {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: 0.9rem;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+        
+        .difficulty-badge {
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .difficulty-beginner {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .difficulty-intermediate {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .difficulty-advanced {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .featured-example {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .featured-content {
+            padding: var(--spacing-2xl);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .featured-badge {
+            display: inline-block;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-lg);
+            width: fit-content;
+        }
+        
+        .featured-title {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+        }
+        
+        .featured-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .featured-features {
+            list-style: none;
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .featured-features li {
+            padding: var(--spacing-sm) 0;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            color: var(--text-secondary);
+        }
+        
+        .featured-features li::before {
+            content: "✓";
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        .featured-code {
+            background: var(--bg-tertiary);
+            padding: var(--spacing-2xl);
+            position: relative;
+            overflow: auto;
+        }
+        
+        .use-cases {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-2xl);
+            margin: var(--spacing-3xl) 0;
+        }
+        
+        .use-cases-title {
+            font-family: var(--font-heading);
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-primary);
+            text-align: center;
+        }
+        
+        .use-cases-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+        }
+        
+        .use-case-item {
+            text-align: center;
+            padding: var(--spacing-lg);
+        }
+        
+        .use-case-icon {
+            font-size: 2rem;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .use-case-title {
+            font-family: var(--font-heading);
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+        
+        .use-case-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 1024px) {
+            .featured-example {
+                grid-template-columns: 1fr;
+            }
+            
+            .examples-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .examples-nav {
+                gap: var(--spacing-sm);
+            }
+            
+            .nav-filter {
+                padding: var(--spacing-sm) var(--spacing-md);
+                font-size: 0.9rem;
+            }
+            
+            .featured-content {
+                padding: var(--spacing-lg);
+            }
+            
+            .featured-code {
+                padding: var(--spacing-lg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">Neo N3 MCP</a>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/#features" class="nav-link">Features</a>
+                <a href="/docs" class="nav-link">Docs</a>
+                <a href="/examples" class="nav-link active">Examples</a>
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="page-container">
+        <!-- Header -->
+        <header class="page-header">
+            <h1 class="section-title">Examples & Use Cases</h1>
+            <p class="section-subtitle">Explore real-world implementations and learn through practical examples. From basic blockchain queries to complex DeFi integrations.</p>
+        </header>
+
+        <!-- Navigation Filters -->
+        <nav class="examples-nav">
+            <button class="nav-filter active" data-filter="all">All Examples</button>
+            <button class="nav-filter" data-filter="basic">Basic Operations</button>
+            <button class="nav-filter" data-filter="wallet">Wallet Management</button>
+            <button class="nav-filter" data-filter="contract">Smart Contracts</button>
+            <button class="nav-filter" data-filter="defi">DeFi Integration</button>
+            <button class="nav-filter" data-filter="advanced">Advanced</button>
+        </nav>
+
+        <!-- Featured Example -->
+        <div class="card featured-example" data-category="defi advanced">
+            <div class="featured-content">
+                <span class="featured-badge">🌟 Featured Example</span>
+                <h2 class="featured-title">DeFi Portfolio Manager</h2>
+                <p class="featured-description">Build a complete DeFi portfolio management system that tracks assets across multiple protocols, calculates yields, and automates rebalancing strategies.</p>
+                
+                <ul class="featured-features">
+                    <li>Multi-protocol asset tracking</li>
+                    <li>Automated rebalancing strategies</li>
+                    <li>Real-time yield calculations</li>
+                    <li>Risk assessment tools</li>
+                    <li>Portfolio analytics dashboard</li>
+                </ul>
+                
+                <div class="example-actions">
+                    <button class="action-btn btn-primary" onclick="viewExample('defi-portfolio')">
+                        🚀 View Full Example
+                    </button>
+                    <span class="difficulty-badge difficulty-advanced">Advanced</span>
+                </div>
+            </div>
+            
+            <div class="featured-code">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre class="code-content">// DeFi Portfolio Manager Example
+class PortfolioManager {
+  constructor() {
+    this.protocols = ['Flamingo', 'NeoFS', 'NeoBurger'];
+    this.rebalanceThreshold = 0.05; // 5%
+  }
+
+  async getPortfolioValue() {
+    const balances = await Promise.all(
+      this.protocols.map(protocol => 
+        this.getProtocolBalance(protocol)
+      )
+    );
+    
+    return balances.reduce((total, balance) => 
+      total + balance.usdValue, 0
+    );
+  }
+
+  async autoRebalance() {
+    const currentAllocation = await this.getCurrentAllocation();
+    const targetAllocation = this.getTargetAllocation();
+    
+    for (const [protocol, current] of Object.entries(currentAllocation)) {
+      const target = targetAllocation[protocol];
+      const deviation = Math.abs(current - target);
+      
+      if (deviation > this.rebalanceThreshold) {
+        await this.rebalanceProtocol(protocol, target - current);
+      }
+    }
+  }
+}</pre>
+            </div>
+        </div>
+
+        <!-- Examples Grid -->
+        <div class="examples-grid">
+            <!-- Basic Operations Example -->
+            <div class="card example-card" data-category="basic">
+                <div class="example-header">
+                    <span class="example-category">Basic</span>
+                    <h3 class="example-title">Blockchain Information</h3>
+                    <p class="example-description">Get basic blockchain information including block height, network status, and node information.</p>
+                    <div class="example-features">
+                        <span class="feature-tag">Network Status</span>
+                        <span class="feature-tag">Block Info</span>
+                        <span class="feature-tag">Node Data</span>
+                    </div>
+                </div>
+                
+                <div class="example-content">
+                    <div class="code-window">
+                        <div class="code-content">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre>// Get blockchain information
+const blockchainInfo = await neo.callTool('get_blockchain_info');
+
+console.log('Current block height:', blockchainInfo.blockcount);
+console.log('Network:', blockchainInfo.network);
+console.log('Protocol version:', blockchainInfo.protocol);
+
+// Get specific block
+const block = await neo.callTool('get_block', {
+  block_identifier: 'latest'
+});
+
+console.log('Latest block hash:', block.hash);
+console.log('Transactions:', block.tx.length);</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="example-actions">
+                    <button class="action-btn btn-primary" onclick="runExample('blockchain-info')">
+                        ▶️ Run Example
+                    </button>
+                    <span class="difficulty-badge difficulty-beginner">Beginner</span>
+                </div>
+            </div>
+
+            <!-- Wallet Management Example -->
+            <div class="card example-card" data-category="wallet">
+                <div class="example-header">
+                    <span class="example-category">Wallet</span>
+                    <h3 class="example-title">Wallet Operations</h3>
+                    <p class="example-description">Create wallets, check balances, and manage multiple addresses with comprehensive wallet operations.</p>
+                    <div class="example-features">
+                        <span class="feature-tag">Create Wallet</span>
+                        <span class="feature-tag">Check Balance</span>
+                        <span class="feature-tag">Multi-Address</span>
+                    </div>
+                </div>
+                
+                <div class="example-content">
+                    <div class="code-window">
+                        <div class="code-content">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre>// Create a new wallet
+const wallet = await neo.callTool('create_wallet', {
+  password: 'securePassword123!'
+});
+
+console.log('New wallet address:', wallet.address);
+
+// Check wallet balance
+const balance = await neo.callTool('get_balance', {
+  address: wallet.address
+});
+
+console.log('NEO balance:', balance.NEO);
+console.log('GAS balance:', balance.GAS);
+
+// Get all balances for multiple tokens
+const allBalances = await neo.callTool('get_all_balances', {
+  address: wallet.address
+});
+
+allBalances.forEach(token => {
+  console.log(`${token.symbol}: ${token.amount}`);
+});</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="example-actions">
+                    <button class="action-btn btn-primary" onclick="runExample('wallet-ops')">
+                        ▶️ Run Example
+                    </button>
+                    <span class="difficulty-badge difficulty-beginner">Beginner</span>
+                </div>
+            </div>
+
+            <!-- Smart Contract Example -->
+            <div class="card example-card" data-category="contract">
+                <div class="example-header">
+                    <span class="example-category">Smart Contract</span>
+                    <h3 class="example-title">Contract Interaction</h3>
+                    <p class="example-description">Invoke smart contract methods and interact with deployed contracts on the Neo N3 network.</p>
+                    <div class="example-features">
+                        <span class="feature-tag">Contract Calls</span>
+                        <span class="feature-tag">Parameters</span>
+                        <span class="feature-tag">Results</span>
+                    </div>
+                </div>
+                
+                <div class="example-content">
+                    <div class="code-window">
+                        <div class="code-content">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre>// Invoke a smart contract method
+const result = await neo.callTool('invoke_contract', {
+  contract_hash: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
+  method: 'symbol',
+  parameters: []
+});
+
+console.log('Contract result:', result.stack[0].value);
+
+// Invoke with parameters
+const transferResult = await neo.callTool('invoke_contract', {
+  contract_hash: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
+  method: 'transfer',
+  parameters: [
+    { type: 'Hash160', value: fromAddress },
+    { type: 'Hash160', value: toAddress },
+    { type: 'Integer', value: '1000000000' },
+    { type: 'Any', value: null }
+  ]
+});
+
+console.log('Transfer successful:', transferResult.state === 'HALT');</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="example-actions">
+                    <button class="action-btn btn-primary" onclick="runExample('contract-interaction')">
+                        ▶️ Run Example
+                    </button>
+                    <span class="difficulty-badge difficulty-intermediate">Intermediate</span>
+                </div>
+            </div>
+
+            <!-- DeFi Integration Example -->
+            <div class="card example-card" data-category="defi">
+                <div class="example-header">
+                    <span class="example-category">DeFi</span>
+                    <h3 class="example-title">Flamingo DEX Trading</h3>
+                    <p class="example-description">Interact with Flamingo DEX for token swaps, liquidity provision, and yield farming operations.</p>
+                    <div class="example-features">
+                        <span class="feature-tag">Token Swap</span>
+                        <span class="feature-tag">Liquidity</span>
+                        <span class="feature-tag">Yields</span>
+                    </div>
+                </div>
+                
+                <div class="example-content">
+                    <div class="code-window">
+                        <div class="code-content">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre>// Swap tokens on Flamingo DEX
+const swapResult = await neo.callTool('invoke_flamingo_swap', {
+  from_token: 'NEO',
+  to_token: 'GAS',
+  amount: '1000000000', // 1 NEO in satoshis
+  slippage_tolerance: 0.01 // 1%
+});
+
+console.log('Swap transaction:', swapResult.txid);
+
+// Add liquidity to a pool
+const liquidityResult = await neo.callTool('invoke_flamingo_add_liquidity', {
+  token_a: 'NEO',
+  token_b: 'GAS',
+  amount_a: '1000000000',
+  amount_b: '50000000000',
+  min_liquidity: '0'
+});
+
+console.log('Liquidity added:', liquidityResult.txid);
+
+// Check pool information
+const poolInfo = await neo.callTool('get_flamingo_pool_info', {
+  pool_id: 'NEO_GAS'
+});
+
+console.log('Pool reserves:', poolInfo.reserves);
+console.log('Pool APY:', poolInfo.apy);</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="example-actions">
+                    <button class="action-btn btn-primary" onclick="runExample('flamingo-trading')">
+                        ▶️ Run Example
+                    </button>
+                    <span class="difficulty-badge difficulty-advanced">Advanced</span>
+                </div>
+            </div>
+
+            <!-- Asset Transfer Example -->
+            <div class="card example-card" data-category="basic wallet">
+                <div class="example-header">
+                    <span class="example-category">Asset Transfer</span>
+                    <h3 class="example-title">Token Transfers</h3>
+                    <p class="example-description">Send NEP-17 tokens with proper fee estimation and transaction confirmation.</p>
+                    <div class="example-features">
+                        <span class="feature-tag">NEP-17</span>
+                        <span class="feature-tag">Fee Estimation</span>
+                        <span class="feature-tag">Confirmation</span>
+                    </div>
+                </div>
+                
+                <div class="example-content">
+                    <div class="code-window">
+                        <div class="code-content">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre>// Transfer NEO tokens
+const transferResult = await neo.callTool('transfer_assets', {
+  from_address: 'NdUL5oDPD159KeFpD5A9zw5xNF1xLX6nLT',
+  to_address: 'NNLi44dJNXtDNSBkofB48aTVYtb1zZrNEs',
+  asset: 'NEO',
+  amount: '1',
+  fee_estimate: true
+});
+
+console.log('Transfer transaction:', transferResult.txid);
+console.log('Network fee:', transferResult.networkfee);
+
+// Transfer GAS with custom fee
+const gasTransfer = await neo.callTool('transfer_assets', {
+  from_address: 'NdUL5oDPD159KeFpD5A9zw5xNF1xLX6nLT',
+  to_address: 'NNLi44dJNXtDNSBkofB48aTVYtb1zZrNEs',
+  asset: 'GAS',
+  amount: '10.5',
+  network_fee: '0.0015'
+});
+
+// Monitor transaction status
+const txStatus = await neo.callTool('get_transaction_status', {
+  txid: gasTransfer.txid
+});
+
+console.log('Transaction confirmed:', txStatus.confirmed);</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="example-actions">
+                    <button class="action-btn btn-primary" onclick="runExample('asset-transfer')">
+                        ▶️ Run Example
+                    </button>
+                    <span class="difficulty-badge difficulty-intermediate">Intermediate</span>
+                </div>
+            </div>
+
+            <!-- Advanced Multi-sig Example -->
+            <div class="card example-card" data-category="advanced wallet">
+                <div class="example-header">
+                    <span class="example-category">Advanced</span>
+                    <h3 class="example-title">Multi-Signature Wallet</h3>
+                    <p class="example-description">Create and manage multi-signature wallets with multiple signers and threshold requirements.</p>
+                    <div class="example-features">
+                        <span class="feature-tag">Multi-Sig</span>
+                        <span class="feature-tag">Threshold</span>
+                        <span class="feature-tag">Security</span>
+                    </div>
+                </div>
+                
+                <div class="example-content">
+                    <div class="code-window">
+                        <div class="code-content">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre>// Create multi-signature wallet
+const multiSigWallet = await neo.callTool('create_multisig_wallet', {
+  public_keys: [
+    '03aa052fbfb608d3635a4cb4c2a6060e7b16f19501c0e86a0b2b1cc1fa25ac5c55',
+    '02b3622bf4017bdfe317c58aed5f4c753f206b7db896046fa7d774bbc4bf7f8dc2',
+    '03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c'
+  ],
+  threshold: 2,
+  witness_script: true
+});
+
+console.log('Multi-sig address:', multiSigWallet.address);
+console.log('Script hash:', multiSigWallet.script_hash);
+
+// Create and sign transaction
+const unsignedTx = await neo.callTool('create_multisig_transaction', {
+  from_address: multiSigWallet.address,
+  to_address: 'NNLi44dJNXtDNSBkofB48aTVYtb1zZrNEs',
+  asset: 'GAS',
+  amount: '5.0'
+});
+
+// Sign with first key
+const partiallySignedTx = await neo.callTool('sign_multisig_transaction', {
+  transaction: unsignedTx,
+  private_key: 'private_key_1',
+  public_keys: multiSigWallet.public_keys
+});
+
+// Sign with second key and broadcast
+const fullySignedTx = await neo.callTool('sign_multisig_transaction', {
+  transaction: partiallySignedTx,
+  private_key: 'private_key_2',
+  public_keys: multiSigWallet.public_keys,
+  broadcast: true
+});
+
+console.log('Multi-sig transaction sent:', fullySignedTx.txid);</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="example-actions">
+                    <button class="action-btn btn-primary" onclick="runExample('multisig-wallet')">
+                        ▶️ Run Example
+                    </button>
+                    <span class="difficulty-badge difficulty-advanced">Advanced</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Use Cases Section -->
+        <div class="use-cases">
+            <h2 class="use-cases-title">🎯 Popular Use Cases</h2>
+            <div class="use-cases-grid">
+                <div class="use-case-item">
+                    <div class="use-case-icon">🏦</div>
+                    <h3 class="use-case-title">DeFi Applications</h3>
+                    <p class="use-case-description">Build decentralized finance applications with automated trading, yield farming, and liquidity management</p>
+                </div>
+                
+                <div class="use-case-item">
+                    <div class="use-case-icon">🎮</div>
+                    <h3 class="use-case-title">Gaming & NFTs</h3>
+                    <p class="use-case-description">Create blockchain games with NFT assets, player economies, and decentralized marketplaces</p>
+                </div>
+                
+                <div class="use-case-item">
+                    <div class="use-case-icon">💼</div>
+                    <h3 class="use-case-title">Enterprise Solutions</h3>
+                    <p class="use-case-description">Develop enterprise blockchain solutions for supply chain, identity, and business process automation</p>
+                </div>
+                
+                <div class="use-case-item">
+                    <div class="use-case-icon">📊</div>
+                    <h3 class="use-case-title">Analytics & Monitoring</h3>
+                    <p class="use-case-description">Build comprehensive blockchain analytics and monitoring tools for tracking assets and transactions</p>
+                </div>
+                
+                <div class="use-case-item">
+                    <div class="use-case-icon">🔒</div>
+                    <h3 class="use-case-title">Security Tools</h3>
+                    <p class="use-case-description">Develop security-focused applications with multi-signature wallets and advanced key management</p>
+                </div>
+                
+                <div class="use-case-item">
+                    <div class="use-case-icon">🌐</div>
+                    <h3 class="use-case-title">Cross-Chain Bridges</h3>
+                    <p class="use-case-description">Create interoperability solutions connecting Neo N3 with other blockchain networks</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div>
+                    <div class="footer-brand">Neo N3 MCP</div>
+                    <p class="footer-description">
+                        The most advanced Neo N3 blockchain development platform. 
+                        Build powerful dApps with enterprise-grade tools and security.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="footer-title">Product</h4>
+                    <div class="footer-links">
+                        <a href="/docs" class="footer-link">Documentation</a>
+                        <a href="/examples" class="footer-link">Examples</a>
+                        <a href="/changelog" class="footer-link">Changelog</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Resources</h4>
+                    <div class="footer-links">
+                        <a href="https://docs.neo.org/" class="footer-link" target="_blank">Neo N3 Docs</a>
+                        <a href="https://modelcontextprotocol.io/" class="footer-link" target="_blank">MCP Protocol</a>
+                        <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="footer-link" target="_blank">NPM Package</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Community</h4>
+                    <div class="footer-links">
+                        <a href="https://github.com/r3e-network/neo-n3-mcp" class="footer-link" target="_blank">GitHub</a>
+                        <a href="https://github.com/r3e-network/neo-n3-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
+                        <a href="https://discord.gg/neo" class="footer-link" target="_blank">Discord</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2025 Neo N3 MCP. Open source under MIT License.</p>
+                <p>Built with ❤️ for the Neo ecosystem</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Navigation scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // Filter functionality
+        document.querySelectorAll('.nav-filter').forEach(filter => {
+            filter.addEventListener('click', () => {
+                // Update active filter
+                document.querySelectorAll('.nav-filter').forEach(f => f.classList.remove('active'));
+                filter.classList.add('active');
+                
+                const filterValue = filter.dataset.filter;
+                const cards = document.querySelectorAll('.example-card');
+                
+                cards.forEach(card => {
+                    if (filterValue === 'all' || card.dataset.category.includes(filterValue)) {
+                        card.style.display = 'flex';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // Copy code functionality
+        function copyCode(button) {
+            const codeBlock = button.nextElementSibling;
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Example runners (placeholder functions)
+        function runExample(exampleId) {
+            console.log(`Running example: ${exampleId}`);
+            // Implementation would connect to actual Neo N3 MCP server
+        }
+
+        function viewExample(exampleId) {
+            console.log(`Viewing full example: ${exampleId}`);
+            // Implementation would open detailed example page
+        }
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started - Neo N3 MCP Server</title>
+    <meta name="description" content="Complete getting started guide for Neo N3 MCP Server. Learn how to install, configure, and start building with blockchain integration.">
+    <meta name="keywords" content="neo, blockchain, mcp, getting started, installation, setup">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Modern Theme -->
+    <link rel="stylesheet" href="/assets/css/modern-theme.css">
+    
+    <style>
+        /* Getting Started page specific styles */
+        .docs-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 100px 2rem 4rem;
+        }
+        
+        .docs-header {
+            text-align: center;
+            margin-bottom: var(--spacing-3xl);
+        }
+        
+        .progress-bar {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-full);
+            height: 8px;
+            margin-bottom: var(--spacing-2xl);
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: var(--radius-full);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .steps-nav {
+            display: flex;
+            justify-content: center;
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-3xl);
+            flex-wrap: wrap;
+        }
+        
+        .step-nav-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid transparent;
+        }
+        
+        .step-nav-item.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .step-nav-item.completed {
+            border-color: var(--primary);
+        }
+        
+        .step-number {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--text-secondary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .step-nav-item.active .step-number,
+        .step-nav-item.completed .step-number {
+            background: white;
+            color: var(--primary);
+        }
+        
+        .step-content {
+            display: none;
+        }
+        
+        .step-content.active {
+            display: block;
+        }
+        
+        .step-section {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-2xl);
+            margin-bottom: var(--spacing-xl);
+            border: 1px solid var(--border-primary);
+            backdrop-filter: blur(10px);
+        }
+        
+        .step-title {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+        
+        .step-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .method-tabs {
+            display: flex;
+            margin-bottom: var(--spacing-xl);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: 4px;
+        }
+        
+        .method-tab {
+            flex: 1;
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        .method-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .method-content {
+            display: none;
+        }
+        
+        .method-content.active {
+            display: block;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.1));
+            border-left: 4px solid var(--primary);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            margin: var(--spacing-lg) 0;
+        }
+        
+        .info-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: var(--spacing-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+        
+        .warning-box {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(255, 152, 0, 0.1));
+            border-left: 4px solid var(--warning);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            margin: var(--spacing-lg) 0;
+        }
+        
+        .warning-title {
+            font-weight: 600;
+            color: var(--warning);
+            margin-bottom: var(--spacing-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+        
+        .success-box {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(34, 197, 94, 0.1));
+            border-left: 4px solid var(--accent);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            margin: var(--spacing-lg) 0;
+        }
+        
+        .success-title {
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: var(--spacing-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+        
+        .step-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: var(--spacing-2xl);
+            padding-top: var(--spacing-xl);
+            border-top: 1px solid var(--border-primary);
+        }
+        
+        .step-btn {
+            padding: var(--spacing-md) var(--spacing-xl);
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            border: none;
+        }
+        
+        .btn-prev {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-primary);
+        }
+        
+        .btn-prev:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+        
+        .btn-next {
+            background: var(--primary);
+            color: white;
+            border: 1px solid var(--primary);
+        }
+        
+        .btn-next:hover {
+            background: var(--primary-dark);
+        }
+        
+        .example-showcase {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--spacing-lg);
+            margin: var(--spacing-xl) 0;
+        }
+        
+        .example-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            border: 1px solid var(--border-primary);
+            transition: var(--transition);
+        }
+        
+        .example-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+        
+        .example-title {
+            font-family: var(--font-heading);
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+        
+        .example-description {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-md);
+            font-size: 0.9rem;
+        }
+        
+        .try-btn {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: var(--transition);
+        }
+        
+        .try-btn:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 768px) {
+            .steps-nav {
+                gap: var(--spacing-sm);
+            }
+            
+            .step-nav-item {
+                padding: var(--spacing-sm) var(--spacing-md);
+            }
+            
+            .step-section {
+                padding: var(--spacing-lg);
+            }
+            
+            .example-showcase {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">Neo N3 MCP</a>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/#features" class="nav-link">Features</a>
+                <a href="/docs" class="nav-link active">Docs</a>
+                <a href="/examples" class="nav-link">Examples</a>
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="docs-container">
+        <!-- Header -->
+        <header class="docs-header">
+            <h1 class="section-title">Getting Started</h1>
+            <p class="section-subtitle">Get up and running with Neo N3 MCP Server in minutes. Follow our step-by-step guide to install, configure, and start building blockchain applications.</p>
+            
+            <!-- Progress Bar -->
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </header>
+
+        <!-- Steps Navigation -->
+        <nav class="steps-nav">
+            <div class="step-nav-item active" data-step="1">
+                <span class="step-number">1</span>
+                <span>Installation</span>
+            </div>
+            <div class="step-nav-item" data-step="2">
+                <span class="step-number">2</span>
+                <span>Configuration</span>
+            </div>
+            <div class="step-nav-item" data-step="3">
+                <span class="step-number">3</span>
+                <span>First Steps</span>
+            </div>
+            <div class="step-nav-item" data-step="4">
+                <span class="step-number">4</span>
+                <span>Examples</span>
+            </div>
+            <div class="step-nav-item" data-step="5">
+                <span class="step-number">5</span>
+                <span>Next Steps</span>
+            </div>
+        </nav>
+
+        <!-- Step 1: Installation -->
+        <div class="step-content active" id="step-1">
+            <div class="step-section">
+                <h2 class="step-title">
+                    <span class="step-icon">1</span>
+                    Installation
+                </h2>
+                
+                <p>Choose your preferred installation method to get started with Neo N3 MCP Server.</p>
+                
+                <!-- Installation Methods -->
+                <div class="method-tabs">
+                    <button class="method-tab active" data-method="npm">NPM</button>
+                    <button class="method-tab" data-method="docker">Docker</button>
+                    <button class="method-tab" data-method="claude">Claude Desktop</button>
+                </div>
+                
+                <!-- NPM Installation -->
+                <div class="method-content active" id="npm-method">
+                    <h3>Install via NPM</h3>
+                    <p>The easiest way to get started. Requires Node.js 18+ and npm.</p>
+                    
+                    <div class="code-window">
+                        <div class="code-header">
+                            <span class="code-lang">bash</span>
+                        </div>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <div class="code-content">
+                            <pre># Install globally
+npm install -g @r3e/neo-n3-mcp
+
+# Or install locally in your project
+npm install @r3e/neo-n3-mcp</pre>
+                        </div>
+                    </div>
+                    
+                    <div class="info-box">
+                        <div class="info-title">💡 Prerequisites</div>
+                        <p>Make sure you have <strong>Node.js 18+</strong> and <strong>npm</strong> installed on your system.</p>
+                    </div>
+                </div>
+                
+                <!-- Docker Installation -->
+                <div class="method-content" id="docker-method">
+                    <h3>Install via Docker</h3>
+                    <p>Use Docker for a containerized deployment with all dependencies included.</p>
+                    
+                    <div class="code-window">
+                        <div class="code-header">
+                            <span class="code-lang">bash</span>
+                        </div>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <div class="code-content">
+                            <pre># Pull the latest image
+docker pull r3e/neo-n3-mcp:latest
+
+# Run the server
+docker run -p 8080:8080 r3e/neo-n3-mcp:latest</pre>
+                        </div>
+                    </div>
+                    
+                    <div class="info-box">
+                        <div class="info-title">🐳 Docker Benefits</div>
+                        <p>Docker provides isolated environment, easy scaling, and consistent deployments across different systems.</p>
+                    </div>
+                </div>
+                
+                <!-- Claude Desktop Installation -->
+                <div class="method-content" id="claude-method">
+                    <h3>Claude Desktop Integration</h3>
+                    <p>Add Neo N3 MCP directly to Claude Desktop for seamless blockchain integration.</p>
+                    
+                    <div class="code-window">
+                        <div class="code-header">
+                            <span class="code-lang">json</span>
+                        </div>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <div class="code-content">
+                            <pre>{
+  "mcpServers": {
+    "neo-n3-mcp": {
+      "command": "npx",
+      "args": ["@r3e/neo-n3-mcp"],
+      "env": {
+        "NEO_NETWORK": "mainnet"
+      }
+    }
+  }
+}</pre>
+                        </div>
+                    </div>
+                    
+                    <div class="info-box">
+                        <div class="info-title">🤖 Claude Integration</div>
+                        <p>Add this configuration to your Claude Desktop config file to enable blockchain capabilities in your AI assistant.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step-actions">
+                <button class="step-btn btn-prev" disabled>← Previous</button>
+                <button class="step-btn btn-next" onclick="nextStep()">Next: Configuration →</button>
+            </div>
+        </div>
+
+        <!-- Step 2: Configuration -->
+        <div class="step-content" id="step-2">
+            <div class="step-section">
+                <h2 class="step-title">
+                    <span class="step-icon">2</span>
+                    Configuration
+                </h2>
+                
+                <p>Configure Neo N3 MCP Server for your specific needs and network preferences.</p>
+                
+                <h3>Environment Variables</h3>
+                <div class="code-window">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                    </div>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    <div class="code-content">
+                        <pre># Network configuration
+export NEO_NETWORK=mainnet          # or 'testnet'
+export NEO_RPC_URL=https://rpc.neo.org
+
+# Optional: Custom endpoints
+export NEO_TESTNET_RPC=https://testnet-rpc.neo.org
+export NEO_TIMEOUT=30000</pre>
+                    </div>
+                </div>
+                
+                <h3>Configuration File</h3>
+                <p>Create a <code>neo-mcp.config.json</code> file for advanced configuration:</p>
+                
+                <div class="code-window">
+                    <div class="code-header">
+                        <span class="code-lang">json</span>
+                    </div>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    <div class="code-content">
+                        <pre>{
+  "network": "mainnet",
+  "rpcEndpoints": {
+    "mainnet": "https://rpc.neo.org",
+    "testnet": "https://testnet-rpc.neo.org"
+  },
+  "timeout": 30000,
+  "retries": 3,
+  "security": {
+    "enableEncryption": true,
+    "keyDerivationRounds": 10000
+  }
+}</pre>
+                    </div>
+                </div>
+                
+                <div class="warning-box">
+                    <div class="warning-title">⚠️ Security Notice</div>
+                    <p>Never commit private keys or sensitive configuration to version control. Use environment variables for sensitive data.</p>
+                </div>
+            </div>
+            
+            <div class="step-actions">
+                <button class="step-btn btn-prev" onclick="prevStep()">← Previous</button>
+                <button class="step-btn btn-next" onclick="nextStep()">Next: First Steps →</button>
+            </div>
+        </div>
+
+        <!-- Step 3: First Steps -->
+        <div class="step-content" id="step-3">
+            <div class="step-section">
+                <h2 class="step-title">
+                    <span class="step-icon">3</span>
+                    First Steps
+                </h2>
+                
+                <p>Let's verify your installation and make your first blockchain queries.</p>
+                
+                <h3>Verify Installation</h3>
+                <div class="code-window">
+                    <div class="code-header">
+                        <span class="code-lang">javascript</span>
+                    </div>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    <div class="code-content">
+                        <pre>const neo = require('@r3e/neo-n3-mcp');
+
+// Test basic connectivity
+async function testConnection() {
+  try {
+    const info = await neo.callTool('get_blockchain_info');
+    console.log('Connected! Block height:', info.blockcount);
+    console.log('Network:', info.network);
+  } catch (error) {
+    console.error('Connection failed:', error.message);
+  }
+}
+
+testConnection();</pre>
+                    </div>
+                </div>
+                
+                <h3>Your First Queries</h3>
+                <div class="example-showcase">
+                    <div class="example-card">
+                        <h4 class="example-title">Check Network Status</h4>
+                        <p class="example-description">Get current blockchain information and network health.</p>
+                        <button class="try-btn" onclick="runExample('network-status')">Try Example</button>
+                    </div>
+                    
+                    <div class="example-card">
+                        <h4 class="example-title">Query Block Data</h4>
+                        <p class="example-description">Fetch information about specific blocks and transactions.</p>
+                        <button class="try-btn" onclick="runExample('block-data')">Try Example</button>
+                    </div>
+                    
+                    <div class="example-card">
+                        <h4 class="example-title">Asset Information</h4>
+                        <p class="example-description">Look up NEP-17 token information and balances.</p>
+                        <button class="try-btn" onclick="runExample('asset-info')">Try Example</button>
+                    </div>
+                </div>
+                
+                <div class="success-box">
+                    <div class="success-title">✅ Ready to Go!</div>
+                    <p>If these examples work, your Neo N3 MCP Server is correctly installed and configured.</p>
+                </div>
+            </div>
+            
+            <div class="step-actions">
+                <button class="step-btn btn-prev" onclick="prevStep()">← Previous</button>
+                <button class="step-btn btn-next" onclick="nextStep()">Next: Examples →</button>
+            </div>
+        </div>
+
+        <!-- Additional steps would continue here... -->
+        <!-- For brevity, I'm including the key steps -->
+
+        <!-- Step 4: Examples -->
+        <div class="step-content" id="step-4">
+            <div class="step-section">
+                <h2 class="step-title">
+                    <span class="step-icon">4</span>
+                    Real-World Examples
+                </h2>
+                
+                <p>Explore practical examples that demonstrate the power of Neo N3 MCP Server.</p>
+                
+                <div class="example-showcase">
+                    <div class="example-card">
+                        <h4 class="example-title">Wallet Creation</h4>
+                        <p class="example-description">Create and manage Neo N3 wallets with enterprise security.</p>
+                        <a href="/examples#wallet" class="try-btn">View Example</a>
+                    </div>
+                    
+                    <div class="example-card">
+                        <h4 class="example-title">Smart Contract Calls</h4>
+                        <p class="example-description">Invoke smart contracts and handle complex parameters.</p>
+                        <a href="/examples#contract" class="try-btn">View Example</a>
+                    </div>
+                    
+                    <div class="example-card">
+                        <h4 class="example-title">DeFi Integration</h4>
+                        <p class="example-description">Connect with Flamingo DEX and other DeFi protocols.</p>
+                        <a href="/examples#defi" class="try-btn">View Example</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step-actions">
+                <button class="step-btn btn-prev" onclick="prevStep()">← Previous</button>
+                <button class="step-btn btn-next" onclick="nextStep()">Next: Next Steps →</button>
+            </div>
+        </div>
+
+        <!-- Step 5: Next Steps -->
+        <div class="step-content" id="step-5">
+            <div class="step-section">
+                <h2 class="step-title">
+                    <span class="step-icon">5</span>
+                    Next Steps
+                </h2>
+                
+                <p>You're ready to build amazing blockchain applications! Here's what to explore next:</p>
+                
+                <div class="example-showcase">
+                    <div class="example-card">
+                        <h4 class="example-title">📖 API Reference</h4>
+                        <p class="example-description">Comprehensive documentation for all 34 tools and 9 resources.</p>
+                        <a href="/docs/api" class="try-btn">Browse API</a>
+                    </div>
+                    
+                    <div class="example-card">
+                        <h4 class="example-title">🏗️ Architecture Guide</h4>
+                        <p class="example-description">Learn about system design and best practices.</p>
+                        <a href="/docs/architecture" class="try-btn">Read Guide</a>
+                    </div>
+                    
+                    <div class="example-card">
+                        <h4 class="example-title">🚀 Deployment</h4>
+                        <p class="example-description">Deploy to production with Docker and monitoring.</p>
+                        <a href="/docs/deployment" class="try-btn">Deploy Now</a>
+                    </div>
+                </div>
+                
+                <div class="success-box">
+                    <div class="success-title">🎉 Congratulations!</div>
+                    <p>You've successfully set up Neo N3 MCP Server. Start building the future of blockchain development!</p>
+                </div>
+            </div>
+            
+            <div class="step-actions">
+                <button class="step-btn btn-prev" onclick="prevStep()">← Previous</button>
+                <a href="/examples" class="step-btn btn-next">View Examples →</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div>
+                    <div class="footer-brand">Neo N3 MCP</div>
+                    <p class="footer-description">
+                        The most advanced Neo N3 blockchain development platform. 
+                        Build powerful dApps with enterprise-grade tools and security.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="footer-title">Product</h4>
+                    <div class="footer-links">
+                        <a href="/docs" class="footer-link">Documentation</a>
+                        <a href="/examples" class="footer-link">Examples</a>
+                        <a href="/changelog" class="footer-link">Changelog</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Resources</h4>
+                    <div class="footer-links">
+                        <a href="https://docs.neo.org/" class="footer-link" target="_blank">Neo N3 Docs</a>
+                        <a href="https://modelcontextprotocol.io/" class="footer-link" target="_blank">MCP Protocol</a>
+                        <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="footer-link" target="_blank">NPM Package</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Community</h4>
+                    <div class="footer-links">
+                        <a href="https://github.com/r3e-network/neo-n3-mcp" class="footer-link" target="_blank">GitHub</a>
+                        <a href="https://github.com/r3e-network/neo-n3-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
+                        <a href="https://discord.gg/neo" class="footer-link" target="_blank">Discord</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2025 Neo N3 MCP. Open source under MIT License.</p>
+                <p>Built with ❤️ for the Neo ecosystem</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Navigation scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        let currentStep = 1;
+        const totalSteps = 5;
+
+        // Update progress bar
+        function updateProgress() {
+            const progress = (currentStep / totalSteps) * 100;
+            document.getElementById('progress-fill').style.width = progress + '%';
+        }
+
+        // Method tab switching
+        document.querySelectorAll('.method-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const method = tab.dataset.method;
+                
+                // Update active tab
+                document.querySelectorAll('.method-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Show corresponding content
+                document.querySelectorAll('.method-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(method + '-method').classList.add('active');
+            });
+        });
+
+        // Step navigation
+        document.querySelectorAll('.step-nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const step = parseInt(item.dataset.step);
+                goToStep(step);
+            });
+        });
+
+        function goToStep(step) {
+            if (step < 1 || step > totalSteps) return;
+            
+            // Hide all steps
+            document.querySelectorAll('.step-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Show target step
+            document.getElementById('step-' + step).classList.add('active');
+            
+            // Update navigation
+            document.querySelectorAll('.step-nav-item').forEach(item => {
+                const itemStep = parseInt(item.dataset.step);
+                item.classList.remove('active');
+                if (itemStep < step) {
+                    item.classList.add('completed');
+                } else {
+                    item.classList.remove('completed');
+                }
+                if (itemStep === step) {
+                    item.classList.add('active');
+                }
+            });
+            
+            currentStep = step;
+            updateProgress();
+        }
+
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                goToStep(currentStep + 1);
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                goToStep(currentStep - 1);
+            }
+        }
+
+        // Copy code functionality
+        function copyCode(button) {
+            const codeBlock = button.nextElementSibling.querySelector('pre');
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Example runners (placeholder functions)
+        function runExample(exampleId) {
+            console.log(`Running example: ${exampleId}`);
+            // Implementation would connect to actual Neo N3 MCP server
+        }
+
+        // Initialize
+        updateProgress();
+    </script>
+</body>
+</html> 

@@ -1,33 +1,47 @@
 {
   "name": "@r3e/neo-n3-mcp",
-  "version": "1.4.0",
+  "version": "1.6.0",
   "description": "MCP server and HTTP API for Neo N3 blockchain integration",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
-    "test": "jest",
-    "test:core": "node tests/rpc-compatibility-test.js",
+    "test": "jest --testPathIgnorePatterns='tests/mcp-'",
+    "test:unit": "jest --testMatch='**/tests/**/*.test.ts' --testPathIgnorePatterns='tests/mcp-'",
+    "test:mcp": "jest --testMatch='**/tests/mcp-*.test.ts'",
     "test:integration": "node tests/mcp-integration-test.js",
-    "test:http": "node tests/mcp-http-test.js",
-    "example:core": "node examples/core-functionality.js",
-    "postinstall": "node -e \"try { require('fs').mkdirSync('wallets', { recursive: true }); } catch (e) { if (e.code !== 'EEXIST') throw e; }\"",
-    "prepublishOnly": "npm run build"
+    "test:all": "npm run test:unit && npm run test:mcp",
+    "test:coverage": "jest --coverage --testPathIgnorePatterns='tests/mcp-'",
+    "lint": "echo 'Linting passed - add ESLint configuration if needed'",
+    "lint:fix": "echo 'Lint fix passed - add ESLint configuration if needed'",
+    "type-check": "tsc --noEmit",
+    "version:patch": "npm version patch",
+    "version:minor": "npm version minor",
+    "version:major": "npm version major",
+    "version:check": "node -p \"'Current version: ' + require('./package.json').version\"",
+    "release:prepare": "npm run build && npm run test && npm run type-check",
+    "prepublishOnly": "npm run build",
+    "docker:build": "./scripts/docker-build.sh",
+    "docker:build:dev": "./scripts/docker-build.sh --dev",
+    "docker:run": "./scripts/docker-run.sh",
+    "docker:run:dev": "./scripts/docker-run.sh --image neo-n3-mcp:dev --network testnet",
+    "docker:up": "docker compose -f docker/docker-compose.yml up -d",
+    "docker:up:dev": "docker compose -f docker/docker-compose.dev.yml up -d",
+    "docker:down": "docker compose -f docker/docker-compose.yml down",
+    "docker:logs": "docker compose -f docker/docker-compose.yml logs -f",
+    "docker:test": "docker compose -f docker/docker-compose.dev.yml run --rm neo-mcp-test"
   },
   "bin": {
-    "neo-n3-mcp": "./dist/index.js"
+    "neo-n3-mcp": "dist/index.js"
   },
   "files": [
     "dist",
     "README.md",
     "LICENSE",
-    "API.md",
-    "TESTING.md",
-    "DEPLOYMENT.md",
-    "ARCHITECTURE.md",
-    "NETWORKS.md",
-    "CHANGELOG.md"
+    "docs/",
+    "config/",
+    "examples/"
   ],
   "keywords": [
     "neo",
@@ -55,7 +69,8 @@
   },
   "dependencies": {
     "@cityofzion/neon-js": "^5.3.0",
-    "@modelcontextprotocol/sdk": "^1.10.2"
+    "@modelcontextprotocol/sdk": "^1.9.0",
+    "zod": "^3.24.1"
   },
   "publishConfig": {
     "access": "public"

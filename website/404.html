@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found - Neo N3 MCP</title>
+    <meta name="description" content="The page you're looking for could not be found.">
+    <meta name="robots" content="noindex, nofollow">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Modern Theme -->
+    <link rel="stylesheet" href="/assets/css/modern-theme.css">
+    
+    <style>
+        .error-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-xl);
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .error-page::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(16, 185, 129, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .error-content {
+            text-align: center;
+            max-width: 600px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .error-code {
+            font-family: var(--font-heading);
+            font-size: clamp(4rem, 12vw, 8rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: var(--spacing-md);
+            text-shadow: 0 4px 8px rgba(99, 102, 241, 0.2);
+        }
+        
+        .error-title {
+            font-family: var(--font-heading);
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            font-weight: 700;
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-primary);
+        }
+        
+        .error-description {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-2xl);
+            line-height: 1.6;
+        }
+        
+        .error-actions {
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: var(--spacing-2xl);
+        }
+        
+        .error-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+            margin-top: var(--spacing-xl);
+        }
+        
+        .error-link {
+            background: var(--bg-card);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            text-decoration: none;
+            color: inherit;
+            transition: var(--transition);
+            border: 1px solid var(--border-primary);
+            backdrop-filter: blur(10px);
+        }
+        
+        .error-link:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+        
+        .error-link-title {
+            font-family: var(--font-heading);
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+        
+        .error-link-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .search-form {
+            max-width: 400px;
+            margin: var(--spacing-xl) auto 0;
+            position: relative;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border: 2px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            background: var(--bg-glass);
+            color: var(--text-primary);
+            backdrop-filter: blur(10px);
+            transition: var(--transition);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+        
+        @media (max-width: 768px) {
+            .error-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .error-links {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">Neo N3 MCP</a>
+            <div class="nav-menu">
+                <a href="/#features" class="nav-link">Features</a>
+                <a href="/examples" class="nav-link">Examples</a>
+                <a href="/docs" class="nav-link">Documentation</a>
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="error-page">
+        <div class="error-content">
+            <div class="error-code">404</div>
+            <h1 class="error-title">Page Not Found</h1>
+            <p class="error-description">
+                The page you're looking for doesn't exist or has been moved. 
+                Let's get you back to exploring the Neo N3 MCP ecosystem.
+            </p>
+            
+            <div class="error-actions">
+                <a href="/" class="btn btn-primary btn-large">🏠 Go Home</a>
+                <a href="/docs" class="btn btn-secondary btn-large">📚 Documentation</a>
+            </div>
+            
+            <div class="search-form">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    placeholder="Search documentation..."
+                    onkeypress="handleSearch(event)"
+                >
+            </div>
+            
+            <div class="error-links">
+                <a href="/docs/api" class="error-link">
+                    <div class="error-link-title">📖 API Reference</div>
+                    <div class="error-link-description">Complete documentation for all 34 tools and 9 resources</div>
+                </a>
+                
+                <a href="/docs/getting-started" class="error-link">
+                    <div class="error-link-title">🚀 Quick Start</div>
+                    <div class="error-link-description">Get up and running with Neo N3 MCP in minutes</div>
+                </a>
+                
+                <a href="/examples" class="error-link">
+                    <div class="error-link-title">💡 Examples</div>
+                    <div class="error-link-description">Real-world usage examples and tutorials</div>
+                </a>
+                
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="error-link" target="_blank">
+                    <div class="error-link-title">⭐ GitHub Repository</div>
+                    <div class="error-link-description">Source code, issues, and contributions</div>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div>
+                    <div class="footer-brand">Neo N3 MCP</div>
+                    <p class="footer-description">
+                        The most advanced Neo N3 blockchain development platform. 
+                        Build powerful dApps with enterprise-grade tools and security.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="footer-title">Product</h4>
+                    <div class="footer-links">
+                        <a href="/docs" class="footer-link">Documentation</a>
+                        <a href="/examples" class="footer-link">Examples</a>
+                        <a href="/changelog" class="footer-link">Changelog</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Resources</h4>
+                    <div class="footer-links">
+                        <a href="https://docs.neo.org/" class="footer-link" target="_blank">Neo N3 Docs</a>
+                        <a href="https://modelcontextprotocol.io/" class="footer-link" target="_blank">MCP Protocol</a>
+                        <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="footer-link" target="_blank">NPM Package</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Community</h4>
+                    <div class="footer-links">
+                        <a href="https://github.com/r3e-network/neo-n3-mcp" class="footer-link" target="_blank">GitHub</a>
+                        <a href="https://github.com/r3e-network/neo-n3-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
+                        <a href="https://discord.gg/neo" class="footer-link" target="_blank">Discord</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2025 Neo N3 MCP. Open source under MIT License.</p>
+                <p>Built with ❤️ for the Neo ecosystem</p>
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        function handleSearch(event) {
+            if (event.key === 'Enter') {
+                const query = event.target.value.trim();
+                if (query) {
+                    window.location.href = `/docs?search=${encodeURIComponent(query)}`;
+                }
+            }
+        }
+        
+        // Navigation scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+        
+        // Add some interactive animations
+        document.addEventListener('DOMContentLoaded', () => {
+            const errorCode = document.querySelector('.error-code');
+            const content = document.querySelector('.error-content');
+            
+            // Animate the 404 code
+            setTimeout(() => {
+                errorCode.style.animation = 'pulse 2s ease-in-out infinite alternate';
+            }, 500);
+            
+            // Add fade-in animation to content
+            content.style.opacity = '0';
+            content.style.transform = 'translateY(30px)';
+            content.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            
+            setTimeout(() => {
+                content.style.opacity = '1';
+                content.style.transform = 'translateY(0)';
+            }, 100);
+        });
+    </script>
+    
+    <style>
+        @keyframes pulse {
+            from {
+                transform: scale(1);
+            }
+            to {
+                transform: scale(1.05);
+            }
+        }
+    </style>
+</body>
+</html> 

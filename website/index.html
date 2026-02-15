@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neo N3 MCP • Modern Blockchain Development Platform</title>
+    <meta name="description" content="The most advanced Neo N3 blockchain development platform. Build powerful dApps with our comprehensive MCP server featuring 34+ tools and enterprise-grade security.">
+    <meta name="keywords" content="neo n3, blockchain, mcp, development, smart contracts, defi, enterprise">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Neo N3 MCP • Modern Blockchain Development Platform">
+    <meta property="og:description" content="Build the future of blockchain with our advanced Neo N3 MCP server. Enterprise-grade tools for modern developers.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://neo-n3-mcp.netlify.app">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Modern Theme -->
+    <link rel="stylesheet" href="/assets/css/modern-theme.css">
+    
+    <style>
+        /* Homepage-specific styles only */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(16, 185, 129, 0.06) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(1deg); }
+        }
+
+        .hero-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-content {
+            animation: fadeInUp 1s ease 0.2s both;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-primary);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-full);
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .hero-badge::before {
+            content: '🚀';
+            font-size: 1rem;
+        }
+
+        .hero-title {
+            font-family: var(--font-heading);
+            font-size: clamp(3rem, 8vw, 5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .hero-visual {
+            position: relative;
+            animation: fadeInRight 1s ease 0.4s both;
+        }
+
+        .code-line {
+            margin-bottom: 0.5rem;
+            animation: typewriter 0.8s ease both;
+        }
+
+        .code-line:nth-child(2) { animation-delay: 0.5s; }
+        .code-line:nth-child(3) { animation-delay: 1s; }
+        .code-line:nth-child(4) { animation-delay: 1.5s; }
+
+        @keyframes typewriter {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .code-prompt { color: var(--accent); }
+        .code-command { color: var(--warning); }
+        .code-output { color: var(--text-secondary); }
+        .code-success { color: var(--accent); }
+
+        /* Features Section */
+        .features {
+            padding: 8rem 0;
+            background: var(--bg-secondary);
+        }
+
+        .features-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+            animation: fadeInUp 0.6s ease both;
+        }
+
+        .feature-card:nth-child(1) { animation-delay: 0.1s; }
+        .feature-card:nth-child(2) { animation-delay: 0.2s; }
+        .feature-card:nth-child(3) { animation-delay: 0.3s; }
+        .feature-card:nth-child(4) { animation-delay: 0.4s; }
+        .feature-card:nth-child(5) { animation-delay: 0.5s; }
+        .feature-card:nth-child(6) { animation-delay: 0.6s; }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-title {
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .feature-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .feature-tag {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Examples Section */
+        .examples {
+            padding: 8rem 0;
+            background: var(--bg-primary);
+        }
+
+        .examples-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+        }
+
+        .example-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+            animation: fadeInUp 0.6s ease both;
+        }
+
+        .example-card:nth-child(1) { animation-delay: 0.1s; }
+        .example-card:nth-child(2) { animation-delay: 0.2s; }
+        .example-card:nth-child(3) { animation-delay: 0.3s; }
+        .example-card:nth-child(4) { animation-delay: 0.4s; }
+
+        .example-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .example-header {
+            padding: 2rem;
+            border-bottom: 1px solid var(--border-secondary);
+        }
+
+        .example-badge {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .example-title {
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .example-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .example-content {
+            padding: 2rem;
+        }
+
+        /* CTA Section */
+        .cta {
+            padding: 8rem 0;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            text-align: center;
+        }
+
+        .cta-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .cta-title {
+            font-family: var(--font-heading);
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .cta-description {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            line-height: 1.6;
+        }
+
+        .install-command {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin: 2rem 0;
+            position: relative;
+        }
+
+        .install-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .install-title {
+            font-family: var(--font-heading);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .copy-btn {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-primary);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.875rem;
+        }
+
+        .copy-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .install-code {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            color: var(--text-primary);
+            background: var(--bg-primary);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-container {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+                text-align: center;
+            }
+            
+            .hero-stats {
+                justify-content: center;
+            }
+            
+            .hero-actions {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .examples-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">Neo N3 MCP</a>
+            <div class="nav-menu">
+                <a href="/#features" class="nav-link">Features</a>
+                <a href="/examples" class="nav-link">Examples</a>
+                <a href="/docs" class="nav-link">Documentation</a>
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <div class="hero-badge">Enterprise-Grade Neo N3 Development</div>
+                <h1 class="hero-title">Build the Future of Blockchain Development</h1>
+                <p class="hero-subtitle">
+                    The most advanced Neo N3 MCP server with 34+ tools, enterprise security, 
+                    and seamless DeFi integrations. Zero configuration, maximum power.
+                </p>
+                
+                <div class="hero-actions">
+                    <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary btn-large" target="_blank">
+                        🚀 Get Started
+                    </a>
+                    <a href="/docs" class="btn btn-secondary btn-large">
+                        📚 Documentation
+                    </a>
+                </div>
+                
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-number">34+</span>
+                        <span class="stat-label">Tools</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">9</span>
+                        <span class="stat-label">Resources</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">90%+</span>
+                        <span class="stat-label">Coverage</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">0</span>
+                        <span class="stat-label">CVEs</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="hero-visual">
+                <div class="code-window">
+                    <div class="code-header">
+                        <div class="code-dot"></div>
+                        <div class="code-dot"></div>
+                        <div class="code-dot"></div>
+                    </div>
+                    <div class="code-body">
+                        <div class="code-line">
+                            <span class="code-prompt">$</span>
+                            <span class="code-command"> npm install @r3e/neo-n3-mcp</span>
+                        </div>
+                        <div class="code-line">
+                            <span class="code-output">✓ Neo N3 MCP Server installed</span>
+                        </div>
+                        <div class="code-line">
+                            <span class="code-prompt">$</span>
+                            <span class="code-command"> neo-mcp start</span>
+                        </div>
+                        <div class="code-line">
+                            <span class="code-success">🚀 Server running with 34 tools ready</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="features-container">
+            <div class="section-header">
+                <h2 class="section-title">Powerful Features</h2>
+                <p class="section-subtitle">
+                    Everything you need to build production-ready blockchain applications
+                </p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔗</div>
+                    <h3 class="feature-title">Complete Blockchain Operations</h3>
+                    <p class="feature-description">
+                        Access all Neo N3 blockchain functionality with 34+ tools covering transactions, 
+                        smart contracts, asset management, and network operations.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">34+ Tools</span>
+                        <span class="feature-tag">Full Coverage</span>
+                        <span class="feature-tag">Production Ready</span>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3 class="feature-title">Enterprise Security</h3>
+                    <p class="feature-description">
+                        AES-256 encryption, secure key management, and comprehensive input validation. 
+                        Zero known vulnerabilities with 90%+ test coverage.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">AES-256</span>
+                        <span class="feature-tag">Zero CVEs</span>
+                        <span class="feature-tag">90%+ Tests</span>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">💎</div>
+                    <h3 class="feature-title">Smart Contract Integration</h3>
+                    <p class="feature-description">
+                        Deploy, invoke, and manage smart contracts with advanced parameter handling 
+                        and comprehensive result parsing.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">Deploy</span>
+                        <span class="feature-tag">Invoke</span>
+                        <span class="feature-tag">Monitor</span>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">💰</div>
+                    <h3 class="feature-title">Advanced Asset Management</h3>
+                    <p class="feature-description">
+                        Complete NEP-17 token support with batch operations, multi-signature wallets, 
+                        and automated fee estimation.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">NEP-17</span>
+                        <span class="feature-tag">Multi-Sig</span>
+                        <span class="feature-tag">Batch Ops</span>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3 class="feature-title">Developer Experience</h3>
+                    <p class="feature-description">
+                        Zero-configuration setup, TypeScript support, comprehensive documentation, 
+                        and interactive examples for rapid development.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">Zero Config</span>
+                        <span class="feature-tag">TypeScript</span>
+                        <span class="feature-tag">Examples</span>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3 class="feature-title">Production Ready</h3>
+                    <p class="feature-description">
+                        Docker support, monitoring tools, comprehensive logging, and proven scalability 
+                        for enterprise deployments.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="feature-tag">Docker</span>
+                        <span class="feature-tag">Monitoring</span>
+                        <span class="feature-tag">Scalable</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Examples Section -->
+    <section class="examples">
+        <div class="examples-container">
+            <div class="section-header">
+                <h2 class="section-title">Code Examples</h2>
+                <p class="section-subtitle">
+                    See Neo N3 MCP in action with real-world examples
+                </p>
+            </div>
+            
+            <div class="examples-grid">
+                <div class="example-card">
+                    <div class="example-header">
+                        <div class="example-badge">Wallet Operations</div>
+                        <h3 class="example-title">Wallet Management</h3>
+                        <p class="example-description">
+                            Create wallets, check balances, and manage assets with enterprise-grade security.
+                        </p>
+                    </div>
+                    <div class="example-content">
+                        <div class="code-window">
+                            <div class="code-content">
+                                <pre><span class="code-comment">// Create and manage wallets</span>
+<span class="code-keyword">const</span> wallet = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'create_wallet'</span>);
+<span class="code-keyword">const</span> balance = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'get_balance'</span>, {
+  address: wallet.address
+});
+
+console.<span class="code-method">log</span>(<span class="code-string">'NEO:'</span>, balance.NEO);
+console.<span class="code-method">log</span>(<span class="code-string">'GAS:'</span>, balance.GAS);</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="example-card">
+                    <div class="example-header">
+                        <div class="example-badge">Smart Contracts</div>
+                        <h3 class="example-title">Contract Interaction</h3>
+                        <p class="example-description">
+                            Invoke smart contract methods with advanced parameter handling and result parsing.
+                        </p>
+                    </div>
+                    <div class="example-content">
+                        <div class="code-window">
+                            <div class="code-content">
+                                <pre><span class="code-comment">// Invoke smart contracts</span>
+<span class="code-keyword">const</span> result = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'invoke_contract'</span>, {
+  contract_hash: <span class="code-string">'0xd2a4cff31913016155e38e474a2c06d08be276cf'</span>,
+  method: <span class="code-string">'transfer'</span>,
+  parameters: [fromAddr, toAddr, amount]
+});
+
+console.<span class="code-method">log</span>(<span class="code-string">'Success:'</span>, result.state === <span class="code-string">'HALT'</span>);</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="example-card">
+                    <div class="example-header">
+                        <div class="example-badge">Asset Transfers</div>
+                        <h3 class="example-title">Token Operations</h3>
+                        <p class="example-description">
+                            Transfer NEP-17 tokens with automatic fee estimation and transaction confirmation.
+                        </p>
+                    </div>
+                    <div class="example-content">
+                        <div class="code-window">
+                            <div class="code-content">
+                                <pre><span class="code-comment">// Transfer assets</span>
+<span class="code-keyword">const</span> transfer = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'transfer_assets'</span>, {
+  from_address: fromAddr,
+  to_address: toAddr,
+  asset: <span class="code-string">'NEO'</span>,
+  amount: <span class="code-string">'1'</span>,
+  fee_estimate: <span class="code-keyword">true</span>
+});
+
+console.<span class="code-method">log</span>(<span class="code-string">'TX ID:'</span>, transfer.txid);</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="example-card">
+                    <div class="example-header">
+                        <div class="example-badge">Blockchain Data</div>
+                        <h3 class="example-title">Network Information</h3>
+                        <p class="example-description">
+                            Access comprehensive blockchain data including blocks, transactions, and network status.
+                        </p>
+                    </div>
+                    <div class="example-content">
+                        <div class="code-window">
+                            <div class="code-content">
+                                <pre><span class="code-comment">// Get blockchain info</span>
+<span class="code-keyword">const</span> info = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'get_blockchain_info'</span>);
+<span class="code-keyword">const</span> block = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'get_block'</span>, {
+  block_identifier: <span class="code-string">'latest'</span>
+});
+
+console.<span class="code-method">log</span>(<span class="code-string">'Height:'</span>, info.blockcount);
+console.<span class="code-method">log</span>(<span class="code-string">'Hash:'</span>, block.hash);</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="cta-container">
+            <h2 class="cta-title">Ready to Build?</h2>
+            <p class="cta-description">
+                Get started with Neo N3 MCP in minutes. Zero configuration required.
+            </p>
+            
+            <div class="install-command">
+                <div class="install-header">
+                    <span class="install-title">Quick Install</span>
+                    <button class="copy-btn" onclick="copyInstallCommand()">Copy</button>
+                </div>
+                <div class="install-code">npm install @r3e/neo-n3-mcp</div>
+            </div>
+            
+            <div class="hero-actions">
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary btn-large" target="_blank">
+                    ⭐ Star on GitHub
+                </a>
+                <a href="/docs" class="btn btn-secondary btn-large">
+                    📖 Read Documentation
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div>
+                    <div class="footer-brand">Neo N3 MCP</div>
+                    <p class="footer-description">
+                        The most advanced Neo N3 blockchain development platform. 
+                        Build powerful dApps with enterprise-grade tools and security.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="footer-title">Product</h4>
+                    <div class="footer-links">
+                        <a href="/docs" class="footer-link">Documentation</a>
+                        <a href="/examples" class="footer-link">Examples</a>
+                        <a href="/changelog" class="footer-link">Changelog</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Resources</h4>
+                    <div class="footer-links">
+                        <a href="https://docs.neo.org/" class="footer-link" target="_blank">Neo N3 Docs</a>
+                        <a href="https://modelcontextprotocol.io/" class="footer-link" target="_blank">MCP Protocol</a>
+                        <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="footer-link" target="_blank">NPM Package</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Community</h4>
+                    <div class="footer-links">
+                        <a href="https://github.com/r3e-network/neo-n3-mcp" class="footer-link" target="_blank">GitHub</a>
+                        <a href="https://github.com/r3e-network/neo-n3-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
+                        <a href="https://discord.gg/neo" class="footer-link" target="_blank">Discord</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2025 Neo N3 MCP. Open source under MIT License.</p>
+                <p>Built with ❤️ for the Neo ecosystem</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Navigation scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // Copy install command
+        function copyInstallCommand() {
+            const command = 'npm install @r3e/neo-n3-mcp';
+            navigator.clipboard.writeText(command).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                }, 2000);
+            });
+        }
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

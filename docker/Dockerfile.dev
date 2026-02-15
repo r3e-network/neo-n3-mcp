@@ -1,0 +1,49 @@
+# Development Dockerfile for Neo N3 MCP Server
+FROM node:18-alpine AS development
+
+# Install development tools
+RUN apk add --no-cache \
+    git \
+    curl \
+    bash \
+    dumb-init
+
+# Create app user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S neo-mcp -u 1001
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig.json ./
+
+# Install all dependencies (including dev dependencies)
+RUN npm ci
+
+# Copy source code
+COPY src/ ./src/
+COPY tests/ ./tests/
+COPY jest.config.js ./
+COPY babel.config.cjs ./
+
+# Create necessary directories
+RUN mkdir -p logs wallets config && \
+    chown -R neo-mcp:nodejs logs wallets config
+
+# Switch to non-root user
+USER neo-mcp
+
+# Expose ports
+EXPOSE 3000 9229
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Default command (can be overridden)
+CMD ["npm", "run", "dev"]

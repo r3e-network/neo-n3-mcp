@@ -1,0 +1,208 @@
+[build]
+  # No build command needed for static site
+  publish = "."
+  
+[build.environment]
+  NODE_VERSION = "18"
+
+# Headers for security and performance
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Security headers
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: http:; connect-src 'self' https:; frame-src 'none'; object-src 'none'"
+    
+    # Performance headers
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Specific headers for HTML files
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Specific headers for CSS and JS files
+[[headers]]
+  for = "*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Specific headers for images
+[[headers]]
+  for = "*.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "*.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "*.webp"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Documentation redirects
+[[redirects]]
+  from = "/docs"
+  to = "/docs/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/docs/api"
+  to = "/docs/api.html"
+  status = 200
+
+[[redirects]]
+  from = "/docs/architecture"
+  to = "/docs/architecture.html"
+  status = 200
+
+[[redirects]]
+  from = "/docs/deployment"
+  to = "/docs/deployment.html"
+  status = 200
+
+[[redirects]]
+  from = "/docs/testing"
+  to = "/docs/testing.html"
+  status = 200
+
+[[redirects]]
+  from = "/docs/getting-started"
+  to = "/docs/getting-started.html"
+  status = 200
+
+# Examples redirects
+[[redirects]]
+  from = "/examples"
+  to = "/examples/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/examples/wallet"
+  to = "/examples/wallet.html"
+  status = 200
+
+[[redirects]]
+  from = "/examples/contracts"
+  to = "/examples/contracts.html"
+  status = 200
+
+[[redirects]]
+  from = "/examples/explorer"
+  to = "/examples/explorer.html"
+  status = 200
+
+# Changelog redirect
+[[redirects]]
+  from = "/changelog"
+  to = "/changelog.html"
+  status = 200
+
+# API redirects (if needed for documentation)
+[[redirects]]
+  from = "/api/*"
+  to = "/docs/api/:splat"
+  status = 301
+
+# GitHub repository redirect
+[[redirects]]
+  from = "/github"
+  to = "https://github.com/r3e-network/neo-n3-mcp"
+  status = 301
+
+# NPM package redirect
+[[redirects]]
+  from = "/npm"
+  to = "https://www.npmjs.com/package/@r3e/neo-n3-mcp"
+  status = 301
+
+# Documentation shortcuts
+[[redirects]]
+  from = "/readme"
+  to = "/docs"
+  status = 301
+
+[[redirects]]
+  from = "/getting-started"
+  to = "/docs/getting-started"
+  status = 301
+
+[[redirects]]
+  from = "/installation"
+  to = "/#quick-start"
+  status = 301
+
+# Legacy redirects (in case of URL changes)
+[[redirects]]
+  from = "/documentation/*"
+  to = "/docs/:splat"
+  status = 301
+
+# Catch-all for other docs and examples (with .html extension)
+[[redirects]]
+  from = "/docs/*"
+  to = "/docs/:splat.html"
+  status = 200
+
+[[redirects]]
+  from = "/examples/*"
+  to = "/examples/:splat.html"
+  status = 200
+
+# 404 fallback
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404
+
+# Form handling (if contact forms are added later)
+# [[redirects]]
+#   from = "/contact"
+#   to = "/contact-success.html"
+#   status = 200
+#   conditions = {Role = ["form-submission"]}
+
+# Prerendering for better SEO (optional)
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = true
+  minify = true
+
+[build.processing.js]
+  bundle = true
+  minify = true
+
+[build.processing.html]
+  pretty_urls = true
+
+[build.processing.images]
+  compress = true
+
+# Edge functions (if needed later)
+# [[edge_functions]]
+# function = "geo-redirect"
+# path = "/api/*"
+
+# Dev server configuration
+[dev]
+  port = 3000
+  autoLaunch = false 

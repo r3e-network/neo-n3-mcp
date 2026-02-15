@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture Guide - Neo N3 MCP Server</title>
+    <meta name="description" content="System architecture and design patterns for Neo N3 MCP Server. Learn about components, data flow, and technical implementation.">
+    <meta name="keywords" content="neo, blockchain, mcp, architecture, design, system, components">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Modern Theme -->
+    <link rel="stylesheet" href="/assets/css/modern-theme.css">
+    
+    <style>
+        .breadcrumb {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .breadcrumb a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .architecture-section {
+            margin-bottom: var(--spacing-3xl);
+        }
+        
+        .architecture-section h2 {
+            font-family: var(--font-heading);
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-primary);
+        }
+        
+        .architecture-section h3 {
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: var(--spacing-xl) 0 var(--spacing-lg) 0;
+            color: var(--text-primary);
+        }
+        
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--spacing-lg);
+            margin: var(--spacing-xl) 0;
+        }
+        
+        .component-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            border: 1px solid var(--border-primary);
+            transition: var(--transition);
+        }
+        
+        .component-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+        
+        .component-icon {
+            font-size: 2rem;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .component-title {
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+        
+        .architecture-diagram {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-2xl);
+            margin: var(--spacing-xl) 0;
+            text-align: center;
+            border: 1px solid var(--border-primary);
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.1));
+            border-left: 4px solid var(--primary);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            margin: var(--spacing-lg) 0;
+        }
+        
+        .info-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--spacing-md);
+            margin: var(--spacing-lg) 0;
+        }
+        
+        .tech-item {
+            background: var(--bg-tertiary);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            text-align: center;
+            border: 1px solid var(--border-primary);
+        }
+        
+        .tech-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .tech-version {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">Neo N3 MCP</a>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/#features" class="nav-link">Features</a>
+                <a href="/docs" class="nav-link active">Docs</a>
+                <a href="/examples" class="nav-link">Examples</a>
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-container">
+        <div class="breadcrumb">
+            <a href="/docs">Documentation</a> > Architecture Guide
+        </div>
+        
+        <header style="text-align: center; margin-bottom: 3rem;">
+            <h1 class="section-title">Architecture Guide</h1>
+            <p class="section-subtitle">
+                System architecture and design patterns for Neo N3 MCP Server
+            </p>
+        </header>
+
+        <div class="architecture-section">
+            <h2>🏗️ System Overview</h2>
+            <p>Neo N3 MCP Server is built as a modular, extensible system that bridges the gap between AI applications and the Neo N3 blockchain. The architecture follows industry best practices for security, performance, and maintainability.</p>
+            
+            <div class="architecture-diagram">
+                <h3>High-Level Architecture</h3>
+                <pre style="text-align: left; font-family: var(--font-mono); color: var(--text-primary); font-size: 0.9rem;">
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   AI Client     │    │   MCP Server     │    │   Neo N3        │
+│   (Claude, etc) │◄──►│   (This System)  │◄──►│   Network       │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                                │
+                                ▼
+                       ┌──────────────────┐
+                       │   Tool & Resource│
+                       │   Management     │
+                       └──────────────────┘
+                                │
+                    ┌───────────┼───────────┐
+                    ▼           ▼           ▼
+            ┌──────────┐ ┌──────────┐ ┌──────────┐
+            │Blockchain│ │ Wallet   │ │ Security │
+            │ Service  │ │ Service  │ │ Service  │
+            └──────────┘ └──────────┘ └──────────┘</pre>
+            </div>
+        </div>
+
+        <div class="architecture-section">
+            <h2>🔧 Core Components</h2>
+            
+            <div class="component-grid">
+                <div class="component-card">
+                    <div class="component-icon">🌐</div>
+                    <h3 class="component-title">MCP Protocol Handler</h3>
+                    <p>Manages the Model Context Protocol communication, handling tool calls, resource requests, and maintaining session state.</p>
+                    <ul>
+                        <li>JSON-RPC 2.0 protocol</li>
+                        <li>Session management</li>
+                        <li>Request/response validation</li>
+                        <li>Error handling & recovery</li>
+                    </ul>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-icon">🔗</div>
+                    <h3 class="component-title">Neo N3 Service</h3>
+                    <p>Core blockchain interaction layer that handles all Neo N3 network communications and operations.</p>
+                    <ul>
+                        <li>RPC client management</li>
+                        <li>Network switching (mainnet/testnet)</li>
+                        <li>Connection pooling</li>
+                        <li>Automatic failover</li>
+                    </ul>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-icon">💰</div>
+                    <h3 class="component-title">Wallet Manager</h3>
+                    <p>Secure wallet operations including creation, import, and transaction signing with enterprise-grade encryption.</p>
+                    <ul>
+                        <li>AES-256 encryption</li>
+                        <li>Secure key derivation</li>
+                        <li>Multi-signature support</li>
+                        <li>Hardware wallet integration</li>
+                    </ul>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-icon">📜</div>
+                    <h3 class="component-title">Contract Registry</h3>
+                    <p>Manages famous contracts and provides standardized interfaces for smart contract interactions.</p>
+                    <ul>
+                        <li>Contract metadata storage</li>
+                        <li>ABI management</li>
+                        <li>Method mapping</li>
+                        <li>Parameter validation</li>
+                    </ul>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-icon">🛡️</div>
+                    <h3 class="component-title">Security Layer</h3>
+                    <p>Comprehensive security controls including input validation, rate limiting, and access control.</p>
+                    <ul>
+                        <li>Input sanitization</li>
+                        <li>Rate limiting</li>
+                        <li>Confirmation requirements</li>
+                        <li>Audit logging</li>
+                    </ul>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-icon">📊</div>
+                    <h3 class="component-title">Monitoring System</h3>
+                    <p>Real-time monitoring, metrics collection, and health checks for operational excellence.</p>
+                    <ul>
+                        <li>Prometheus metrics</li>
+                        <li>Health endpoints</li>
+                        <li>Performance tracking</li>
+                        <li>Alert generation</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="architecture-section">
+            <h2>⚡ Data Flow</h2>
+            
+            <h3>Request Processing Flow</h3>
+            <div class="code-window">
+                <div class="code-content">
+                    <pre>1. AI Client Request
+   │
+   ▼
+2. MCP Protocol Validation
+   │
+   ▼
+3. Security Checks
+   │ ├─ Input Validation
+   │ ├─ Rate Limiting
+   │ └─ Authorization
+   ▼
+4. Tool Router
+   │
+   ▼
+5. Service Layer
+   │ ├─ Blockchain Service
+   │ ├─ Wallet Service
+   │ └─ Contract Service
+   ▼
+6. Neo N3 Network
+   │
+   ▼
+7. Response Processing
+   │ ├─ Data Transformation
+   │ ├─ Error Handling
+   │ └─ Metrics Collection
+   ▼
+8. MCP Response to Client</pre>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <div class="info-title">💡 Design Principles</div>
+                <ul>
+                    <li><strong>Modularity:</strong> Each component has a single responsibility</li>
+                    <li><strong>Security First:</strong> All inputs validated, all operations logged</li>
+                    <li><strong>Fault Tolerance:</strong> Graceful degradation and automatic recovery</li>
+                    <li><strong>Performance:</strong> Connection pooling and efficient caching</li>
+                    <li><strong>Observability:</strong> Comprehensive monitoring and logging</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="architecture-section">
+            <h2>🛠️ Technology Stack</h2>
+            
+            <div class="tech-stack">
+                <div class="tech-item">
+                    <div class="tech-name">Node.js</div>
+                    <div class="tech-version">18+</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-name">TypeScript</div>
+                    <div class="tech-version">5.0+</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-name">Neo N3</div>
+                    <div class="tech-version">SDK 3.x</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-name">Docker</div>
+                    <div class="tech-version">24+</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-name">Prometheus</div>
+                    <div class="tech-version">2.x</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-name">Jest</div>
+                    <div class="tech-version">29+</div>
+                </div>
+            </div>
+            
+            <h3>Key Dependencies</h3>
+            <div class="code-window">
+                <div class="code-content">
+                    <pre>{
+  "dependencies": {
+    "@cityofzion/neon-js": "^5.4.0",
+    "@neo-project/neo-js": "^3.15.0",
+    "express": "^4.18.2",
+    "ws": "^8.13.0",
+    "crypto": "node:crypto",
+    "dotenv": "^16.3.1",
+    "joi": "^17.9.2",
+    "winston": "^3.10.0",
+    "prom-client": "^14.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.4.5",
+    "typescript": "^5.1.6",
+    "jest": "^29.6.2",
+    "eslint": "^8.45.0",
+    "prettier": "^3.0.0"
+  }
+}</pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="architecture-section">
+            <h2>🏛️ Design Patterns</h2>
+            
+            <div class="component-grid">
+                <div class="component-card">
+                    <div class="component-icon">🏭</div>
+                    <h3 class="component-title">Factory Pattern</h3>
+                    <p>Tool creation and service instantiation based on configuration and runtime requirements.</p>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-icon">🔌</div>
+                    <h3 class="component-title">Strategy Pattern</h3>
+                    <p>Different network handlers (mainnet/testnet) and encryption strategies for various security levels.</p>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-icon">👀</div>
+                    <h3 class="component-title">Observer Pattern</h3>
+                    <p>Event-driven architecture for monitoring, logging, and metric collection across components.</p>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-icon">🔄</div>
+                    <h3 class="component-title">Circuit Breaker</h3>
+                    <p>Prevents cascading failures when Neo N3 network is unavailable or experiencing issues.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="architecture-section">
+            <h2>🔒 Security Architecture</h2>
+            
+            <h3>Multi-Layer Security Model</h3>
+            <div class="code-window">
+                <div class="code-content">
+                    <pre>┌─────────────────────────────────────────┐
+│            Application Layer            │
+│  ├─ Input Validation                   │
+│  ├─ Rate Limiting                      │
+│  └─ Request Authentication             │
+├─────────────────────────────────────────┤
+│             Service Layer               │
+│  ├─ Business Logic Validation          │
+│  ├─ Permission Checks                  │
+│  └─ Operation Confirmation             │
+├─────────────────────────────────────────┤
+│              Data Layer                 │
+│  ├─ Encryption at Rest                 │
+│  ├─ Secure Key Derivation              │
+│  └─ Audit Logging                      │
+├─────────────────────────────────────────┤
+│            Network Layer                │
+│  ├─ TLS/SSL Encryption                 │
+│  ├─ Connection Security                │
+│  └─ Network Isolation                  │
+└─────────────────────────────────────────┘</pre>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <div class="info-title">🛡️ Security Features</div>
+                <ul>
+                    <li><strong>Zero Trust:</strong> All operations require explicit validation</li>
+                    <li><strong>Principle of Least Privilege:</strong> Minimal permissions by default</li>
+                    <li><strong>Defense in Depth:</strong> Multiple security layers</li>
+                    <li><strong>Audit Trail:</strong> Complete operation logging</li>
+                    <li><strong>Secure by Default:</strong> Safe configuration out of the box</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="architecture-section">
+            <h2>📈 Scalability & Performance</h2>
+            
+            <h3>Performance Optimizations</h3>
+            <div class="component-grid">
+                <div class="component-card">
+                    <div class="component-icon">🔄</div>
+                    <h3 class="component-title">Connection Pooling</h3>
+                    <p>Efficient Neo N3 RPC connection management with automatic load balancing and failover.</p>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-icon">⚡</div>
+                    <h3 class="component-title">Async Processing</h3>
+                    <p>Non-blocking operations with proper error handling and timeout management.</p>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-icon">💾</div>
+                    <h3 class="component-title">Smart Caching</h3>
+                    <p>Intelligent caching of blockchain data with appropriate TTL and invalidation strategies.</p>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-icon">📊</div>
+                    <h3 class="component-title">Resource Management</h3>
+                    <p>Memory-efficient operations with garbage collection optimization and leak prevention.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div>
+                    <div class="footer-brand">Neo N3 MCP</div>
+                    <p class="footer-description">
+                        The most advanced Neo N3 blockchain development platform. 
+                        Build powerful dApps with enterprise-grade tools and security.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="footer-title">Product</h4>
+                    <div class="footer-links">
+                        <a href="/docs" class="footer-link">Documentation</a>
+                        <a href="/examples" class="footer-link">Examples</a>
+                        <a href="/changelog" class="footer-link">Changelog</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Resources</h4>
+                    <div class="footer-links">
+                        <a href="https://docs.neo.org/" class="footer-link" target="_blank">Neo N3 Docs</a>
+                        <a href="https://modelcontextprotocol.io/" class="footer-link" target="_blank">MCP Protocol</a>
+                        <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="footer-link" target="_blank">NPM Package</a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="footer-title">Community</h4>
+                    <div class="footer-links">
+                        <a href="https://github.com/r3e-network/neo-n3-mcp" class="footer-link" target="_blank">GitHub</a>
+                        <a href="https://github.com/r3e-network/neo-n3-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
+                        <a href="https://discord.gg/neo" class="footer-link" target="_blank">Discord</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2025 Neo N3 MCP. Open source under MIT License.</p>
+                <p>Built with ❤️ for the Neo ecosystem</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Navigation scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html> 

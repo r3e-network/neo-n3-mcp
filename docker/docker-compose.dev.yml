@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  neo-mcp-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: development
+    image: neo-n3-mcp:dev
+    container_name: neo-n3-mcp-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Debug port
+    environment:
+      # Network Configuration
+      - NEO_NETWORK=testnet
+      - NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443
+      - NEO_TESTNET_RPC=https://testnet1.neo.coz.io:443
+      
+      # Rate Limiting (more permissive for dev)
+      - RATE_LIMITING_ENABLED=false
+      - MAX_REQUESTS_PER_MINUTE=1000
+      - MAX_REQUESTS_PER_HOUR=10000
+      
+      # Logging
+      - LOG_LEVEL=debug
+      - LOG_FILE=/app/logs/neo-mcp-dev.log
+      - LOG_CONSOLE=true
+      
+      # Development
+      - NODE_ENV=development
+      - PORT=3000
+    volumes:
+      # Mount source code for hot reload
+      - ./src:/app/src:ro
+      - ./tests:/app/tests:ro
+      - ./package*.json:/app/
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      
+      # Persistent data
+      - neo-mcp-dev-logs:/app/logs
+      - neo-mcp-dev-wallets:/app/wallets
+      - ./config:/app/config:ro
+    networks:
+      - neo-mcp-dev-network
+    command: ["npm", "run", "dev"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Test runner service
+  neo-mcp-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: development
+    image: neo-n3-mcp:dev
+    container_name: neo-n3-mcp-test
+    environment:
+      - NODE_ENV=test
+      - NEO_NETWORK=testnet
+    volumes:
+      - ./src:/app/src:ro
+      - ./tests:/app/tests:ro
+      - ./package*.json:/app/
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./jest.config.js:/app/jest.config.js:ro
+      - ./babel.config.cjs:/app/babel.config.cjs:ro
+    networks:
+      - neo-mcp-dev-network
+    command: ["npm", "test"]
+    profiles:
+      - test
+
+volumes:
+  neo-mcp-dev-logs:
+    driver: local
+  neo-mcp-dev-wallets:
+    driver: local
+
+networks:
+  neo-mcp-dev-network:
+    driver: bridge
