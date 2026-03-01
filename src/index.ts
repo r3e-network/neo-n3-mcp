@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
+import * as neonJs from '@cityofzion/neon-js';
 
 import { NeoService, NeoNetwork } from './services/neo-service';
 import { ContractService } from './contracts/contract-service';
+import { callTool } from './handlers/tool-handler';
 import { config, NetworkMode } from './config';
 import {
   validateAddress,
@@ -27,7 +29,7 @@ class NeoN3McpServer {
   private servicesInitialized = false;
 
   constructor() {
-    console.log('🚀 Initializing Neo N3 MCP Server (Modern API)...');
+    console.error('🚀 Initializing Neo N3 MCP Server (Modern API)...');
     
     // Create McpServer with high-level API
     this.server = new McpServer({
@@ -43,7 +45,7 @@ class NeoN3McpServer {
     this.setupTools();
     this.setupResources();
     
-    console.log('✅ Neo N3 MCP Server initialized successfully');
+    console.error('✅ Neo N3 MCP Server initialized successfully');
   }
 
   /**
@@ -55,12 +57,12 @@ class NeoN3McpServer {
     }
 
     try {
-      console.log('🔧 Lazy-initializing Neo services...');
-      console.log(`Network mode: ${config.networkMode}`);
+      console.error('🔧 Lazy-initializing Neo services...');
+      console.error(`Network mode: ${config.networkMode}`);
 
       // Initialize mainnet services if enabled
       if (config.networkMode === NetworkMode.MAINNET_ONLY || config.networkMode === NetworkMode.BOTH) {
-        console.log('   Initializing mainnet services...');
+        console.error('   Initializing mainnet services...');
         
         const mainnetNeoService = new NeoService(config.mainnetRpcUrl, NeoNetwork.MAINNET);
         const mainnetContractService = new ContractService(config.mainnetRpcUrl, NeoNetwork.MAINNET);
@@ -68,12 +70,12 @@ class NeoN3McpServer {
         this.neoServices.set(NeoNetwork.MAINNET, mainnetNeoService);
         this.contractServices.set(NeoNetwork.MAINNET, mainnetContractService);
         
-        console.log('   ✅ Mainnet services initialized');
+        console.error('   ✅ Mainnet services initialized');
       }
 
       // Initialize testnet services if enabled
       if (config.networkMode === NetworkMode.TESTNET_ONLY || config.networkMode === NetworkMode.BOTH) {
-        console.log('   Initializing testnet services...');
+        console.error('   Initializing testnet services...');
         
         const testnetNeoService = new NeoService(config.testnetRpcUrl, NeoNetwork.TESTNET);
         const testnetContractService = new ContractService(config.testnetRpcUrl, NeoNetwork.TESTNET);
@@ -81,11 +83,11 @@ class NeoN3McpServer {
         this.neoServices.set(NeoNetwork.TESTNET, testnetNeoService);
         this.contractServices.set(NeoNetwork.TESTNET, testnetContractService);
         
-        console.log('   ✅ Testnet services initialized');
+        console.error('   ✅ Testnet services initialized');
       }
 
       this.servicesInitialized = true;
-      console.log('✅ All Neo services initialized successfully');
+      console.error('✅ All Neo services initialized successfully');
     } catch (error) {
       console.error('❌ Error initializing Neo services:', error);
       throw error;
@@ -162,7 +164,7 @@ class NeoN3McpServer {
    * Setup tools using modern McpServer API
    */
   private setupTools() {
-    console.log('🔧 Setting up tools with modern API...');
+    console.error('🔧 Setting up tools with modern API...');
 
     // Network mode tool
     this.server.tool(
@@ -332,14 +334,285 @@ class NeoN3McpServer {
       }
     );
 
-    console.log('✅ Tools set up successfully');
+    // Create wallet tool
+    this.server.tool(
+      'create_wallet',
+      {
+        password: z.string().describe('Password to encrypt the wallet WIF'),
+      },
+      async ({ password }) => {
+        validatePassword(password);
+        const account = new neonJs.wallet.Account();
+        const encryptedWIF = await neonJs.wallet.encrypt(account.WIF, password);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({ 
+                address: account.address, 
+                publicKey: account.publicKey,
+                encryptedPrivateKey: encryptedWIF 
+              }, null, 2),
+            },
+          ],
+        };
+      }
+    );
+    this.server.tool(
+      'set_network_mode',
+      { mode: z.string().describe('Network mode to set') },
+      async (args) => {
+        try {
+          await this.ensureServicesInitialized();
+          const result = await callTool('set_network_mode', args, this.neoServices, this.contractServices);
+          // If the result is an error object from our error handler, return it properly formatted
+          if (result && result.error) {
+            return { isError: true, content: [{ type: 'text', text: typeof result.error === 'string' ? result.error : JSON.stringify(result.error) }] };
+          }
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        } catch (error: any) {
+          return { isError: true, content: [{ type: 'text', text: error.message }] };
+        }
+      }
+    );
+
+    this.server.tool(
+      'get_block',
+      { hashOrHeight: z.union([z.string(), z.number()]).describe('Block hash or height'), network: z.string().optional().describe('Optional: Network') },
+      async (args) => {
+        try {
+          await this.ensureServicesInitialized();
+          const result = await callTool('get_block', args, this.neoServices, this.contractServices);
+          // If the result is an error object from our error handler, return it properly formatted
+          if (result && result.error) {
+            return { isError: true, content: [{ type: 'text', text: typeof result.error === 'string' ? result.error : JSON.stringify(result.error) }] };
+          }
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        } catch (error: any) {
+          return { isError: true, content: [{ type: 'text', text: error.message }] };
+        }
+      }
+    );
+
+    this.server.tool(
+      'get_transaction',
+      { txid: z.string().describe('Transaction hash'), network: z.string().optional().describe('Optional: Network') },
+      async (args) => {
+        try {
+          await this.ensureServicesInitialized();
+          const result = await callTool('get_transaction', args, this.neoServices, this.contractServices);
+          // If the result is an error object from our error handler, return it properly formatted
+          if (result && result.error) {
+            return { isError: true, content: [{ type: 'text', text: typeof result.error === 'string' ? result.error : JSON.stringify(result.error) }] };
+          }
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        } catch (error: any) {
+          return { isError: true, content: [{ type: 'text', text: error.message }] };
+        }
+      }
+    );
+
+    this.server.tool(
+      'transfer_assets',
+      { 
+      network: z.string().optional().describe('Optional: Network'),
+      fromWIF: z.string().describe('Sender WIF'),
+      toAddress: z.string().describe('Recipient address'),
+      asset: z.string().describe('Asset hash (e.g. NEO or GAS hash)'),
+      amount: z.string().describe('Amount to transfer'),
+      confirm: z.boolean().optional().describe('Must be true to execute')
+    },
+      async (args) => {
+        try {
+          await this.ensureServicesInitialized();
+          const result = await callTool('transfer_assets', args, this.neoServices, this.contractServices);
+          // If the result is an error object from our error handler, return it properly formatted
+          if (result && result.error) {
+            return { isError: true, content: [{ type: 'text', text: typeof result.error === 'string' ? result.error : JSON.stringify(result.error) }] };
+          }
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        } catch (error: any) {
+          return { isError: true, content: [{ type: 'text', text: error.message }] };
+        }
+      }
+    );
+
+    this.server.tool(
+      'invoke_contract',
+      { 
+      network: z.string().optional().describe('Optional: Network'),
+      fromWIF: z.string().optional().describe('Optional: Sender WIF for write operations'),
+      scriptHash: z.string().describe('Contract script hash'),
+      operation: z.string().describe('Method name'),
+      args: z.array(z.any()).optional().describe('Optional: Method arguments'),
+      signers: z.array(z.any()).optional().describe('Optional: Signer scopes'),
+      confirm: z.boolean().optional().describe('Must be true to execute write operations')
+    },
+      async (args) => {
+        try {
+          await this.ensureServicesInitialized();
+          const result = await callTool('invoke_contract', args, this.neoServices, this.contractServices);
+          // If the result is an error object from our error handler, return it properly formatted
+          if (result && result.error) {
+            return { isError: true, content: [{ type: 'text', text: typeof result.error === 'string' ? result.error : JSON.stringify(result.error) }] };
+          }
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        } catch (error: any) {
+          return { isError: true, content: [{ type: 'text', text: error.message }] };
+        }
+      }
+    );
+
+    this.server.tool(
+      'import_wallet',
+      { privateKeyOrWIF: z.string().describe('Private key or WIF') },
+      async (args) => {
+        try {
+          await this.ensureServicesInitialized();
+          const result = await callTool('import_wallet', args, this.neoServices, this.contractServices);
+          // If the result is an error object from our error handler, return it properly formatted
+          if (result && result.error) {
+            return { isError: true, content: [{ type: 'text', text: typeof result.error === 'string' ? result.error : JSON.stringify(result.error) }] };
+          }
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        } catch (error: any) {
+          return { isError: true, content: [{ type: 'text', text: error.message }] };
+        }
+      }
+    );
+
+    this.server.tool(
+      'estimate_transfer_fees',
+      { 
+      network: z.string().optional().describe('Optional: Network'),
+      fromAddress: z.string().describe('Sender address'),
+      toAddress: z.string().describe('Recipient address'),
+      asset: z.string().describe('Asset hash'),
+      amount: z.string().describe('Amount')
+    },
+      async (args) => {
+        try {
+          await this.ensureServicesInitialized();
+          const result = await callTool('estimate_transfer_fees', args, this.neoServices, this.contractServices);
+          // If the result is an error object from our error handler, return it properly formatted
+          if (result && result.error) {
+            return { isError: true, content: [{ type: 'text', text: typeof result.error === 'string' ? result.error : JSON.stringify(result.error) }] };
+          }
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        } catch (error: any) {
+          return { isError: true, content: [{ type: 'text', text: error.message }] };
+        }
+      }
+    );
+
+    this.server.tool(
+      'estimate_invoke_fees',
+      { 
+      network: z.string().optional().describe('Optional: Network'),
+      signerAddress: z.string().describe('Signer address'),
+      scriptHash: z.string().describe('Contract script hash'),
+      operation: z.string().describe('Method name'),
+      args: z.array(z.any()).optional().describe('Optional: Method arguments'),
+      signers: z.array(z.any()).optional().describe('Optional: Signer scopes')
+    },
+      async (args) => {
+        try {
+          await this.ensureServicesInitialized();
+          const result = await callTool('estimate_invoke_fees', args, this.neoServices, this.contractServices);
+          // If the result is an error object from our error handler, return it properly formatted
+          if (result && result.error) {
+            return { isError: true, content: [{ type: 'text', text: typeof result.error === 'string' ? result.error : JSON.stringify(result.error) }] };
+          }
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        } catch (error: any) {
+          return { isError: true, content: [{ type: 'text', text: error.message }] };
+        }
+      }
+    );
+
+    this.server.tool(
+      'claim_gas',
+      { network: z.string().optional().describe('Optional: Network'), fromWIF: z.string().describe('Account WIF'), confirm: z.boolean().optional().describe('Must be true to execute') },
+      async (args) => {
+        try {
+          await this.ensureServicesInitialized();
+          const result = await callTool('claim_gas', args, this.neoServices, this.contractServices);
+          // If the result is an error object from our error handler, return it properly formatted
+          if (result && result.error) {
+            return { isError: true, content: [{ type: 'text', text: typeof result.error === 'string' ? result.error : JSON.stringify(result.error) }] };
+          }
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        } catch (error: any) {
+          return { isError: true, content: [{ type: 'text', text: error.message }] };
+        }
+      }
+    );
+
+    this.server.tool(
+      'neofs_create_container',
+      { network: z.string().optional().describe('Optional: Network'), wif: z.string().describe('Account WIF'), rules: z.array(z.any()).optional().describe('Optional: Container placement rules') },
+      async (args) => {
+        try {
+          await this.ensureServicesInitialized();
+          const result = await callTool('neofs_create_container', args, this.neoServices, this.contractServices);
+          // If the result is an error object from our error handler, return it properly formatted
+          if (result && result.error) {
+            return { isError: true, content: [{ type: 'text', text: typeof result.error === 'string' ? result.error : JSON.stringify(result.error) }] };
+          }
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        } catch (error: any) {
+          return { isError: true, content: [{ type: 'text', text: error.message }] };
+        }
+      }
+    );
+
+    this.server.tool(
+      'neofs_get_containers',
+      { network: z.string().optional().describe('Optional: Network'), ownerAddress: z.string().describe('Address of the owner') },
+      async (args) => {
+        try {
+          await this.ensureServicesInitialized();
+          const result = await callTool('neofs_get_containers', args, this.neoServices, this.contractServices);
+          // If the result is an error object from our error handler, return it properly formatted
+          if (result && result.error) {
+            return { isError: true, content: [{ type: 'text', text: typeof result.error === 'string' ? result.error : JSON.stringify(result.error) }] };
+          }
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        } catch (error: any) {
+          return { isError: true, content: [{ type: 'text', text: error.message }] };
+        }
+      }
+    );
+
   }
 
   /**
    * Setup resources using modern McpServer API
    */
   private setupResources() {
-    console.log('🔧 Setting up resources with modern API...');
+    console.error('🔧 Setting up resources with modern API...');
 
     // Network status resource
     this.server.resource(
@@ -401,7 +674,28 @@ class NeoN3McpServer {
       }
     );
 
-    console.log('✅ Resources set up successfully');
+    // Block resource by height
+    this.server.resource(
+      'neo-block',
+      new ResourceTemplate('neo://block/{height}', { list: undefined }),
+      async (uri, { height }) => {
+        const neoService = await this.getNeoService();
+        const parsedHeight = Array.isArray(height) ? height[0] : height;
+        const blockHeight = typeof parsedHeight === 'string' ? parseInt(parsedHeight, 10) : parsedHeight;
+        const block = await neoService.getBlock(blockHeight as number);
+        return {
+          contents: [
+            {
+              uri: uri.href,
+              mimeType: 'application/json',
+              text: JSON.stringify(block, null, 2),
+            },
+          ],
+        };
+      }
+    );
+
+    console.error('✅ Resources set up successfully');
   }
 
   /**
@@ -409,12 +703,12 @@ class NeoN3McpServer {
    */
   async run() {
     try {
-      console.log('🚀 Starting Neo N3 MCP Server...');
+      console.error('🚀 Starting Neo N3 MCP Server...');
       
       const transport = new StdioServerTransport();
       await this.server.connect(transport);
       
-      console.log('✅ Neo N3 MCP Server started and connected successfully');
+      console.error('✅ Neo N3 MCP Server started and connected successfully');
     } catch (error) {
       console.error('❌ Failed to start Neo N3 MCP Server:', error);
       throw error;

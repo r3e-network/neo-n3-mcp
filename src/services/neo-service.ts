@@ -87,14 +87,14 @@ export class NeoService {
         } catch (directError) {
           // Fallback to execute method
           try {
-            const validatorsResult = await this.rpcClient.execute('getvalidators', []);
+            const validatorsResult = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getvalidators', params: [] }));
             if (validatorsResult && Array.isArray(validatorsResult)) {
               validators = validatorsResult;
             }
           } catch (executeError) {
             // Last fallback - try getnextblockvalidators
             try {
-              const validatorsResult = await this.rpcClient.execute('getnextblockvalidators', []);
+              const validatorsResult = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getnextblockvalidators', params: [] }));
               if (validatorsResult && Array.isArray(validatorsResult)) {
                 validators = validatorsResult;
               }
@@ -148,12 +148,12 @@ export class NeoService {
     try {
       // Try to use execute method instead of direct method call
       try {
-        return await this.rpcClient.execute('getrawtransaction', [txid, 1]);
+        return await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getrawtransaction', params: [txid, 1] }));
       } catch (directError) {
         console.warn('Direct getrawtransaction failed, trying alternative approach:', directError);
 
         // Alternative approach using RPC client's execute method
-        const result = await this.rpcClient.execute('getrawtransaction', [txid, true]);
+        const result = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getrawtransaction', params: [txid, true] }));
         return result;
       }
     } catch (error) {
@@ -175,7 +175,8 @@ export class NeoService {
 
       try {
         // Try to use execute method for getNep17Balances
-        const balanceResult = await this.rpcClient.execute('getnep17balances', [address]);
+        const query = new neonJs.rpc.Query({ method: 'getnep17balances', params: [address] });
+        const balanceResult = await this.rpcClient.execute(query);
         if (balanceResult && balanceResult.balance) {
           return {
             address: balanceResult.address,
@@ -338,10 +339,10 @@ export class NeoService {
       };
 
       // Get transaction info from RPC using direct execute call
-      const tx = await this.rpcClient.execute('invokescript', [
+      const tx = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'invokescript', params: [
         neonJs.u.HexString.fromHex(script),
         txIntent.signers
-      ]);
+      ] }));
 
       // Properly sign the transaction
       let signedTx;
@@ -375,7 +376,7 @@ export class NeoService {
       }
 
       // Send transaction using direct execute call
-      const result = await this.rpcClient.execute('sendrawtransaction', [signedTx]);
+      const result = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'sendrawtransaction', params: [signedTx] }));
 
       return { txid: result, tx: signedTx };
     } catch (error) {
@@ -482,7 +483,7 @@ export class NeoService {
       } catch (invokeFunctionError) {
         console.warn('Direct invokeFunction failed, trying execute method:', invokeFunctionError);
         // Fallback to execute method
-        invokeResult = await this.rpcClient.execute('invokefunction', [scriptHash, operation, args, [signer]]);
+        invokeResult = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'invokefunction', params: [scriptHash, operation, args, [signer]] }));
       }
 
       if (invokeResult.state !== 'HALT') {

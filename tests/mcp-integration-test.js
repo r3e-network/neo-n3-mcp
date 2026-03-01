@@ -204,7 +204,7 @@ class McpIntegrationTest {
   async testGetBalance() {
     try {
       // Use a known testnet address
-      const testAddress = 'NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj';
+      const testAddress = 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr';
 
       const result = await this.client.callTool('get_balance', { address: testAddress });
 

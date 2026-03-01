@@ -45,7 +45,13 @@ async function handleGetBlockCount(input: any, neoService: NeoService): Promise<
 
 async function handleGetBlock(input: any, neoService: NeoService): Promise<any> {
   try {
-    validateHash(input.hashOrHeight);
+    if (typeof input.hashOrHeight === 'string') {
+      validateHash(input.hashOrHeight);
+    } else if (typeof input.hashOrHeight === 'number') {
+      // It's a block height, could validate integer if needed
+    } else {
+      throw new McpError(ErrorCode.InvalidParams, 'hashOrHeight must be a string or number');
+    }
     const block = await neoService.getBlock(input.hashOrHeight);
     return createSuccessResponse(block);
   } catch (error) {
@@ -260,8 +266,8 @@ export async function callTool(name: string, input: any, neoServices: Map<NeoNet
   }
 
   // Validate network for network-specific tools
-  if (!input || typeof input !== 'object' || !input.network) {
-    throw new McpError(ErrorCode.InvalidParams, 'Missing or invalid network parameter for this tool.');
+  if (!input || typeof input !== 'object') {
+    throw new McpError(ErrorCode.InvalidParams, 'Invalid input parameters. Expected an object.');
   }
 
   let network: NeoNetwork;
@@ -718,5 +724,5 @@ export function setupToolHandlers(
     return await callTool(name, input, neoServices, contractServices);
   });
 
-  console.log('Tool handlers setup complete.');
+  console.error('Tool handlers setup complete.');
 }

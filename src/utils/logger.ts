@@ -118,11 +118,9 @@ export class Logger {
     const formattedMessage = this.formatMessage(levelStr, message, context);
 
     if (this.logToConsole) {
-      const consoleMethod = level === LogLevel.ERROR ? console.error :
-                            level === LogLevel.WARN ? console.warn :
-                            level === LogLevel.INFO ? console.info :
-                            console.debug;
-      consoleMethod(formattedMessage);
+      // For MCP servers using stdio transport, all console output MUST go to stderr
+      // Otherwise it corrupts the JSON-RPC stream on stdout
+      console.error(formattedMessage);
     }
 
     if (this.logToFile && this.logStream) {

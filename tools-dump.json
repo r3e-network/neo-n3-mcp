@@ -1,0 +1,371 @@
+[
+      {
+        name: 'get_network_mode',
+        description: 'Get the currently configured network mode (mainnet_only, testnet_only, both)',
+        inputSchema: { type: 'object', properties: {} },
+      },
+      {
+        name: 'set_network_mode',
+        description: 'Set the network mode (mainnet_only, testnet_only, both). Requires restart.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            mode: {
+              type: 'string',
+              description: 'Network mode to set',
+              enum: [NetworkMode.MAINNET_ONLY, NetworkMode.TESTNET_ONLY, NetworkMode.BOTH],
+            },
+          },
+          required: ['mode'],
+        },
+      },
+      {
+        name: 'get_blockchain_info',
+        description: 'Get essential blockchain information (block height, version)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            network: {
+              type: 'string',
+              description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
+              enum: ["MAINNET", "TESTNET"],
+            },
+          },
+          required: [],
+        },
+      },
+      {
+        name: 'get_block_count',
+        description: 'Get the current block height of the Neo N3 blockchain',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            network: {
+              type: 'string',
+              description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
+              enum: ["MAINNET", "TESTNET"],
+            },
+          },
+          required: [],
+        },
+      },
+      {
+        name: 'get_block',
+        description: 'Get block details by height or hash',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            hashOrHeight: {
+              oneOf: [
+                { type: 'string', description: 'Block hash (hex string)' },
+                { type: 'number', description: 'Block height (integer)' },
+              ],
+              description: 'Block hash or height',
+            },
+            network: {
+              type: 'string',
+              description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
+              enum: ["MAINNET", "TESTNET"],
+            },
+          },
+          required: ['hashOrHeight'],
+        },
+      },
+      {
+        name: 'get_transaction',
+        description: 'Get transaction details by hash',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            txid: {
+              type: 'string',
+              description: 'Transaction hash (hex string)',
+            },
+            network: {
+              type: 'string',
+              description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
+              enum: ["MAINNET", "TESTNET"],
+            },
+          },
+          required: ['txid'],
+        },
+      },
+      {
+        name: 'get_balance',
+        description: 'Get native (NEO/GAS) and NEP-17 token balances for an address',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            address: {
+              type: 'string',
+              description: 'Neo N3 address',
+            },
+            network: {
+              type: 'string',
+              description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
+              enum: ["MAINNET", "TESTNET"],
+            },
+          },
+          required: ['address'],
+        },
+      },
+      {
+        name: 'transfer_assets',
+        description: 'Transfer NEP-17 assets between addresses. Requires sender WIF.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            fromWIF: {
+              type: 'string',
+              description: 'WIF of the sender account',
+            },
+            toAddress: {
+              type: 'string',
+              description: 'Recipient address',
+            },
+            asset: {
+              type: 'string',
+              description: 'Asset script hash (hex string, e.g., GAS hash)',
+            },
+            amount: {
+              oneOf: [
+                { type: 'string', description: 'Amount as string' },
+                { type: 'number', description: 'Amount as number' },
+              ],
+              description: 'Amount to transfer (in smallest unit, e.g., drops for GAS)',
+            },
+            confirm: {
+              type: 'boolean',
+              description: 'Set to true to confirm the transfer operation',
+            },
+            network: {
+              type: 'string',
+              description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
+              enum: ["MAINNET", "TESTNET"],
+            },
+          },
+          required: ['fromWIF', 'toAddress', 'asset', 'amount', 'confirm'],
+        },
+      },
+      {
+        name: 'invoke_contract',
+        description: 'Prepare invocation details for a smart contract method. If fromWIF is provided, prepares a write transaction (client signs/sends); otherwise, performs a read-only query.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            fromWIF: {
+              type: 'string',
+              description: 'Optional: WIF of the account to sign the transaction (for write operations)',
+            },
+            scriptHash: {
+              type: 'string',
+              description: 'Contract script hash (hex string)',
+            },
+            operation: {
+              type: 'string',
+              description: 'Method name to invoke',
+            },
+            args: {
+              type: 'array',
+              description: 'Optional: Method arguments (array of values or SDK Signer/ContractParam objects)',
+              default: [],
+            },
+            confirm: {
+              type: 'boolean',
+              description: 'Required for write operations (when fromWIF is provided). Set to true to confirm.',
+            },
+            network: {
+              type: 'string',
+              description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
+              enum: ["MAINNET", "TESTNET"],
+            },
+          },
+          required: ['scriptHash', 'operation'], // `confirm` is conditionally required by handler
+        },
+      },
+      {
+        name: 'create_wallet',
+        description: 'Create a new Neo N3 wallet (address and encrypted WIF)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            password: {
+              type: 'string',
+              description: 'Password to encrypt the wallet WIF',
+            },
+          },
+          required: ['password'],
+        },
+      },
+      {
+        name: 'import_wallet',
+        description: 'Import a Neo N3 wallet from private key or WIF. Returns address and optionally encrypted WIF.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            key: {
+              type: 'string',
+              description: 'Private key (hex) or WIF string',
+            },
+            password: {
+              type: 'string',
+              description: 'Optional: Password to encrypt the imported wallet WIF',
+            },
+          },
+          required: ['key'],
+        },
+      },
+      {
+        name: 'estimate_transfer_fees',
+        description: 'Estimate network and system fees for a transfer transaction',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            fromAddress: {
+              type: 'string',
+              description: 'Sender address',
+            },
+            toAddress: {
+              type: 'string',
+              description: 'Recipient address',
+            },
+            asset: {
+              type: 'string',
+              description: 'Asset script hash (hex string)',
+            },
+            amount: {
+              oneOf: [
+                { type: 'string', description: 'Amount as string' },
+                { type: 'number', description: 'Amount as number' },
+              ],
+              description: 'Amount to transfer (in smallest unit)',
+            },
+            network: {
+              type: 'string',
+              description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
+              enum: ["MAINNET", "TESTNET"],
+            },
+          },
+          required: ['fromAddress', 'toAddress', 'asset', 'amount'],
+        },
+      },
+      {
+        name: 'estimate_invoke_fees',
+        description: 'Estimate network and system fees for a contract invocation',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            signerAddress: {
+              type: 'string',
+              description: 'Address of the account that will sign the transaction',
+            },
+            scriptHash: {
+              type: 'string',
+              description: 'Contract script hash (hex string)',
+            },
+            operation: {
+              type: 'string',
+              description: 'Method name to invoke',
+            },
+            args: {
+              type: 'array',
+              description: 'Optional: Method arguments',
+              default: [],
+            },
+            network: {
+              type: 'string',
+              description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
+              enum: ["MAINNET", "TESTNET"],
+            },
+          },
+          required: ['signerAddress', 'scriptHash', 'operation'],
+        },
+      },
+      {
+        name: 'claim_gas',
+        description: 'Claim available GAS for an account. Requires account WIF.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            fromWIF: {
+              type: 'string',
+              description: 'WIF of the account to claim GAS for',
+            },
+            confirm: {
+              type: 'boolean',
+              description: 'Set to true to confirm the GAS claim operation',
+            },
+            network: {
+              type: 'string',
+              description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
+              enum: ["MAINNET", "TESTNET"],
+            },
+          },
+          required: ['fromWIF', 'confirm'],
+        },
+      },
+      {
+        name: 'list_famous_contracts',
+        description: 'List known famous contracts with their names and script hashes for the active network(s)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+             network: {
+              type: 'string',
+              description: 'Optional: Filter by network ("mainnet" or "testnet"). Defaults to showing contracts for all configured networks.',
+              enum: ["MAINNET", "TESTNET"],
+            },
+          },
+          required: [],
+        },
+      },
+      {
+        name: 'get_contract_info',
+        description: 'Get details about a known famous contract by name or script hash',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            nameOrHash: {
+                type: 'string',
+                description: 'Name (e.g., "flamingo") or script hash (hex string) of the famous contract',
+            },
+             network: {
+              type: 'string',
+              description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
+              enum: ["MAINNET", "TESTNET"],
+            },
+          },
+          required: ['nameOrHash'],
+        },
+      },
+      // Add specific contract interaction tools (as examples)
+      // --- NeoFS --- (Assuming ContractService handles NeoFS interactions via its methods)
+      {
+        name: 'neofs_create_container',
+        description: '[NeoFS] Create a new storage container (requires WIF)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+             fromWIF: { type: 'string', description: 'WIF of the container owner' },
+             ownerId: { type: 'string', description: 'Owner ID' },
+             rules: { type: 'object', description: 'Container rules definition (complex object)' }, // Needs specific schema
+             confirm: { type: 'boolean', description: 'Confirm operation' },
+             network: { type: 'string', enum: ["MAINNET", "TESTNET"], description: 'Optional: Network' },
+          },
+           required: ['fromWIF', 'ownerId', 'rules', 'confirm'],
+        },
+      },
+      {
+          name: 'neofs_get_containers',
+          description: '[NeoFS] List containers owned by an address',
+          inputSchema: {
+              type: 'object',
+              properties: {
+                  ownerAddress: { type: 'string', description: 'Address of the owner' },
+                  network: { type: 'string', enum: ["MAINNET", "TESTNET"], description: 'Optional: Network' },
+              },
+              required: ['ownerAddress'],
+          },
+      },
+      // --- Add other contract-specific tools similarly ---
+  ]

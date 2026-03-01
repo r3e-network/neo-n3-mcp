@@ -24,7 +24,7 @@ describe('Validation Utils', () => {
   describe('validateAddress', () => {
     const validAddresses = [
       'NUVPACMnKFhpuHjsRjhUvXz1XhqfGZYVtY',
-      'NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj',
+      'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
       'NVbGwMfRQVudQCcChhCFwQRwSxr5tYEqQs'
     ];
 

@@ -1,0 +1,551 @@
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+  console.log
+    ✅ Server provides 7 tools and 3 resources
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:71:15)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+  console.log
+    ✅ Validated 7 tools with proper structure
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:113:15)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:14:02.229Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:14:02.229Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+  console.log
+    ✅ Blockchain height: 8947644, Network: mainnet
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:137:15)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:14:03.206Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:14:03.207Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+  console.log
+    ✅ Block count: 8947644
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:151:15)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:14:04.285Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:14:04.286Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+  console.log
+    ✅ Balance retrieved for NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj: 0 assets
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:166:15)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+  console.log
+    ✅ Created wallet: NSWNc25ogzmKoAaZztMAfqJg9LTP9d4Tab
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:183:15)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+  console.log
+    ✅ Network mode: both, Available: mainnet, testnet
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:197:15)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:14:07.982Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:14:07.983Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+  console.log
+    ✅ Listed 6 famous contracts
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:211:15)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+  console.log
+    ✅ Available resources: 3
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:233:15)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:14:08.518Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:14:08.519Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+  console.log
+    ✅ Network status: height 8947645
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:251:15)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:14:09.293Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:14:09.294Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+  console.log
+    ✅ Mainnet status: height 8947645
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:261:15)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:14:09.994Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:14:09.995Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+  console.log
+    ✅ Testnet status: height 14022951
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:271:15)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:14:12.119Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:14:12.119Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+  console.log
+    ✅ Handled 5 concurrent requests successfully
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:367:15)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+  console.log
+    ✅ Sequential execution completed in 10ms
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:384:15)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:14:13.495Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:14:13.496Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+  console.log
+    ✅ Large response handled: 67 characters
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:400:15)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:14:16.150Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:14:16.150Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+  console.log
+    ✅ Complete workflow: wallet NMmEDkxs8F2uKCqXkk4gpJkau3KUv6SXZT on mainnet
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:433:15)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:14:17.569Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:14:17.570Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:14:18.420Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:14:18.421Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+  console.log
+    ✅ Multi-network: Mode both, Mainnet: 8947645, Testnet: 14022954
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:480:15)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:14:20.037Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:14:20.038Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+  console.log
+    ✅ MCP response format validation passed
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:504:15)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+  console.log
+    ✅ All 3 resource URIs are compliant
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:521:15)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+FAIL tests/mcp-comprehensive.test.ts (20.398 s)
+  Comprehensive MCP Server Tests
+    🚀 MCP Protocol Fundamentals
+      ✓ should establish connection and maintain protocol compliance (289 ms)
+      ✓ should support all required MCP methods (294 ms)
+      ✓ should handle protocol versioning correctly (245 ms)
+    🔧 Tool Execution & Validation
+      ✓ should list all blockchain tools with proper metadata (267 ms)
+      ✓ should execute blockchain info tool with valid data (951 ms)
+      ✓ should handle block count retrieval correctly (739 ms)
+      ✓ should validate address balance retrieval (1098 ms)
+      ✓ should create wallets with proper structure (2458 ms)
+      ✓ should handle network mode operations (500 ms)
+      ✓ should handle contract listing (260 ms)
+    📚 Resource Management & Access
+      ✓ should list all available resources (271 ms)
+      ✓ should read network status resource (724 ms)
+      ✓ should read mainnet-specific resource (768 ms)
+      ✓ should read testnet-specific resource (765 ms)
+      ✕ should handle parameterized block resources (270 ms)
+    🛡️ Error Handling & Edge Cases
+      ✓ should handle invalid tool names gracefully (261 ms)
+      ✓ should validate required parameters (277 ms)
+      ✕ should handle invalid addresses properly (254 ms)
+      ✓ should handle invalid resource URIs (266 ms)
+      ✓ should handle network connectivity issues gracefully (748 ms)
+    ⚡ Performance & Reliability
+      ✓ should handle concurrent tool executions (340 ms)
+      ✓ should maintain performance under sequential load (254 ms)
+      ✓ should handle large data responses properly (751 ms)
+    🔄 Workflow Integration Tests
+      ✓ should support complete wallet workflow (3261 ms)
+      ✕ should support blockchain exploration workflow (828 ms)
+      ✓ should handle multi-network operations (1460 ms)
+    📊 Protocol Compliance Validation
+      ✓ should follow MCP response format standards (985 ms)
+      ✓ should handle resource URI format compliance (300 ms)
+      ✕ should maintain consistent tool metadata (270 ms)
+
+  ● Comprehensive MCP Server Tests › 📚 Resource Management & Access › should handle parameterized block resources
+
+    McpError: MCP error -32603: Invalid URL
+
+      at Client._onresponse (node_modules/@modelcontextprotocol/sdk/src/shared/protocol.ts:464:21)
+      at StdioClientTransport._transport.onmessage (node_modules/@modelcontextprotocol/sdk/src/shared/protocol.ts:292:14)
+      at StdioClientTransport.processReadBuffer (node_modules/@modelcontextprotocol/sdk/src/client/stdio.ts:195:23)
+      at Socket.<anonymous> (node_modules/@modelcontextprotocol/sdk/src/client/stdio.ts:159:14)
+
+  ● Comprehensive MCP Server Tests › 🛡️ Error Handling & Edge Cases › should handle invalid addresses properly
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected substring: "address"
+    Received string:    "fail is not defined"
+
+      320 |       } catch (error: any) {
+      321 |         expect(error).toBeDefined();
+    > 322 |         expect(error.message.toLowerCase()).toContain('address');
+          |                                             ^
+      323 |       }
+      324 |     });
+      325 |
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:322:45)
+
+  ● Comprehensive MCP Server Tests › 🔄 Workflow Integration Tests › should support blockchain exploration workflow
+
+    McpError: MCP error -32603: Invalid URL
+
+      at Client._onresponse (node_modules/@modelcontextprotocol/sdk/src/shared/protocol.ts:464:21)
+      at StdioClientTransport._transport.onmessage (node_modules/@modelcontextprotocol/sdk/src/shared/protocol.ts:292:14)
+      at StdioClientTransport.processReadBuffer (node_modules/@modelcontextprotocol/sdk/src/client/stdio.ts:195:23)
+      at Socket.<anonymous> (node_modules/@modelcontextprotocol/sdk/src/client/stdio.ts:159:14)
+
+  ● Comprehensive MCP Server Tests › 📊 Protocol Compliance Validation › should maintain consistent tool metadata
+
+    TypeError: Cannot read properties of undefined (reading 'length')
+
+      531 |         // expect(typeof tool.description).toBe('string');
+      532 |         expect(tool.name.length).toBeGreaterThan(0);
+    > 533 |         expect(tool.description.length).toBeGreaterThan(0);
+          |                                 ^
+      534 |       });
+      535 |
+      536 |       console.log(`✅ All ${tools.tools.length} tools have consistent metadata`);
+
+      at tests/mcp-comprehensive.test.ts:533:33
+          at Array.forEach (<anonymous>)
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:527:19)
+
+Test Suites: 1 failed, 1 total
+Tests:       4 failed, 25 passed, 29 total
+Snapshots:   0 total
+Time:        20.665 s, estimated 24 s
+Ran all test suites matching /tests\/mcp-comprehensive.test.ts/i.

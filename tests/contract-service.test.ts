@@ -11,16 +11,18 @@ import { ContractError, NetworkError, ValidationError } from '../src/utils/error
 
 // Mock data
 const mockContractResult = {
+  script: 'mock-script',
   state: 'HALT',
   gasconsumed: '1000000',
   stack: [{ value: '100' }]
 };
 
-const mockTransactionId = '0xabc123def456';
+const mockTransactionId = '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
 
 // Mock neon-js
 jest.mock('@cityofzion/neon-js', () => ({
   rpc: {
+    Query: jest.fn().mockImplementation((q) => q),
     RPCClient: jest.fn().mockImplementation(() => ({
       execute: jest.fn().mockResolvedValue(mockContractResult),
       invokeScript: jest.fn().mockResolvedValue(mockContractResult),
@@ -32,13 +34,14 @@ jest.mock('@cityofzion/neon-js', () => ({
     ContractParam: {
       string: jest.fn().mockReturnValue({ type: 'String', value: 'mock' }),
       integer: jest.fn().mockReturnValue({ type: 'Integer', value: 123 }),
-      array: jest.fn().mockReturnValue({ type: 'Array', value: [] })
+      array: jest.fn().mockReturnValue({ type: 'Array', value: [] }),
+      hash160: jest.fn().mockReturnValue({ type: 'Hash160', value: 'mock-hash' })
     }
   },
   wallet: {
-    getScriptHashFromAddress: jest.fn().mockReturnValue('mock-hash'),
+    getScriptHashFromAddress: jest.fn().mockReturnValue('f81a9a9ebf8cc9ae7f9ac3491f5a9f3b282b5e9e'),
     Account: jest.fn().mockImplementation(() => ({
-      address: 'NMockAddress123',
+      address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
       WIF: 'mock-wif'
     }))
   },
@@ -81,7 +84,7 @@ describe('ContractService', () => {
     });
 
     test('should throw ContractError for non-existent contract', () => {
-      expect(() => contractService.getContract('NonExistent')).toThrow(ContractError);
+      expect(() => contractService.getContract('NonExistent')).toThrow(ValidationError);
     });
   });
 
@@ -111,7 +114,7 @@ describe('ContractService', () => {
   });
 
   describe('invokeContract', () => {
-    const mockAccount = { address: 'NMockAddress123', WIF: 'mock-wif' };
+    const mockAccount = { address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr', WIF: 'mock-wif' };
 
     test('should invoke contract successfully', async () => {
       const contract = Object.values(FAMOUS_CONTRACTS)[0];
@@ -162,7 +165,7 @@ describe('ContractService', () => {
   });
 
   describe('NeoFS operations', () => {
-    const mockAccount = { address: 'NMockAddress123' };
+    const mockAccount = { address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr' };
 
     test('should create NeoFS container', async () => {
       const result = await contractService.createNeoFSContainer(
@@ -178,7 +181,7 @@ describe('ContractService', () => {
   });
 
   describe('NeoBurger operations', () => {
-    const mockAccount = { address: 'NMockAddress123' };
+    const mockAccount = { address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr' };
 
     test('should deposit to NeoBurger', async () => {
       const result = await contractService.depositNeoToNeoBurger(mockAccount);
@@ -191,7 +194,7 @@ describe('ContractService', () => {
     });
 
     test('should get NeoBurger balance', async () => {
-      const result = await contractService.getNeoBurgerBalance('NMockAddress123');
+      const result = await contractService.getNeoBurgerBalance('NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr');
       expect(result).toBeDefined();
     });
   });

@@ -57,6 +57,7 @@ const mockTransactionId = 'txhash123';
 jest.mock('@cityofzion/neon-js', () => {
   return {
     rpc: {
+    Query: jest.fn().mockImplementation((q) => q),
       RPCClient: jest.fn().mockImplementation(() => ({
         getBlockCount: jest.fn().mockReturnValue(Promise.resolve(mockBlockCount)),
         getValidators: jest.fn().mockReturnValue(Promise.resolve(mockValidators)),
@@ -72,14 +73,20 @@ jest.mock('@cityofzion/neon-js', () => {
           validuntilblock: 12500
         })),
         sendRawTransaction: jest.fn().mockReturnValue(Promise.resolve(mockTransactionId)),
-        execute: jest.fn().mockImplementation((method, params) => {
+        execute: jest.fn().mockImplementation((queryOrMethod, paramsArray) => {
+        let method = queryOrMethod;
+        let params = paramsArray;
+        if (typeof queryOrMethod === 'object' && queryOrMethod !== null) {
+          method = queryOrMethod.req ? queryOrMethod.req.method : queryOrMethod.method;
+          params = queryOrMethod.req ? queryOrMethod.req.params : queryOrMethod.params;
+        }
           if (method === 'getblockcount') return Promise.resolve(mockBlockCount);
           if (method === 'getvalidators') return Promise.resolve(mockValidators);
           if (method === 'getblock') return Promise.resolve(mockBlock);
           if (method === 'getrawtransaction') return Promise.resolve(mockTransaction);
           if (method === 'getaccountstate') return Promise.resolve(mockAccountState);
           if (method === 'getnep17balances') return Promise.resolve({
-            address: 'NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ',
+            address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
             balance: [
               { assethash: '0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5', amount: '100', lastupdatedblock: 12345 },
               { assethash: '0xd2a4cff31913016155e38e474a2c06d08be276cf', amount: '50.5', lastupdatedblock: 12345 }
@@ -99,13 +106,13 @@ jest.mock('@cityofzion/neon-js', () => {
     },
     wallet: {
       Account: jest.fn().mockImplementation(() => ({
-        address: 'NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ',
+        address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
         publicKey: 'publicKey',
         WIF: 'WIF',
         encrypt: jest.fn().mockReturnValue('encryptedKey'),
         decrypt: jest.fn(),
       })),
-      getScriptHashFromAddress: jest.fn().mockReturnValue('scriptHash'),
+      getScriptHashFromAddress: jest.fn().mockReturnValue('f81a9a9ebf8cc9ae7f9ac3491f5a9f3b282b5e9e'),
     },
     sc: {
       createScript: jest.fn().mockReturnValue('script'),
@@ -164,7 +171,7 @@ describe('NeoService', () => {
   });
 
   test('getBalance returns balance for address', async () => {
-    const balance = await neoService.getBalance('NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ');
+    const balance = await neoService.getBalance('NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr');
     expect(balance).toHaveProperty('balance');
     expect(balance.balance).toHaveLength(2);
     expect(balance.balance[0]).toHaveProperty('asset_name', 'NEO');
@@ -173,10 +180,10 @@ describe('NeoService', () => {
   });
 
   test('transferAssets calls the right methods', async () => {
-    const account = { address: 'NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ' };
+    const account = { address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr' };
     const result = await neoService.transferAssets(
       account,
-      'NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ',
+      'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
       'NEO',
       '1'
     );
@@ -184,7 +191,7 @@ describe('NeoService', () => {
   });
 
   test('invokeContract calls the right methods', async () => {
-    const account = { address: 'NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ' };
+    const account = { address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr' };
     const result = await neoService.invokeContract(
       account,
       '0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5',
@@ -196,7 +203,7 @@ describe('NeoService', () => {
 
   test('createWallet returns wallet information', () => {
     const wallet = neoService.createWallet('password');
-    expect(wallet).toHaveProperty('address', 'NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ');
+    expect(wallet).toHaveProperty('address', 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr');
     expect(wallet).toHaveProperty('publicKey', 'publicKey');
     expect(wallet).toHaveProperty('encryptedPrivateKey', 'encryptedKey');
     expect(wallet).toHaveProperty('WIF', 'WIF');
@@ -204,7 +211,7 @@ describe('NeoService', () => {
 
   test('importWallet returns wallet information', () => {
     const wallet = neoService.importWallet('WIF');
-    expect(wallet).toHaveProperty('address', 'NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ');
+    expect(wallet).toHaveProperty('address', 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr');
     expect(wallet).toHaveProperty('publicKey', 'publicKey');
   });
 

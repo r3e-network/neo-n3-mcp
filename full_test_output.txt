@@ -1,0 +1,3259 @@
+
+> @r3e/neo-n3-mcp@1.6.0 test:all
+> npm run test:unit && npm run test:mcp
+
+
+> @r3e/neo-n3-mcp@1.6.0 test:unit
+> jest --testMatch='**/tests/**/*.test.ts' --testPathIgnorePatterns='tests/mcp-'
+
+PASS tests/server-init.test.ts
+PASS tests/blockchain-operations.test.ts
+  ● Console
+
+    console.error
+      Failed to get blockchain info: Error: RPC Error
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/blockchain-operations.test.ts:176:65)
+          at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)
+          at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:103:5)
+          at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)
+          at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+          at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+          at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)
+          at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)
+          at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)
+
+      115 |       };
+      116 |     } catch (error) {
+    > 117 |       console.error('Failed to get blockchain info:', error);
+          |               ^
+      118 |       // Provide a default/empty response on error to allow tests to proceed partially
+      119 |       return {
+      120 |         height: 0,
+
+      at NeoService.getBlockchainInfo (src/services/neo-service.ts:117:15)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:178:22)
+
+    console.warn
+      getnep17balances failed, trying alternative approach: TypeError: neonJs.rpc.Query is not a constructor
+          at NeoService.getBalance (/home/neo/git/neo-n3-mcp/src/services/neo-service.ts:178:23)
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/blockchain-operations.test.ts:235:40)
+          at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)
+          at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:103:5)
+          at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)
+          at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+          at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+          at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)
+          at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)
+          at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)
+
+      190 |         }
+      191 |       } catch (nep17Error) {
+    > 192 |         console.warn('getnep17balances failed, trying alternative approach:', nep17Error);
+          |                 ^
+      193 |
+      194 |         // Try to get NEO and GAS balances directly
+      195 |         try {
+
+      at NeoService.getBalance (src/services/neo-service.ts:192:17)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:235:40)
+
+    console.error
+      Failed to claim GAS for undefined: Invalid account for claiming GAS: missing address Error: Invalid account for claiming GAS: missing address
+          at NeoService.claimGas (/home/neo/git/neo-n3-mcp/src/services/neo-service.ts:644:15)
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/blockchain-operations.test.ts:363:31)
+          at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)
+          at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:103:5)
+          at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)
+          at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+          at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+          at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)
+          at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)
+          at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)
+
+      660 |     } catch (error) {
+      661 |       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 662 |       console.error(`Failed to claim GAS for ${fromAccount?.address}: ${errorMessage}`, error);
+          |               ^
+      663 |       throw new Error(`Failed to claim GAS: ${errorMessage}`);
+      664 |     }
+      665 |   }
+
+      at NeoService.claimGas (src/services/neo-service.ts:662:15)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:363:31)
+
+    console.error
+      Failed to get blockchain info: Error: Detailed test error
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/blockchain-operations.test.ts:391:65)
+          at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)
+          at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:103:5)
+          at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)
+          at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+          at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+          at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)
+          at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)
+          at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)
+
+      115 |       };
+      116 |     } catch (error) {
+    > 117 |       console.error('Failed to get blockchain info:', error);
+          |               ^
+      118 |       // Provide a default/empty response on error to allow tests to proceed partially
+      119 |       return {
+      120 |         height: 0,
+
+      at NeoService.getBlockchainInfo (src/services/neo-service.ts:117:15)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:394:9)
+
+PASS tests/neo-service.test.ts
+  ● Console
+
+    console.warn
+      getnep17balances failed, trying alternative approach: TypeError: neonJs.rpc.Query is not a constructor
+          at NeoService.getBalance (/home/neo/git/neo-n3-mcp/src/services/neo-service.ts:178:23)
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/neo-service.test.ts:167:38)
+          at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)
+          at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:103:5)
+          at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)
+          at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+          at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+          at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)
+          at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)
+          at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)
+
+      190 |         }
+      191 |       } catch (nep17Error) {
+    > 192 |         console.warn('getnep17balances failed, trying alternative approach:', nep17Error);
+          |                 ^
+      193 |
+      194 |         // Try to get NEO and GAS balances directly
+      195 |         try {
+
+      at NeoService.getBalance (src/services/neo-service.ts:192:17)
+      at Object.<anonymous> (tests/neo-service.test.ts:167:38)
+
+PASS tests/contract-service.test.ts
+  ● Console
+
+    console.error
+      [2026-03-01T16:02:08.509Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at new ContractService (src/contracts/contract-service.ts:47:14)
+      at Object.<anonymous> (tests/contract-service.test.ts:63:23)
+
+    console.error
+      [2026-03-01T16:02:08.542Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at new ContractService (src/contracts/contract-service.ts:47:14)
+      at Object.<anonymous> (tests/contract-service.test.ts:63:23)
+
+    console.error
+      [2026-03-01T16:02:08.565Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at new ContractService (src/contracts/contract-service.ts:47:14)
+      at Object.<anonymous> (tests/contract-service.test.ts:63:23)
+
+    console.error
+      [2026-03-01T16:02:08.567Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at new ContractService (src/contracts/contract-service.ts:47:14)
+      at Object.<anonymous> (tests/contract-service.test.ts:63:23)
+
+    console.error
+      [2026-03-01T16:02:08.581Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at new ContractService (src/contracts/contract-service.ts:47:14)
+      at Object.<anonymous> (tests/contract-service.test.ts:63:23)
+
+    console.error
+      [2026-03-01T16:02:08.581Z] [INFO] Querying contract NeoFS {"operation":"createContainer","args":"[]","network":"mainnet"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at ContractService.queryContract (src/contracts/contract-service.ts:146:14)
+      at Object.<anonymous> (tests/contract-service.test.ts:95:44)
+
+    console.error
+      [2026-03-01T16:02:08.583Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at new ContractService (src/contracts/contract-service.ts:47:14)
+      at Object.<anonymous> (tests/contract-service.test.ts:63:23)
+
+    console.error
+      [2026-03-01T16:02:08.584Z] [INFO] Querying contract NeoFS {"operation":"createContainer","args":"[]","network":"mainnet"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at ContractService.queryContract (src/contracts/contract-service.ts:146:14)
+      at Object.<anonymous> (tests/contract-service.test.ts:110:36)
+
+    console.error
+      [2026-03-01T16:02:08.585Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at new ContractService (src/contracts/contract-service.ts:47:14)
+      at Object.<anonymous> (tests/contract-service.test.ts:63:23)
+
+    console.error
+      [2026-03-01T16:02:08.588Z] [INFO] Invoking contract NeoFS {"operation":"createContainer","args":"[]","network":"mainnet","address":"NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at ContractService.invokeContract (src/contracts/contract-service.ts:249:14)
+      at Object.<anonymous> (tests/contract-service.test.ts:122:44)
+
+    console.error
+      [2026-03-01T16:02:08.588Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at new ContractService (src/contracts/contract-service.ts:47:14)
+      at Object.<anonymous> (tests/contract-service.test.ts:63:23)
+
+    console.error
+      [2026-03-01T16:02:08.589Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at new ContractService (src/contracts/contract-service.ts:47:14)
+      at Object.<anonymous> (tests/contract-service.test.ts:63:23)
+
+    console.error
+      [2026-03-01T16:02:08.592Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at new ContractService (src/contracts/contract-service.ts:47:14)
+      at Object.<anonymous> (tests/contract-service.test.ts:63:23)
+
+    console.error
+      [2026-03-01T16:02:08.593Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at new ContractService (src/contracts/contract-service.ts:47:14)
+      at Object.<anonymous> (tests/contract-service.test.ts:63:23)
+
+    console.error
+      [2026-03-01T16:02:08.594Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at new ContractService (src/contracts/contract-service.ts:47:14)
+      at Object.<anonymous> (tests/contract-service.test.ts:63:23)
+
+    console.error
+      [2026-03-01T16:02:08.594Z] [INFO] Invoking contract neofs {"operation":"createContainer","args":"[{\"type\":\"String\",\"value\":\"mock\"},{\"type\":\"Array\",\"value\":[]}]","network":"mainnet","address":"NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at ContractService.invokeContract (src/contracts/contract-service.ts:249:14)
+      at ContractService.createNeoFSContainer (src/contracts/contract-service.ts:462:17)
+      at Object.<anonymous> (tests/contract-service.test.ts:170:44)
+
+    console.error
+      [2026-03-01T16:02:08.595Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at new ContractService (src/contracts/contract-service.ts:47:14)
+      at Object.<anonymous> (tests/contract-service.test.ts:63:23)
+
+    console.error
+      [2026-03-01T16:02:08.595Z] [INFO] Querying contract neofs {"operation":"getContainers","args":"[{\"type\":\"String\",\"value\":\"mock\"}]","network":"mainnet"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at ContractService.queryContract (src/contracts/contract-service.ts:146:14)
+      at ContractService.getNeoFSContainers (src/contracts/contract-service.ts:474:17)
+      at Object.<anonymous> (tests/contract-service.test.ts:177:44)
+
+    console.error
+      [2026-03-01T16:02:08.595Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at new ContractService (src/contracts/contract-service.ts:47:14)
+      at Object.<anonymous> (tests/contract-service.test.ts:63:23)
+
+    console.error
+      [2026-03-01T16:02:08.596Z] [INFO] Invoking contract neoburger {"operation":"exchange","args":"[{\"type\":\"Hash160\",\"value\":\"mock-hash\"}]","network":"mainnet","address":"NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at ContractService.invokeContract (src/contracts/contract-service.ts:249:14)
+      at ContractService.depositNeoToNeoBurger (src/contracts/contract-service.ts:591:17)
+      at Object.<anonymous> (tests/contract-service.test.ts:186:44)
+
+    console.error
+      [2026-03-01T16:02:08.596Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at new ContractService (src/contracts/contract-service.ts:47:14)
+      at Object.<anonymous> (tests/contract-service.test.ts:63:23)
+
+    console.error
+      [2026-03-01T16:02:08.596Z] [INFO] Invoking contract neoburger {"operation":"exchange_to_neo","args":"[{\"type\":\"Hash160\",\"value\":\"mock-hash\"},{\"type\":\"Integer\",\"value\":123}]","network":"mainnet","address":"NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at ContractService.invokeContract (src/contracts/contract-service.ts:249:14)
+      at ContractService.withdrawNeoFromNeoBurger (src/contracts/contract-service.ts:603:17)
+      at Object.<anonymous> (tests/contract-service.test.ts:191:44)
+
+    console.error
+      [2026-03-01T16:02:08.597Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at new ContractService (src/contracts/contract-service.ts:47:14)
+      at Object.<anonymous> (tests/contract-service.test.ts:63:23)
+
+    console.error
+      [2026-03-01T16:02:08.597Z] [INFO] Querying contract neoburger {"operation":"balanceOf","args":"[{\"type\":\"Hash160\",\"value\":\"mock-hash\"}]","network":"mainnet"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.info (src/utils/logger.ts:150:10)
+      at ContractService.queryContract (src/contracts/contract-service.ts:146:14)
+      at ContractService.getNeoBurgerBalance (src/contracts/contract-service.ts:615:17)
+      at Object.<anonymous> (tests/contract-service.test.ts:196:44)
+
+PASS tests/wallet-service.test.ts
+PASS tests/validation.test.ts
+PASS tests/tool-handler.test.ts (5.515 s)
+  ● Console
+
+    console.error
+      [2026-03-01T16:02:09.116Z] [ERROR] Error occurred: {"error":"ValidationError: Invalid hash length: invalid. Expected 64 characters (without 0x prefix).","stack":"ValidationError: Invalid hash length: invalid. Expected 64 characters (without 0x prefix).\n    at new ValidationError (/home/neo/git/neo-n3-mcp/src/utils/errors.ts:54:5)\n    at validateHash (/home/neo/git/neo-n3-mcp/src/utils/validation.ts:73:11)\n    at handleGetTransaction (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:64:17)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:301:22)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:163:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.error (src/utils/logger.ts:168:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleGetTransaction (src/handlers/tool-handler.ts:68:23)
+      at callTool (src/handlers/tool-handler.ts:301:22)
+      at Object.<anonymous> (tests/tool-handler.test.ts:163:36)
+
+    console.error
+      [2026-03-01T16:02:09.134Z] [ERROR] Error occurred: {"error":"ValidationError: Invalid Neo N3 address format: invalid","stack":"ValidationError: Invalid Neo N3 address format: invalid\n    at new ValidationError (/home/neo/git/neo-n3-mcp/src/utils/errors.ts:54:5)\n    at validateAddress (/home/neo/git/neo-n3-mcp/src/utils/validation.ts:38:11)\n    at handleGetBalance (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:74:20)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:303:22)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:182:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.error (src/utils/logger.ts:168:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleGetBalance (src/handlers/tool-handler.ts:78:23)
+      at callTool (src/handlers/tool-handler.ts:303:22)
+      at Object.<anonymous> (tests/tool-handler.test.ts:182:36)
+
+    console.error
+      [2026-03-01T16:02:09.206Z] [ERROR] Error occurred: {"error":"McpError: MCP error -32602: Transfer requires explicit confirmation. Set confirm=true.","stack":"McpError: MCP error -32602: Transfer requires explicit confirmation. Set confirm=true.\n    at handleTransferAssets (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:85:13)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:305:22)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:213:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.error (src/utils/logger.ts:168:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleTransferAssets (src/handlers/tool-handler.ts:97:23)
+      at callTool (src/handlers/tool-handler.ts:305:22)
+      at Object.<anonymous> (tests/tool-handler.test.ts:213:36)
+
+    console.error
+      [2026-03-01T16:02:09.208Z] [ERROR] Error occurred: {"error":"McpError: MCP error -32602: Invalid sender WIF provided.","stack":"McpError: MCP error -32602: Invalid sender WIF provided.\n    at handleTransferAssets (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:91:13)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:305:22)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:227:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.error (src/utils/logger.ts:168:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleTransferAssets (src/handlers/tool-handler.ts:97:23)
+      at callTool (src/handlers/tool-handler.ts:305:22)
+      at Object.<anonymous> (tests/tool-handler.test.ts:227:36)
+
+    console.error
+      [2026-03-01T16:02:11.045Z] [ERROR] Error occurred: {"error":"ValidationError: Password must be at least 8 characters long","stack":"ValidationError: Password must be at least 8 characters long\n    at new ValidationError (/home/neo/git/neo-n3-mcp/src/utils/errors.ts:54:5)\n    at validatePassword (/home/neo/git/neo-n3-mcp/src/utils/validation.ts:164:11)\n    at handleCreateWallet (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:134:21)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:262:20)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:245:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.error (src/utils/logger.ts:168:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleCreateWallet (src/handlers/tool-handler.ts:139:23)
+      at callTool (src/handlers/tool-handler.ts:262:20)
+      at Object.<anonymous> (tests/tool-handler.test.ts:245:36)
+
+    console.error
+      [2026-03-01T16:02:13.071Z] [ERROR] Error occurred: {"error":"McpError: MCP error -32602: Contract invocation requires explicit confirmation. Set confirm=true.","stack":"McpError: MCP error -32602: Contract invocation requires explicit confirmation. Set confirm=true.\n    at handleInvokeWriteContract (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:114:13)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:308:24)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:313:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.error (src/utils/logger.ts:168:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleInvokeWriteContract (src/handlers/tool-handler.ts:128:23)
+      at callTool (src/handlers/tool-handler.ts:308:24)
+      at Object.<anonymous> (tests/tool-handler.test.ts:313:36)
+
+    console.error
+      [2026-03-01T16:02:13.075Z] [ERROR] Error occurred: {"error":"ValidationError: Contract name must be a non-empty string","stack":"ValidationError: Contract name must be a non-empty string\n    at new ValidationError (/home/neo/git/neo-n3-mcp/src/utils/errors.ts:54:5)\n    at validateContractName (/home/neo/git/neo-n3-mcp/src/utils/validation.ts:292:11)\n    at handleGetContractInfo (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:221:46)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:321:22)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:341:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.error (src/utils/logger.ts:168:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleGetContractInfo (src/handlers/tool-handler.ts:226:23)
+      at callTool (src/handlers/tool-handler.ts:321:22)
+      at Object.<anonymous> (tests/tool-handler.test.ts:341:36)
+
+    console.error
+      [2026-03-01T16:02:13.079Z] [ERROR] Error occurred: {"error":"McpError: MCP error -32602: Signer address is required to estimate invocation fees.","stack":"McpError: MCP error -32602: Signer address is required to estimate invocation fees.\n    at handleEstimateInvokeFees (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:181:15)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:315:22)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:386:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.error (src/utils/logger.ts:168:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleEstimateInvokeFees (src/handlers/tool-handler.ts:187:23)
+      at callTool (src/handlers/tool-handler.ts:315:22)
+      at Object.<anonymous> (tests/tool-handler.test.ts:386:36)
+
+    console.error
+      [2026-03-01T16:02:13.147Z] [ERROR] Error occurred: {"error":"McpError: MCP error -32602: GAS claim requires explicit confirmation. Set confirm=true.","stack":"McpError: MCP error -32602: GAS claim requires explicit confirmation. Set confirm=true.\n    at handleClaimGas (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:194:13)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:317:22)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:410:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.error (src/utils/logger.ts:168:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleClaimGas (src/handlers/tool-handler.ts:203:23)
+      at callTool (src/handlers/tool-handler.ts:317:22)
+      at Object.<anonymous> (tests/tool-handler.test.ts:410:36)
+
+    console.error
+      [2026-03-01T16:02:13.148Z] [ERROR] Error occurred: {"error":"McpError: MCP error -32602: Tool unknown_tool not found or requires network parameter.","stack":"McpError: MCP error -32602: Tool unknown_tool not found or requires network parameter.\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:330:15)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:418:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.error (src/utils/logger.ts:168:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at callTool (src/handlers/tool-handler.ts:333:23)
+      at Object.<anonymous> (tests/tool-handler.test.ts:418:36)
+
+    console.error
+      [2026-03-01T16:02:13.150Z] [ERROR] Error occurred: {"error":"ValidationError: Invalid network: invalid. Must be one of: mainnet, testnet","stack":"ValidationError: Invalid network: invalid. Must be one of: mainnet, testnet\n    at new ValidationError (/home/neo/git/neo-n3-mcp/src/utils/errors.ts:54:5)\n    at validateNetwork (/home/neo/git/neo-n3-mcp/src/utils/validation.ts:197:9)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:279:30)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:424:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.error (src/utils/logger.ts:168:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at callTool (src/handlers/tool-handler.ts:288:23)
+      at Object.<anonymous> (tests/tool-handler.test.ts:424:36)
+
+    console.error
+      [2026-03-01T16:02:13.152Z] [ERROR] Error occurred: {"error":"Error: Service error","stack":"Error: Service error\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:430:67)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.error (src/utils/logger.ts:168:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleGetBlockchainInfo (src/handlers/tool-handler.ts:33:23)
+      at callTool (src/handlers/tool-handler.ts:295:16)
+      at Object.<anonymous> (tests/tool-handler.test.ts:433:22)
+
+    console.error
+      [2026-03-01T16:02:13.154Z] [ERROR] Error occurred: {"error":"ValidationError: Invalid Neo N3 address format: invalid-address","stack":"ValidationError: Invalid Neo N3 address format: invalid-address\n    at new ValidationError (/home/neo/git/neo-n3-mcp/src/utils/errors.ts:54:5)\n    at validateAddress (/home/neo/git/neo-n3-mcp/src/utils/validation.ts:38:11)\n    at handleGetBalance (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:74:20)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:303:22)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:441:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.error (src/utils/logger.ts:168:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleGetBalance (src/handlers/tool-handler.ts:78:23)
+      at callTool (src/handlers/tool-handler.ts:303:22)
+      at Object.<anonymous> (tests/tool-handler.test.ts:441:36)
+
+    console.error
+      [2026-03-01T16:02:13.156Z] [ERROR] Error occurred: {"error":"ValidationError: Amount must be greater than zero","stack":"ValidationError: Amount must be greater than zero\n    at new ValidationError (/home/neo/git/neo-n3-mcp/src/utils/errors.ts:54:5)\n    at validateAmount (/home/neo/git/neo-n3-mcp/src/utils/validation.ts:139:11)\n    at handleTransferAssets (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:88:19)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:305:22)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:454:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.error (src/utils/logger.ts:168:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleTransferAssets (src/handlers/tool-handler.ts:97:23)
+      at callTool (src/handlers/tool-handler.ts:305:22)
+      at Object.<anonymous> (tests/tool-handler.test.ts:454:36)
+
+    console.error
+      [2026-03-01T16:02:13.157Z] [ERROR] Error occurred: {"error":"ValidationError: Invalid script hash length: invalid-hash. Expected 40 characters (without 0x prefix).","stack":"ValidationError: Invalid script hash length: invalid-hash. Expected 40 characters (without 0x prefix).\n    at new ValidationError (/home/neo/git/neo-n3-mcp/src/utils/errors.ts:54:5)\n    at validateScriptHash (/home/neo/git/neo-n3-mcp/src/utils/validation.ts:101:11)\n    at handleInvokeReadContract (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:103:23)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:310:24)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:465:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      121 |       // For MCP servers using stdio transport, all console output MUST go to stderr
+      122 |       // Otherwise it corrupts the JSON-RPC stream on stdout
+    > 123 |       console.error(formattedMessage);
+          |               ^
+      124 |     }
+      125 |
+      126 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:123:15)
+      at Logger.error (src/utils/logger.ts:168:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleInvokeReadContract (src/handlers/tool-handler.ts:107:23)
+      at callTool (src/handlers/tool-handler.ts:310:24)
+      at Object.<anonymous> (tests/tool-handler.test.ts:465:36)
+
+
+Test Suites: 7 passed, 7 total
+Tests:       8 skipped, 225 passed, 233 total
+Snapshots:   0 total
+Time:        6.305 s, estimated 8 s
+Ran all test suites.
+
+> @r3e/neo-n3-mcp@1.6.0 test:mcp
+> jest --testMatch='**/tests/mcp-*.test.ts'
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:15.598Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:15.599Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:15.972Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:15.973Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:16.401Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:16.402Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:16.622Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:16.623Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:16.671Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:16.671Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:16.759Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:16.760Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+All validator query methods failed, continuing without validators
+[2026-03-01T16:02:17.157Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:17.158Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:17.358Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:17.359Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:17.376Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:17.376Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+[2026-03-01T16:02:18.114Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:18.114Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:19.343Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:19.344Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:20.425Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:20.441Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:21.628Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:21.629Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:22.351Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:22.352Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:22.686Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:22.687Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:23.152Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:23.156Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:23.559Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:23.560Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:23.995Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:23.996Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:24.487Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:24.488Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:24.753Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:24.753Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:26.547Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:26.548Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:26.650Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:26.650Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:27.235Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:27.236Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:27.813Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:27.813Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:27.910Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:27.910Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:28.627Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:28.627Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:30.075Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:30.075Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:30.922Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:30.922Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:31.055Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:31.056Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+PASS tests/mcp-protocol-compliance.test.ts (17.288 s)
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:31.744Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:31.745Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:32.899Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:32.900Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:33.323Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:33.324Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+FAIL tests/mcp-comprehensive.test.ts (19.427 s)
+  ● Console
+
+    console.log
+      ✅ Server provides 7 tools and 3 resources
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:71:15)
+
+    console.log
+      ✅ Blockchain height: 8947598, Network: mainnet
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:137:15)
+
+    console.log
+      ✅ Block count: 8947598
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:151:15)
+
+    console.log
+      ✅ Balance retrieved for NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj: 0 assets
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:166:15)
+
+    console.log
+      ✅ Created wallet: NQ7CFdWU4XHBCFw2VnXQaruLipyoa5BA21
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:183:15)
+
+    console.log
+      ✅ Network mode: both, Available: mainnet, testnet
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:197:15)
+
+    console.log
+      ✅ Listed 6 famous contracts
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:211:15)
+
+    console.log
+      ✅ Available resources: 3
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:233:15)
+
+    console.log
+      ✅ Network status: height 8947598
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:251:15)
+
+    console.log
+      ✅ Mainnet status: height 8947598
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:261:15)
+
+    console.log
+      ✅ Testnet status: height 14022724
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:271:15)
+
+    console.log
+      ✅ Handled 5 concurrent requests successfully
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:367:15)
+
+    console.log
+      ✅ Sequential execution completed in 5ms
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:384:15)
+
+    console.log
+      ✅ Large response handled: 67 characters
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:400:15)
+
+    console.log
+      ✅ Complete workflow: wallet NQ4xKexgzZ1krgKLznA8kJjgDoMntZ8avX on mainnet
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:433:15)
+
+    console.log
+      ✅ Multi-network: Mode both, Mainnet: 8947598, Testnet: 14022726
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:480:15)
+
+    console.log
+      ✅ MCP response format validation passed
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:504:15)
+
+    console.log
+      ✅ All 3 resource URIs are compliant
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:521:15)
+
+  ● Comprehensive MCP Server Tests › 🔧 Tool Execution & Validation › should list all blockchain tools with proper metadata
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected value: "get_block"
+    Received array: ["get_network_mode", "get_blockchain_info", "get_block_count", "get_balance", "list_famous_contracts", "get_contract_info", "create_wallet"]
+
+      100 |
+      101 |       expectedTools.forEach(expectedTool => {
+    > 102 |         expect(toolNames).toContain(expectedTool);
+          |                           ^
+      103 |       });
+      104 |
+      105 |       // Validate tool structure
+
+      at tests/mcp-comprehensive.test.ts:102:27
+          at Array.forEach (<anonymous>)
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:101:21)
+
+  ● Comprehensive MCP Server Tests › 📚 Resource Management & Access › should handle parameterized block resources
+
+    McpError: MCP error -32603: Invalid URL
+
+      at Client._onresponse (node_modules/@modelcontextprotocol/sdk/src/shared/protocol.ts:464:21)
+      at StdioClientTransport._transport.onmessage (node_modules/@modelcontextprotocol/sdk/src/shared/protocol.ts:292:14)
+      at StdioClientTransport.processReadBuffer (node_modules/@modelcontextprotocol/sdk/src/client/stdio.ts:195:23)
+      at Socket.<anonymous> (node_modules/@modelcontextprotocol/sdk/src/client/stdio.ts:159:14)
+
+  ● Comprehensive MCP Server Tests › 🛡️ Error Handling & Edge Cases › should handle invalid addresses properly
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected substring: "address"
+    Received string:    "fail is not defined"
+
+      320 |       } catch (error: any) {
+      321 |         expect(error).toBeDefined();
+    > 322 |         expect(error.message.toLowerCase()).toContain('address');
+          |                                             ^
+      323 |       }
+      324 |     });
+      325 |
+
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:322:45)
+
+  ● Comprehensive MCP Server Tests › 🔄 Workflow Integration Tests › should support blockchain exploration workflow
+
+    McpError: MCP error -32603: Invalid URL
+
+      at Client._onresponse (node_modules/@modelcontextprotocol/sdk/src/shared/protocol.ts:464:21)
+      at StdioClientTransport._transport.onmessage (node_modules/@modelcontextprotocol/sdk/src/shared/protocol.ts:292:14)
+      at StdioClientTransport.processReadBuffer (node_modules/@modelcontextprotocol/sdk/src/client/stdio.ts:195:23)
+      at Socket.<anonymous> (node_modules/@modelcontextprotocol/sdk/src/client/stdio.ts:159:14)
+
+  ● Comprehensive MCP Server Tests › 📊 Protocol Compliance Validation › should maintain consistent tool metadata
+
+    expect(received).toBeDefined()
+
+    Received: undefined
+
+      527 |       tools.tools.forEach((tool: any) => {
+      528 |         expect(tool.name).toBeDefined();
+    > 529 |         expect(tool.description).toBeDefined();
+          |                                  ^
+      530 |         expect(typeof tool.name).toBe('string');
+      531 |         expect(typeof tool.description).toBe('string');
+      532 |         expect(tool.name.length).toBeGreaterThan(0);
+
+      at tests/mcp-comprehensive.test.ts:529:34
+          at Array.forEach (<anonymous>)
+      at Object.<anonymous> (tests/mcp-comprehensive.test.ts:527:19)
+
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:36.284Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:36.284Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:02:37.720Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:02:37.721Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+FAIL tests/mcp-latest-features.test.ts (26.1 s)
+  ● Console
+
+    console.log
+      ℹ️  No tool annotations found (optional feature)
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:94:17)
+
+    console.log
+      ✅ Validated tool categorization for 7 tools
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:117:15)
+
+    console.log
+      ✅ Structured content validation passed
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:143:15)
+
+    console.log
+      ✅ Content type validation passed
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:207:15)
+
+    console.log
+      ✅ Resource subscription validation for 3 resources
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:222:15)
+
+    console.log
+      ✅ Performance test: 5 requests in 12ms (avg: 2.4ms)
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:257:15)
+
+    console.log
+      ✅ Concurrent test: 3 requests in 730ms
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:280:15)
+
+    console.log
+      ✅ Connection stability test: 10 mixed operations completed
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:299:15)
+
+    console.log
+      ✅ Parameter validation test completed for 3 cases
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:342:15)
+
+    console.log
+      ✅ Malformed request handling validated
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:357:15)
+
+    console.log
+      ✅ Resource enumeration protection validated
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:377:15)
+
+    console.log
+      ✅ Network-specific operations: Mainnet height 8947598, Testnet height 14022727
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:393:15)
+
+    console.log
+      ✅ Secure wallet creation: NQxZzvhdij5NwbuBrYfgep6Pf3tsePVWzM
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:412:15)
+
+    console.log
+      ✅ State consistency: 8947598 -> 8947598
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:438:15)
+
+    console.log
+      🚀 Starting comprehensive blockchain workflow test...
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:444:15)
+
+    console.log
+      📊 Network: mainnet, Height: 8947599
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:452:15)
+
+    console.log
+      👛 Created wallet: NZyJYEh5iabkskcSrGwCrapzhu4sXNWa5M
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:460:15)
+
+    console.log
+      💰 Balance: 0 assets
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:468:15)
+
+    console.log
+      📜 Contracts: 6 available
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:476:15)
+
+    console.log
+      📡 Resource status: height 8947599
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:481:15)
+
+    console.log
+      ✅ Comprehensive workflow completed successfully!
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:490:15)
+
+  ● Latest MCP Protocol Features › 📊 Enhanced Content Types & Responses › should handle complex data structures in responses
+
+    expect(received).toMatchObject(expected)
+
+    - Expected  - 1
+    + Received  + 0
+
+      Object {
+        "description": Any<String>,
+    -   "hash": Any<String>,
+        "name": Any<String>,
+      }
+
+      161 |       if (data.contracts.length > 0) {
+      162 |         data.contracts.forEach((contract: any) => {
+    > 163 |           expect(contract).toMatchObject({
+          |                            ^
+      164 |             name: expect.any(String),
+      165 |             hash: expect.any(String),
+      166 |             description: expect.any(String)
+
+      at tests/mcp-latest-features.test.ts:163:28
+          at Array.forEach (<anonymous>)
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:162:24)
+
+  ● Latest MCP Protocol Features › 📊 Enhanced Content Types & Responses › should support proper error responses with context
+
+    expect(received).toBeDefined()
+
+    Received: undefined
+
+      182 |         expect(error).toBeDefined();
+      183 |         expect(error.message).toBeDefined();
+    > 184 |         expect(error.code).toBeDefined();
+          |                            ^
+      185 |         
+      186 |         // Should provide helpful error context
+      187 |         expect(error.message.toLowerCase()).toContain('address');
+
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:184:28)
+
+  ● Latest MCP Protocol Features › 🔄 Advanced Protocol Features › should support parameterized resources properly
+
+    McpError: MCP error -32603: Invalid URL
+
+      at Client._onresponse (node_modules/@modelcontextprotocol/sdk/src/shared/protocol.ts:464:21)
+      at StdioClientTransport._transport.onmessage (node_modules/@modelcontextprotocol/sdk/src/shared/protocol.ts:292:14)
+      at StdioClientTransport.processReadBuffer (node_modules/@modelcontextprotocol/sdk/src/client/stdio.ts:195:23)
+      at Socket.<anonymous> (node_modules/@modelcontextprotocol/sdk/src/client/stdio.ts:159:14)
+
+  ● Latest MCP Protocol Features › 🔐 Protocol Security & Validation › should protect against resource enumeration
+
+    thrown: "Exceeded timeout of 10000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      358 |     });
+      359 |
+    > 360 |     test('should protect against resource enumeration', async () => {
+          |     ^
+      361 |       // Test invalid resource access
+      362 |       const invalidResources = [
+      363 |         'neo://invalid/path',
+
+      at tests/mcp-latest-features.test.ts:360:5
+      at tests/mcp-latest-features.test.ts:303:3
+      at Object.<anonymous> (tests/mcp-latest-features.test.ts:13:1)
+
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:05:31.422Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:05:31.422Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:05:51.434Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:05:51.434Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:06:04.388Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:06:04.389Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:06:07.527Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:06:07.527Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+🚀 Initializing Neo N3 MCP Server (Modern API)...
+🔧 Setting up tools with modern API...
+✅ Tools set up successfully
+🔧 Setting up resources with modern API...
+✅ Resources set up successfully
+✅ Neo N3 MCP Server initialized successfully
+🚀 Starting Neo N3 MCP Server...
+✅ Neo N3 MCP Server started and connected successfully
+🔧 Lazy-initializing Neo services...
+Network mode: both
+   Initializing mainnet services...
+[2026-03-01T16:06:13.555Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"https://mainnet1.neo.coz.io:443"}
+   ✅ Mainnet services initialized
+   Initializing testnet services...
+[2026-03-01T16:06:13.555Z] [INFO] ContractService initialized for testnet {"rpcUrl":"http://seed1t5.neo.org:20332"}
+   ✅ Testnet services initialized
+✅ All Neo services initialized successfully
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+All validator query methods failed, continuing without validators
+FAIL tests/mcp-stress.test.ts (243.971 s)
+  ● Console
+
+    console.log
+      🚀 Starting 50 sequential tool calls...
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:60:15)
+
+    console.log
+      📊 Progress: 0/50 calls completed
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:74:21)
+
+    console.log
+      📊 Progress: 10/50 calls completed
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:74:21)
+
+    console.log
+      📊 Progress: 20/50 calls completed
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:74:21)
+
+    console.log
+      📊 Progress: 30/50 calls completed
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:74:21)
+
+    console.log
+      📊 Progress: 40/50 calls completed
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:74:21)
+
+    console.log
+      ✅ Stress test completed:
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:85:15)
+
+    console.log
+         • Total calls: 50
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:86:15)
+
+    console.log
+         • Successful: 50
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:87:15)
+
+    console.log
+         • Errors: 0
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:88:15)
+
+    console.log
+         • Total time: 153ms
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:89:15)
+
+    console.log
+         • Average response time: 3.06ms
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:90:15)
+
+    console.log
+      🚀 Starting 20 concurrent tool calls...
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:100:15)
+
+    console.log
+      ✅ Concurrent test completed:
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:131:15)
+
+    console.log
+         • Total calls: 20
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:132:15)
+
+    console.log
+         • Successful: 20
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:133:15)
+
+    console.log
+         • Errors: 0
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:134:15)
+
+    console.log
+         • Total time: 769ms
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:135:15)
+
+    console.log
+      🚀 Starting 30 mixed heavy operations...
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:157:15)
+
+    console.log
+      📊 Progress: 0/30 operations completed
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:167:21)
+
+    console.log
+      📊 Progress: 5/30 operations completed
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:167:21)
+
+    console.log
+      📊 Progress: 10/30 operations completed
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:167:21)
+
+    console.log
+      📊 Progress: 15/30 operations completed
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:167:21)
+
+    console.log
+      📊 Progress: 20/30 operations completed
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:167:21)
+
+    console.log
+      📊 Progress: 25/30 operations completed
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:167:21)
+
+    console.log
+      ✅ Mixed operations test completed:
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:177:15)
+
+    console.log
+         • Total operations: 30
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:178:15)
+
+    console.log
+         • Successful: 30
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:179:15)
+
+    console.log
+         • Total time: 12348ms
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:180:15)
+
+    console.log
+         • Average time: 411.60ms
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:181:15)
+
+    console.log
+      🚀 Starting 30 rapid resource reads...
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:202:15)
+
+    console.error
+      ❌ Error reading neo://network/status: McpError: MCP error -32001: Request timed out
+          at Timeout.timeoutHandler (/home/neo/git/neo-n3-mcp/node_modules/@modelcontextprotocol/sdk/src/shared/protocol.ts:591:43)
+          at listOnTimeout (node:internal/timers:605:17)
+          at processTimers (node:internal/timers:541:7) {
+        code: -32001,
+        data: { timeout: 60000 }
+      }
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://mainnet/status: McpError: MCP error -32000: Connection closed
+          at Client._onclose (/home/neo/git/neo-n3-mcp/node_modules/@modelcontextprotocol/sdk/src/shared/protocol.ts:312:19)
+          at StdioClientTransport._transport.onclose (/home/neo/git/neo-n3-mcp/node_modules/@modelcontextprotocol/sdk/src/shared/protocol.ts:283:12)
+          at ChildProcess.<anonymous> (/home/neo/git/neo-n3-mcp/node_modules/@modelcontextprotocol/sdk/src/client/stdio.ts:136:23)
+          at ChildProcess.emit (node:events:508:28)
+          at abortChildProcess (node:child_process:759:13)
+          at AbortSignal.onAbortListener (node:child_process:829:7)
+          at AbortSignal.[nodejs.internal.kHybridDispatch] (node:internal/event_target:845:20)
+          at AbortSignal.dispatchEvent (node:internal/event_target:778:26)
+          at runAbort (node:internal/abort_controller:488:10)
+          at abortSignal (node:internal/abort_controller:459:3)
+          at AbortController.abort (node:internal/abort_controller:507:5)
+          at StdioClientTransport.close (/home/neo/git/neo-n3-mcp/node_modules/@modelcontextprotocol/sdk/src/client/stdio.ts:203:27)
+          at Client.close (/home/neo/git/neo-n3-mcp/node_modules/@modelcontextprotocol/sdk/src/shared/protocol.ts:481:28)
+          at stopServer (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:48:20)
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:28:11)
+          at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)
+          at _callCircusHook (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:281:40)
+          at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:254:5)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)
+          at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+          at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+          at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)
+          at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)
+          at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12) {
+        code: -32000,
+        data: undefined
+      }
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://testnet/status: Error: Not connected
+          at /home/neo/git/neo-n3-mcp/node_modules/@modelcontextprotocol/sdk/src/shared/protocol.ts:523:16
+          at new Promise (<anonymous>)
+          at Client.request (/home/neo/git/neo-n3-mcp/node_modules/@modelcontextprotocol/sdk/src/shared/protocol.ts:521:12)
+          at Client.readResource (/home/neo/git/neo-n3-mcp/node_modules/@modelcontextprotocol/sdk/src/client/index.ts:388:17)
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://block/100: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://block/200: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://block/300: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://network/status: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://mainnet/status: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://testnet/status: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://block/100: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://block/200: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://block/300: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://network/status: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://mainnet/status: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://testnet/status: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://block/100: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://block/200: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://block/300: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://network/status: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://mainnet/status: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://testnet/status: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://block/100: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://block/200: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://block/300: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://network/status: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://mainnet/status: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://testnet/status: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://block/100: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://block/200: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.error
+      ❌ Error reading neo://block/300: TypeError: Cannot read properties of null (reading 'readResource')
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/mcp-stress.test.ts:207:41)
+
+      213 |           successCount++;
+      214 |         } catch (error) {
+    > 215 |           console.error(`❌ Error reading ${resources[i % resources.length]}:`, error);
+          |                   ^
+      216 |         }
+      217 |       }
+      218 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:215:19)
+
+    console.log
+      ✅ Resource stress test completed:
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:221:15)
+
+    console.log
+         • Total reads: 30
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:222:15)
+
+    console.log
+         • Successful: 0
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:223:15)
+
+    console.log
+         • Total time: 120030ms
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:224:15)
+
+    console.log
+      🚀 Starting 15 concurrent resource reads...
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:237:15)
+
+    console.log
+      ✅ Concurrent resource test completed:
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:252:15)
+
+    console.log
+         • Total reads: 15
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:253:15)
+
+    console.log
+         • Successful: 0
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:254:15)
+
+    console.log
+      🚀 Starting 10 complex wallet workflows...
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:266:15)
+
+    console.log
+      📊 Completed 1/10 wallet workflows
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:291:21)
+
+    console.log
+      📊 Completed 3/10 wallet workflows
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:291:21)
+
+    console.log
+      📊 Completed 5/10 wallet workflows
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:291:21)
+
+    console.log
+      📊 Completed 7/10 wallet workflows
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:291:21)
+
+    console.log
+      📊 Completed 9/10 wallet workflows
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:291:21)
+
+    console.log
+      ✅ Wallet workflow stress test completed:
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:300:15)
+
+    console.log
+         • Total workflows: 10
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:301:15)
+
+    console.log
+         • Successful: 10
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:302:15)
+
+    console.log
+         • Total time: 21441ms
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:303:15)
+
+    console.log
+      🚀 Starting 15 blockchain exploration workflows...
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:313:15)
+
+    console.log
+      ✅ Exploration workflow stress test completed:
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:348:15)
+
+    console.log
+         • Total workflows: 15
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:349:15)
+
+    console.log
+         • Successful: 15
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:350:15)
+
+    console.log
+         • Total time: 12673ms
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:351:15)
+
+    console.log
+      🚀 Starting error recovery test with 20 operations...
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:374:15)
+
+    console.log
+      ✅ Error recovery test completed:
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:400:15)
+
+    console.log
+         • Valid operations succeeded: 13
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:401:15)
+
+    console.log
+         • Expected errors: 7
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:402:15)
+
+    console.log
+      🚀 Generating errors to test stability...
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:418:15)
+
+    console.log
+      📊 Generated 3 errors, now testing stability...
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:429:15)
+
+    console.log
+      ✅ Stability test completed:
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:448:15)
+
+    console.log
+         • Errors generated: 3
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:449:15)
+
+    console.log
+         • Recovery successes: 10/10
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:450:15)
+
+    console.log
+      🚀 Running performance benchmark with 20 operations...
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:462:15)
+
+    console.log
+      📊 Operation 0: 490ms
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:477:21)
+
+    console.log
+      📊 Operation 5: 282ms
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:477:21)
+
+    console.log
+      📊 Operation 10: 278ms
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:477:21)
+
+    console.log
+      📊 Operation 15: 279ms
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:477:21)
+
+    console.log
+      ✅ Performance benchmark completed:
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:488:15)
+
+    console.log
+         • Operations: 20
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:489:15)
+
+    console.log
+         • Average response time: 290.80ms
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:490:15)
+
+    console.log
+         • Min response time: 277ms
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:491:15)
+
+    console.log
+         • Max response time: 490ms
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:492:15)
+
+    console.log
+      🚀 Running extended memory efficiency test...
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:503:15)
+
+    console.log
+      📊 Extended test progress: 0/30
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:523:21)
+
+    console.log
+      📊 Extended test progress: 10/30
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:523:21)
+
+    console.log
+      📊 Extended test progress: 20/30
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:523:21)
+
+    console.log
+      ✅ Extended memory test completed:
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:530:15)
+
+    console.log
+         • Total operations: 30
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:531:15)
+
+    console.log
+         • Successful: 30
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:532:15)
+
+  ● MCP Server Stress Tests › 📊 Resource Access Stress Tests › should handle rapid resource reads
+
+    thrown: "Exceeded timeout of 120000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      186 |
+      187 |   describe('📊 Resource Access Stress Tests', () => {
+    > 188 |     test('should handle rapid resource reads', async () => {
+          |     ^
+      189 |       const resources = [
+      190 |         'neo://network/status',
+      191 |         'neo://mainnet/status',
+
+      at tests/mcp-stress.test.ts:188:5
+      at tests/mcp-stress.test.ts:187:3
+      at Object.<anonymous> (tests/mcp-stress.test.ts:13:1)
+
+  ● MCP Server Stress Tests › 📊 Resource Access Stress Tests › should handle concurrent resource access
+
+    expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 13.5
+    Received:    0
+
+      254 |       console.log(`   • Successful: ${successCount}`);
+      255 |
+    > 256 |       expect(successCount).toBeGreaterThanOrEqual(concurrentReads * 0.9);
+          |                            ^
+      257 |     }, STRESS_TEST_TIMEOUT);
+      258 |   });
+      259 |
+
+      at Object.<anonymous> (tests/mcp-stress.test.ts:256:28)
+
+Test Suites: 3 failed, 1 passed, 4 total
+Tests:       11 failed, 72 passed, 83 total
+Snapshots:   0 total
+Time:        244.721 s, estimated 249 s
+Ran all test suites.

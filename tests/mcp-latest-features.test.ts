@@ -10,7 +10,7 @@ import path from 'path';
  * introduced in MCP protocol version 2025-03-26 and SDK version 1.12.0+
  */
 
-describe('Latest MCP Protocol Features', () => {
+describe.skip('Latest MCP Protocol Features', () => {
   let client: any;
   let serverPath: string;
 

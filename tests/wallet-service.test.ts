@@ -62,7 +62,7 @@ describe('WalletService', () => {
     it('should return wallet information for the specified address', async () => {
       // Mock wallet data
       const mockWalletData = {
-        address: 'NTest1Address',
+        address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
         publicKey: 'test-public-key',
         encryptedPrivateKey: 'encrypted-private-key',
         createdAt: new Date().toISOString()
@@ -75,12 +75,12 @@ describe('WalletService', () => {
       (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify(mockWalletData));
 
       // Call getWallet
-      const result = await walletService.getWallet('NTest1Address');
+      const result = await walletService.getWallet('NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr');
 
       // Verify the result
       expect(result).toEqual(mockWalletData);
       expect(fs.readFileSync).toHaveBeenCalledWith(
-        path.join(testWalletsDir, 'NTest1Address.json'),
+        path.join(testWalletsDir, 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr.json'),
         'utf-8'
       );
     });
@@ -90,7 +90,7 @@ describe('WalletService', () => {
       (fs.existsSync as jest.Mock).mockReturnValueOnce(false);
 
       // Call getWallet and expect it to throw
-      await expect(walletService.getWallet('NTest1Address')).rejects.toThrow('Wallet not found');
+      await expect(walletService.getWallet('NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr')).rejects.toThrow('Wallet not found');
     });
   });
 

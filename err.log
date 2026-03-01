@@ -1,0 +1,25 @@
+FAIL tests/mcp-comprehensive.test.ts
+  ● Test suite failed to run
+
+    [96mtests/mcp-comprehensive.test.ts[0m:[93m482[0m:[93m3[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m482[0m   });
+    [7m   [0m [91m  ~[0m
+    [96mtests/mcp-comprehensive.test.ts[0m:[93m482[0m:[93m4[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m482[0m   });
+    [7m   [0m [91m   ~[0m
+    [96mtests/mcp-comprehensive.test.ts[0m:[93m539[0m:[93m1[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m539[0m });
+    [7m   [0m [91m~[0m
+    [96mtests/mcp-comprehensive.test.ts[0m:[93m539[0m:[93m2[0m - [91merror[0m[90m TS1128: [0mDeclaration or statement expected.
+
+    [7m539[0m });
+    [7m   [0m [91m ~[0m
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        0.651 s
+Ran all test suites matching /tests\/mcp-comprehensive.test.ts/i.

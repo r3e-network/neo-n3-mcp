@@ -1,0 +1,907 @@
+
+> @r3e/neo-n3-mcp@1.6.0 test:unit
+> jest --testMatch='**/tests/**/*.test.ts' --testPathIgnorePatterns='tests/mcp-'
+
+PASS tests/server-init.test.ts
+PASS tests/neo-service.test.ts
+FAIL tests/blockchain-operations.test.ts
+  ● Console
+
+    console.error
+      Failed to get blockchain info: Error: RPC Error
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/blockchain-operations.test.ts:157:65)
+          at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)
+          at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:103:5)
+          at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)
+          at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+          at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+          at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)
+          at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)
+          at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)
+
+      115 |       };
+      116 |     } catch (error) {
+    > 117 |       console.error('Failed to get blockchain info:', error);
+          |               ^
+      118 |       // Provide a default/empty response on error to allow tests to proceed partially
+      119 |       return {
+      120 |         height: 0,
+
+      at NeoService.getBlockchainInfo (src/services/neo-service.ts:117:15)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:159:7)
+
+    console.error
+      Failed to invoke write contract 0x1234567890abcdef1234567890abcdef12345678.transfer: Cannot read properties of undefined (reading 'HexString') TypeError: Cannot read properties of undefined (reading 'HexString')
+          at NeoService.invokeContract (/home/neo/git/neo-n3-mcp/src/services/neo-service.ts:459:40)
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/blockchain-operations.test.ts:353:39)
+          at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)
+          at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:103:5)
+          at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)
+          at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+          at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+          at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)
+          at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)
+          at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)
+
+      513 |     } catch (error) {
+      514 |       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 515 |       console.error(`Failed to invoke write contract ${scriptHash}.${operation}: ${errorMessage}`, error);
+          |               ^
+      516 |       throw new Error(`Failed to invoke write contract ${scriptHash}.${operation}: ${errorMessage}`);
+      517 |     }
+      518 |   }
+
+      at NeoService.invokeContract (src/services/neo-service.ts:515:15)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:353:39)
+
+    console.error
+      Failed to invoke write contract invalid-hash.transfer: Cannot read properties of undefined (reading 'HexString') TypeError: Cannot read properties of undefined (reading 'HexString')
+          at NeoService.invokeContract (/home/neo/git/neo-n3-mcp/src/services/neo-service.ts:459:40)
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/blockchain-operations.test.ts:364:31)
+          at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)
+          at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:103:5)
+          at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)
+          at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+          at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+          at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)
+          at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)
+          at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)
+
+      513 |     } catch (error) {
+      514 |       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 515 |       console.error(`Failed to invoke write contract ${scriptHash}.${operation}: ${errorMessage}`, error);
+          |               ^
+      516 |       throw new Error(`Failed to invoke write contract ${scriptHash}.${operation}: ${errorMessage}`);
+      517 |     }
+      518 |   }
+
+      at NeoService.invokeContract (src/services/neo-service.ts:515:15)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:364:31)
+
+    console.error
+      Failed to claim GAS for NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr: Cannot read properties of undefined (reading 'hash160') TypeError: Cannot read properties of undefined (reading 'hash160')
+          at NeoService.claimGas (/home/neo/git/neo-n3-mcp/src/services/neo-service.ts:654:45)
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/blockchain-operations.test.ts:380:39)
+          at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)
+          at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:103:5)
+          at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)
+          at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+          at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+          at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)
+          at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)
+          at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)
+
+      659 |     } catch (error) {
+      660 |       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 661 |       console.error(`Failed to claim GAS for ${fromAccount?.address}: ${errorMessage}`, error);
+          |               ^
+      662 |       throw new Error(`Failed to claim GAS: ${errorMessage}`);
+      663 |     }
+      664 |   }
+
+      at NeoService.claimGas (src/services/neo-service.ts:661:15)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:380:39)
+
+    console.error
+      Failed to claim GAS for undefined: Invalid account for claiming GAS: missing address Error: Invalid account for claiming GAS: missing address
+          at NeoService.claimGas (/home/neo/git/neo-n3-mcp/src/services/neo-service.ts:643:15)
+          at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/blockchain-operations.test.ts:385:31)
+          at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)
+          at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:103:5)
+          at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)
+          at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)
+          at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+          at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+          at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)
+          at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)
+          at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)
+
+      659 |     } catch (error) {
+      660 |       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 661 |       console.error(`Failed to claim GAS for ${fromAccount?.address}: ${errorMessage}`, error);
+          |               ^
+      662 |       throw new Error(`Failed to claim GAS: ${errorMessage}`);
+      663 |     }
+      664 |   }
+
+      at NeoService.claimGas (src/services/neo-service.ts:661:15)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:385:31)
+
+  ● Blockchain Operations › getBlockchainInfo › should handle RPC errors
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"height": 0, "network": "mainnet", "validators": []}
+
+      157 |       mockRpcClient.getBlockCount = jest.fn().mockRejectedValue(new Error('RPC Error'));
+      158 |
+    > 159 |       await expect(neoService.getBlockchainInfo()).rejects.toThrow();
+          |             ^
+      160 |     });
+      161 |   });
+      162 |
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:159:13)
+
+  ● Blockchain Operations › getBlock › should handle invalid block identifier
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"hash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef", "index": 12344, "merkleroot": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890", "nextconsensus": "NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr", "nonce": "0", "previousblockhash": "0x0987654321fedcba0987654321fedcba0987654321fedcba0987654321fedcba", "script": {"invocation": "", "verification": ""}, "size": 1000, "time": 1600000000, "tx": [], "version": 0}
+
+      194 |
+      195 |     test('should handle invalid block identifier', async () => {
+    > 196 |       await expect(neoService.getBlock('invalid')).rejects.toThrow();
+          |             ^
+      197 |     });
+      198 |   });
+      199 |
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:196:13)
+
+  ● Blockchain Operations › getTransaction › should handle invalid transaction hash
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"attributes": [], "hash": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890", "netfee": "0.05", "nonce": 0, "script": "", "sender": "NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr", "signers": [], "size": 500, "sysfee": "0.1", "validuntilblock": 12400, "version": 0, "witnesses": []}
+
+      210 |
+      211 |     test('should handle invalid transaction hash', async () => {
+    > 212 |       await expect(neoService.getTransaction('invalid')).rejects.toThrow();
+          |             ^
+      213 |     });
+      214 |   });
+      215 |
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:212:13)
+
+  ● Blockchain Operations › getBalance › should handle invalid address
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"address": "NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr", "balance": [{"amount": "100", "asset_hash": "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5", "asset_name": "NEO", "last_updated_block": 12345}, {"amount": "50.5", "asset_hash": "0xd2a4cff31913016155e38e474a2c06d08be276cf", "asset_name": "GAS", "last_updated_block": 12345}]}
+
+      231 |
+      232 |     test('should handle invalid address', async () => {
+    > 233 |       await expect(neoService.getBalance('invalid')).rejects.toThrow();
+          |             ^
+      234 |     });
+      235 |
+      236 |     test('should handle empty address', async () => {
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:233:13)
+
+  ● Blockchain Operations › transferAssets › should transfer assets successfully
+
+    Failed to transfer assets: Cannot read properties of undefined (reading 'hash160')
+
+      382 |       // Production error handling
+      383 |       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 384 |       throw new Error(`Failed to transfer assets: ${errorMessage}`);
+          |             ^
+      385 |     }
+      386 |   }
+      387 |
+
+      at NeoService.transferAssets (src/services/neo-service.ts:384:13)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:248:39)
+
+  ● Blockchain Operations › wallet operations › should import wallet from WIF
+
+    expect(received).toHaveProperty(path)
+
+    Expected path: "WIF"
+    Received path: []
+
+    Received value: {"address": "NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr", "publicKey": "mock-public-key"}
+
+      308 |       expect(wallet).toHaveProperty('address');
+      309 |       expect(wallet).toHaveProperty('publicKey');
+    > 310 |       expect(wallet).toHaveProperty('WIF');
+          |                      ^
+      311 |     });
+      312 |
+      313 |     test('should handle invalid WIF', () => {
+
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:310:22)
+
+  ● Blockchain Operations › wallet operations › should handle invalid WIF
+
+    expect(received).toThrow()
+
+    Received function did not throw
+
+      312 |
+      313 |     test('should handle invalid WIF', () => {
+    > 314 |       expect(() => neoService.importWallet('invalid-wif')).toThrow();
+          |                                                            ^
+      315 |     });
+      316 |   });
+      317 |
+
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:314:60)
+
+  ● Blockchain Operations › fee calculation › should calculate transfer fees
+
+    Failed to calculate transfer fee: Cannot read properties of undefined (reading 'hash160')
+
+      589 |     } catch (error) {
+      590 |       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 591 |       throw new Error(`Failed to calculate transfer fee: ${errorMessage}`);
+          |             ^
+      592 |     }
+      593 |   }
+      594 |
+
+      at NeoService.calculateTransferFee (src/services/neo-service.ts:591:13)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:320:37)
+
+  ● Blockchain Operations › fee calculation › should calculate invocation fees
+
+    Failed to calculate invoke fee: Cannot read properties of undefined (reading 'CalledByEntry')
+
+      629 |     } catch (error) {
+      630 |       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 631 |       throw new Error(`Failed to calculate invoke fee: ${errorMessage}`);
+          |             ^
+      632 |     }
+      633 |   }
+      634 |
+
+      at NeoService.calculateInvokeFee (src/services/neo-service.ts:631:13)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:334:37)
+
+  ● Blockchain Operations › contract invocation › should invoke contract successfully
+
+    Failed to invoke write contract 0x1234567890abcdef1234567890abcdef12345678.transfer: Cannot read properties of undefined (reading 'HexString')
+
+      514 |       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      515 |       console.error(`Failed to invoke write contract ${scriptHash}.${operation}: ${errorMessage}`, error);
+    > 516 |       throw new Error(`Failed to invoke write contract ${scriptHash}.${operation}: ${errorMessage}`);
+          |             ^
+      517 |     }
+      518 |   }
+      519 |
+
+      at NeoService.invokeContract (src/services/neo-service.ts:516:13)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:353:39)
+
+  ● Blockchain Operations › GAS claiming › should claim GAS successfully
+
+    Failed to claim GAS: Cannot read properties of undefined (reading 'hash160')
+
+      660 |       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      661 |       console.error(`Failed to claim GAS for ${fromAccount?.address}: ${errorMessage}`, error);
+    > 662 |       throw new Error(`Failed to claim GAS: ${errorMessage}`);
+          |             ^
+      663 |     }
+      664 |   }
+      665 |
+
+      at NeoService.claimGas (src/services/neo-service.ts:662:13)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:380:39)
+
+  ● Blockchain Operations › transaction status checking › should check transaction status
+
+    TypeError: neoService.checkTransactionStatus is not a function
+
+      390 |     test('should check transaction status', async () => {
+      391 |       const txHash = '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890';
+    > 392 |       const status = await neoService.checkTransactionStatus(txHash);
+          |                                       ^
+      393 |       
+      394 |       expect(status).toHaveProperty('confirmed');
+      395 |       expect(typeof status.confirmed).toBe('boolean');
+
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:392:39)
+
+  ● Blockchain Operations › transaction status checking › should handle invalid transaction hash
+
+    TypeError: neoService.checkTransactionStatus is not a function
+
+      397 |
+      398 |     test('should handle invalid transaction hash', async () => {
+    > 399 |       await expect(neoService.checkTransactionStatus('invalid')).rejects.toThrow();
+          |                               ^
+      400 |     });
+      401 |   });
+      402 |
+
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:399:31)
+
+  ● Blockchain Operations › network operations › should handle network errors gracefully
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"height": 12345, "network": "mainnet", "validators": [{"active": true, "publickey": "key1", "votes": "100"}, {"active": true, "publickey": "key2", "votes": "200"}]}
+
+      410 |       mockRpcClient.execute = jest.fn().mockRejectedValue(new Error('ECONNREFUSED'));
+      411 |
+    > 412 |       await expect(neoService.getBlockchainInfo()).rejects.toThrow();
+          |             ^
+      413 |     });
+      414 |   });
+      415 |
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:412:13)
+
+  ● Blockchain Operations › error handling › should handle RPC client initialization errors
+
+    expect(received).toThrow(expected)
+
+    Expected constructor: NetworkError
+    Received constructor: Error
+
+    Received message: "Failed to initialize Neo RPC client: RPC Client initialization failed"
+
+          47 |     } catch (error) {
+          48 |       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        > 49 |       throw new Error(`Failed to initialize Neo RPC client: ${errorMessage}`);
+             |             ^
+          50 |     }
+          51 |
+          52 |     // Validate network
+
+      at new NeoService (src/services/neo-service.ts:49:13)
+      at tests/blockchain-operations.test.ts:424:20
+      at Object.<anonymous> (node_modules/expect/build/toThrowMatchers.js:74:11)
+      at Object.throwingMatcher [as toThrow] (node_modules/expect/build/index.js:320:21)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:425:10)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:425:10)
+
+  ● Blockchain Operations › error handling › should provide detailed error messages
+
+    Failed to initialize Neo RPC client: RPC Client initialization failed
+
+      47 |     } catch (error) {
+      48 |       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 49 |       throw new Error(`Failed to initialize Neo RPC client: ${errorMessage}`);
+         |             ^
+      50 |     }
+      51 |
+      52 |     // Validate network
+
+      at new NeoService (src/services/neo-service.ts:49:13)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:124:18)
+
+  ● Blockchain Operations › edge cases › should handle empty responses
+
+    Failed to initialize Neo RPC client: RPC Client initialization failed
+
+      47 |     } catch (error) {
+      48 |       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 49 |       throw new Error(`Failed to initialize Neo RPC client: ${errorMessage}`);
+         |             ^
+      50 |     }
+      51 |
+      52 |     // Validate network
+
+      at new NeoService (src/services/neo-service.ts:49:13)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:124:18)
+
+  ● Blockchain Operations › edge cases › should handle malformed responses
+
+    Failed to initialize Neo RPC client: RPC Client initialization failed
+
+      47 |     } catch (error) {
+      48 |       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 49 |       throw new Error(`Failed to initialize Neo RPC client: ${errorMessage}`);
+         |             ^
+      50 |     }
+      51 |
+      52 |     // Validate network
+
+      at new NeoService (src/services/neo-service.ts:49:13)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:124:18)
+
+  ● Blockchain Operations › edge cases › should validate input parameters
+
+    Failed to initialize Neo RPC client: RPC Client initialization failed
+
+      47 |     } catch (error) {
+      48 |       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    > 49 |       throw new Error(`Failed to initialize Neo RPC client: ${errorMessage}`);
+         |             ^
+      50 |     }
+      51 |
+      52 |     // Validate network
+
+      at new NeoService (src/services/neo-service.ts:49:13)
+      at Object.<anonymous> (tests/blockchain-operations.test.ts:124:18)
+
+FAIL tests/contract-service.test.ts
+  ● Console
+
+    console.info
+      [2026-03-01T13:24:52.303Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.352Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.393Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.397Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.403Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.405Z] [INFO] Querying contract NeoFS {"operation":"createContainer","args":"[]","network":"mainnet"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.409Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.411Z] [INFO] Querying contract NeoFS {"operation":"createContainer","args":"[]","network":"mainnet"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.413Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.416Z] [INFO] Invoking contract NeoFS {"operation":"createContainer","args":"[]","network":"mainnet","address":"NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.418Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.425Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.432Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.436Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.438Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.447Z] [INFO] Invoking contract neofs {"operation":"createContainer","args":"[{\"type\":\"String\",\"value\":\"mock\"},{\"type\":\"Array\",\"value\":[]}]","network":"mainnet","address":"NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.448Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.449Z] [INFO] Querying contract neofs {"operation":"getContainers","args":"[{\"type\":\"String\",\"value\":\"mock\"}]","network":"mainnet"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.449Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.450Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+    console.info
+      [2026-03-01T13:24:52.452Z] [INFO] ContractService initialized for mainnet {"rpcUrl":"http://localhost:10332"}
+
+      at Logger.log (src/utils/logger.ts:125:7)
+
+  ● ContractService › NeoBurger operations › should deposit to NeoBurger
+
+    TypeError: neonJs.sc.ContractParam.hash160 is not a function
+
+      593 |       'neoburger',
+      594 |       FAMOUS_CONTRACTS.neoburger.operations.depositNeo.name,
+    > 595 |       [neonJs.sc.ContractParam.hash160(fromAccount.address)]
+          |                                ^
+      596 |     );
+      597 |   }
+      598 |
+
+      at ContractService.depositNeoToNeoBurger (src/contracts/contract-service.ts:595:32)
+      at Object.<anonymous> (tests/contract-service.test.ts:185:44)
+
+  ● ContractService › NeoBurger operations › should withdraw from NeoBurger
+
+    TypeError: neonJs.sc.ContractParam.hash160 is not a function
+
+      606 |       FAMOUS_CONTRACTS.neoburger.operations.withdrawNeo.name,
+      607 |       [
+    > 608 |         neonJs.sc.ContractParam.hash160(fromAccount.address),
+          |                                 ^
+      609 |         neonJs.sc.ContractParam.integer(validAmount)
+      610 |       ]
+      611 |     );
+
+      at ContractService.withdrawNeoFromNeoBurger (src/contracts/contract-service.ts:608:33)
+      at Object.<anonymous> (tests/contract-service.test.ts:190:44)
+
+  ● ContractService › NeoBurger operations › should get NeoBurger balance
+
+    TypeError: neonJs.sc.ContractParam.hash160 is not a function
+
+      616 |       'neoburger',
+      617 |       FAMOUS_CONTRACTS.neoburger.operations.balanceOf.name,
+    > 618 |       [neonJs.sc.ContractParam.hash160(address)]
+          |                                ^
+      619 |     );
+      620 |   }
+      621 |
+
+      at ContractService.getNeoBurgerBalance (src/contracts/contract-service.ts:618:32)
+      at Object.<anonymous> (tests/contract-service.test.ts:195:44)
+
+PASS tests/wallet-service.test.ts
+PASS tests/validation.test.ts
+PASS tests/tool-handler.test.ts (5.914 s)
+  ● Console
+
+    console.error
+      [2026-03-01T13:24:53.080Z] [ERROR] Error occurred: {"error":"ValidationError: Invalid hash length: invalid. Expected 64 characters (without 0x prefix).","stack":"ValidationError: Invalid hash length: invalid. Expected 64 characters (without 0x prefix).\n    at new ValidationError (/home/neo/git/neo-n3-mcp/src/utils/errors.ts:54:5)\n    at validateHash (/home/neo/git/neo-n3-mcp/src/utils/validation.ts:73:11)\n    at handleGetTransaction (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:64:17)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:301:22)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:163:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      123 |                             level === LogLevel.INFO ? console.info :
+      124 |                             console.debug;
+    > 125 |       consoleMethod(formattedMessage);
+          |       ^
+      126 |     }
+      127 |
+      128 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:125:7)
+      at Logger.error (src/utils/logger.ts:170:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleGetTransaction (src/handlers/tool-handler.ts:68:23)
+      at callTool (src/handlers/tool-handler.ts:301:22)
+      at Object.<anonymous> (tests/tool-handler.test.ts:163:36)
+
+    console.error
+      [2026-03-01T13:24:53.108Z] [ERROR] Error occurred: {"error":"ValidationError: Invalid Neo N3 address format: invalid","stack":"ValidationError: Invalid Neo N3 address format: invalid\n    at new ValidationError (/home/neo/git/neo-n3-mcp/src/utils/errors.ts:54:5)\n    at validateAddress (/home/neo/git/neo-n3-mcp/src/utils/validation.ts:38:11)\n    at handleGetBalance (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:74:20)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:303:22)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:182:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      123 |                             level === LogLevel.INFO ? console.info :
+      124 |                             console.debug;
+    > 125 |       consoleMethod(formattedMessage);
+          |       ^
+      126 |     }
+      127 |
+      128 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:125:7)
+      at Logger.error (src/utils/logger.ts:170:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleGetBalance (src/handlers/tool-handler.ts:78:23)
+      at callTool (src/handlers/tool-handler.ts:303:22)
+      at Object.<anonymous> (tests/tool-handler.test.ts:182:36)
+
+    console.error
+      [2026-03-01T13:24:53.191Z] [ERROR] Error occurred: {"error":"McpError: MCP error -32602: Transfer requires explicit confirmation. Set confirm=true.","stack":"McpError: MCP error -32602: Transfer requires explicit confirmation. Set confirm=true.\n    at handleTransferAssets (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:85:13)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:305:22)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:213:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      123 |                             level === LogLevel.INFO ? console.info :
+      124 |                             console.debug;
+    > 125 |       consoleMethod(formattedMessage);
+          |       ^
+      126 |     }
+      127 |
+      128 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:125:7)
+      at Logger.error (src/utils/logger.ts:170:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleTransferAssets (src/handlers/tool-handler.ts:97:23)
+      at callTool (src/handlers/tool-handler.ts:305:22)
+      at Object.<anonymous> (tests/tool-handler.test.ts:213:36)
+
+    console.error
+      [2026-03-01T13:24:53.194Z] [ERROR] Error occurred: {"error":"McpError: MCP error -32602: Invalid sender WIF provided.","stack":"McpError: MCP error -32602: Invalid sender WIF provided.\n    at handleTransferAssets (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:91:13)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:305:22)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:227:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      123 |                             level === LogLevel.INFO ? console.info :
+      124 |                             console.debug;
+    > 125 |       consoleMethod(formattedMessage);
+          |       ^
+      126 |     }
+      127 |
+      128 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:125:7)
+      at Logger.error (src/utils/logger.ts:170:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleTransferAssets (src/handlers/tool-handler.ts:97:23)
+      at callTool (src/handlers/tool-handler.ts:305:22)
+      at Object.<anonymous> (tests/tool-handler.test.ts:227:36)
+
+    console.error
+      [2026-03-01T13:24:55.282Z] [ERROR] Error occurred: {"error":"ValidationError: Password must be at least 8 characters long","stack":"ValidationError: Password must be at least 8 characters long\n    at new ValidationError (/home/neo/git/neo-n3-mcp/src/utils/errors.ts:54:5)\n    at validatePassword (/home/neo/git/neo-n3-mcp/src/utils/validation.ts:164:11)\n    at handleCreateWallet (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:134:21)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:262:20)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:245:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      123 |                             level === LogLevel.INFO ? console.info :
+      124 |                             console.debug;
+    > 125 |       consoleMethod(formattedMessage);
+          |       ^
+      126 |     }
+      127 |
+      128 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:125:7)
+      at Logger.error (src/utils/logger.ts:170:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleCreateWallet (src/handlers/tool-handler.ts:139:23)
+      at callTool (src/handlers/tool-handler.ts:262:20)
+      at Object.<anonymous> (tests/tool-handler.test.ts:245:36)
+
+    console.error
+      [2026-03-01T13:24:57.346Z] [ERROR] Error occurred: {"error":"McpError: MCP error -32602: Contract invocation requires explicit confirmation. Set confirm=true.","stack":"McpError: MCP error -32602: Contract invocation requires explicit confirmation. Set confirm=true.\n    at handleInvokeWriteContract (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:114:13)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:308:24)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:313:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      123 |                             level === LogLevel.INFO ? console.info :
+      124 |                             console.debug;
+    > 125 |       consoleMethod(formattedMessage);
+          |       ^
+      126 |     }
+      127 |
+      128 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:125:7)
+      at Logger.error (src/utils/logger.ts:170:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleInvokeWriteContract (src/handlers/tool-handler.ts:128:23)
+      at callTool (src/handlers/tool-handler.ts:308:24)
+      at Object.<anonymous> (tests/tool-handler.test.ts:313:36)
+
+    console.error
+      [2026-03-01T13:24:57.348Z] [ERROR] Error occurred: {"error":"ValidationError: Contract name must be a non-empty string","stack":"ValidationError: Contract name must be a non-empty string\n    at new ValidationError (/home/neo/git/neo-n3-mcp/src/utils/errors.ts:54:5)\n    at validateContractName (/home/neo/git/neo-n3-mcp/src/utils/validation.ts:292:11)\n    at handleGetContractInfo (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:221:46)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:321:22)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:341:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      123 |                             level === LogLevel.INFO ? console.info :
+      124 |                             console.debug;
+    > 125 |       consoleMethod(formattedMessage);
+          |       ^
+      126 |     }
+      127 |
+      128 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:125:7)
+      at Logger.error (src/utils/logger.ts:170:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleGetContractInfo (src/handlers/tool-handler.ts:226:23)
+      at callTool (src/handlers/tool-handler.ts:321:22)
+      at Object.<anonymous> (tests/tool-handler.test.ts:341:36)
+
+    console.error
+      [2026-03-01T13:24:57.350Z] [ERROR] Error occurred: {"error":"McpError: MCP error -32602: Signer address is required to estimate invocation fees.","stack":"McpError: MCP error -32602: Signer address is required to estimate invocation fees.\n    at handleEstimateInvokeFees (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:181:15)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:315:22)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:386:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      123 |                             level === LogLevel.INFO ? console.info :
+      124 |                             console.debug;
+    > 125 |       consoleMethod(formattedMessage);
+          |       ^
+      126 |     }
+      127 |
+      128 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:125:7)
+      at Logger.error (src/utils/logger.ts:170:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleEstimateInvokeFees (src/handlers/tool-handler.ts:187:23)
+      at callTool (src/handlers/tool-handler.ts:315:22)
+      at Object.<anonymous> (tests/tool-handler.test.ts:386:36)
+
+    console.error
+      [2026-03-01T13:24:57.413Z] [ERROR] Error occurred: {"error":"McpError: MCP error -32602: GAS claim requires explicit confirmation. Set confirm=true.","stack":"McpError: MCP error -32602: GAS claim requires explicit confirmation. Set confirm=true.\n    at handleClaimGas (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:194:13)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:317:22)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:410:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      123 |                             level === LogLevel.INFO ? console.info :
+      124 |                             console.debug;
+    > 125 |       consoleMethod(formattedMessage);
+          |       ^
+      126 |     }
+      127 |
+      128 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:125:7)
+      at Logger.error (src/utils/logger.ts:170:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleClaimGas (src/handlers/tool-handler.ts:203:23)
+      at callTool (src/handlers/tool-handler.ts:317:22)
+      at Object.<anonymous> (tests/tool-handler.test.ts:410:36)
+
+    console.error
+      [2026-03-01T13:24:57.414Z] [ERROR] Error occurred: {"error":"McpError: MCP error -32602: Tool unknown_tool not found or requires network parameter.","stack":"McpError: MCP error -32602: Tool unknown_tool not found or requires network parameter.\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:330:15)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:418:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      123 |                             level === LogLevel.INFO ? console.info :
+      124 |                             console.debug;
+    > 125 |       consoleMethod(formattedMessage);
+          |       ^
+      126 |     }
+      127 |
+      128 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:125:7)
+      at Logger.error (src/utils/logger.ts:170:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at callTool (src/handlers/tool-handler.ts:333:23)
+      at Object.<anonymous> (tests/tool-handler.test.ts:418:36)
+
+    console.error
+      [2026-03-01T13:24:57.415Z] [ERROR] Error occurred: {"error":"ValidationError: Invalid network: invalid. Must be one of: mainnet, testnet","stack":"ValidationError: Invalid network: invalid. Must be one of: mainnet, testnet\n    at new ValidationError (/home/neo/git/neo-n3-mcp/src/utils/errors.ts:54:5)\n    at validateNetwork (/home/neo/git/neo-n3-mcp/src/utils/validation.ts:197:9)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:279:30)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:424:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      123 |                             level === LogLevel.INFO ? console.info :
+      124 |                             console.debug;
+    > 125 |       consoleMethod(formattedMessage);
+          |       ^
+      126 |     }
+      127 |
+      128 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:125:7)
+      at Logger.error (src/utils/logger.ts:170:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at callTool (src/handlers/tool-handler.ts:288:23)
+      at Object.<anonymous> (tests/tool-handler.test.ts:424:36)
+
+    console.error
+      [2026-03-01T13:24:57.416Z] [ERROR] Error occurred: {"error":"Error: Service error","stack":"Error: Service error\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:430:67)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      123 |                             level === LogLevel.INFO ? console.info :
+      124 |                             console.debug;
+    > 125 |       consoleMethod(formattedMessage);
+          |       ^
+      126 |     }
+      127 |
+      128 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:125:7)
+      at Logger.error (src/utils/logger.ts:170:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleGetBlockchainInfo (src/handlers/tool-handler.ts:33:23)
+      at callTool (src/handlers/tool-handler.ts:295:16)
+      at Object.<anonymous> (tests/tool-handler.test.ts:433:22)
+
+    console.error
+      [2026-03-01T13:24:57.419Z] [ERROR] Error occurred: {"error":"ValidationError: Invalid Neo N3 address format: invalid-address","stack":"ValidationError: Invalid Neo N3 address format: invalid-address\n    at new ValidationError (/home/neo/git/neo-n3-mcp/src/utils/errors.ts:54:5)\n    at validateAddress (/home/neo/git/neo-n3-mcp/src/utils/validation.ts:38:11)\n    at handleGetBalance (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:74:20)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:303:22)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:441:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      123 |                             level === LogLevel.INFO ? console.info :
+      124 |                             console.debug;
+    > 125 |       consoleMethod(formattedMessage);
+          |       ^
+      126 |     }
+      127 |
+      128 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:125:7)
+      at Logger.error (src/utils/logger.ts:170:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleGetBalance (src/handlers/tool-handler.ts:78:23)
+      at callTool (src/handlers/tool-handler.ts:303:22)
+      at Object.<anonymous> (tests/tool-handler.test.ts:441:36)
+
+    console.error
+      [2026-03-01T13:24:57.422Z] [ERROR] Error occurred: {"error":"ValidationError: Amount must be greater than zero","stack":"ValidationError: Amount must be greater than zero\n    at new ValidationError (/home/neo/git/neo-n3-mcp/src/utils/errors.ts:54:5)\n    at validateAmount (/home/neo/git/neo-n3-mcp/src/utils/validation.ts:139:11)\n    at handleTransferAssets (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:88:19)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:305:22)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:454:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      123 |                             level === LogLevel.INFO ? console.info :
+      124 |                             console.debug;
+    > 125 |       consoleMethod(formattedMessage);
+          |       ^
+      126 |     }
+      127 |
+      128 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:125:7)
+      at Logger.error (src/utils/logger.ts:170:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleTransferAssets (src/handlers/tool-handler.ts:97:23)
+      at callTool (src/handlers/tool-handler.ts:305:22)
+      at Object.<anonymous> (tests/tool-handler.test.ts:454:36)
+
+    console.error
+      [2026-03-01T13:24:57.425Z] [ERROR] Error occurred: {"error":"ValidationError: Invalid script hash length: invalid-hash. Expected 40 characters (without 0x prefix).","stack":"ValidationError: Invalid script hash length: invalid-hash. Expected 40 characters (without 0x prefix).\n    at new ValidationError (/home/neo/git/neo-n3-mcp/src/utils/errors.ts:54:5)\n    at validateScriptHash (/home/neo/git/neo-n3-mcp/src/utils/validation.ts:101:11)\n    at handleInvokeReadContract (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:103:23)\n    at callTool (/home/neo/git/neo-n3-mcp/src/handlers/tool-handler.ts:310:24)\n    at Object.<anonymous> (/home/neo/git/neo-n3-mcp/tests/tool-handler.test.ts:465:36)\n    at Promise.then.completed (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at _runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:121:9)\n    at run (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/home/neo/git/neo-n3-mcp/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/home/neo/git/neo-n3-mcp/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      123 |                             level === LogLevel.INFO ? console.info :
+      124 |                             console.debug;
+    > 125 |       consoleMethod(formattedMessage);
+          |       ^
+      126 |     }
+      127 |
+      128 |     if (this.logToFile && this.logStream) {
+
+      at Logger.log (src/utils/logger.ts:125:7)
+      at Logger.error (src/utils/logger.ts:170:10)
+      at handleError (src/utils/error-handler.ts:112:10)
+      at handleInvokeReadContract (src/handlers/tool-handler.ts:107:23)
+      at callTool (src/handlers/tool-handler.ts:310:24)
+      at Object.<anonymous> (tests/tool-handler.test.ts:465:36)
+
+
+Test Suites: 2 failed, 5 passed, 7 total
+Tests:       22 failed, 211 passed, 233 total
+Snapshots:   0 total
+Time:        7.096 s
+Ran all test suites.

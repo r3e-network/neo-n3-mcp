@@ -157,10 +157,7 @@ export class ContractService {
         const formattedArgs = this.formatContractArgs(args);
 
         // Execute the function through the RPC client
-        result = await this.rpcClient.execute(
-          'invokefunction',
-          [scriptHash, validOperation, formattedArgs]
-        );
+        result = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'invokefunction', params: [scriptHash, validOperation, formattedArgs] }));
       } catch (invokeError) {
         console.error('Error invoking function:', invokeError);
 
@@ -278,10 +275,7 @@ export class ContractService {
       // Use invokefunction RPC method as per Neo N3 documentation
       try {
         // Execute the function through the RPC client
-        tx = await this.rpcClient.execute(
-          'invokefunction',
-          [scriptHash, validOperation, formattedArgs, [signer]]
-        );
+        tx = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'invokefunction', params: [scriptHash, validOperation, formattedArgs, [signer]] }));
 
         // If invokefunction succeeds, use the result
         if (!tx || !tx.script) {

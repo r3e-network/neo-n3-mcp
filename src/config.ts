@@ -11,7 +11,7 @@ export enum NetworkMode {
 
 // Default configuration values - simplified to reduce reliance on environment variables
 const DEFAULT_MAINNET_RPC = 'https://mainnet1.neo.coz.io:443';
-const DEFAULT_TESTNET_RPC = 'https://testnet1.neo.coz.io:443';
+const DEFAULT_TESTNET_RPC = 'http://seed1t5.neo.org:20332';
 const DEFAULT_NETWORK_MODE = NetworkMode.BOTH;
 
 // Helper function remains for potential advanced override, but not used by default config
