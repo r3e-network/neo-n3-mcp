@@ -10,7 +10,7 @@ The project follows [Semantic Versioning (SemVer)](https://semver.org/) with the
 - **MINOR** (0.X.0): New features that are backwards compatible
 - **PATCH** (0.0.X): Bug fixes that are backwards compatible
 
-### Current Version: 1.6.0
+### Current Version: 1.6.4
 
 ## Version Management Scripts
 
@@ -20,13 +20,13 @@ The project follows [Semantic Versioning (SemVer)](https://semver.org/) with the
 # Check current version
 npm run version:check
 
-# Bump patch version (1.6.0 → 1.6.1)
+# Bump patch version (1.6.4 → 1.6.5)
 npm run version:patch
 
-# Bump minor version (1.6.0 → 1.7.0)
+# Bump minor version (1.6.4 → 1.7.0)
 npm run version:minor
 
-# Bump major version (1.6.0 → 2.0.0)
+# Bump major version (1.6.4 → 2.0.0)
 npm run version:major
 
 # Prepare for release (build, test, type-check)
@@ -83,10 +83,10 @@ Use the comprehensive release preparation script:
 
 2. **Manual Process** (Alternative):
    ```bash
-   # Update package.json version
+   # Update package.json and package-lock.json versions
    npm version minor --no-git-tag-version
-   
-   # Update version in src/index.ts manually
+
+   # Server version is derived automatically from package.json in src/version.ts
    # Update CHANGELOG.md
    
    # Commit changes
@@ -123,26 +123,34 @@ When updating versions, ensure consistency across these files:
 1. **`package.json`**: Main version source
    ```json
    {
-     "version": "1.6.0"
+     "version": "1.6.4"
    }
    ```
 
-2. **`src/index.ts`**: Server version
+2. **`src/version.ts`**: Server version source
    ```typescript
-   this.server = new McpServer({
-     name: 'neo-n3-mcp-server',
-     version: '1.6.0',
-   });
+   import packageJson from '../package.json';
+
+   export const SERVER_VERSION = packageJson.version;
    ```
 
-3. **`docs/CHANGELOG.md`**: Version history
+3. **`config/docker.json`**: Docker example config version
+   ```json
+   {
+     "server": {
+       "version": "1.6.4"
+     }
+   }
+   ```
+
+4. **`docs/CHANGELOG.md`**: Version history
    ```markdown
-   ## [1.6.0] - 2025-06-25
+   ## [1.6.4] - 2026-03-06
    ```
 
 ## Release Types and Examples
 
-### Patch Release (1.6.0 → 1.6.1)
+### Patch Release (1.6.4 → 1.6.5)
 **When to use**: Bug fixes, security patches, minor improvements
 
 **Examples**:
@@ -156,7 +164,7 @@ When updating versions, ensure consistency across these files:
 ./scripts/prepare-release.sh --type patch
 ```
 
-### Minor Release (1.6.0 → 1.7.0)
+### Minor Release (1.6.4 → 1.7.0)
 **When to use**: New features, enhancements, non-breaking changes
 
 **Examples**:
@@ -171,7 +179,7 @@ When updating versions, ensure consistency across these files:
 ./scripts/prepare-release.sh --type minor
 ```
 
-### Major Release (1.6.0 → 2.0.0)
+### Major Release (1.6.4 → 2.0.0)
 **When to use**: Breaking changes, major architecture changes
 
 **Examples**:
@@ -207,6 +215,7 @@ The release process triggers automated workflows:
 
 | Version | Date | Type | Description |
 |---------|------|------|-------------|
+| 1.6.4 | 2026-03-06 | Patch | Packaging hardening, built-artifact CI smoke validation, resource handler extraction |
 | 1.6.0 | 2025-06-25 | Minor | Enterprise CI/CD, Docker infrastructure, project organization |
 | 1.5.0 | Previous | Minor | Neo N3 MCP integration, multi-network support |
 
@@ -238,7 +247,7 @@ The release process triggers automated workflows:
 1. **Version Mismatch**:
    ```bash
    # Check all version locations
-   grep -r "1\.6\.0" package.json src/index.ts docs/CHANGELOG.md
+   rg -n "1\.6\.4" package.json package-lock.json src/version.ts config/docker.json docs/CHANGELOG.md
    ```
 
 2. **Failed NPM Publish**:

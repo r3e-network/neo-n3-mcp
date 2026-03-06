@@ -134,12 +134,10 @@ if [ "$DRY_RUN" = false ]; then
     NEW_VERSION=$(npm version $VERSION_TYPE --no-git-tag-version)
     echo -e "${GREEN}✅ Version updated to: $NEW_VERSION${NC}"
     
-    # Update version in src/index.ts
-    sed -i "s/version: '[0-9]\+\.[0-9]\+\.[0-9]\+'/version: '${NEW_VERSION#v}'/" src/index.ts
-    echo -e "${GREEN}✅ Updated version in src/index.ts${NC}"
+    echo -e "${GREEN}✅ Runtime version will be read automatically from package.json via src/version.ts${NC}"
 else
     echo -e "${YELLOW}   Would run: npm version $VERSION_TYPE --no-git-tag-version${NC}"
-    echo -e "${YELLOW}   Would update version in src/index.ts${NC}"
+    echo -e "${YELLOW}   Runtime version is derived automatically from package.json via src/version.ts${NC}"
 fi
 
 # Test Docker builds
@@ -164,12 +162,12 @@ fi
 # Commit changes
 if [ "$DRY_RUN" = false ]; then
     echo -e "${BLUE}📝 Committing changes...${NC}"
-    git add package.json src/index.ts
+    git add package.json package-lock.json
     git commit -m "chore: bump version to $NEW_VERSION
 
 Prepared for release with:
 - Updated package.json version
-- Updated server version in src/index.ts
+- Runtime server version remains package-driven via src/version.ts
 - Verified tests, type checking, and builds
 - Confirmed Docker builds working"
     echo -e "${GREEN}✅ Changes committed${NC}"

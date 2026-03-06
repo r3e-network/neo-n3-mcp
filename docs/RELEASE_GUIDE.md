@@ -16,7 +16,7 @@ gh release create v1.7.0 --generate-notes
 ```bash
 ./scripts/prepare-release.sh --type patch
 git push
-gh release create v1.6.1 --generate-notes
+gh release create v1.6.5 --generate-notes
 ```
 
 ### For Breaking Changes (Major Release)
@@ -72,7 +72,7 @@ If you prefer manual control:
 # 1. Update version
 npm version minor  # or patch/major
 
-# 2. Update src/index.ts version manually
+# 2. `src/version.ts` picks up the package version automatically
 # 3. Update CHANGELOG.md
 # 4. Commit changes
 git add .

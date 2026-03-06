@@ -3,7 +3,7 @@
 
 # Neo N3 MCP Server
 
-**MCP Server for Neo N3 Blockchain Integration** | Version 1.6.3
+**MCP Server for Neo N3 Blockchain Integration** | Version 1.6.4
 
 [![MCP SDK](https://img.shields.io/badge/MCP%20SDK-1.9.0-blue)](https://github.com/modelcontextprotocol/typescript-sdk)
 [![Neo N3](https://img.shields.io/badge/Neo%20N3-Compatible-green)](https://neo.org/)
@@ -83,7 +83,7 @@ docker run -p 3000:3000 \
   -e NEO_NETWORK=mainnet \
   -e LOG_CONSOLE=false \
   -e LOG_FILE=/app/logs/neo-n3-mcp.log \
-  r3enetwork/neo-n3-mcp:1.6.3
+  r3enetwork/neo-n3-mcp:1.6.4
 
 # With environment variables
 docker run -p 3000:3000 \
@@ -91,14 +91,14 @@ docker run -p 3000:3000 \
   -e NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443 \
   -e NEO_TESTNET_RPC=http://seed1t5.neo.org:20332 \
   -e LOG_LEVEL=info \
-  r3enetwork/neo-n3-mcp:1.6.3
+  r3enetwork/neo-n3-mcp:1.6.4
 
 # With volume for persistent data
 docker run -p 3000:3000 \
   -v $(pwd)/wallets:/app/wallets \
   -v $(pwd)/logs:/app/logs \
   -e NEO_NETWORK=testnet \
-  r3enetwork/neo-n3-mcp:1.6.3
+  r3enetwork/neo-n3-mcp:1.6.4
 ```
 
 #### Docker Compose
@@ -108,7 +108,7 @@ Create a `docker-compose.yml`:
 version: '3.8'
 services:
   neo-mcp:
-    image: r3enetwork/neo-n3-mcp:1.6.3
+    image: r3enetwork/neo-n3-mcp:1.6.4
     ports:
       - "3000:3000"
     environment:
@@ -148,7 +148,7 @@ npm run docker:up:dev
 #### Production Docker Setup
 ```bash
 # Build production image
-./scripts/docker-build.sh --tag v1.6.3
+./scripts/docker-build.sh --tag v1.6.4
 
 # Run with custom configuration
 docker run -d \
@@ -156,7 +156,7 @@ docker run -d \
   -p 3000:3000 \
   -e NEO_NETWORK=mainnet \
   -v neo-mcp-logs:/app/logs \
-  neo-n3-mcp:v1.6.3
+  neo-n3-mcp:v1.6.4
 ```
 
 #### Development Docker Setup
@@ -274,7 +274,7 @@ await client.connect(transport);
 
 ## 🔄 Version Management & Release Process
 
-### Current Version: 1.6.3
+### Current Version: 1.6.4
 
 This project follows [Semantic Versioning](https://semver.org/) with automated CI/CD pipeline for releases. See our [Version Management Guide](./docs/VERSION_MANAGEMENT.md) for detailed information.
 
@@ -301,9 +301,9 @@ gh release create v1.7.0 --generate-notes
 npm run version:check
 
 # Bump version manually
-npm run version:patch   # 1.6.3 → 1.6.4 (bug fixes)
-npm run version:minor   # 1.6.3 → 1.7.0 (new features)
-npm run version:major   # 1.6.3 → 2.0.0 (breaking changes)
+npm run version:patch   # 1.6.4 → 1.6.5 (bug fixes)
+npm run version:minor   # 1.6.4 → 1.7.0 (new features)
+npm run version:major   # 1.6.4 → 2.0.0 (breaking changes)
 
 # Then commit and push
 git add . && git commit -m "chore: bump version to 1.7.0"
@@ -357,9 +357,9 @@ The automated CI/CD pipeline triggers the following workflow:
 
 | Type | Version Change | Use Case | Example |
 |------|---------------|----------|---------|
-| **patch** | 1.6.3 → 1.6.4 | Bug fixes, security patches | `./scripts/prepare-release.sh --type patch` |
-| **minor** | 1.6.3 → 1.7.0 | New features, enhancements | `./scripts/prepare-release.sh --type minor` |
-| **major** | 1.6.3 → 2.0.0 | Breaking changes | `./scripts/prepare-release.sh --type major` |
+| **patch** | 1.6.4 → 1.6.5 | Bug fixes, security patches | `./scripts/prepare-release.sh --type patch` |
+| **minor** | 1.6.4 → 1.7.0 | New features, enhancements | `./scripts/prepare-release.sh --type minor` |
+| **major** | 1.6.4 → 2.0.0 | Breaking changes | `./scripts/prepare-release.sh --type major` |
 
 ### 🎯 Quick Release Commands
 
@@ -377,13 +377,12 @@ The automated CI/CD pipeline triggers the following workflow:
 ./scripts/prepare-release.sh --type minor --dry-run
 ```
 
-### 📊 Latest Changes (v1.6.3)
-- ✅ **MCP Metadata Hardening**: Tool and resource descriptions now surface correctly in `listTools` and `listResources`
-- ✅ **Runtime Version Alignment**: The MCP server now reports the package version dynamically
-- ✅ **Config Compatibility**: Runtime now accepts both documented and legacy Neo RPC environment variables
-- ✅ **Tool Surface Fixes**: `import_wallet`, `set_network_mode`, and NeoFS tool wiring now match their exposed MCP contracts
-- ✅ **Clean Build Output**: The build now emits a fresh `dist/index.js` entrypoint used by package consumers and tests
-- ✅ **Live Test Coverage**: MCP protocol tests now cover wallet import and combined network mode handling
+### 📊 Latest Changes (v1.6.4)
+- ✅ **Release Surface Hardening**: npm packaging now publishes only the intended runtime assets and consumer metadata
+- ✅ **Built Artifact CI Smoke Test**: CI now starts the compiled MCP server and validates core MCP surfaces after build
+- ✅ **Resource Handler Extraction**: MCP resource registration now lives in a focused handler module without changing public URIs or payloads
+- ✅ **Clean Checkout Packaging**: `prepack` now rebuilds `dist` before `npm pack`, preventing release tarballs from missing compiled output
+- ✅ **Versioning Documentation Refresh**: release docs and helper scripts now reflect package-driven versioning via `src/version.ts`
 
 ### 📚 Release Documentation
 - **[CHANGELOG.md](./docs/CHANGELOG.md)** - Complete version history

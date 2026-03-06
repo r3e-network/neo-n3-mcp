@@ -5,6 +5,17 @@ All notable changes to the Neo N3 MCP project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.4] - 2026-03-06
+
+### ✨ Enhancements
+- Hardened the published npm package surface with explicit entry metadata and a tight runtime file allowlist.
+- Added a built-artifact MCP smoke test to CI so the compiled `dist/index.js` server is validated after each build.
+- Extracted MCP resource registration into `src/handlers/resource-handler.ts` while preserving public resource URIs and payload shapes.
+
+### 🐛 Fixes
+- Fixed clean-checkout packaging by rebuilding `dist` during `prepack`, so `npm pack --dry-run` and releases always include compiled output.
+- Refreshed release docs and scripts to reflect package-driven server versioning via `src/version.ts` instead of manual `src/index.ts` edits.
+
 ## [1.6.0] - 2025-06-25
 
 ### 🚀 Major Features Added
@@ -123,12 +134,13 @@ This project follows [Semantic Versioning](https://semver.org/):
 
 ## Release Process
 
-1. Update version in `package.json` and `src/index.ts`
-2. Update this CHANGELOG.md with new features and changes
-3. Create a GitHub release with the version tag
-4. Automated CI/CD pipeline handles building and publishing
-5. Docker images are automatically published to Docker Hub
-6. NPM package is automatically published to npm registry
+1. Update version in `package.json` and `package-lock.json`
+2. Confirm `src/version.ts` still derives the server version from `package.json`
+3. Update this CHANGELOG.md with new features and changes
+4. Create a GitHub release with the version tag
+5. Automated CI/CD pipeline handles building and publishing
+6. Docker images are automatically published to Docker Hub
+7. NPM package is automatically published to npm registry
 
 ## Contributing
 
