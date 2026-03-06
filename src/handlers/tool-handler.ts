@@ -3,26 +3,81 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema, ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 import { NeoService, NeoNetwork } from '../services/neo-service';
 import { ContractService } from '../contracts/contract-service';
+import { WalletService } from '../services/wallet-service';
 import { FAMOUS_CONTRACTS } from '../contracts/contracts';
 import { config, NetworkMode } from '../config';
-import { validateAddress, validateHash, validateAmount, validatePassword, validateScriptHash, validateNetwork, validateContractName } from '../utils/validation';
+import { validateAddress, validateHash, validateAmount, validatePassword, validateScriptHash, validateNetwork, validateContractName, validateInteger } from '../utils/validation';
 import { handleError, createSuccessResponse } from '../utils/error-handler';
+import { logger } from '../utils/logger';
 import * as neonJs from '@cityofzion/neon-js'; // Needed for Account creation
 
 // --- Individual Tool Handlers ---
 
 async function handleGetNetworkMode(): Promise<any> {
-  return createSuccessResponse({ networkMode: config.networkMode });
+  const availableNetworks = [];
+
+  if (config.networkMode === NetworkMode.MAINNET_ONLY || config.networkMode === NetworkMode.BOTH) {
+    availableNetworks.push(NeoNetwork.MAINNET);
+  }
+
+  if (config.networkMode === NetworkMode.TESTNET_ONLY || config.networkMode === NetworkMode.BOTH) {
+    availableNetworks.push(NeoNetwork.TESTNET);
+  }
+
+  const defaultNetwork = config.networkMode === NetworkMode.TESTNET_ONLY
+    ? NeoNetwork.TESTNET
+    : NeoNetwork.MAINNET;
+
+  return createSuccessResponse({
+    networkMode: config.networkMode,
+    mode: config.networkMode,
+    availableNetworks,
+    defaultNetwork
+  });
 }
 
 async function handleSetNetworkMode(input: any): Promise<any> {
-  // Note: In a real-world scenario, changing network mode dynamically might require re-initializing services.
-  // This example assumes the mode is primarily set at startup.
-  // For now, this might just reflect the intended mode without restarting.
-  const newMode = validateNetwork(input.mode); // Use validateNetwork to parse mode string
-  // config.networkMode = newMode; // Avoid direct mutation if possible
-  console.warn(`Network mode change requested to ${newMode}. Restart might be needed for full effect.`);
-  return createSuccessResponse({ message: `Network mode set to ${newMode}. Restart may be required.` });
+  const normalizedMode = typeof input?.mode === 'string' ? input.mode.toLowerCase().trim() : '';
+
+  let newMode: NetworkMode;
+  switch (normalizedMode) {
+    case 'mainnet':
+    case NetworkMode.MAINNET_ONLY:
+      newMode = NetworkMode.MAINNET_ONLY;
+      break;
+    case 'testnet':
+    case NetworkMode.TESTNET_ONLY:
+      newMode = NetworkMode.TESTNET_ONLY;
+      break;
+    case NetworkMode.BOTH:
+      newMode = NetworkMode.BOTH;
+      break;
+    default:
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `Invalid network mode: ${input?.mode}. Must be one of: ${NetworkMode.MAINNET_ONLY}, ${NetworkMode.TESTNET_ONLY}, ${NetworkMode.BOTH}`
+      );
+  }
+
+  config.networkMode = newMode;
+
+  const availableNetworks = [];
+  if (newMode === NetworkMode.MAINNET_ONLY || newMode === NetworkMode.BOTH) {
+    availableNetworks.push(NeoNetwork.MAINNET);
+  }
+  if (newMode === NetworkMode.TESTNET_ONLY || newMode === NetworkMode.BOTH) {
+    availableNetworks.push(NeoNetwork.TESTNET);
+  }
+
+  logger.warn('Network mode change requested; restart may be required for full effect', { networkMode: newMode });
+  return createSuccessResponse({
+    message: `Network mode set to ${newMode}. Restart may be required for resource listings to refresh.`,
+    networkMode: newMode,
+    mode: newMode,
+    availableNetworks,
+    defaultNetwork: newMode === NetworkMode.TESTNET_ONLY ? NeoNetwork.TESTNET : NeoNetwork.MAINNET,
+    restartRequired: true
+  });
 }
 
 async function handleGetBlockchainInfo(input: any, neoService: NeoService): Promise<any> {
@@ -69,6 +124,102 @@ async function handleGetTransaction(input: any, neoService: NeoService): Promise
   }
 }
 
+
+async function handleGetApplicationLog(input: any, neoService: NeoService): Promise<any> {
+  try {
+    validateHash(input.txid);
+    const applicationLog = await neoService.getApplicationLog(input.txid);
+    return createSuccessResponse(applicationLog);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleWaitForTransaction(input: any, neoService: NeoService): Promise<any> {
+  try {
+    validateHash(input.txid);
+    const timeoutMs = input.timeoutMs !== undefined ? validateInteger(input.timeoutMs) : 30000;
+    const pollIntervalMs = input.pollIntervalMs !== undefined ? validateInteger(input.pollIntervalMs) : 1000;
+
+    if (timeoutMs <= 0) {
+      throw new McpError(ErrorCode.InvalidParams, 'timeoutMs must be greater than zero.');
+    }
+
+    if (pollIntervalMs <= 0) {
+      throw new McpError(ErrorCode.InvalidParams, 'pollIntervalMs must be greater than zero.');
+    }
+
+    const result = await neoService.waitForTransaction(input.txid, {
+      timeoutMs,
+      pollIntervalMs,
+      includeApplicationLog: Boolean(input.includeApplicationLog),
+    });
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleGetUnclaimedGas(input: any, neoService: NeoService): Promise<any> {
+  try {
+    validateAddress(input.address);
+    const result = await neoService.getUnclaimedGas(input.address);
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleGetNep17Transfers(input: any, neoService: NeoService): Promise<any> {
+  try {
+    validateAddress(input.address);
+    const fromTimestampMs = input.fromTimestampMs !== undefined ? validateInteger(input.fromTimestampMs) : undefined;
+    const toTimestampMs = input.toTimestampMs !== undefined ? validateInteger(input.toTimestampMs) : undefined;
+
+    if (fromTimestampMs !== undefined && toTimestampMs !== undefined && fromTimestampMs > toTimestampMs) {
+      throw new McpError(ErrorCode.InvalidParams, 'fromTimestampMs must be less than or equal to toTimestampMs.');
+    }
+
+    const result = await neoService.getNep17Transfers(input.address, {
+      ...(fromTimestampMs !== undefined ? { fromTimestampMs } : {}),
+      ...(toTimestampMs !== undefined ? { toTimestampMs } : {}),
+    });
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleGetNep11Balances(input: any, neoService: NeoService): Promise<any> {
+  try {
+    validateAddress(input.address);
+    const result = await neoService.getNep11Balances(input.address);
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleGetNep11Transfers(input: any, neoService: NeoService): Promise<any> {
+  try {
+    validateAddress(input.address);
+    const fromTimestampMs = input.fromTimestampMs !== undefined ? validateInteger(input.fromTimestampMs) : undefined;
+    const toTimestampMs = input.toTimestampMs !== undefined ? validateInteger(input.toTimestampMs) : undefined;
+
+    if (fromTimestampMs !== undefined && toTimestampMs !== undefined && fromTimestampMs > toTimestampMs) {
+      throw new McpError(ErrorCode.InvalidParams, 'fromTimestampMs must be less than or equal to toTimestampMs.');
+    }
+
+    const result = await neoService.getNep11Transfers(input.address, {
+      ...(fromTimestampMs !== undefined ? { fromTimestampMs } : {}),
+      ...(toTimestampMs !== undefined ? { toTimestampMs } : {}),
+    });
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
 async function handleGetBalance(input: any, neoService: NeoService): Promise<any> {
   try {
     validateAddress(input.address);
@@ -98,10 +249,43 @@ async function handleTransferAssets(input: any, neoService: NeoService): Promise
   }
 }
 
-async function handleInvokeReadContract(input: any, contractService: ContractService): Promise<any> {
+
+function resolveContractReference(input: any): string {
+  const reference = input?.contractName ?? input?.nameOrHash;
+  if (typeof reference === 'string' && reference.trim()) {
+    return reference.trim();
+  }
+
+  throw new McpError(
+    ErrorCode.InvalidParams,
+    'Either scriptHash or contractName must be provided.'
+  );
+}
+
+function resolveInvocationScriptHash(input: any, contractService: ContractService): string {
+  if (typeof input?.scriptHash === 'string' && input.scriptHash.trim()) {
+    return validateScriptHash(input.scriptHash);
+  }
+
+  return contractService.getContractScriptHash(resolveContractReference(input));
+}
+
+async function handleInvokeReadContract(input: any, neoService: NeoService, contractService: ContractService): Promise<any> {
   try {
-    validateScriptHash(input.scriptHash);
-    const result = await contractService.queryContract(input.scriptHash, input.operation, input.args || []);
+    const namedContractReference = !input?.scriptHash && (typeof input?.contractName === 'string' && input.contractName.trim()
+      ? input.contractName.trim()
+      : typeof input?.nameOrHash === 'string' && input.nameOrHash.trim()
+        ? input.nameOrHash.trim()
+        : undefined);
+
+    if (namedContractReference) {
+      await contractService.assertContractDeployed(namedContractReference);
+    }
+
+    const result = namedContractReference
+      ? await contractService.invokeReadContract(namedContractReference, input.operation, input.args || [])
+      : await neoService.invokeReadContract(resolveInvocationScriptHash(input, contractService), input.operation, input.args || []);
+
     return createSuccessResponse(result);
   } catch (error) {
     return handleError(error);
@@ -113,49 +297,99 @@ async function handleInvokeWriteContract(input: any, neoService: NeoService, con
     if (!input.confirm) {
       throw new McpError(ErrorCode.InvalidParams, 'Contract invocation requires explicit confirmation. Set confirm=true.');
     }
-    validateScriptHash(input.scriptHash);
-    // Basic WIF validation
+
     if (!input.fromWIF || typeof input.fromWIF !== 'string' || !neonJs.wallet.isWIF(input.fromWIF)) {
       throw new McpError(ErrorCode.InvalidParams, 'Invalid sender WIF provided.');
     }
+
+    const namedContractReference = !input?.scriptHash && (typeof input?.contractName === 'string' && input.contractName.trim()
+      ? input.contractName.trim()
+      : typeof input?.nameOrHash === 'string' && input.nameOrHash.trim()
+        ? input.nameOrHash.trim()
+        : undefined);
+    if (namedContractReference) {
+      await contractService.assertContractDeployed(namedContractReference);
+    }
     const account = new neonJs.wallet.Account(input.fromWIF);
-    // Note: invokeContract PREPARES the transaction details, client needs to sign/send.
-    // The tool name 'invoke_contract' is slightly misleading as it doesn't *send* the tx itself.
-    // It returns the script and fees needed for the client.
-    const result = await contractService.invokeContract(account, input.scriptHash, input.operation, input.args || []);
+    const result = namedContractReference
+      ? await contractService.invokeWriteContract(account, namedContractReference, input.operation, input.args || [])
+      : await neoService.invokeContract(account, resolveInvocationScriptHash(input, contractService), input.operation, input.args || []);
     return createSuccessResponse(result);
   } catch (error) {
     return handleError(error);
   }
 }
 
-async function handleCreateWallet(input: any): Promise<any> {
+async function handleCreateWallet(input: any, walletService?: WalletService): Promise<any> {
   try {
     validatePassword(input.password);
+
+    if (walletService) {
+      const wallet = await walletService.createWallet(input.password);
+      return createSuccessResponse({
+        ...wallet,
+        encryptedWIF: wallet.encryptedPrivateKey,
+      });
+    }
+
     const account = new neonJs.wallet.Account();
     const encryptedWIF = await neonJs.wallet.encrypt(account.WIF, input.password);
-    return createSuccessResponse({ address: account.address, encryptedWIF });
+    return createSuccessResponse({
+      address: account.address,
+      publicKey: account.publicKey,
+      encryptedPrivateKey: encryptedWIF,
+      encryptedWIF,
+    });
   } catch (error) {
     return handleError(error);
   }
 }
 
-async function handleImportWallet(input: any): Promise<any> {
+async function handleImportWallet(input: any, walletService?: WalletService): Promise<any> {
   try {
-    let account;
-    if (neonJs.wallet.isWIF(input.key) || neonJs.wallet.isPrivateKey(input.key)) {
-      account = new neonJs.wallet.Account(input.key);
-    } else {
+    const key = input?.key ?? input?.privateKeyOrWIF;
+    if (typeof key !== 'string' || !(neonJs.wallet.isWIF(key) || neonJs.wallet.isPrivateKey(key))) {
       throw new McpError(ErrorCode.InvalidParams, 'Invalid private key or WIF format.');
     }
+
+    if (walletService) {
+      const wallet = await walletService.importWallet(key, input.password);
+      if ('encryptedPrivateKey' in wallet) {
+        return createSuccessResponse({
+          ...wallet,
+          encryptedWIF: wallet.encryptedPrivateKey,
+        });
+      }
+      return createSuccessResponse(wallet);
+    }
+
+    let account = new neonJs.wallet.Account(key);
     if (input.password) {
       validatePassword(input.password);
       const encryptedWIF = await neonJs.wallet.encrypt(account.WIF, input.password);
-      return createSuccessResponse({ address: account.address, encryptedWIF });
-    } else {
-      // Return unencrypted WIF if no password provided (use with caution)
-      return createSuccessResponse({ address: account.address, WIF: account.WIF });
+      return createSuccessResponse({
+        address: account.address,
+        publicKey: account.publicKey,
+        encryptedPrivateKey: encryptedWIF,
+        encryptedWIF,
+      });
     }
+
+    return createSuccessResponse({ address: account.address, publicKey: account.publicKey });
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleGetWallet(input: any, walletService?: WalletService): Promise<any> {
+  try {
+    validateAddress(input.address);
+    if (!walletService) {
+      throw new McpError(ErrorCode.InternalError, 'Wallet service is not available.');
+    }
+    const wallet = await walletService.getWallet(input.address);
+    const { encryptedPrivateKey, ...sanitizedWallet } = wallet;
+    return createSuccessResponse(sanitizedWallet);
   } catch (error) {
     return handleError(error);
   }
@@ -175,13 +409,23 @@ async function handleEstimateTransferFees(input: any, neoService: NeoService): P
 
 async function handleEstimateInvokeFees(input: any, neoService: NeoService, contractService: ContractService): Promise<any> {
   try {
-    validateScriptHash(input.scriptHash);
-    // Need an account to sign the fee estimation invocation
     if (!input.signerAddress) {
-        throw new McpError(ErrorCode.InvalidParams, 'Signer address is required to estimate invocation fees.');
+      throw new McpError(ErrorCode.InvalidParams, 'Signer address is required to estimate invocation fees.');
     }
+
+    const namedContractReference = !input?.scriptHash && (typeof input?.contractName === 'string' && input.contractName.trim()
+      ? input.contractName.trim()
+      : typeof input?.nameOrHash === 'string' && input.nameOrHash.trim()
+        ? input.nameOrHash.trim()
+        : undefined);
+
+    if (namedContractReference) {
+      await contractService.assertContractDeployed(namedContractReference);
+    }
+
+    const scriptHash = resolveInvocationScriptHash(input, contractService);
     validateAddress(input.signerAddress);
-    const fees = await neoService.calculateInvokeFee(input.signerAddress, input.scriptHash, input.operation, input.args || []); 
+    const fees = await neoService.calculateInvokeFee(input.signerAddress, scriptHash, input.operation, input.args || []);
     return createSuccessResponse(fees);
   } catch (error) {
     return handleError(error);
@@ -204,11 +448,41 @@ async function handleClaimGas(input: any, neoService: NeoService): Promise<any> 
   }
 }
 
+
+async function handleDeployContract(input: any, contractService: ContractService): Promise<any> {
+  try {
+    if (!input.confirm) {
+      throw new McpError(ErrorCode.InvalidParams, 'Contract deployment requires explicit confirmation. Set confirm=true.');
+    }
+
+    const fromWIF = input.fromWIF ?? input.wif;
+    if (!fromWIF || typeof fromWIF !== 'string' || !neonJs.wallet.isWIF(fromWIF)) {
+      throw new McpError(ErrorCode.InvalidParams, 'Invalid deployer WIF provided.');
+    }
+
+    if (!input.script || typeof input.script !== 'string') {
+      throw new McpError(ErrorCode.InvalidParams, 'Contract script must be a non-empty string.');
+    }
+
+    if (!input.manifest || typeof input.manifest !== 'object' || Array.isArray(input.manifest)) {
+      throw new McpError(ErrorCode.InvalidParams, 'Contract manifest must be an object.');
+    }
+
+    const result = await contractService.deployContract(fromWIF, input.script, input.manifest);
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
 async function handleListFamousContracts(input: any, contractService: ContractService): Promise<any> {
   try {
-    // Call the correct method to get the list of supported contracts
-    const contracts = contractService.listSupportedContracts();
-    return { contracts };
+    const contracts = await contractService.listSupportedContracts();
+    const availableContracts = contracts.filter(contract => contract.available);
+    return {
+      contracts: availableContracts,
+      network: contractService.getNetwork()
+    };
   } catch (error) {
     return handleError(error);
   }
@@ -216,12 +490,24 @@ async function handleListFamousContracts(input: any, contractService: ContractSe
 
 async function handleGetContractInfo(input: any, contractService: ContractService): Promise<any> {
   try {
-    // Get available contract names from the constant
-    const availableContracts = Object.values(FAMOUS_CONTRACTS).map(c => c.name);
-    const contractName = validateContractName(input.contractName, availableContracts);
-    // Call the correct method to get contract operations/details
-    const contractInfo = await contractService.getContractOperations(contractName);
-    return { contractInfo }; // Adjust structure as needed based on return value
+    const contractReference = typeof input?.contractName === 'string' && input.contractName.trim()
+      ? input.contractName.trim()
+      : resolveContractReference(input);
+    const contract = contractService.getContract(contractReference);
+    const available = await contractService.isContractDeployed(contractReference);
+    const operations = {
+      ...contractService.getContractOperations(contractReference),
+      available
+    };
+    const scriptHash = contractService.getContractScriptHash(contractReference);
+    return {
+      name: contract.name,
+      description: contract.description,
+      scriptHash,
+      operations,
+      network: contractService.getNetwork(),
+      available
+    };
   } catch (error) {
     return handleError(error);
   }
@@ -229,11 +515,22 @@ async function handleGetContractInfo(input: any, contractService: ContractServic
 
 async function handleCreateContainer(input: any, neoService: NeoService, contractService: ContractService): Promise<any> {
   try {
-    // Assume input contains fromWIF, ownerId, and rules
-    const fromAccount = await neoService.importWallet(input.fromWIF);
-    // Call the correct method to create a new container
-    const txid = await contractService.createNeoFSContainer(fromAccount, input.ownerId, input.rules);
-    return { txid }; // Return transaction ID
+    if (!input.confirm) {
+      throw new McpError(ErrorCode.InvalidParams, 'NeoFS container creation requires explicit confirmation. Set confirm=true.');
+    }
+
+    const fromWIF = input?.fromWIF ?? input?.wif;
+    if (!fromWIF || typeof fromWIF !== 'string' || !neonJs.wallet.isWIF(fromWIF)) {
+      throw new McpError(ErrorCode.InvalidParams, 'Invalid sender WIF provided.');
+    }
+
+    if (!input.ownerId || typeof input.ownerId !== 'string') {
+      throw new McpError(ErrorCode.InvalidParams, 'ownerId is required.');
+    }
+
+    const fromAccount = new neonJs.wallet.Account(fromWIF);
+    const txid = await contractService.createNeoFSContainer(fromAccount, input.ownerId, input.rules || []);
+    return createSuccessResponse({ txid });
   } catch (error) {
     return handleError(error);
   }
@@ -241,9 +538,9 @@ async function handleCreateContainer(input: any, neoService: NeoService, contrac
 
 async function handleGetContainers(input: any, neoService: NeoService, contractService: ContractService): Promise<any> {
   try {
-    // Call the correct method to get containers owned by an address
+    validateAddress(input.ownerAddress);
     const containers = await contractService.getNeoFSContainers(input.ownerAddress);
-    return { containers };
+    return createSuccessResponse({ containers });
   } catch (error) {
     return handleError(error);
   }
@@ -251,44 +548,50 @@ async function handleGetContainers(input: any, neoService: NeoService, contractS
 
 // --- Tool Setup Function ---
 
-export async function callTool(name: string, input: any, neoServices: Map<NeoNetwork, NeoService>, contractServices: Map<NeoNetwork, ContractService>): Promise<any> {
-  // Handle non-network specific tools first
+export async function callTool(name: string, input: any, neoServices: Map<NeoNetwork, NeoService>, contractServices: Map<NeoNetwork, ContractService>, walletService?: WalletService): Promise<any> {
   switch (name) {
     case 'get_network_mode':
       return await handleGetNetworkMode();
     case 'set_network_mode':
       return await handleSetNetworkMode(input);
     case 'create_wallet':
-      return await handleCreateWallet(input);
+      return await handleCreateWallet(input, walletService);
     case 'import_wallet':
-      return await handleImportWallet(input);
-    // Add other non-network tools here
+      return await handleImportWallet(input, walletService);
+    case 'get_wallet':
+      return await handleGetWallet(input, walletService);
   }
 
-  // Validate network for network-specific tools
   if (!input || typeof input !== 'object') {
     throw new McpError(ErrorCode.InvalidParams, 'Invalid input parameters. Expected an object.');
   }
 
-  let network: NeoNetwork;
   let neoService: NeoService | undefined;
   let contractService: ContractService | undefined;
 
   try {
-    // Validate the network string and ensure it's a valid enum member
-    network = validateNetwork(input.network as string); // Cast is safe due to check above
-    neoService = neoServices.get(network);
-    contractService = contractServices.get(network);
+    const requestedNetwork = typeof input.network === 'string' && input.network.trim().length > 0
+      ? validateNetwork(input.network as string)
+      : undefined;
+
+    if (requestedNetwork) {
+      neoService = neoServices.get(requestedNetwork);
+      contractService = contractServices.get(requestedNetwork);
+    } else if (neoServices.size === 1 && contractServices.size === 1) {
+      neoService = neoServices.values().next().value;
+      contractService = contractServices.values().next().value;
+    } else {
+      neoService = neoServices.get(NeoNetwork.MAINNET) || neoServices.get(NeoNetwork.TESTNET);
+      contractService = contractServices.get(NeoNetwork.MAINNET) || contractServices.get(NeoNetwork.TESTNET);
+    }
 
     if (!neoService || !contractService) {
-      throw new McpError(ErrorCode.InvalidParams, `Network ${network} is not enabled or service unavailable.`);
+      throw new McpError(ErrorCode.InvalidParams, 'Requested network is not enabled or service unavailable.');
     }
   } catch (error) {
-    // Catch validation errors or service not found errors
     return handleError(error);
   }
 
-  // Handle network-specific tools, passing the validated services
   try {
     switch (name) {
       case 'get_blockchain_info':
@@ -299,33 +602,43 @@ export async function callTool(name: string, input: any, neoServices: Map<NeoNet
         return await handleGetBlock(input, neoService);
       case 'get_transaction':
         return await handleGetTransaction(input, neoService);
+      case 'get_application_log':
+        return await handleGetApplicationLog(input, neoService);
+      case 'wait_for_transaction':
+        return await handleWaitForTransaction(input, neoService);
       case 'get_balance':
         return await handleGetBalance(input, neoService);
+      case 'get_unclaimed_gas':
+        return await handleGetUnclaimedGas(input, neoService);
+      case 'get_nep17_transfers':
+        return await handleGetNep17Transfers(input, neoService);
+      case 'get_nep11_balances':
+        return await handleGetNep11Balances(input, neoService);
+      case 'get_nep11_transfers':
+        return await handleGetNep11Transfers(input, neoService);
       case 'transfer_assets':
         return await handleTransferAssets(input, neoService);
       case 'invoke_contract':
         if (input.fromWIF) {
           return await handleInvokeWriteContract(input, neoService, contractService);
-        } else {
-          return await handleInvokeReadContract(input, contractService);
         }
+        return await handleInvokeReadContract(input, neoService, contractService);
       case 'estimate_transfer_fees':
         return await handleEstimateTransferFees(input, neoService);
       case 'estimate_invoke_fees':
         return await handleEstimateInvokeFees(input, neoService, contractService);
       case 'claim_gas':
         return await handleClaimGas(input, neoService);
+      case 'deploy_contract':
+        return await handleDeployContract(input, contractService);
       case 'list_famous_contracts':
         return await handleListFamousContracts(input, contractService);
       case 'get_contract_info':
         return await handleGetContractInfo(input, contractService);
-      // --- Add cases for specific contract tools --- //
-      // These might need neoService, contractService, or both depending on the implementation
       case 'neofs_create_container':
+        return await handleCreateContainer(input, neoService, contractService);
       case 'neofs_get_containers':
-        // Example: Pass both services if needed
-        // return await handleNeoFSTool(input, neoService, contractService);
-        throw new McpError(ErrorCode.InternalError, `Tool ${name} handler not fully implemented yet.`); // Corrected: Use InternalError
+        return await handleGetContainers(input, neoService, contractService);
       default:
         throw new McpError(ErrorCode.InvalidParams, `Tool ${name} not found or requires network parameter.`);
     }
@@ -339,7 +652,8 @@ export async function callTool(name: string, input: any, neoServices: Map<NeoNet
 export function setupToolHandlers(
   server: Server,
   neoServices: Map<NeoNetwork, NeoService>,
-  contractServices: Map<NeoNetwork, ContractService>
+  contractServices: Map<NeoNetwork, ContractService>,
+  walletService?: WalletService
 ) {
   const tools = [
       {
@@ -434,6 +748,56 @@ export function setupToolHandlers(
         },
       },
       {
+        name: 'get_application_log',
+        description: 'Get the application log for a confirmed transaction',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            txid: {
+              type: 'string',
+              description: 'Transaction hash (hex string)',
+            },
+            network: {
+              type: 'string',
+              description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
+              enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+            },
+          },
+          required: ['txid'],
+        },
+      },
+      {
+        name: 'wait_for_transaction',
+        description: 'Poll until a transaction is confirmed or a timeout is reached',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            txid: {
+              type: 'string',
+              description: 'Transaction hash (hex string)',
+            },
+            timeoutMs: {
+              type: 'number',
+              description: 'Optional timeout in milliseconds',
+            },
+            pollIntervalMs: {
+              type: 'number',
+              description: 'Optional polling interval in milliseconds',
+            },
+            includeApplicationLog: {
+              type: 'boolean',
+              description: 'Include application log once confirmed',
+            },
+            network: {
+              type: 'string',
+              description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
+              enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+            },
+          },
+          required: ['txid'],
+        },
+      },
+      {
         name: 'get_balance',
         description: 'Get native (NEO/GAS) and NEP-17 token balances for an address',
         inputSchema: {
@@ -492,7 +856,7 @@ export function setupToolHandlers(
       },
       {
         name: 'invoke_contract',
-        description: 'Prepare invocation details for a smart contract method. If fromWIF is provided, prepares a write transaction (client signs/sends); otherwise, performs a read-only query.',
+        description: 'Prepare invocation details for a smart contract method. Accepts either a scriptHash or a supported contractName. If fromWIF is provided, prepares a write transaction (client signs/sends); otherwise, performs a read-only query.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -503,6 +867,10 @@ export function setupToolHandlers(
             scriptHash: {
               type: 'string',
               description: 'Contract script hash (hex string)',
+            },
+            contractName: {
+              type: 'string',
+              description: 'Supported contract name',
             },
             operation: {
               type: 'string',
@@ -523,7 +891,7 @@ export function setupToolHandlers(
               enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
             },
           },
-          required: ['scriptHash', 'operation'], // `confirm` is conditionally required by handler
+          required: ['operation'],
         },
       },
       {
@@ -550,12 +918,30 @@ export function setupToolHandlers(
               type: 'string',
               description: 'Private key (hex) or WIF string',
             },
+            privateKeyOrWIF: {
+              type: 'string',
+              description: 'Backward-compatible alias for key',
+            },
             password: {
               type: 'string',
               description: 'Optional: Password to encrypt the imported wallet WIF',
             },
           },
-          required: ['key'],
+          required: [],
+        },
+      },
+      {
+        name: 'get_wallet',
+        description: 'Get sanitized metadata for a stored wallet by address.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            address: {
+              type: 'string',
+              description: 'Neo N3 address',
+            },
+          },
+          required: ['address'],
         },
       },
       {
@@ -594,7 +980,7 @@ export function setupToolHandlers(
       },
       {
         name: 'estimate_invoke_fees',
-        description: 'Estimate network and system fees for a contract invocation',
+        description: 'Estimate network and system fees for a contract invocation by script hash or supported contract name',
         inputSchema: {
           type: 'object',
           properties: {
@@ -605,6 +991,10 @@ export function setupToolHandlers(
             scriptHash: {
               type: 'string',
               description: 'Contract script hash (hex string)',
+            },
+            contractName: {
+              type: 'string',
+              description: 'Supported contract name',
             },
             operation: {
               type: 'string',
@@ -621,7 +1011,7 @@ export function setupToolHandlers(
               enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
             },
           },
-          required: ['signerAddress', 'scriptHash', 'operation'],
+          required: ['signerAddress', 'operation'],
         },
       },
       {
@@ -648,6 +1038,129 @@ export function setupToolHandlers(
         },
       },
       {
+        name: 'get_unclaimed_gas',
+        description: 'Get the currently unclaimed GAS amount for an address',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            address: {
+              type: 'string',
+              description: 'Neo N3 address',
+            },
+            network: {
+              type: 'string',
+              description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
+              enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+            },
+          },
+          required: ['address'],
+        },
+      },
+      {
+        name: 'get_nep17_transfers',
+        description: 'Get NEP-17 transfer history for an address with additive known-account enrichment when available',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            address: {
+              type: 'string',
+              description: 'Neo N3 address',
+            },
+            fromTimestampMs: {
+              type: 'integer',
+              description: 'Optional start of the transfer history window, in Unix epoch milliseconds.',
+            },
+            toTimestampMs: {
+              type: 'integer',
+              description: 'Optional end of the transfer history window, in Unix epoch milliseconds.',
+            },
+            network: {
+              type: 'string',
+              description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
+              enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+            },
+          },
+          required: ['address'],
+        },
+      },
+      {
+        name: 'get_nep11_balances',
+        description: 'Get NEP-11 balances for an address with additive asset enrichment when available',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            address: {
+              type: 'string',
+              description: 'Neo N3 address',
+            },
+            network: {
+              type: 'string',
+              description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
+              enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+            },
+          },
+          required: ['address'],
+        },
+      },
+      {
+        name: 'get_nep11_transfers',
+        description: 'Get NEP-11 transfer history for an address with additive asset and party enrichment when available',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            address: {
+              type: 'string',
+              description: 'Neo N3 address',
+            },
+            fromTimestampMs: {
+              type: 'integer',
+              description: 'Optional start of the transfer history window, in Unix epoch milliseconds.',
+            },
+            toTimestampMs: {
+              type: 'integer',
+              description: 'Optional end of the transfer history window, in Unix epoch milliseconds.',
+            },
+            network: {
+              type: 'string',
+              description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
+              enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+            },
+          },
+          required: ['address'],
+        },
+      },
+      {
+        name: 'deploy_contract',
+        description: 'Deploy a smart contract from a NEF script and manifest. Requires deployer WIF and explicit confirmation.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            fromWIF: {
+              type: 'string',
+              description: 'WIF of the deploying account',
+            },
+            script: {
+              type: 'string',
+              description: 'Contract NEF script as base64 or hex string',
+            },
+            manifest: {
+              type: 'object',
+              description: 'Contract manifest JSON object',
+            },
+            confirm: {
+              type: 'boolean',
+              description: 'Set to true to confirm deployment',
+            },
+            network: {
+              type: 'string',
+              description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
+              enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+            },
+          },
+          required: ['fromWIF', 'script', 'manifest', 'confirm'],
+        },
+      },
+      {
         name: 'list_famous_contracts',
         description: 'List known famous contracts with their names and script hashes for the active network(s)',
         inputSchema: {
@@ -668,17 +1181,21 @@ export function setupToolHandlers(
         inputSchema: {
           type: 'object',
           properties: {
-            nameOrHash: {
-                type: 'string',
-                description: 'Name (e.g., "flamingo") or script hash (hex string) of the famous contract',
+            contractName: {
+              type: 'string',
+              description: 'Supported contract name',
             },
-             network: {
+            nameOrHash: {
+              type: 'string',
+              description: 'Name (e.g., "flamingo") or script hash (hex string) of the famous contract',
+            },
+            network: {
               type: 'string',
               description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
               enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
             },
           },
-          required: ['nameOrHash'],
+          required: [],
         },
       },
       // Add specific contract interaction tools (as examples)
@@ -721,8 +1238,8 @@ export function setupToolHandlers(
   // Register CallTool handler
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: input = {} } = request.params;
-    return await callTool(name, input, neoServices, contractServices);
+    return await callTool(name, input, neoServices, contractServices, walletService);
   });
 
-  console.error('Tool handlers setup complete.');
+  logger.debug('Tool handlers setup complete.');
 }

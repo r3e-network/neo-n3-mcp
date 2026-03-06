@@ -1,10 +1,10 @@
 {
   "name": "@r3e/neo-n3-mcp",
-  "version": "1.6.2-0",
+  "version": "1.6.3",
   "description": "MCP server and HTTP API for Neo N3 blockchain integration",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "npm run clean && tsc",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "test": "jest --testPathIgnorePatterns='tests/mcp-'",
@@ -13,14 +13,14 @@
     "test:integration": "node tests/mcp-integration-test.js",
     "test:all": "npm run test:unit && npm run test:mcp",
     "test:coverage": "jest --coverage --testPathIgnorePatterns='tests/mcp-'",
-    "lint": "echo 'Linting passed - add ESLint configuration if needed'",
-    "lint:fix": "echo 'Lint fix passed - add ESLint configuration if needed'",
+    "lint": "npm run type-check",
+    "lint:fix": "npm run lint",
     "type-check": "tsc --noEmit",
     "version:patch": "npm version patch",
     "version:minor": "npm version minor",
     "version:major": "npm version major",
     "version:check": "node -p \"'Current version: ' + require('./package.json').version\"",
-    "release:prepare": "npm run build && npm run test && npm run type-check",
+    "release:prepare": "npm run lint && npm run build && npm run test:all && npm run test:integration",
     "prepublishOnly": "npm run build",
     "docker:build": "./scripts/docker-build.sh",
     "docker:build:dev": "./scripts/docker-build.sh --dev",
@@ -30,7 +30,10 @@
     "docker:up:dev": "docker compose -f docker/docker-compose.dev.yml up -d",
     "docker:down": "docker compose -f docker/docker-compose.yml down",
     "docker:logs": "docker compose -f docker/docker-compose.yml logs -f",
-    "docker:test": "docker compose -f docker/docker-compose.dev.yml run --rm neo-mcp-test"
+    "docker:test": "docker compose -f docker/docker-compose.dev.yml run --rm neo-mcp-test",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "start:http": "node dist/http.js",
+    "dev:http": "ts-node src/http.ts"
   },
   "bin": {
     "neo-n3-mcp": "dist/index.js"

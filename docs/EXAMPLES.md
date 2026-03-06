@@ -1,459 +1,162 @@
 # Neo N3 MCP Examples
 
-This document provides practical examples of using the Neo N3 Model Context Protocol (MCP) server.
+This document shows accurate examples for the current MCP and HTTP surfaces.
 
-## Table of Contents
+## Start the MCP Server
 
-- [Basic Setup](#basic-setup)
-- [Blockchain Queries](#blockchain-queries)
-- [Wallet Operations](#wallet-operations)
-- [Asset Transfers](#asset-transfers)
-- [Contract Interactions](#contract-interactions)
-- [Famous Contracts](#famous-contracts)
-- [Error Handling](#error-handling)
-
-## Basic Setup
-
-### Starting the MCP Server
+### Stdio mode
 
 ```bash
-# Install the package
-npm install -g @r3e/neo-n3-mcp
-
-# Start with default configuration (both networks)
-neo-n3-mcp
-
-# Start with specific network
-neo-n3-mcp --network mainnet
-
-# Start with custom configuration
-neo-n3-mcp --config ./my-config.json
+NEO_NETWORK=both \
+NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443 \
+NEO_TESTNET_RPC=http://seed1t5.neo.org:20332 \
+LOG_LEVEL=info \
+LOG_FILE=./logs/neo-n3-mcp.log \
+npx @r3e/neo-n3-mcp
 ```
 
-### Configuration Example
+### HTTP mode
 
-```json
-{
-  "network": "mainnet",
-  "rpc": {
-    "mainnet": "https://mainnet1.neo.coz.io:443",
-    "testnet": "https://testnet1.neo.coz.io:443"
+```bash
+npm run build
+PORT=3000 NEO_NETWORK=testnet npm run start:http
+```
+
+## MCP Client Example
+
+```typescript
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+
+const transport = new StdioClientTransport({
+  command: 'npx',
+  args: ['-y', '@r3e/neo-n3-mcp'],
+  env: {
+    NEO_NETWORK: 'testnet',
+    NEO_TESTNET_RPC: 'http://seed1t5.neo.org:20332',
+    LOG_LEVEL: 'info',
   },
-  "logging": {
-    "level": "info",
-    "file": "./logs/neo-mcp.log",
-    "console": true
-  },
-  "rateLimiting": {
-    "enabled": true,
-    "maxRequestsPerMinute": 60,
-    "maxRequestsPerHour": 1000
-  }
-}
-```
-
-## Blockchain Queries
-
-### Get Blockchain Information
-
-```javascript
-// Using MCP client
-const response = await client.callTool('get_blockchain_info', {
-  network: 'mainnet'
 });
 
-// Response includes:
-// - Current block height
-// - Network validators
-// - Network status
-```
+const client = new Client(
+  { name: 'example-client', version: '1.0.0' },
+  { capabilities: {} }
+);
 
-### Get Block Details
-
-```javascript
-// Get block by height
-const block = await client.callTool('get_block', {
-  hashOrHeight: 1000000,
-  network: 'mainnet'
-});
-
-// Get block by hash
-const block = await client.callTool('get_block', {
-  hashOrHeight: '0x1234567890abcdef...',
-  network: 'mainnet'
-});
-```
-
-### Get Transaction Details
-
-```javascript
-const transaction = await client.callTool('get_transaction', {
-  txid: '0xabcdef1234567890...',
-  network: 'mainnet'
-});
+await client.connect(transport);
 ```
 
 ## Wallet Operations
 
-### Create New Wallet
+### Create a wallet
 
 ```javascript
-const wallet = await client.callTool('create_wallet', {
-  password: 'secure-password-123',
-  network: 'testnet'
+const wallet = await client.callTool({
+  name: 'create_wallet',
+  arguments: {
+    password: 'secure-password-123',
+  },
 });
 
-// Response includes:
-// - address: Neo N3 address
-// - publicKey: Public key
-// - encryptedPrivateKey: Encrypted private key
-// - WIF: Wallet Import Format key
+const payload = JSON.parse(wallet.content[0].text);
+// payload.address
+// payload.publicKey
+// payload.encryptedPrivateKey
+// payload.encryptedWIF (compatibility alias)
 ```
 
-### Import Existing Wallet
+### Import a wallet without persisting encrypted material
 
 ```javascript
-// Import from WIF
-const wallet = await client.callTool('import_wallet', {
-  key: 'KweTwNercgFfoUNGg3718riDQ12cizaw2Dgffp8SP6PbyJmuA9PR',
-  password: 'new-password-123',
-  network: 'testnet'
+const wallet = await client.callTool({
+  name: 'import_wallet',
+  arguments: {
+    privateKeyOrWIF: 'Kx...',
+  },
 });
 
-// Import from encrypted key
-const wallet = await client.callTool('import_wallet', {
-  key: 'encrypted-key-data',
-  password: 'decryption-password',
-  network: 'testnet'
-});
+const payload = JSON.parse(wallet.content[0].text);
+// payload.address
+// payload.publicKey
 ```
 
-### Check Balance
+### Import a wallet and request an encrypted key
 
 ```javascript
-const balance = await client.callTool('get_balance', {
-  address: 'NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ',
-  network: 'mainnet'
+const wallet = await client.callTool({
+  name: 'import_wallet',
+  arguments: {
+    key: 'Kx...',
+    password: 'new-password-123',
+  },
 });
 
-// Response includes balance for all assets (NEO, GAS, etc.)
+const payload = JSON.parse(wallet.content[0].text);
+// payload.encryptedPrivateKey
 ```
 
-## Asset Transfers
-
-### Transfer NEO
+## Balance Query
 
 ```javascript
-const transfer = await client.callTool('transfer_assets', {
-  fromWIF: 'KweTwNercgFfoUNGg3718riDQ12cizaw2Dgffp8SP6PbyJmuA9PR',
-  toAddress: 'NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ',
-  asset: 'NEO',
-  amount: '10',
-  confirm: true,
-  network: 'testnet'
-});
-```
-
-### Transfer GAS
-
-```javascript
-const transfer = await client.callTool('transfer_assets', {
-  fromWIF: 'KweTwNercgFfoUNGg3718riDQ12cizaw2Dgffp8SP6PbyJmuA9PR',
-  toAddress: 'NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ',
-  asset: 'GAS',
-  amount: '50.5',
-  confirm: true,
-  network: 'testnet'
+const balance = await client.callTool({
+  name: 'get_balance',
+  arguments: {
+    address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
+    network: 'testnet',
+  },
 });
 ```
 
-### Estimate Transfer Fees
+## Contract Invocation
+
+### Discover a script hash
 
 ```javascript
-const fees = await client.callTool('estimate_transfer_fees', {
-  fromAddress: 'NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ',
-  toAddress: 'NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ',
-  asset: 'GAS',
-  amount: '10.5',
-  network: 'mainnet'
+const contractInfo = await client.callTool({
+  name: 'get_contract_info',
+  arguments: {
+    contractName: 'NeoFS',
+    network: 'testnet',
+  },
+});
+
+const info = JSON.parse(contractInfo.content[0].text);
+const scriptHash = info.scriptHash;
+```
+
+### Read invocation
+
+```javascript
+const readResult = await client.callTool({
+  name: 'invoke_contract',
+  arguments: {
+    network: 'testnet',
+    scriptHash,
+    operation: 'balanceOf',
+    args: ['NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr'],
+  },
 });
 ```
 
-## Contract Interactions
-
-### List Available Contracts
+### Write invocation
 
 ```javascript
-const contracts = await client.callTool('list_famous_contracts', {
-  network: 'mainnet'
-});
-
-// Returns list of supported contracts:
-// - NeoFS, NeoBurger, Flamingo, NeoCompound, GrandShare, GhostMarket
-```
-
-### Get Contract Information
-
-```javascript
-const contractInfo = await client.callTool('get_contract_info', {
-  contractName: 'NeoFS',
-  network: 'mainnet'
-});
-
-// Response includes:
-// - Contract description
-// - Script hash
-// - Available operations
-// - Operation parameters
-```
-
-### Read-Only Contract Call
-
-```javascript
-const result = await client.callTool('invoke_read_contract', {
-  contractName: 'NeoFS',
-  operation: 'getContainers',
-  args: ['owner-id-123'],
-  network: 'mainnet'
-});
-```
-
-### Write Contract Call
-
-```javascript
-const result = await client.callTool('invoke_write_contract', {
-  fromWIF: 'KweTwNercgFfoUNGg3718riDQ12cizaw2Dgffp8SP6PbyJmuA9PR',
-  contractName: 'NeoFS',
-  operation: 'createContainer',
-  args: ['owner-id-123', []],
-  confirm: true,
-  network: 'testnet'
-});
-```
-
-## Famous Contracts
-
-### NeoFS (Decentralized Storage)
-
-```javascript
-// Create storage container
-const createContainer = await client.callTool('invoke_write_contract', {
-  fromWIF: 'your-wif-key',
-  contractName: 'NeoFS',
-  operation: 'createContainer',
-  args: ['owner-id', []],
-  confirm: true,
-  network: 'mainnet'
-});
-
-// Get containers for owner
-const containers = await client.callTool('invoke_read_contract', {
-  contractName: 'NeoFS',
-  operation: 'getContainers',
-  args: ['owner-id'],
-  network: 'mainnet'
-});
-```
-
-### NeoBurger (NEO Staking)
-
-```javascript
-// Deposit NEO to get bNEO
-const deposit = await client.callTool('invoke_write_contract', {
-  fromWIF: 'your-wif-key',
-  contractName: 'NeoBurger',
-  operation: 'exchange',
-  args: ['your-address'],
-  confirm: true,
-  network: 'mainnet'
-});
-
-// Check bNEO balance
-const balance = await client.callTool('invoke_read_contract', {
-  contractName: 'NeoBurger',
-  operation: 'balanceOf',
-  args: ['your-address'],
-  network: 'mainnet'
-});
-
-// Claim GAS rewards
-const claimGas = await client.callTool('invoke_write_contract', {
-  fromWIF: 'your-wif-key',
-  contractName: 'NeoBurger',
-  operation: 'claim_gas',
-  args: ['your-address'],
-  confirm: true,
-  network: 'mainnet'
-});
-```
-
-### Flamingo (DeFi Platform)
-
-```javascript
-// Check FLM balance
-const balance = await client.callTool('invoke_read_contract', {
-  contractName: 'Flamingo',
-  operation: 'balanceOf',
-  args: ['your-address'],
-  network: 'mainnet'
-});
-
-// Stake FLM tokens
-const stake = await client.callTool('invoke_write_contract', {
-  fromWIF: 'your-wif-key',
-  contractName: 'Flamingo',
-  operation: 'stake',
-  args: ['your-address', '1000'],
-  confirm: true,
-  network: 'mainnet'
-});
-```
-
-### GhostMarket (NFT Marketplace)
-
-```javascript
-// Create NFT
-const createNFT = await client.callTool('invoke_write_contract', {
-  fromWIF: 'your-wif-key',
-  contractName: 'GhostMarket',
-  operation: 'mintToken',
-  args: ['owner-address', 'https://metadata-uri.com/token/1', []],
-  confirm: true,
-  network: 'mainnet'
-});
-
-// Get token information
-const tokenInfo = await client.callTool('invoke_read_contract', {
-  contractName: 'GhostMarket',
-  operation: 'getTokenInfo',
-  args: ['1'],
-  network: 'mainnet'
-});
-```
-
-## Error Handling
-
-### Common Error Patterns
-
-```javascript
-try {
-  const result = await client.callTool('get_balance', {
-    address: 'invalid-address',
-    network: 'mainnet'
-  });
-} catch (error) {
-  if (error.code === -32602) {
-    console.log('Invalid parameters:', error.message);
-  } else if (error.code === -32603) {
-    console.log('Internal error:', error.message);
-  } else {
-    console.log('Unknown error:', error);
-  }
-}
-```
-
-### Validation Errors
-
-```javascript
-// Address validation
-try {
-  await client.callTool('get_balance', {
-    address: 'too-short',
-    network: 'mainnet'
-  });
-} catch (error) {
-  // Error: Invalid Neo N3 address format
-}
-
-// Amount validation
-try {
-  await client.callTool('transfer_assets', {
-    fromWIF: 'valid-wif',
-    toAddress: 'valid-address',
-    asset: 'GAS',
-    amount: '-10', // Invalid negative amount
+const writeResult = await client.callTool({
+  name: 'invoke_contract',
+  arguments: {
+    network: 'testnet',
+    fromWIF: 'Kx...',
+    scriptHash,
+    operation: 'transfer',
+    args: ['NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr', 'Nb2o2ey5...', '1', null],
     confirm: true,
-    network: 'testnet'
-  });
-} catch (error) {
-  // Error: Amount must be greater than zero
-}
-```
-
-### Network Errors
-
-```javascript
-try {
-  await client.callTool('get_blockchain_info', {
-    network: 'invalid-network'
-  });
-} catch (error) {
-  // Error: Invalid network: invalid-network. Must be one of: mainnet, testnet
-}
-```
-
-## Best Practices
-
-### 1. Always Use Testnet for Development
-
-```javascript
-// Use testnet for all development and testing
-const config = {
-  network: 'testnet',
-  // ... other config
-};
-```
-
-### 2. Handle Confirmations Properly
-
-```javascript
-// For write operations, always wait for confirmation
-const result = await client.callTool('transfer_assets', {
-  // ... parameters
-  confirm: true, // Wait for transaction confirmation
-  network: 'testnet'
+  },
 });
-
-console.log('Transaction confirmed:', result.txid);
 ```
 
-### 3. Validate Inputs
+## HTTP Monitoring
 
-```javascript
-// Always validate addresses before use
-function isValidNeoAddress(address) {
-  return /^[A-Za-z0-9]{34}$/.test(address);
-}
-
-if (!isValidNeoAddress(userAddress)) {
-  throw new Error('Invalid Neo N3 address format');
-}
+```bash
+curl http://localhost:3000/health
+curl http://localhost:3000/metrics
 ```
-
-### 4. Use Appropriate Networks
-
-```javascript
-// Use mainnet for production
-const productionConfig = { network: 'mainnet' };
-
-// Use testnet for development
-const developmentConfig = { network: 'testnet' };
-```
-
-### 5. Monitor Rate Limits
-
-```javascript
-// Implement retry logic for rate limiting
-async function callWithRetry(toolName, args, maxRetries = 3) {
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await client.callTool(toolName, args);
-    } catch (error) {
-      if (error.code === 429 && i < maxRetries - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-        continue;
-      }
-      throw error;
-    }
-  }
-}

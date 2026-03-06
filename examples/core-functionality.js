@@ -13,7 +13,7 @@ const { ContractService } = require('../dist/contracts/contract-service');
 
 // Configuration
 const CONFIG = {
-  rpcUrl: 'https://testnet1.neo.coz.io:443',
+  rpcUrl: 'http://seed1t5.neo.org:20332',
   network: NeoNetwork.TESTNET,
   testAddress: 'NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj', // Example address
   // Mock data for testing when RPC is unavailable

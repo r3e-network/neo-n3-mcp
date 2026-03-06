@@ -5,7 +5,7 @@
 
 import { jest } from '@jest/globals';
 import { NeoService, NeoNetwork } from '../src/services/neo-service';
-import { NetworkError, ValidationError } from '../src/utils/errors';
+import * as neonJs from '@cityofzion/neon-js';
 
 // Mock data for blockchain operations
 const mockBlockchainInfo = {
@@ -57,6 +57,7 @@ const mockBalance = {
 const mockTransferResult = {
   txid: '0xabc123def456789abc123def456789abc123def456789abc123def456789abc123'
 };
+const mockNetworkMagic = 894710606;
 
 // Mock neon-js
 jest.mock('@cityofzion/neon-js', () => ({
@@ -64,16 +65,23 @@ jest.mock('@cityofzion/neon-js', () => ({
     Query: jest.fn().mockImplementation((q) => q),
     RPCClient: jest.fn().mockImplementation(() => ({
       getBlockCount: jest.fn().mockResolvedValue(12345),
+      getVersion: jest.fn().mockResolvedValue({ protocol: { network: 877933390 } }),
       getValidators: jest.fn().mockResolvedValue(mockBlockchainInfo.validators),
       getBlock: jest.fn().mockResolvedValue(mockBlock),
       getTransaction: jest.fn().mockResolvedValue(mockTransaction),
       invokeScript: jest.fn().mockResolvedValue({ state: 'HALT', stack: [], script: 'mock', tx: 'mock' }),
       invokeFunction: jest.fn().mockResolvedValue({ state: 'HALT', stack: [], script: 'mock', tx: 'mock' }),
       sendRawTransaction: jest.fn().mockResolvedValue('0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'),
-      execute: jest.fn().mockImplementation((method) => {
+      execute: jest.fn().mockImplementation((queryOrMethod) => {
+        const method = typeof queryOrMethod === 'string'
+          ? queryOrMethod
+          : queryOrMethod?.method;
+
         switch (method) {
           case 'getblockcount':
             return Promise.resolve(12345);
+          case 'getversion':
+            return Promise.resolve({ protocol: { network: 877933390 } });
           case 'getvalidators':
             return Promise.resolve(mockBlockchainInfo.validators);
           case 'getblock':
@@ -90,8 +98,10 @@ jest.mock('@cityofzion/neon-js', () => ({
             });
           case 'sendrawtransaction':
             return Promise.resolve(mockTransferResult.txid);
+          case 'getversion':
+            return Promise.resolve({ protocol: { network: mockNetworkMagic } });
           default:
-            return Promise.resolve({ state: 'HALT', stack: [], script: 'mock-script', tx: 'mock-tx' });
+            return Promise.resolve({ state: 'HALT', stack: [], script: 'mock-script', tx: 'mock-tx', gasconsumed: '100000' });
         }
       })
     }))
@@ -101,10 +111,13 @@ jest.mock('@cityofzion/neon-js', () => ({
       address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
       WIF: wif || 'mock-wif',
       publicKey: 'mock-public-key',
+      scriptHash: 'f81a9a9ebf8cc9ae7f9ac3491f5a9f3b282b5e9e',
+      contract: { script: 'bW9jay1zY3JpcHQ=' },
       encrypt: jest.fn().mockResolvedValue('encrypted-key'),
       decrypt: jest.fn()
     })),
     getScriptHashFromAddress: jest.fn().mockReturnValue('f81a9a9ebf8cc9ae7f9ac3491f5a9f3b282b5e9e'),
+    getAddressFromScriptHash: jest.fn().mockImplementation((scriptHash) => `addr-${String(scriptHash).replace(/^0x/, '').toLowerCase()}`),
     isWIF: jest.fn().mockReturnValue(true),
     isPrivateKey: jest.fn().mockReturnValue(true),
     encrypt: jest.fn().mockResolvedValue('encrypted-wif')
@@ -119,9 +132,29 @@ jest.mock('@cityofzion/neon-js', () => ({
       any: jest.fn().mockReturnValue('mock-any')
     }
   },
+  experimental: {
+    nep17: {
+      Nep17Contract: jest.fn().mockImplementation(() => ({
+        transfer: jest.fn().mockResolvedValue(mockTransferResult.txid)
+      })),
+      NEOContract: jest.fn().mockImplementation(() => ({
+        claimGas: jest.fn().mockResolvedValue(mockTransferResult.txid)
+      }))
+    },
+    SmartContract: jest.fn().mockImplementation(() => ({
+      invoke: jest.fn().mockResolvedValue(mockTransferResult.txid)
+    })),
+    txHelpers: {
+      getSystemFee: jest.fn().mockResolvedValue({ toString: () => '100000' })
+    }
+  },
+  api: {
+    smartCalculateNetworkFee: jest.fn().mockResolvedValue({ toString: () => '50000' })
+  },
   u: {
     HexString: {
-      fromHex: jest.fn().mockReturnValue('mock-hex')
+      fromHex: jest.fn().mockReturnValue('mock-hex'),
+      fromBase64: jest.fn().mockReturnValue({ toString: () => 'mock-base64' })
     }
   },
   tx: {
@@ -129,8 +162,12 @@ jest.mock('@cityofzion/neon-js', () => ({
       CalledByEntry: 1,
       Global: 128
     },
+    Witness: jest.fn().mockImplementation((config) => config),
     Transaction: jest.fn().mockImplementation(() => ({
+      script: '',
       sign: jest.fn(),
+      addSigner: jest.fn(),
+      addWitness: jest.fn(),
       serialize: jest.fn().mockReturnValue('serialized-transaction')
     }))
   }
@@ -176,7 +213,7 @@ describe('Blockchain Operations', () => {
       const mockRpcClient = neoService['rpcClient'];
       mockRpcClient.getBlockCount = jest.fn().mockRejectedValue(new Error('RPC Error'));
 
-      const result = await neoService.getBlockchainInfo(); expect(result).toBeDefined();
+      await expect(neoService.getBlockchainInfo()).rejects.toThrow('Failed to get blockchain info: RPC Error');
     });
   });
 
@@ -213,7 +250,10 @@ describe('Blockchain Operations', () => {
     });
 
     test('should handle invalid block identifier', async () => {
-      // skipped
+      const mockRpcClient = neoService['rpcClient'];
+      mockRpcClient.getBlock = jest.fn().mockRejectedValue(new Error('Invalid block'));
+
+      await expect(neoService.getBlock(-1)).rejects.toThrow('Failed to get block');
     });
   });
 
@@ -228,7 +268,12 @@ describe('Blockchain Operations', () => {
       expect(tx).toHaveProperty('netfee');
     });
 
-    test.skip('should handle invalid transaction hash', async () => {});
+    test('should handle invalid transaction hash', async () => {
+      const mockRpcClient = neoService['rpcClient'];
+      mockRpcClient.execute = jest.fn().mockRejectedValue(new Error('Invalid transaction hash'));
+
+      await expect(neoService.getTransaction('invalid')).rejects.toThrow('Failed to get transaction');
+    });
   });
 
   describe('getBalance', () => {
@@ -248,7 +293,9 @@ describe('Blockchain Operations', () => {
     });
 
     test('should handle invalid address', async () => {
-      // skipped
+      await expect(neoService.getBalance(null as unknown as string)).rejects.toThrow(
+        'Failed to get balance for address'
+      );
     });
 
     test('should handle empty address', async () => {
@@ -275,17 +322,21 @@ describe('Blockchain Operations', () => {
     });
 
     test('should handle invalid recipient address', async () => {
-      // skipped
+      await expect(
+        neoService.transferAssets(mockAccount, '', 'NEO', '1')
+      ).rejects.toThrow('Failed to transfer assets');
     });
 
     test('should handle invalid amount', async () => {
-      // skipped
-
-      // skipped
+      await expect(
+        neoService.transferAssets(mockAccount, 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr', 'NEO', '0')
+      ).rejects.toThrow('Failed to transfer assets');
     });
 
     test('should handle missing account', async () => {
-      // skipped
+      await expect(
+        neoService.transferAssets(null, 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr', 'NEO', '1')
+      ).rejects.toThrow('Failed to transfer assets');
     });
   });
 
@@ -309,12 +360,29 @@ describe('Blockchain Operations', () => {
     });
 
     test('should handle invalid WIF', () => {
-      // skipped
+      const walletAccountMock = neonJs.wallet.Account as unknown as jest.Mock;
+      walletAccountMock.mockImplementationOnce(() => {
+        throw new Error('invalid key');
+      });
+
+      expect(() => neoService.importWallet('invalid-wif')).toThrow('Failed to import wallet');
     });
   });
 
   describe('fee calculation', () => {
-    test.skip('should calculate transfer fees', async () => {});
+    test('should calculate transfer fees', async () => {
+      const fees = await neoService.calculateTransferFee(
+        'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
+        'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
+        'NEO',
+        '1'
+      );
+
+      expect(fees).toHaveProperty('networkFee');
+      expect(fees).toHaveProperty('systemFee');
+      expect(typeof fees.networkFee).toBe('number');
+      expect(typeof fees.systemFee).toBe('number');
+    });
 
     test('should calculate invocation fees', async () => {
       const fees = await neoService.calculateInvokeFee(
@@ -346,7 +414,16 @@ describe('Blockchain Operations', () => {
       expect(result).toHaveProperty('txid');
     });
 
-    test.skip('should handle invalid script hash', async () => {});
+    test('should handle invalid script hash', async () => {
+      await expect(
+        neoService.invokeContract(
+          mockAccount,
+          '',
+          'transfer',
+          []
+        )
+      ).rejects.toThrow('Failed to invoke write contract');
+    });
   });
 
   describe('GAS claiming', () => {
@@ -366,9 +443,17 @@ describe('Blockchain Operations', () => {
   });
 
   describe('transaction status checking', () => {
-    test.skip('should check transaction status', async () => {});
+    test('should check transaction status', async () => {
+      const txHash = '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890';
+      const tx = await neoService.getTransaction(txHash);
+      expect(tx).toHaveProperty('hash');
+    });
 
-    test.skip('should handle invalid transaction hash', async () => {});
+    test('should handle invalid transaction hash', async () => {
+      const mockRpcClient = neoService['rpcClient'];
+      mockRpcClient.execute = jest.fn().mockRejectedValue(new Error('not found'));
+      await expect(neoService.getTransaction('0x1')).rejects.toThrow('Failed to get transaction');
+    });
   });
 
   describe('network operations', () => {
@@ -385,18 +470,15 @@ describe('Blockchain Operations', () => {
   });
 
   describe('error handling', () => {
-    test.skip('should handle RPC client initialization errors', () => {});
+    test('should handle RPC client initialization errors', () => {
+      expect(() => new NeoService('not-a-url', NeoNetwork.MAINNET)).toThrow('Failed to initialize Neo RPC client');
+    });
 
     test('should provide detailed error messages', async () => {
       const mockRpcClient = neoService['rpcClient'];
       mockRpcClient.getBlockCount = jest.fn().mockRejectedValue(new Error('Detailed test error'));
 
-      try {
-        await neoService.getBlockchainInfo();
-      } catch (error) {
-        expect(error).toBeInstanceOf(NetworkError);
-        expect((error as NetworkError).message).toContain('blockchain info');
-      }
+      await expect(neoService.getBlockchainInfo()).rejects.toThrow('Failed to get blockchain info: Detailed test error');
     });
   });
 
@@ -408,8 +490,22 @@ describe('Blockchain Operations', () => {
       const result = await neoService.getBlockchainInfo(); expect(result).toBeDefined();
     });
 
-    test.skip('should handle malformed responses', async () => {});
+    test('should handle malformed responses', async () => {
+      const mockRpcClient = neoService['rpcClient'];
+      mockRpcClient.getValidators = jest.fn().mockResolvedValue('not-an-array');
+      const info = await neoService.getBlockchainInfo();
 
-    test.skip('should validate input parameters', async () => {});
+      expect(info.validators).toEqual([]);
+      expect(info.height).toBe(12345);
+    });
+
+    test('should validate input parameters', async () => {
+      await expect(neoService.getBalance(undefined as unknown as string)).rejects.toThrow(
+        'Failed to get balance for address'
+      );
+      await expect(
+        neoService.transferAssets({ address: '' }, 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr', 'NEO', '1')
+      ).rejects.toThrow('Failed to transfer assets');
+    });
   });
 }); 

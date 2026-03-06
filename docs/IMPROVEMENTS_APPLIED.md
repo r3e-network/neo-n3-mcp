@@ -39,14 +39,14 @@ version: '1.5.0',
 ### 3. Updated Default Testnet RPC URL ✅
 **File**: `src/config.ts`
 **Issue**: Using non-standard testnet RPC URL
-**Fix**: Updated to use standard CoZ testnet RPC for consistency
+**Fix**: Updated to use the Neo testnet seed RPC endpoint for consistency
 
 ```typescript
 // Before
 const DEFAULT_TESTNET_RPC = 'https://testnet1.neo.n3.nodereal.io';
 
 // After
-const DEFAULT_TESTNET_RPC = 'https://testnet1.neo.coz.io:443';
+const DEFAULT_TESTNET_RPC = 'http://seed1t5.neo.org:20332';
 ```
 
 ## 🚀 Enhancements Added

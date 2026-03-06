@@ -7,6 +7,7 @@ import { FAMOUS_CONTRACTS, ContractDefinition, ContractNetwork } from '../contra
 import { config, NetworkMode } from '../config';
 import { validateAddress, validateScriptHash } from '../utils/validation';
 import { handleError, createSuccessResponse } from '../utils/error-handler';
+import { logger } from '../utils/logger';
 
 // TODO: Move resource registration logic here
 // TODO: Move resource read handling logic here
@@ -17,7 +18,7 @@ export function setupResourceHandlers(
   contractServices: Map<NeoNetwork, ContractService>
 ) {
   // Placeholder: Resource registration and request handling logic will be moved here
-  console.error('Setting up resource handlers...');
+  logger.debug('Setting up resource handlers...');
 
   // Example structures (to be filled in)
   // server.setRequestHandler(ListResourcesRequestSchema, async () => { /* ... */ });

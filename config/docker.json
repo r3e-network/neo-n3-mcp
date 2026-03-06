@@ -2,11 +2,11 @@
   "network": "mainnet",
   "rpc": {
     "mainnet": "https://mainnet1.neo.coz.io:443",
-    "testnet": "https://testnet1.neo.coz.io:443"
+    "testnet": "http://seed1t5.neo.org:20332"
   },
   "logging": {
     "level": "info",
-    "file": "/app/logs/neo-mcp.log",
+    "file": "/app/logs/neo-n3-mcp.log",
     "console": true
   },
   "rateLimiting": {
@@ -16,7 +16,7 @@
   },
   "server": {
     "name": "neo-n3-mcp-server",
-    "version": "1.5.0",
+    "version": "1.6.3",
     "port": 3000
   },
   "wallets": {

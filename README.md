@@ -3,13 +3,13 @@
 
 # Neo N3 MCP Server
 
-**MCP Server for Neo N3 Blockchain Integration** | Version 1.6.0
+**MCP Server for Neo N3 Blockchain Integration** | Version 1.6.3
 
 [![MCP SDK](https://img.shields.io/badge/MCP%20SDK-1.9.0-blue)](https://github.com/modelcontextprotocol/typescript-sdk)
 [![Neo N3](https://img.shields.io/badge/Neo%20N3-Compatible-green)](https://neo.org/)
 [![NPM](https://img.shields.io/badge/NPM-@r3e/neo--n3--mcp-red)](https://www.npmjs.com/package/@r3e/neo-n3-mcp)
 
-A production-ready MCP server providing Neo N3 blockchain integration with 34 tools and 9 resources for wallet management, asset transfers, contract interactions, and blockchain queries.
+A production-ready MCP server providing Neo N3 blockchain integration with 26 tools, 3 fixed resources, and a parameterized block resource for wallet management, transaction lifecycle tracking, asset transfers, contract deployment, contract interactions, and blockchain queries.
 
 ## 🚀 Quick Start
 
@@ -33,56 +33,45 @@ neo-n3-mcp
 
 ## ⚙️ Configuration
 
-### 1. Command Line Configuration
+### 1. Environment Variables
+
+The MCP stdio server reads configuration from environment variables.
 
 ```bash
-# Specify network
-neo-n3-mcp --network testnet
-
-# Custom RPC endpoints
-neo-n3-mcp --mainnet-rpc https://mainnet1.neo.coz.io:443 --testnet-rpc https://testnet1.neo.coz.io:443
-
-# Enable logging
-neo-n3-mcp --log-level info --log-file ./neo-mcp.log
-
-# Complete example
-neo-n3-mcp \
-  --network mainnet \
-  --mainnet-rpc https://mainnet1.neo.coz.io:443 \
-  --testnet-rpc https://testnet1.neo.coz.io:443 \
-  --log-level debug \
-  --log-file ./logs/neo-mcp.log
+NEO_NETWORK=both \
+NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443 \
+NEO_TESTNET_RPC=http://seed1t5.neo.org:20332 \
+LOG_LEVEL=info \
+LOG_FILE=./logs/neo-n3-mcp.log \
+npx @r3e/neo-n3-mcp
 ```
 
-### 2. JSON Configuration
+Backward-compatible aliases are also accepted:
+- `NEO_MAINNET_RPC_URL`
+- `NEO_TESTNET_RPC_URL`
+- `NEO_NETWORK_MODE`
 
-Create a `neo-mcp-config.json` file:
+When `NEO_NETWORK=both`, stdio tool calls without an explicit network default to mainnet. The HTTP entrypoint requires `NEO_NETWORK=mainnet` or `NEO_NETWORK=testnet`.
+
+### 2. MCP Client Configuration
+
+Example Claude/Cursor configuration:
 
 ```json
 {
-  "network": "mainnet",
-  "rpc": {
-    "mainnet": "https://mainnet1.neo.coz.io:443",
-    "testnet": "https://testnet1.neo.coz.io:443"
-  },
-  "logging": {
-    "level": "info",
-    "file": "./logs/neo-mcp.log",
-    "console": true
-  },
-  "server": {
-    "name": "neo-n3-mcp-server",
-    "version": "1.6.0"
-  },
-  "wallets": {
-    "directory": "./wallets"
+  "mcpServers": {
+    "neo-n3": {
+      "command": "npx",
+      "args": ["-y", "@r3e/neo-n3-mcp"],
+      "disabled": false,
+      "env": {
+        "NEO_NETWORK": "testnet",
+        "NEO_TESTNET_RPC": "http://seed1t5.neo.org:20332",
+        "LOG_LEVEL": "info"
+      }
+    }
   }
 }
-```
-
-Run with config file:
-```bash
-neo-n3-mcp --config ./neo-mcp-config.json
 ```
 
 ### 3. Docker Configuration
@@ -90,22 +79,26 @@ neo-n3-mcp --config ./neo-mcp-config.json
 #### Using Docker Hub Image
 ```bash
 # Basic run
-docker run -p 3000:3000 r3enetwork/neo-n3-mcp:1.6.0
+docker run -p 3000:3000 \
+  -e NEO_NETWORK=mainnet \
+  -e LOG_CONSOLE=false \
+  -e LOG_FILE=/app/logs/neo-n3-mcp.log \
+  r3enetwork/neo-n3-mcp:1.6.3
 
 # With environment variables
 docker run -p 3000:3000 \
   -e NEO_NETWORK=mainnet \
   -e NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443 \
-  -e NEO_TESTNET_RPC=https://testnet1.neo.coz.io:443 \
+  -e NEO_TESTNET_RPC=http://seed1t5.neo.org:20332 \
   -e LOG_LEVEL=info \
-  r3enetwork/neo-n3-mcp:1.6.0
+  r3enetwork/neo-n3-mcp:1.6.3
 
 # With volume for persistent data
 docker run -p 3000:3000 \
   -v $(pwd)/wallets:/app/wallets \
   -v $(pwd)/logs:/app/logs \
   -e NEO_NETWORK=testnet \
-  r3enetwork/neo-n3-mcp:1.6.0
+  r3enetwork/neo-n3-mcp:1.6.3
 ```
 
 #### Docker Compose
@@ -115,15 +108,15 @@ Create a `docker-compose.yml`:
 version: '3.8'
 services:
   neo-mcp:
-    image: r3enetwork/neo-n3-mcp:1.6.0
+    image: r3enetwork/neo-n3-mcp:1.6.3
     ports:
       - "3000:3000"
     environment:
       - NEO_NETWORK=mainnet
       - NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443
-      - NEO_TESTNET_RPC=https://testnet1.neo.coz.io:443
+      - NEO_TESTNET_RPC=http://seed1t5.neo.org:20332
       - LOG_LEVEL=info
-      - LOG_FILE=/app/logs/neo-mcp.log
+      - LOG_FILE=/app/logs/neo-n3-mcp.log
     volumes:
       - ./wallets:/app/wallets
       - ./logs:/app/logs
@@ -155,7 +148,7 @@ npm run docker:up:dev
 #### Production Docker Setup
 ```bash
 # Build production image
-./scripts/docker-build.sh --tag v1.6.0
+./scripts/docker-build.sh --tag v1.6.3
 
 # Run with custom configuration
 docker run -d \
@@ -163,7 +156,7 @@ docker run -d \
   -p 3000:3000 \
   -e NEO_NETWORK=mainnet \
   -v neo-mcp-logs:/app/logs \
-  neo-n3-mcp:v1.6.0
+  neo-n3-mcp:v1.6.3
 ```
 
 #### Development Docker Setup
@@ -180,67 +173,35 @@ docker-compose -f docker/docker-compose.dev.yml up -d
 ### Environment Variables
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `NEO_NETWORK` | Default network (mainnet/testnet) | `testnet` |
+| `NEO_NETWORK` | Network mode: `mainnet`, `testnet`, or `both` | `both` |
 | `NEO_MAINNET_RPC` | Mainnet RPC endpoint | `https://mainnet1.neo.coz.io:443` |
-| `NEO_TESTNET_RPC` | Testnet RPC endpoint | `https://testnet1.neo.coz.io:443` |
-| `LOG_LEVEL` | Logging level (debug/info/warn/error) | `info` |
-| `LOG_FILE` | Log file path | `./logs/neo-mcp.log` |
-| `WALLET_DIR` | Wallet storage directory | `./wallets` |
+| `NEO_TESTNET_RPC` | Testnet RPC endpoint | `http://seed1t5.neo.org:20332` |
+| `LOG_LEVEL` | Logging level | `info` |
+| `LOG_FILE` | Log file path | `./logs/neo-n3-mcp.log` |
+| `RATE_LIMITING_ENABLED` | Enable HTTP rate limiting | `true` |
+| `MAX_REQUESTS_PER_MINUTE` | Per-minute limit | `60` |
+| `MAX_REQUESTS_PER_HOUR` | Per-hour limit | `1000` |
 
-### Command Line Options
-| Option | Description |
-|--------|-------------|
-| `--network` | Set default network |
-| `--mainnet-rpc` | Mainnet RPC URL |
-| `--testnet-rpc` | Testnet RPC URL |
-| `--log-level` | Set logging level |
-| `--log-file` | Set log file path |
-| `--config` | Load configuration from JSON file |
-| `--help` | Show help information |
+Legacy aliases accepted:
+- `NEO_MAINNET_RPC_URL`
+- `NEO_TESTNET_RPC_URL`
+- `NEO_NETWORK_MODE`
 
 ## 🛠️ MCP Client Integration
 
-### Claude Desktop
-Add to your Claude Desktop config (`~/.cursor/mcp.json` or similar):
+### Claude Desktop / Cursor
 
 ```json
 {
   "mcpServers": {
     "neo-n3": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@r3e/neo-n3-mcp",
-        "--network",
-        "testnet"
-      ],
-      "disabled": false,
-      "env": {
-        "NEO_NETWORK": "testnet",
-        "LOG_LEVEL": "info"
-      }
-    }
-  }
-}
-```
-
-For mainnet configuration:
-```json
-{
-  "mcpServers": {
-    "neo-n3": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@r3e/neo-n3-mcp",
-        "--network",
-        "mainnet"
-      ],
+      "args": ["-y", "@r3e/neo-n3-mcp"],
       "disabled": false,
       "env": {
         "NEO_NETWORK": "mainnet",
         "NEO_MAINNET_RPC": "https://mainnet1.neo.coz.io:443",
-        "NEO_TESTNET_RPC": "https://testnet1.neo.coz.io:443",
+        "NEO_TESTNET_RPC": "http://seed1t5.neo.org:20332",
         "LOG_LEVEL": "info"
       }
     }
@@ -255,7 +216,12 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 
 const transport = new StdioClientTransport({
   command: 'npx',
-  args: ['@r3e/neo-n3-mcp', '--network', 'mainnet']
+  args: ['-y', '@r3e/neo-n3-mcp'],
+  env: {
+    NEO_NETWORK: 'mainnet',
+    NEO_MAINNET_RPC: 'https://mainnet1.neo.coz.io:443',
+    NEO_TESTNET_RPC: 'http://seed1t5.neo.org:20332',
+  },
 });
 
 const client = new Client(
@@ -268,19 +234,27 @@ await client.connect(transport);
 
 ## 📊 Available Tools & Resources
 
-### 🛠️ Tools (34 available)
+### 🛠️ Tools (26 available)
 - **Network**: `get_network_mode`, `set_network_mode`
-- **Blockchain**: `get_blockchain_info`, `get_block_count`, `get_block`, `get_transaction`
-- **Wallets**: `create_wallet`, `import_wallet`
-- **Assets**: `get_balance`, `transfer_assets`, `estimate_transfer_fees`
-- **Contracts**: `invoke_contract`, `list_famous_contracts`, `get_contract_info`
+- **Blockchain**: `get_blockchain_info`, `get_block_count`, `get_block`, `get_transaction`, `get_application_log`, `wait_for_transaction`
+- **Wallets**: `create_wallet`, `import_wallet`, `get_wallet`
+- **Assets**: `get_balance`, `get_unclaimed_gas`, `get_nep17_transfers`, `get_nep11_balances`, `get_nep11_transfers`, `transfer_assets`, `estimate_transfer_fees`
+- **Contracts**: `invoke_contract`, `deploy_contract`, `list_famous_contracts`, `get_contract_info`
+- **NeoFS**: `neofs_create_container`, `neofs_get_containers`
 - **Advanced**: `claim_gas`, `estimate_invoke_fees`
 
-### 📁 Resources (9 available)
-- **Network Status**: `neo://network/status`, `neo://mainnet/status`, `neo://testnet/status`
-- **Blockchain Data**: `neo://mainnet/blockchain`, `neo://testnet/blockchain`
-- **Contract Registry**: `neo://mainnet/contracts`, `neo://testnet/contracts`
-- **Asset Information**: `neo://mainnet/assets`, `neo://testnet/assets`
+### 🌐 HTTP Endpoints
+- **Health & metrics**: `/health`, `/metrics`
+- **Transactions**: `/api/transactions/:txid`, `/api/transactions/:txid/application-log`, `/api/transactions/:txid/wait`
+- **Accounts**: `/api/accounts/:address/balance`, `/api/accounts/:address/unclaimed-gas`, `/api/accounts/:address/nep17-transfers`, `/api/accounts/:address/nep11-balances`, `/api/accounts/:address/nep11-transfers`, `POST /api/accounts/claim-gas`
+- **Blocks**: `GET /api/blocks/:hashOrHeight`
+- **Transfers**: `POST /api/transfers`, `POST /api/transfers/estimate-fees`
+- **Contracts**: `POST /api/contracts/invoke`, `POST /api/contracts/invoke/estimate-fees`, `POST /api/contracts/:name/invoke`, `POST /api/contracts/deploy` (requires `confirm=true`)
+- **Wallets**: `POST /api/wallets`, `POST /api/wallets/import`, `GET /api/wallets/:address`
+
+### 📁 Resources (3 fixed + 1 template)
+- **Status**: `neo://network/status`, `neo://mainnet/status`, `neo://testnet/status`
+- **Parameterized Block**: `neo://block/{height}`
 
 ## 🔐 Security
 
@@ -300,7 +274,7 @@ await client.connect(transport);
 
 ## 🔄 Version Management & Release Process
 
-### Current Version: 1.6.0
+### Current Version: 1.6.3
 
 This project follows [Semantic Versioning](https://semver.org/) with automated CI/CD pipeline for releases. See our [Version Management Guide](./docs/VERSION_MANAGEMENT.md) for detailed information.
 
@@ -327,9 +301,9 @@ gh release create v1.7.0 --generate-notes
 npm run version:check
 
 # Bump version manually
-npm run version:patch   # 1.6.0 → 1.6.1 (bug fixes)
-npm run version:minor   # 1.6.0 → 1.7.0 (new features)
-npm run version:major   # 1.6.0 → 2.0.0 (breaking changes)
+npm run version:patch   # 1.6.3 → 1.6.4 (bug fixes)
+npm run version:minor   # 1.6.3 → 1.7.0 (new features)
+npm run version:major   # 1.6.3 → 2.0.0 (breaking changes)
 
 # Then commit and push
 git add . && git commit -m "chore: bump version to 1.7.0"
@@ -383,9 +357,9 @@ The automated CI/CD pipeline triggers the following workflow:
 
 | Type | Version Change | Use Case | Example |
 |------|---------------|----------|---------|
-| **patch** | 1.6.0 → 1.6.1 | Bug fixes, security patches | `./scripts/prepare-release.sh --type patch` |
-| **minor** | 1.6.0 → 1.7.0 | New features, enhancements | `./scripts/prepare-release.sh --type minor` |
-| **major** | 1.6.0 → 2.0.0 | Breaking changes | `./scripts/prepare-release.sh --type major` |
+| **patch** | 1.6.3 → 1.6.4 | Bug fixes, security patches | `./scripts/prepare-release.sh --type patch` |
+| **minor** | 1.6.3 → 1.7.0 | New features, enhancements | `./scripts/prepare-release.sh --type minor` |
+| **major** | 1.6.3 → 2.0.0 | Breaking changes | `./scripts/prepare-release.sh --type major` |
 
 ### 🎯 Quick Release Commands
 
@@ -403,13 +377,13 @@ The automated CI/CD pipeline triggers the following workflow:
 ./scripts/prepare-release.sh --type minor --dry-run
 ```
 
-### 📊 Latest Changes (v1.6.0)
-- ✨ **Enterprise CI/CD Pipeline**: Complete GitHub Actions workflow
-- 🐳 **Docker Infrastructure**: Production and development environments
-- 📁 **Project Organization**: Structured folders (docker/, docs/, scripts/)
-- 🔧 **Automated Publishing**: NPM and Docker Hub integration
-- 📚 **Comprehensive Documentation**: Guides for all deployment scenarios
-- 🔄 **Version Management**: Automated release preparation and validation
+### 📊 Latest Changes (v1.6.3)
+- ✅ **MCP Metadata Hardening**: Tool and resource descriptions now surface correctly in `listTools` and `listResources`
+- ✅ **Runtime Version Alignment**: The MCP server now reports the package version dynamically
+- ✅ **Config Compatibility**: Runtime now accepts both documented and legacy Neo RPC environment variables
+- ✅ **Tool Surface Fixes**: `import_wallet`, `set_network_mode`, and NeoFS tool wiring now match their exposed MCP contracts
+- ✅ **Clean Build Output**: The build now emits a fresh `dist/index.js` entrypoint used by package consumers and tests
+- ✅ **Live Test Coverage**: MCP protocol tests now cover wallet import and combined network mode handling
 
 ### 📚 Release Documentation
 - **[CHANGELOG.md](./docs/CHANGELOG.md)** - Complete version history

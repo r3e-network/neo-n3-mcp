@@ -248,9 +248,9 @@ The server is **READY FOR PRODUCTION** with:
 
 **PRODUCTION READINESS**: ✅ **CERTIFIED**
 
-The Neo N3 MCP Server v1.4.0 has successfully passed all quality gates:
+The Neo N3 MCP Server v1.6.3 has successfully passed all quality gates:
 
-1. ✅ **Functionality**: All 34 tools and 9 resources working correctly
+1. ✅ **Functionality**: All 23 tools, 3 fixed resources, and the parameterized block resource working correctly
 2. ✅ **Security**: Comprehensive input validation and attack prevention
 3. ✅ **Performance**: Sub-5-second test execution, efficient runtime
 4. ✅ **Reliability**: Robust error handling and graceful degradation
@@ -273,6 +273,6 @@ The Neo N3 MCP Server v1.4.0 has successfully passed all quality gates:
 ---
 
 *Report generated on: $(date)*  
-*Version: 1.4.0*  
+*Version: 1.6.3*  
 *Test Coverage: 90%+*  
 *Status: PRODUCTION READY* ✅ 

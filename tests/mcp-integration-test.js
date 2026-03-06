@@ -12,11 +12,26 @@ const path = require('path');
 class McpIntegrationTest {
   constructor() {
     this.client = null;
+    this.transport = null;
+    this.callTimeoutMs = 30000;
     this.results = {
       passed: 0,
       failed: 0,
       tests: []
     };
+  }
+
+  async withTimeout(promise, name) {
+    let timeoutId;
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error(`${name} timed out after ${this.callTimeoutMs}ms`)), this.callTimeoutMs);
+    });
+
+    try {
+      return await Promise.race([promise, timeoutPromise]);
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   /**
@@ -35,8 +50,15 @@ class McpIntegrationTest {
     const serverPath = path.join(__dirname, '../dist/index.js');
     const transport = new StdioClientTransport({
       command: 'node',
-      args: [serverPath]
+      args: [serverPath],
+      env: {
+        ...process.env,
+        NODE_ENV: 'test',
+        NEO_NETWORK_MODE: 'mainnet_only'
+      }
     });
+
+    this.transport = transport;
 
     // Connect to the server
     console.log('Connecting to server...');
@@ -53,6 +75,11 @@ class McpIntegrationTest {
       console.log('Closing client connection...');
       await this.client.close();
       this.client = null;
+    }
+
+    if (this.transport && typeof this.transport.close === 'function') {
+      await this.transport.close();
+      this.transport = null;
     }
   }
 
@@ -83,7 +110,7 @@ class McpIntegrationTest {
    */
   async testListTools() {
     try {
-      const result = await this.client.listTools();
+      const result = await this.withTimeout(this.client.listTools(), 'listTools');
 
       // Verify that tools were returned
       if (!result || !Array.isArray(result.tools)) {
@@ -115,7 +142,7 @@ class McpIntegrationTest {
    */
   async testListResources() {
     try {
-      const result = await this.client.listResources();
+      const result = await this.withTimeout(this.client.listResources(), 'listResources');
 
       // Verify that resources were returned
       if (!result || !Array.isArray(result.resources)) {
@@ -123,6 +150,11 @@ class McpIntegrationTest {
       }
 
       console.log(`   Found ${result.resources.length} resources`);
+
+      const resourceUris = result.resources.map(resource => resource.uri);
+      if (process.env.NEO_NETWORK_MODE === 'mainnet_only' && resourceUris.includes('neo://testnet/status')) {
+        throw new Error('Testnet resource should not be advertised in mainnet-only mode');
+      }
 
       // Log the first few resources
       result.resources.slice(0, 3).forEach(resource => {
@@ -142,7 +174,10 @@ class McpIntegrationTest {
    */
   async testGetBlockchainInfo() {
     try {
-      const result = await this.client.callTool('get_blockchain_info', {});
+      const result = await this.withTimeout(
+        this.client.callTool({ name: 'get_blockchain_info', arguments: {} }),
+        'get_blockchain_info'
+      );
 
       // Verify that blockchain info was returned
       if (!result || !result.content || !result.content[0] || !result.content[0].text) {
@@ -173,7 +208,10 @@ class McpIntegrationTest {
    */
   async testGetBlockCount() {
     try {
-      const result = await this.client.callTool('get_block_count', {});
+      const result = await this.withTimeout(
+        this.client.callTool({ name: 'get_block_count', arguments: {} }),
+        'get_block_count'
+      );
 
       // Verify that block count was returned
       if (!result || !result.content || !result.content[0] || !result.content[0].text) {
@@ -206,7 +244,10 @@ class McpIntegrationTest {
       // Use a known testnet address
       const testAddress = 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr';
 
-      const result = await this.client.callTool('get_balance', { address: testAddress });
+      const result = await this.withTimeout(
+        this.client.callTool({ name: 'get_balance', arguments: { address: testAddress } }),
+        'get_balance'
+      );
 
       // Verify that balance was returned
       if (!result || !result.content || !result.content[0] || !result.content[0].text) {
@@ -240,7 +281,10 @@ class McpIntegrationTest {
    */
   async testCreateWallet() {
     try {
-      const result = await this.client.callTool('create_wallet', { password: 'test123' });
+      const result = await this.withTimeout(
+        this.client.callTool({ name: 'create_wallet', arguments: { password: 'test12345' } }),
+        'create_wallet'
+      );
 
       // Verify that wallet was created
       if (!result || !result.content || !result.content[0] || !result.content[0].text) {
@@ -270,7 +314,10 @@ class McpIntegrationTest {
    */
   async testGetNetworkMode() {
     try {
-      const result = await this.client.callTool('get_network_mode', {});
+      const result = await this.withTimeout(
+        this.client.callTool({ name: 'get_network_mode', arguments: {} }),
+        'get_network_mode'
+      );
 
       // Verify that network mode was returned
       if (!result || !result.content || !result.content[0] || !result.content[0].text) {
@@ -300,7 +347,10 @@ class McpIntegrationTest {
    */
   async testReadNetworkStatusResource() {
     try {
-      const result = await this.client.readResource('neo://network/status');
+      const result = await this.withTimeout(
+        this.client.readResource({ uri: 'neo://network/status' }),
+        'readResource neo://network/status'
+      );
 
       // Verify that resource was returned
       if (!result || !result.contents || !result.contents[0] || !result.contents[0].text) {
@@ -348,10 +398,12 @@ class McpIntegrationTest {
       // Print summary
       this.printSummary();
     } catch (error) {
+      this.results.failed += 1;
       console.error('Test execution failed:', error);
     } finally {
       // Stop the server
       await this.stopServer();
+      process.exit(this.results.failed > 0 ? 1 : 0);
     }
   }
 

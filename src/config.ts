@@ -2,19 +2,49 @@
  * Configuration for the Neo N3 MCP server
  */
 
-// Define valid network modes
 export enum NetworkMode {
   MAINNET_ONLY = 'mainnet_only',
   TESTNET_ONLY = 'testnet_only',
   BOTH = 'both'
 }
 
-// Default configuration values - simplified to reduce reliance on environment variables
 const DEFAULT_MAINNET_RPC = 'https://mainnet1.neo.coz.io:443';
 const DEFAULT_TESTNET_RPC = 'http://seed1t5.neo.org:20332';
 const DEFAULT_NETWORK_MODE = NetworkMode.BOTH;
 
-// Helper function remains for potential advanced override, but not used by default config
+function readEnv(...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = process.env[key]?.trim();
+    if (value) {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
+function readBooleanEnv(...keys: string[]): boolean | undefined {
+  const value = readEnv(...keys);
+  if (value === undefined) {
+    return undefined;
+  }
+
+  switch (value.toLowerCase()) {
+    case 'true':
+    case '1':
+    case 'yes':
+    case 'on':
+      return true;
+    case 'false':
+    case '0':
+    case 'no':
+    case 'off':
+      return false;
+    default:
+      return undefined;
+  }
+}
+
 function parseNetworkMode(value: string | undefined): NetworkMode {
   if (!value) return DEFAULT_NETWORK_MODE;
 
@@ -31,35 +61,25 @@ function parseNetworkMode(value: string | undefined): NetworkMode {
   }
 }
 
-export const config = {
-  // Use hardcoded defaults, allowing optional override via environment variables
-  // if absolutely necessary for advanced use cases, but primarily rely on defaults.
-  mainnetRpcUrl: process.env.NEO_MAINNET_RPC_URL || DEFAULT_MAINNET_RPC,
-  testnetRpcUrl: process.env.NEO_TESTNET_RPC_URL || DEFAULT_TESTNET_RPC,
-  networkMode: parseNetworkMode(process.env.NEO_NETWORK_MODE), // Keep parsing for potential override
+const logFilePath = readEnv('LOG_FILE') || './logs/neo-n3-mcp.log';
+const logToConsole = readBooleanEnv('LOG_CONSOLE');
+const isTestLikeEnvironment = (process.env.NODE_ENV || '').toLowerCase().includes('test');
 
-  // Rate limiting configuration
+export const config = {
+  mainnetRpcUrl: readEnv('NEO_MAINNET_RPC', 'NEO_MAINNET_RPC_URL') || DEFAULT_MAINNET_RPC,
+  testnetRpcUrl: readEnv('NEO_TESTNET_RPC', 'NEO_TESTNET_RPC_URL') || DEFAULT_TESTNET_RPC,
+  networkMode: parseNetworkMode(readEnv('NEO_NETWORK', 'NEO_NETWORK_MODE')),
+
   rateLimiting: {
-    enabled: process.env.RATE_LIMITING_ENABLED !== 'false', // Default enabled
+    enabled: process.env.RATE_LIMITING_ENABLED !== 'false',
     maxRequestsPerMinute: parseInt(process.env.MAX_REQUESTS_PER_MINUTE || '60', 10),
     maxRequestsPerHour: parseInt(process.env.MAX_REQUESTS_PER_HOUR || '1000', 10),
   },
 
-  // Logging configuration
   logging: {
     level: process.env.LOG_LEVEL || 'info',
-    file: process.env.LOG_FILE || './logs/neo-mcp.log',
-    console: process.env.LOG_CONSOLE !== 'false', // Default enabled
+    console: logToConsole ?? !isTestLikeEnvironment,
+    fileEnabled: process.env.LOG_FILE_ENABLED === 'true' || Boolean(readEnv('LOG_FILE')),
+    filePath: logFilePath,
   },
-
-  // Port for the *optional* HTTP server - KEEPING this, as http-mcp-server.js might be added back later or used differently
-  // port: parseInt(process.env.PORT || '5000', 10),
-
-  // Other settings (like walletPath, security, logging) are removed from this primary export
-  // to simplify basic usage. They might still exist internally or be added back if needed.
 };
-
-// Example of accessing the simplified config:
-// import { config } from './config';
-// console.log(config.mainnetRpcUrl);
-// console.log(config.networkMode);

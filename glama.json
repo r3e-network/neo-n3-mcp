@@ -6,6 +6,6 @@
   "config": {
     "networkMode": "both",
     "mainnetRpcUrl": "https://mainnet1.neo.coz.io:443",
-    "testnetRpcUrl": "https://testnet1.neo.coz.io:443"
+    "testnetRpcUrl": "http://seed1t5.neo.org:20332"
   }
 } 

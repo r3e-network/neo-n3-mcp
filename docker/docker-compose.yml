@@ -4,7 +4,7 @@ services:
   neo-mcp:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
       target: production
     image: r3enetwork/neo-n3-mcp:latest
     container_name: neo-n3-mcp-server
@@ -15,7 +15,7 @@ services:
       # Network Configuration
       - NEO_NETWORK=mainnet
       - NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443
-      - NEO_TESTNET_RPC=https://testnet1.neo.coz.io:443
+      - NEO_TESTNET_RPC=http://seed1t5.neo.org:20332
       
       # Rate Limiting
       - RATE_LIMITING_ENABLED=true
@@ -24,8 +24,8 @@ services:
       
       # Logging
       - LOG_LEVEL=info
-      - LOG_FILE=/app/logs/neo-mcp.log
-      - LOG_CONSOLE=true
+      - LOG_FILE=/app/logs/neo-n3-mcp.log
+      - LOG_CONSOLE=false
       
       # Application
       - NODE_ENV=production
@@ -41,7 +41,7 @@ services:
     networks:
       - neo-mcp-network
     healthcheck:
-      test: ["CMD", "node", "-e", "console.log('Health check passed')"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3

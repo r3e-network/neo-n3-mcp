@@ -101,9 +101,10 @@ DOCKER_CMD="$DOCKER_CMD -p $PORT:3000"
 # Add environment variables
 DOCKER_CMD="$DOCKER_CMD -e NEO_NETWORK=$NETWORK"
 DOCKER_CMD="$DOCKER_CMD -e NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443"
-DOCKER_CMD="$DOCKER_CMD -e NEO_TESTNET_RPC=https://testnet1.neo.coz.io:443"
+DOCKER_CMD="$DOCKER_CMD -e NEO_TESTNET_RPC=http://seed1t5.neo.org:20332"
 DOCKER_CMD="$DOCKER_CMD -e LOG_LEVEL=info"
-DOCKER_CMD="$DOCKER_CMD -e LOG_CONSOLE=true"
+DOCKER_CMD="$DOCKER_CMD -e LOG_CONSOLE=false"
+DOCKER_CMD="$DOCKER_CMD -e LOG_FILE=/app/logs/neo-n3-mcp.log"
 
 # Add env file if specified
 if [ -n "$ENV_FILE" ]; then

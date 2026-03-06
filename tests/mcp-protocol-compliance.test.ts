@@ -1,8 +1,11 @@
 import { jest } from '@jest/globals';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
+import * as neonJs from '@cityofzion/neon-js';
+import { startMcpTestClient, stopMcpTestClient } from './mcp-test-utils';
+
+const packageVersion = require('../package.json').version as string;
 
 /**
  * MCP Protocol Compliance Test Suite
@@ -13,7 +16,7 @@ import path from 'path';
 
 describe('MCP Protocol Compliance Tests', () => {
   let client: Client | null;
-  let serverProcess: ChildProcess;
+  let transport: StdioClientTransport | null = null;
   let serverPath: string;
 
   const LATEST_PROTOCOL_VERSION = '2025-03-26';
@@ -33,49 +36,38 @@ describe('MCP Protocol Compliance Tests', () => {
   }, 10000);
 
   async function startServer() {
-    client = new Client(
-      { 
-        name: 'MCP Protocol Compliance Test Client', 
-        version: '1.0.0' 
-      },
-      { 
-        capabilities: { 
+    try {
+      const session = await startMcpTestClient({
+        serverPath,
+        env: {
+          ...process.env,
+          NODE_ENV: 'test'
+        },
+        clientInfo: {
+          name: 'MCP Protocol Compliance Test Client',
+          version: '1.0.0'
+        },
+        capabilities: {
           tools: {},
           resources: {},
           prompts: {},
           experimental: {
-            // Test latest experimental features
             completions: {}
           }
-        } 
-      }
-    );
+        }
+      });
 
-    const transport = new StdioClientTransport({
-      command: 'node',
-      args: [serverPath],
-      env: {
-        ...process.env,
-        NODE_ENV: 'test'
-      }
-    });
-
-    try {
-      await client.connect(transport);
+      client = session.client;
+      transport = session.transport;
     } catch (error) {
       throw new Error(`Failed to connect to MCP server: ${error}`);
     }
   }
 
   async function stopServer() {
-    if (client) {
-      try {
-        await client.close();
-      } catch (error) {
-        console.warn('Error closing client:', error);
-      }
-      client = null;
-    }
+    await stopMcpTestClient(client, transport);
+    client = null;
+    transport = null;
   }
 
   describe('Protocol Initialization', () => {
@@ -91,6 +83,7 @@ describe('MCP Protocol Compliance Tests', () => {
       expect(serverInfo).toBeDefined();
       expect(serverInfo.name).toBe('neo-n3-mcp-server');
       expect(serverInfo.version).toMatch(/^\d+\.\d+\.\d+$/);
+      expect(serverInfo.version).toBe(packageVersion);
     });
 
     test('should declare expected capabilities', async () => {
@@ -119,6 +112,8 @@ describe('MCP Protocol Compliance Tests', () => {
       response.tools.forEach(tool => {
         expect(tool.name).toBeDefined();
         expect(typeof tool.name).toBe('string');
+        expect(tool.description).toEqual(expect.any(String));
+        expect(tool.description.trim().length).toBeGreaterThan(0);
         
         
         if (tool.inputSchema) {
@@ -177,6 +172,18 @@ describe('MCP Protocol Compliance Tests', () => {
       expect(response.content).toBeDefined();
     });
 
+    test('should import wallet with supported MCP arguments', async () => {
+      const account = new neonJs.wallet.Account();
+      const response = await client.callTool({
+        name: 'import_wallet',
+        arguments: { privateKeyOrWIF: account.WIF, password: 'password123' }
+      });
+
+      expect(response.isError).not.toBe(true);
+      const wallet = JSON.parse(response.content[0].text);
+      expect(wallet.address).toBe(account.address);
+    });
+
     test('should validate wallet creation tool', async () => {
       const response = await client.callTool({ name: 'create_wallet', arguments: { password: 'password123' } });
       
@@ -188,6 +195,21 @@ describe('MCP Protocol Compliance Tests', () => {
       expect(wallet.publicKey).toBeDefined();
       expect(wallet.encryptedPrivateKey).toBeDefined();
       expect(wallet.address).toMatch(/^N[A-Za-z0-9]{33}$/); // Neo N3 address format
+    });
+
+    test('should allow setting the combined network mode', async () => {
+      const response = await client.callTool({
+        name: 'set_network_mode',
+        arguments: { mode: 'both' }
+      });
+
+      expect(response.isError).not.toBe(true);
+      expect(response.content[0].text).toContain('both');
+
+      const networkModeResponse = await client.callTool({ name: 'get_network_mode', arguments: {} });
+      const networkMode = JSON.parse(networkModeResponse.content[0].text);
+      expect(networkMode.mode).toBe('both');
+      expect(networkMode.availableNetworks).toEqual(expect.arrayContaining(['mainnet', 'testnet']));
     });
 
     test('should handle network switching tools', async () => {
@@ -213,6 +235,8 @@ describe('MCP Protocol Compliance Tests', () => {
       response.resources.forEach(resource => {
         expect(resource.uri).toBeDefined();
         expect(typeof resource.uri).toBe('string');
+        expect(resource.description).toEqual(expect.any(String));
+        expect(resource.description.trim().length).toBeGreaterThan(0);
         
         
         // Validate URI format

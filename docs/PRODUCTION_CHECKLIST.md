@@ -1,352 +1,95 @@
-# Neo N3 MCP Production Deployment Checklist
+# Production Checklist
 
-This checklist ensures your Neo N3 MCP server is properly configured and secured for production use.
+Use this checklist before shipping `@r3e/neo-n3-mcp` into production.
 
-## Pre-Deployment Checklist
+## Configuration
 
-### ✅ Configuration
+- [ ] Set `NEO_NETWORK` explicitly; use `mainnet` or `testnet` for HTTP deployments
+- [ ] Configure stable RPC endpoints for every enabled network
+- [ ] Set `LOG_LEVEL` and `LOG_FILE`
+- [ ] Keep `LOG_CONSOLE=false` for long-running HTTP deployments
+- [ ] Enable rate limiting for public HTTP deployments
 
-- [ ] **Network Configuration**
-  - [ ] Set appropriate network mode (`mainnet` for production)
-  - [ ] Configure reliable RPC endpoints
-  - [ ] Test RPC endpoint connectivity and performance
-  - [ ] Set up backup RPC endpoints
-
-- [ ] **Security Configuration**
-  - [ ] Enable rate limiting (`RATE_LIMITING_ENABLED=true`)
-  - [ ] Set appropriate rate limits for your use case
-  - [ ] Configure secure logging (no sensitive data in logs)
-  - [ ] Set up proper access controls
-
-- [ ] **Environment Variables**
-  ```bash
-  # Required for production
-  NEO_NETWORK=mainnet
-  NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443
-  NEO_TESTNET_RPC=https://testnet1.neo.coz.io:443
-  
-  # Rate limiting
-  RATE_LIMITING_ENABLED=true
-  MAX_REQUESTS_PER_MINUTE=60
-  MAX_REQUESTS_PER_HOUR=1000
-  
-  # Logging
-  LOG_LEVEL=info
-  LOG_FILE=/var/log/neo-mcp/server.log
-  LOG_CONSOLE=false
-  ```
-
-### ✅ Infrastructure
-
-- [ ] **Server Requirements**
-  - [ ] Minimum 2GB RAM
-  - [ ] Minimum 2 CPU cores
-  - [ ] SSD storage for logs
-  - [ ] Stable internet connection
-
-- [ ] **Monitoring Setup**
-  - [ ] Health check endpoints configured
-  - [ ] Log aggregation setup
-  - [ ] Performance monitoring
-  - [ ] Error alerting
-
-- [ ] **Backup & Recovery**
-  - [ ] Log rotation configured
-  - [ ] Backup strategy for configuration
-  - [ ] Disaster recovery plan
-
-### ✅ Testing
-
-- [ ] **Functional Testing**
-  - [ ] All tools tested on target network
-  - [ ] Contract interactions verified
-  - [ ] Error handling tested
-  - [ ] Performance benchmarks completed
-
-- [ ] **Security Testing**
-  - [ ] Input validation tested
-  - [ ] Rate limiting verified
-  - [ ] Access control tested
-  - [ ] No sensitive data exposure
-
-## Deployment Steps
-
-### 1. Install Dependencies
+Recommended baseline:
 
 ```bash
-# Install Node.js 18+ and npm
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-# Install the MCP server
-npm install -g @r3e/neo-n3-mcp
+NEO_NETWORK=mainnet
+NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443
+NEO_TESTNET_RPC=http://seed1t5.neo.org:20332
+RATE_LIMITING_ENABLED=true
+MAX_REQUESTS_PER_MINUTE=60
+MAX_REQUESTS_PER_HOUR=1000
+LOG_LEVEL=info
+LOG_FILE=/var/log/neo-n3-mcp/server.log
+LOG_CONSOLE=false
+PORT=3000
 ```
 
-### 2. Create Configuration
+Backward-compatible aliases accepted by the runtime:
+- `NEO_MAINNET_RPC_URL`
+- `NEO_TESTNET_RPC_URL`
+- `NEO_NETWORK_MODE`
 
-```bash
-# Create configuration directory
-sudo mkdir -p /etc/neo-mcp
-sudo mkdir -p /var/log/neo-mcp
+## Validation
 
-# Create configuration file
-sudo tee /etc/neo-mcp/config.json << EOF
-{
-  "network": "mainnet",
-  "rpc": {
-    "mainnet": "https://mainnet1.neo.coz.io:443",
-    "testnet": "https://testnet1.neo.coz.io:443"
-  },
-  "logging": {
-    "level": "info",
-    "file": "/var/log/neo-mcp/server.log",
-    "console": false
-  },
-  "rateLimiting": {
-    "enabled": true,
-    "maxRequestsPerMinute": 60,
-    "maxRequestsPerHour": 1000
-  }
-}
-EOF
-```
+- [ ] Run `npm run lint`
+- [ ] Run `npm run build`
+- [ ] Run `npm test`
+- [ ] Run `npm run test:mcp`
+- [ ] Run `npm run test:integration`
+- [ ] Verify `/health` and `/metrics` in HTTP mode
+- [ ] Verify one read-only testnet workflow against the intended RPC node
 
-### 3. Create Systemd Service
+## Deployment
 
-```bash
-# Create service file
-sudo tee /etc/systemd/system/neo-mcp.service << EOF
+- [ ] Run stdio mode only behind an MCP client
+- [ ] Run HTTP mode with `npm run start:http` for REST/monitoring use cases
+- [ ] Use a process supervisor such as systemd, Docker, or Kubernetes
+- [ ] Persist logs and wallet storage to controlled volumes
+- [ ] Rotate logs
+
+Example systemd service:
+
+```ini
 [Unit]
-Description=Neo N3 MCP Server
+Description=Neo N3 MCP HTTP Server
 After=network.target
 
 [Service]
 Type=simple
 User=neo-mcp
 Group=neo-mcp
-WorkingDirectory=/opt/neo-mcp
-ExecStart=/usr/bin/neo-n3-mcp --config /etc/neo-mcp/config.json
+WorkingDirectory=/opt/neo-n3-mcp
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=NEO_NETWORK=mainnet
+Environment=NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443
+Environment=NEO_TESTNET_RPC=http://seed1t5.neo.org:20332
+Environment=LOG_LEVEL=info
+Environment=LOG_FILE=/var/log/neo-n3-mcp/server.log
+ExecStart=/usr/bin/npm run start:http --prefix /opt/neo-n3-mcp
 Restart=always
 RestartSec=10
-StandardOutput=journal
-StandardError=journal
-SyslogIdentifier=neo-mcp
-
-# Security settings
-NoNewPrivileges=true
-PrivateTmp=true
-ProtectSystem=strict
-ProtectHome=true
-ReadWritePaths=/var/log/neo-mcp
-
-# Environment
-Environment=NODE_ENV=production
 
 [Install]
 WantedBy=multi-user.target
-EOF
 ```
 
-### 4. Create User and Set Permissions
+## Security
+
+- [ ] Never log raw private keys or WIF values
+- [ ] Require explicit confirmation for state-changing tools
+- [ ] Keep secrets out of shell history and container image layers
+- [ ] Restrict HTTP exposure with a reverse proxy, firewall, or private network
+- [ ] Monitor RPC latency and failure rates
+
+## Smoke Checks
 
 ```bash
-# Create dedicated user
-sudo useradd --system --shell /bin/false neo-mcp
-
-# Set permissions
-sudo chown -R neo-mcp:neo-mcp /var/log/neo-mcp
-sudo chmod 755 /var/log/neo-mcp
-sudo chmod 644 /etc/neo-mcp/config.json
+curl http://localhost:3000/health
+curl http://localhost:3000/metrics
 ```
-
-### 5. Configure Log Rotation
 
 ```bash
-# Create logrotate configuration
-sudo tee /etc/logrotate.d/neo-mcp << EOF
-/var/log/neo-mcp/*.log {
-    daily
-    missingok
-    rotate 30
-    compress
-    delaycompress
-    notifempty
-    create 644 neo-mcp neo-mcp
-    postrotate
-        systemctl reload neo-mcp
-    endscript
-}
-EOF
+npm run test:integration
 ```
-
-### 6. Start and Enable Service
-
-```bash
-# Reload systemd
-sudo systemctl daemon-reload
-
-# Enable and start service
-sudo systemctl enable neo-mcp
-sudo systemctl start neo-mcp
-
-# Check status
-sudo systemctl status neo-mcp
-```
-
-## Post-Deployment Verification
-
-### ✅ Service Health
-
-- [ ] **Service Status**
-  ```bash
-  # Check service is running
-  sudo systemctl status neo-mcp
-  
-  # Check logs
-  sudo journalctl -u neo-mcp -f
-  ```
-
-- [ ] **Connectivity Test**
-  ```bash
-  # Test MCP server response
-  echo '{"name":"get_network_mode","arguments":{}}' | neo-n3-mcp
-  ```
-
-### ✅ Performance Monitoring
-
-- [ ] **Resource Usage**
-  ```bash
-  # Monitor CPU and memory
-  top -p $(pgrep -f neo-n3-mcp)
-  
-  # Check disk usage
-  df -h /var/log/neo-mcp
-  ```
-
-- [ ] **Response Times**
-  ```bash
-  # Test response time
-  time echo '{"name":"get_blockchain_info","arguments":{}}' | neo-n3-mcp
-  ```
-
-### ✅ Security Verification
-
-- [ ] **Rate Limiting**
-  ```bash
-  # Test rate limiting (should fail after limit)
-  for i in {1..70}; do
-    echo '{"name":"get_network_mode","arguments":{}}' | neo-n3-mcp
-  done
-  ```
-
-- [ ] **Input Validation**
-  ```bash
-  # Test invalid inputs (should return proper errors)
-  echo '{"name":"get_balance","arguments":{"address":"invalid"}}' | neo-n3-mcp
-  ```
-
-## Monitoring and Maintenance
-
-### Daily Checks
-
-- [ ] Service status: `sudo systemctl status neo-mcp`
-- [ ] Log file size: `ls -lh /var/log/neo-mcp/`
-- [ ] Error count: `grep -c ERROR /var/log/neo-mcp/server.log`
-
-### Weekly Checks
-
-- [ ] Performance metrics review
-- [ ] Security log analysis
-- [ ] Backup verification
-- [ ] Update availability check
-
-### Monthly Checks
-
-- [ ] Full security audit
-- [ ] Performance optimization review
-- [ ] Disaster recovery test
-- [ ] Documentation updates
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Service Won't Start**
-   ```bash
-   # Check logs
-   sudo journalctl -u neo-mcp --no-pager
-   
-   # Check configuration
-   neo-n3-mcp --config /etc/neo-mcp/config.json --validate
-   ```
-
-2. **High Memory Usage**
-   ```bash
-   # Check for memory leaks
-   sudo systemctl restart neo-mcp
-   
-   # Monitor memory usage
-   watch -n 5 'ps aux | grep neo-n3-mcp'
-   ```
-
-3. **RPC Connection Issues**
-   ```bash
-   # Test RPC connectivity
-   curl -X POST https://mainnet1.neo.coz.io:443 \
-     -H "Content-Type: application/json" \
-     -d '{"jsonrpc":"2.0","method":"getblockcount","params":[],"id":1}'
-   ```
-
-4. **Rate Limiting Issues**
-   ```bash
-   # Check rate limit configuration
-   grep -i rate /etc/neo-mcp/config.json
-   
-   # Adjust limits if needed
-   sudo systemctl restart neo-mcp
-   ```
-
-### Emergency Procedures
-
-1. **Service Failure**
-   ```bash
-   # Immediate restart
-   sudo systemctl restart neo-mcp
-   
-   # If restart fails, check logs and configuration
-   sudo journalctl -u neo-mcp --since "1 hour ago"
-   ```
-
-2. **High Load**
-   ```bash
-   # Temporarily reduce rate limits
-   # Edit /etc/neo-mcp/config.json
-   # Restart service
-   sudo systemctl restart neo-mcp
-   ```
-
-3. **Security Incident**
-   ```bash
-   # Stop service immediately
-   sudo systemctl stop neo-mcp
-   
-   # Analyze logs
-   sudo grep -i "error\|fail\|attack" /var/log/neo-mcp/server.log
-   
-   # Contact security team
-   ```
-
-## Support and Resources
-
-- **Documentation**: [Neo N3 MCP Documentation](./README.md)
-- **Examples**: [Usage Examples](./EXAMPLES.md)
-- **API Reference**: [API Documentation](./API.md)
-- **Neo N3 Documentation**: https://docs.neo.org/
-- **Community Support**: https://discord.gg/neo
-
-## Version Information
-
-- **Neo N3 MCP Version**: 1.5.0
-- **Neo N3 SDK Version**: @cityofzion/neon-js v5.3.0
-- **MCP SDK Version**: @modelcontextprotocol/sdk v1.9.0
-- **Node.js Version**: 18+ required

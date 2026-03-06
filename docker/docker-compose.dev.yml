@@ -4,7 +4,7 @@ services:
   neo-mcp-dev:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: docker/Dockerfile.dev
       target: development
     image: neo-n3-mcp:dev
     container_name: neo-n3-mcp-dev
@@ -16,7 +16,7 @@ services:
       # Network Configuration
       - NEO_NETWORK=testnet
       - NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443
-      - NEO_TESTNET_RPC=https://testnet1.neo.coz.io:443
+      - NEO_TESTNET_RPC=http://seed1t5.neo.org:20332
       
       # Rate Limiting (more permissive for dev)
       - RATE_LIMITING_ENABLED=false
@@ -25,7 +25,7 @@ services:
       
       # Logging
       - LOG_LEVEL=debug
-      - LOG_FILE=/app/logs/neo-mcp-dev.log
+      - LOG_FILE=/app/logs/neo-n3-mcp-dev.log
       - LOG_CONSOLE=true
       
       # Development
@@ -44,7 +44,7 @@ services:
       - ./config:/app/config:ro
     networks:
       - neo-mcp-dev-network
-    command: ["npm", "run", "dev"]
+    command: ["npm", "run", "dev:http"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s

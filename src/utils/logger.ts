@@ -7,15 +7,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { config } from '../config';
 
-// Define default logging settings
 const DEFAULT_LOG_LEVEL = 'info';
-const DEFAULT_LOG_CONSOLE = true;
-const DEFAULT_LOG_FILE = false;
+const DEFAULT_LOG_CONSOLE = !(process.env.NODE_ENV || '').toLowerCase().includes('test');
 const DEFAULT_LOG_FILE_PATH = './logs/neo-n3-mcp.log';
+const LOGGER_HOOKS_REGISTERED = '__neoN3McpLoggerHooksRegistered__';
 
-/**
- * Log levels enum
- */
 export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
@@ -23,9 +19,6 @@ export enum LogLevel {
   ERROR = 3
 }
 
-/**
- * Logger class - singleton pattern
- */
 export class Logger {
   private static instance: Logger;
   private logLevel: LogLevel;
@@ -34,20 +27,15 @@ export class Logger {
   private logFilePath: string;
   private logStream: fs.WriteStream | null = null;
 
-  /**
-   * Private constructor - use getInstance() instead
-   */
   private constructor() {
-    // Use defaults if config or specific logging properties are not available
-    const loggingConfig = (config as any)?.logging; // Check if logging exists
+    const loggingConfig = (config as any)?.logging;
     this.logLevel = this.stringToLogLevel(loggingConfig?.level || DEFAULT_LOG_LEVEL);
     this.logToConsole = loggingConfig?.console !== undefined ? loggingConfig.console : DEFAULT_LOG_CONSOLE;
-    this.logToFile = loggingConfig?.file || DEFAULT_LOG_FILE;
+    this.logToFile = Boolean(loggingConfig?.fileEnabled);
     this.logFilePath = loggingConfig?.filePath || DEFAULT_LOG_FILE_PATH;
 
     if (this.logToFile) {
       try {
-        // Ensure directory exists
         const dir = path.dirname(this.logFilePath);
         if (!fs.existsSync(dir)) {
           fs.mkdirSync(dir, { recursive: true });
@@ -61,16 +49,8 @@ export class Logger {
     }
   }
 
-  /**
-   * Convert string log level to enum
-   * @param level Log level string (case-insensitive)
-   * @returns LogLevel enum value
-   */
   private stringToLogLevel(level?: string): LogLevel {
-    if (!level) {
-      level = DEFAULT_LOG_LEVEL;
-    }
-    switch (level.toLowerCase()) {
+    switch ((level || DEFAULT_LOG_LEVEL).toLowerCase()) {
       case 'debug': return LogLevel.DEBUG;
       case 'info': return LogLevel.INFO;
       case 'warn': return LogLevel.WARN;
@@ -79,10 +59,6 @@ export class Logger {
     }
   }
 
-  /**
-   * Get singleton instance
-   * @returns Logger instance
-   */
   public static getInstance(): Logger {
     if (!Logger.instance) {
       Logger.instance = new Logger();
@@ -90,26 +66,12 @@ export class Logger {
     return Logger.instance;
   }
 
-  /**
-   * Format log message with timestamp and context
-   * @param level Log level string
-   * @param message Log message
-   * @param context Optional context object
-   * @returns Formatted message
-   */
   private formatMessage(level: string, message: string, context?: Record<string, any>): string {
     const timestamp = new Date().toISOString();
     const contextStr = context ? ` ${JSON.stringify(context)}` : '';
     return `[${timestamp}] [${level}] ${message}${contextStr}`;
   }
 
-  /**
-   * Internal log method
-   * @param level Log level
-   * @param levelStr Log level string
-   * @param message Log message
-   * @param context Optional context object
-   */
   private log(level: LogLevel, levelStr: string, message: string, context?: Record<string, any>): void {
     if (level < this.logLevel) {
       return;
@@ -118,9 +80,13 @@ export class Logger {
     const formattedMessage = this.formatMessage(levelStr, message, context);
 
     if (this.logToConsole) {
-      // For MCP servers using stdio transport, all console output MUST go to stderr
-      // Otherwise it corrupts the JSON-RPC stream on stdout
-      console.error(formattedMessage);
+      if (level >= LogLevel.ERROR) {
+        console.error(formattedMessage);
+      } else if (level >= LogLevel.WARN) {
+        console.warn(formattedMessage);
+      } else {
+        console.log(formattedMessage);
+      }
     }
 
     if (this.logToFile && this.logStream) {
@@ -132,45 +98,22 @@ export class Logger {
     }
   }
 
-  /**
-   * Log debug message
-   * @param message Log message
-   * @param context Optional context object
-   */
   public debug(message: string, context?: Record<string, any>): void {
     this.log(LogLevel.DEBUG, 'DEBUG', message, context);
   }
 
-  /**
-   * Log info message
-   * @param message Log message
-   * @param context Optional context object
-   */
   public info(message: string, context?: Record<string, any>): void {
     this.log(LogLevel.INFO, 'INFO', message, context);
   }
 
-  /**
-   * Log warning message
-   * @param message Log message
-   * @param context Optional context object
-   */
   public warn(message: string, context?: Record<string, any>): void {
     this.log(LogLevel.WARN, 'WARN', message, context);
   }
 
-  /**
-   * Log error message
-   * @param message Log message
-   * @param context Optional context object
-   */
   public error(message: string, context?: Record<string, any>): void {
     this.log(LogLevel.ERROR, 'ERROR', message, context);
   }
 
-  /**
-   * Close log stream
-   */
   public close(): void {
     if (this.logStream) {
       try {
@@ -184,12 +127,12 @@ export class Logger {
   }
 }
 
-// Create singleton instance
 export const logger = Logger.getInstance();
 
-// Add shutdown handling
-process.on('exit', () => logger.close());
-process.on('SIGINT', () => {
-  logger.close();
-  process.exit(0);
-});
+const closeLogger = () => logger.close();
+const loggerGlobalState = globalThis as typeof globalThis & { [LOGGER_HOOKS_REGISTERED]?: boolean };
+
+if (!loggerGlobalState[LOGGER_HOOKS_REGISTERED]) {
+  process.once('exit', closeLogger);
+  loggerGlobalState[LOGGER_HOOKS_REGISTERED] = true;
+}

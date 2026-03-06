@@ -1,4 +1,6 @@
 import * as neonJs from '@cityofzion/neon-js';
+import { KnownAccountMetadata, normalizeScriptHash, resolveKnownAccount, tryGetAddressFromScriptHash, tryGetScriptHashFromAddress } from '../metadata/known-accounts';
+import { logger } from '../utils/logger';
 
 /**
  * Supported Neo N3 networks
@@ -13,6 +15,8 @@ export enum NeoNetwork {
  */
 export class NeoService {
   private rpcClient: any;
+  private rpcUrl: string;
+  private networkMagic?: number;
   private network: NeoNetwork;
   private lastCallTime: number = 0;
   private minCallInterval: number = 100; // Minimum time between RPC calls in milliseconds
@@ -55,6 +59,7 @@ export class NeoService {
     }
 
     this.network = network;
+    this.rpcUrl = rpcUrl;
 
     // Apply options
     if (options.rateLimitEnabled !== undefined) {
@@ -99,12 +104,12 @@ export class NeoService {
                 validators = validatorsResult;
               }
             } catch (nextError) {
-              console.warn('All validator query methods failed, continuing without validators');
+              logger.warn('All validator query methods failed; continuing without validators', { network: this.network });
             }
           }
         }
       } catch (validatorError) {
-        console.warn('Failed to get validators:', validatorError);
+        logger.warn('Failed to get validators; continuing without validators', { network: this.network, error: validatorError instanceof Error ? validatorError.message : String(validatorError) });
         // Continue without validators
       }
 
@@ -114,13 +119,8 @@ export class NeoService {
         network: this.network
       };
     } catch (error) {
-      console.error('Failed to get blockchain info:', error);
-      // Provide a default/empty response on error to allow tests to proceed partially
-      return {
-        height: 0,
-        validators: [],
-        network: this.network
-      };
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to get blockchain info: ${errorMessage}`);
     }
   }
 
@@ -139,6 +139,270 @@ export class NeoService {
     }
   }
 
+
+  private enrichKnownParty(reference: string | null | undefined): { address?: string; scriptHash?: string; displayName?: string; name?: string; logo?: string; kind?: KnownAccountMetadata['kind']; knownAccount?: KnownAccountMetadata } | null {
+    const scriptHash = normalizeScriptHash(reference) ?? tryGetScriptHashFromAddress(reference);
+    const address = (reference && !normalizeScriptHash(reference) ? reference : null) ?? tryGetAddressFromScriptHash(scriptHash);
+    const knownAccount = resolveKnownAccount(reference ?? scriptHash ?? undefined, this.network) ?? (scriptHash ? resolveKnownAccount(scriptHash, this.network) : null);
+
+    if (!address && !scriptHash && !knownAccount) {
+      return null;
+    }
+
+    return {
+      ...(address ? { address } : {}),
+      ...(scriptHash ? { scriptHash } : {}),
+      ...((knownAccount || address || scriptHash)
+        ? { displayName: knownAccount?.name ?? address ?? scriptHash ?? undefined }
+        : {}),
+      ...(knownAccount?.name ? { name: knownAccount.name } : {}),
+      ...(knownAccount?.logo ? { logo: knownAccount.logo } : {}),
+      ...(knownAccount?.kind ? { kind: knownAccount.kind } : {}),
+      ...(knownAccount ? { knownAccount } : {}),
+    };
+  }
+
+  private normalizeHash160FromStackItem(item: any): string | null {
+    if (!item || typeof item !== 'object') {
+      return null;
+    }
+
+    const value = typeof item.value === 'string' ? item.value.trim() : '';
+    if (!value) {
+      return null;
+    }
+
+    if (item.type === 'Hash160') {
+      return normalizeScriptHash(value);
+    }
+
+    if (item.type === 'ByteString' || item.type === 'ByteArray') {
+      const directHex = normalizeScriptHash(value);
+      if (directHex) {
+        return directHex;
+      }
+
+      try {
+        const bytes = Buffer.from(value, 'base64');
+        if (bytes.length === 20) {
+          return normalizeScriptHash(bytes.toString('hex'));
+        }
+
+        const decodedText = bytes.toString('utf8');
+        return normalizeScriptHash(decodedText) ?? tryGetScriptHashFromAddress(decodedText);
+      } catch {
+        return null;
+      }
+    }
+
+    if (item.type === 'String') {
+      return tryGetScriptHashFromAddress(value) ?? normalizeScriptHash(value);
+    }
+
+    return null;
+  }
+
+  private parseTransferParticipant(item: any) {
+    if (!item || item.type === 'Any' || item.type === 'Null') {
+      return null;
+    }
+
+    const scriptHash = this.normalizeHash160FromStackItem(item);
+    if (scriptHash) {
+      return this.enrichKnownParty(scriptHash) ?? { scriptHash };
+    }
+
+    if (typeof item.value === 'string') {
+      return this.enrichKnownParty(item.value) ?? { value: item.value };
+    }
+
+    return null;
+  }
+
+  private parseTransferAmount(item: any): string | null {
+    if (!item || typeof item !== 'object') {
+      return null;
+    }
+
+    if (item.type === 'Integer') {
+      return String(item.value);
+    }
+
+    if ((item.type === 'ByteString' || item.type === 'ByteArray') && typeof item.value === 'string') {
+      try {
+        return Buffer.from(item.value, 'base64').toString('utf8');
+      } catch {
+        return String(item.value);
+      }
+    }
+
+    if (item.value !== undefined && item.value !== null) {
+      return String(item.value);
+    }
+
+    return null;
+  }
+
+  private buildAssetDescriptor(reference: string | null | undefined) {
+    const scriptHash = normalizeScriptHash(reference);
+    const knownAccount = resolveKnownAccount(reference ?? scriptHash ?? undefined, this.network) ?? (scriptHash ? resolveKnownAccount(scriptHash, this.network) : null);
+    const address = tryGetAddressFromScriptHash(scriptHash);
+
+    return {
+      ...(scriptHash ? { scriptHash } : {}),
+      ...(address ? { address } : {}),
+      ...(knownAccount?.symbol ? { symbol: knownAccount.symbol } : {}),
+      name: knownAccount?.name ?? scriptHash ?? undefined,
+      ...(knownAccount?.logo ? { logo: knownAccount.logo } : {}),
+      ...(knownAccount ? { knownAccount } : {}),
+    };
+  }
+
+  private buildTransferHistoryEntry(entry: any, accountAddress: string, direction: 'sent' | 'received') {
+    if (!entry || typeof entry !== 'object') {
+      return entry;
+    }
+
+    const selfParty = this.enrichKnownParty(accountAddress) ?? { address: accountAddress };
+    const counterparty = this.enrichKnownParty(entry.transferaddress) ?? (entry.transferaddress ? { address: entry.transferaddress } : null);
+    const from = direction === 'sent' ? selfParty : counterparty;
+    const to = direction === 'sent' ? counterparty : selfParty;
+    const timestampMs = typeof entry.timestamp === 'number'
+      ? entry.timestamp
+      : (typeof entry.timestamp === 'string' && /^\d+$/.test(entry.timestamp) ? Number.parseInt(entry.timestamp, 10) : null);
+
+    return {
+      ...entry,
+      direction,
+      ...(timestampMs !== null && Number.isFinite(timestampMs)
+        ? { timestampIso: new Date(timestampMs).toISOString() }
+        : {}),
+      ...(entry.assethash ? { asset: this.buildAssetDescriptor(entry.assethash) } : {}),
+      ...(from ? { from } : {}),
+      ...(to ? { to } : {}),
+      ...(counterparty ? { counterparty } : {}),
+    };
+  }
+
+  private enrichNep17Transfers(transfers: any, accountAddress: string) {
+    if (!transfers || typeof transfers !== 'object') {
+      return transfers;
+    }
+
+    return {
+      ...transfers,
+      sent: Array.isArray(transfers.sent)
+        ? transfers.sent.map((entry: any) => this.buildTransferHistoryEntry(entry, accountAddress, 'sent'))
+        : transfers.sent,
+      received: Array.isArray(transfers.received)
+        ? transfers.received.map((entry: any) => this.buildTransferHistoryEntry(entry, accountAddress, 'received'))
+        : transfers.received,
+    };
+  }
+
+  private buildNep11BalanceEntry(entry: any) {
+    if (!entry || typeof entry !== 'object') {
+      return entry;
+    }
+
+    return {
+      ...entry,
+      ...(entry.assethash ? { asset: this.buildAssetDescriptor(entry.assethash) } : {}),
+      ...(Array.isArray(entry.tokens) ? { tokenCount: entry.tokens.length } : {}),
+    };
+  }
+
+  private enrichNep11Balances(balances: any) {
+    if (!balances || typeof balances !== 'object') {
+      return balances;
+    }
+
+    return {
+      ...balances,
+      balance: Array.isArray(balances.balance)
+        ? balances.balance.map((entry: any) => this.buildNep11BalanceEntry(entry))
+        : balances.balance,
+    };
+  }
+
+  private enrichNep11Transfers(transfers: any, accountAddress: string) {
+    if (!transfers || typeof transfers !== 'object') {
+      return transfers;
+    }
+
+    return {
+      ...transfers,
+      sent: Array.isArray(transfers.sent)
+        ? transfers.sent.map((entry: any) => this.buildTransferHistoryEntry(entry, accountAddress, 'sent'))
+        : transfers.sent,
+      received: Array.isArray(transfers.received)
+        ? transfers.received.map((entry: any) => this.buildTransferHistoryEntry(entry, accountAddress, 'received'))
+        : transfers.received,
+    };
+  }
+
+  private enrichNotification(notification: any): any {
+    if (!notification || typeof notification !== 'object') {
+      return notification;
+    }
+
+    const eventName = notification.eventname ?? notification.eventName;
+    const stateValues = Array.isArray(notification.state?.value) ? notification.state.value : null;
+    if (eventName !== 'Transfer' || !stateValues || stateValues.length < 3) {
+      return notification;
+    }
+
+    const contractReference = typeof (notification.contract ?? notification.scriptHash) === 'string'
+      ? (notification.contract ?? notification.scriptHash)
+      : undefined;
+    const parsed = {
+      type: 'nep17_transfer',
+      contract: this.enrichKnownParty(contractReference) ?? { ...(normalizeScriptHash(contractReference) ? { scriptHash: normalizeScriptHash(contractReference) } : {}) },
+      asset: this.buildAssetDescriptor(contractReference),
+      from: this.parseTransferParticipant(stateValues[0]),
+      to: this.parseTransferParticipant(stateValues[1]),
+      amount: this.parseTransferAmount(stateValues[2]),
+    };
+
+    return {
+      ...notification,
+      parsed,
+    };
+  }
+
+  private enrichApplicationLog(applicationLog: any) {
+    if (!applicationLog || typeof applicationLog !== 'object' || !Array.isArray(applicationLog.executions)) {
+      return applicationLog;
+    }
+
+    return {
+      ...applicationLog,
+      executions: applicationLog.executions.map((execution: any) => ({
+        ...execution,
+        notifications: Array.isArray(execution?.notifications)
+          ? execution.notifications.map((notification: any) => this.enrichNotification(notification))
+          : execution?.notifications,
+      })),
+    };
+  }
+
+  private enrichTransaction(transaction: any) {
+    if (!transaction || typeof transaction !== 'object') {
+      return transaction;
+    }
+
+    const senderInfo = typeof transaction.sender === 'string'
+      ? this.enrichKnownParty(transaction.sender)
+      : null;
+
+    return senderInfo
+      ? {
+          ...transaction,
+          senderInfo,
+        }
+      : transaction;
+  }
+
   /**
    * Get transaction details by hash
    * @param txid Transaction hash
@@ -146,20 +410,227 @@ export class NeoService {
    */
   async getTransaction(txid: string) {
     try {
-      // Try to use execute method instead of direct method call
       try {
-        return await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getrawtransaction', params: [txid, 1] }));
+        return this.enrichTransaction(await this.rpcClient.getRawTransaction(txid, true));
       } catch (directError) {
-        console.warn('Direct getrawtransaction failed, trying alternative approach:', directError);
-
-        // Alternative approach using RPC client's execute method
-        const result = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getrawtransaction', params: [txid, true] }));
-        return result;
+        logger.warn('Direct getRawTransaction failed; trying query fallback', { txid, error: directError instanceof Error ? directError.message : String(directError) });
+        return this.enrichTransaction(await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getrawtransaction', params: [txid, 1] })));
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to get transaction ${txid}: ${errorMessage}`);
     }
+  }
+
+  /**
+   * Get the application log for a transaction.
+   * @param txid Transaction hash
+   * @returns Application log payload
+   */
+  async getApplicationLog(txid: string) {
+    try {
+      return this.enrichApplicationLog(await this.rpcClient.getApplicationLog(txid));
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to get application log for ${txid}: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Get the amount of claimable GAS for an address.
+   * @param address Neo N3 address
+   * @returns Unclaimed GAS summary
+   */
+  async getUnclaimedGas(address: string) {
+    try {
+      const unclaimedGas = await this.rpcClient.getUnclaimedGas(address);
+      return {
+        address,
+        unclaimedGas: typeof unclaimedGas === 'string' ? unclaimedGas : String(unclaimedGas),
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to get unclaimed GAS for ${address}: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Get NEP-17 transfer history for an address.
+   * @param address Neo N3 address
+   * @param options Optional timestamp filters in Unix epoch milliseconds
+   * @returns Transfer history payload from RPC with additive enrichment
+   */
+  async getNep17Transfers(
+    address: string,
+    options: {
+      fromTimestampMs?: number,
+      toTimestampMs?: number,
+    } = {}
+  ) {
+    try {
+      if (!address || typeof address !== 'string') {
+        throw new Error('Invalid address format');
+      }
+
+      if (options.fromTimestampMs !== undefined && (!Number.isInteger(options.fromTimestampMs) || options.fromTimestampMs < 0)) {
+        throw new Error(`Invalid fromTimestampMs: ${options.fromTimestampMs}`);
+      }
+
+      if (options.toTimestampMs !== undefined && (!Number.isInteger(options.toTimestampMs) || options.toTimestampMs < 0)) {
+        throw new Error(`Invalid toTimestampMs: ${options.toTimestampMs}`);
+      }
+
+      if (options.fromTimestampMs !== undefined && options.toTimestampMs !== undefined && options.fromTimestampMs > options.toTimestampMs) {
+        throw new Error('fromTimestampMs must be less than or equal to toTimestampMs');
+      }
+
+      const params: Array<string | number> = [address];
+      if (options.fromTimestampMs !== undefined) {
+        params.push(options.fromTimestampMs);
+      }
+      if (options.toTimestampMs !== undefined) {
+        if (options.fromTimestampMs === undefined) {
+          params.push(0);
+        }
+        params.push(options.toTimestampMs);
+      }
+
+      const transfers = await this.rpcClient.execute(new neonJs.rpc.Query({
+        method: 'getnep17transfers',
+        params,
+      }));
+
+      return this.enrichNep17Transfers(transfers, address);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to get NEP-17 transfers for address ${address}: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Get NEP-11 balances for an address.
+   * @param address Neo N3 address
+   * @returns NFT balance payload from RPC with additive enrichment
+   */
+  async getNep11Balances(address: string) {
+    try {
+      if (!address || typeof address !== 'string') {
+        throw new Error('Invalid address format');
+      }
+
+      const balances = await this.rpcClient.execute(new neonJs.rpc.Query({
+        method: 'getnep11balances',
+        params: [address],
+      }));
+
+      return this.enrichNep11Balances(balances);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to get NEP-11 balances for address ${address}: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Get NEP-11 transfer history for an address.
+   * @param address Neo N3 address
+   * @param options Optional timestamp filters in Unix epoch milliseconds
+   * @returns NFT transfer history payload from RPC with additive enrichment
+   */
+  async getNep11Transfers(
+    address: string,
+    options: {
+      fromTimestampMs?: number,
+      toTimestampMs?: number,
+    } = {}
+  ) {
+    try {
+      if (!address || typeof address !== 'string') {
+        throw new Error('Invalid address format');
+      }
+
+      if (options.fromTimestampMs !== undefined && (!Number.isInteger(options.fromTimestampMs) || options.fromTimestampMs < 0)) {
+        throw new Error(`Invalid fromTimestampMs: ${options.fromTimestampMs}`);
+      }
+
+      if (options.toTimestampMs !== undefined && (!Number.isInteger(options.toTimestampMs) || options.toTimestampMs < 0)) {
+        throw new Error(`Invalid toTimestampMs: ${options.toTimestampMs}`);
+      }
+
+      if (options.fromTimestampMs !== undefined && options.toTimestampMs !== undefined && options.fromTimestampMs > options.toTimestampMs) {
+        throw new Error('fromTimestampMs must be less than or equal to toTimestampMs');
+      }
+
+      const params: Array<string | number> = [address];
+      if (options.fromTimestampMs !== undefined) {
+        params.push(options.fromTimestampMs);
+      }
+      if (options.toTimestampMs !== undefined) {
+        if (options.fromTimestampMs === undefined) {
+          params.push(0);
+        }
+        params.push(options.toTimestampMs);
+      }
+
+      const transfers = await this.rpcClient.execute(new neonJs.rpc.Query({
+        method: 'getnep11transfers',
+        params,
+      }));
+
+      return this.enrichNep11Transfers(transfers, address);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to get NEP-11 transfers for address ${address}: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Poll for a transaction to be confirmed on-chain.
+   * @param txid Transaction hash
+   * @param options Polling options
+   * @returns Confirmation status and transaction details
+   */
+  async waitForTransaction(
+    txid: string,
+    options: { timeoutMs?: number; pollIntervalMs?: number; includeApplicationLog?: boolean } = {}
+  ) {
+    const timeoutMs = options.timeoutMs ?? 30_000;
+    const pollIntervalMs = options.pollIntervalMs ?? 1_000;
+    const includeApplicationLog = options.includeApplicationLog ?? false;
+    const deadline = Date.now() + timeoutMs;
+
+    while (Date.now() <= deadline) {
+      try {
+        const blockHeight = await this.rpcClient.getTransactionHeight(txid);
+        const transaction = await this.getTransaction(txid);
+        const result: any = {
+          txid,
+          confirmed: true,
+          blockHeight,
+          transaction,
+        };
+
+        if (includeApplicationLog) {
+          result.applicationLog = await this.getApplicationLog(txid);
+        }
+
+        return result;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const retryable = /unknown|not found|pending|mempool|missing/i.test(errorMessage);
+        if (!retryable) {
+          throw new Error(`Failed while waiting for transaction ${txid}: ${errorMessage}`);
+        }
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+    }
+
+    return {
+      txid,
+      confirmed: false,
+      timeoutMs,
+      pollIntervalMs,
+    };
   }
 
   /**
@@ -189,7 +660,7 @@ export class NeoService {
           };
         }
       } catch (nep17Error) {
-        console.warn('getnep17balances failed, trying alternative approach:', nep17Error);
+        logger.warn('getnep17balances failed; trying alternative balance lookup', { address, error: nep17Error instanceof Error ? nep17Error.message : String(nep17Error) });
 
         // Try to get NEO and GAS balances directly
         try {
@@ -241,16 +712,11 @@ export class NeoService {
             ]
           };
         } catch (invokeError) {
-          console.error('Invoke script approach also failed:', invokeError);
+          throw new Error(`Invoke script approach also failed: ${invokeError instanceof Error ? invokeError.message : String(invokeError)}`);
         }
       }
 
-      // Return empty balance if all methods fail or return no data
-      console.warn(`Returning empty balance for ${address} after failed attempts.`);
-      return {
-        address,
-        balance: []
-      };
+      throw new Error(`No balance data returned for address ${address}`);
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -290,13 +756,17 @@ export class NeoService {
     additionalScriptAttributes: any[] = []
   ) {
     try {
-      // Validate parameters
       if (!fromAccount || !fromAccount.address) {
         throw new Error('Invalid sender account: missing address');
       }
 
       if (!toAddress) {
         throw new Error('Recipient address is required');
+      }
+
+      const normalizedAmount = typeof amount === 'string' ? Number(amount) : amount;
+      if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+        throw new Error(`Invalid transfer amount: ${amount}`);
       }
 
       // Ensure addresses are strings, not objects
@@ -314,73 +784,15 @@ export class NeoService {
         throw new Error(`Invalid recipient address format: ${toAddress}`);
       }
 
-      // Create a transaction
-      const script = neonJs.sc.createScript({
-        scriptHash: asset.startsWith('0x') ? asset : this.getAssetHash(asset),
-        operation: 'transfer',
-        args: [
-          neonJs.sc.ContractParam.hash160(fromAddress),
-          neonJs.sc.ContractParam.hash160(toAddress),
-          neonJs.sc.ContractParam.integer(amount),
-          neonJs.sc.ContractParam.any(null),
-        ],
-      });
+      const contractHash = asset.startsWith('0x') ? asset : this.getAssetHash(asset);
+      const transferContract = new neonJs.experimental.nep17.Nep17Contract(
+        neonJs.u.HexString.fromHex(this.stripHexPrefix(contractHash)),
+        await this.getChainConfig(fromAccount)
+      );
 
-      // Create transaction intent
-      const txIntent = {
-        script,
-        attributes: additionalScriptAttributes,
-        signers: [
-          {
-            account: neonJs.u.HexString.fromHex(neonJs.wallet.getScriptHashFromAddress(fromAddress)),
-            scopes: 'CalledByEntry',
-          },
-        ],
-      };
-
-      // Get transaction info from RPC using direct execute call
-      const tx = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'invokescript', params: [
-        neonJs.u.HexString.fromHex(script),
-        txIntent.signers
-      ] }));
-
-      // Properly sign the transaction
-      let signedTx;
-
-      // Use standard transaction construction and signing
-      try {
-        const txn = new neonJs.tx.Transaction(tx);
-        txn.sign(fromAccount);
-        signedTx = txn.serialize(true);
-      } catch (signError) {
-        // Fall back to other methods if the standard approach fails
-        console.error('Transaction signing error:', signError);
-
-        // Try a different approach if the standard one fails
-        try {
-          // If tx is already a string, use it directly
-          if (typeof tx === 'string') {
-            signedTx = tx;
-          } else if (tx && typeof tx.serialize === 'function') {
-            // If tx has a serialize method, use it
-            signedTx = tx.serialize(true);
-          } else {
-            // Last resort, use JSON serialization
-            signedTx = JSON.stringify(tx);
-          }
-        } catch (fallbackError: any) {
-          throw new Error(`Failed to sign transaction: ${fallbackError.message}`);
-        }
-
-        console.warn('Transaction signing fallback used - verify transaction structure');
-      }
-
-      // Send transaction using direct execute call
-      const result = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'sendrawtransaction', params: [signedTx] }));
-
-      return { txid: result, tx: signedTx };
+      const txid = await transferContract.transfer(fromAddress, toAddress, normalizedAmount);
+      return { txid };
     } catch (error) {
-      // Production error handling
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to transfer assets: ${errorMessage}`);
     }
@@ -414,12 +826,12 @@ export class NeoService {
       const result = await this.rpcClient.invokeScript(scriptHexString.toString(), []);
       if (result.state !== 'HALT') {
         // Log warning but return result anyway, as some reads might not HALT cleanly but still return data
-        console.warn(`Read invoke state is not HALT: ${result.state}, Exception: ${result.exception}`);
+        logger.warn('Read invoke state is not HALT', { scriptHash, operation, state: result.state, exception: result.exception ?? null });
       }
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`Failed to invoke read contract ${scriptHash}.${operation}: ${errorMessage}`, error);
+      logger.error('Failed to invoke read contract', { scriptHash, operation, error: errorMessage });
       throw new Error(`Failed to invoke read contract ${scriptHash}.${operation}: ${errorMessage}`);
     }
   }
@@ -441,79 +853,22 @@ export class NeoService {
     args: any[] = [],
     additionalScriptAttributes: any[] = []
   ) {
-    // Renamed from invokeContract to invokeWriteContract implicitly by removing read path
     try {
       if (!scriptHash) throw new Error('Script hash is required');
       if (!operation) throw new Error('Operation is required');
 
-      // Account validation is now the first step for writes
       if (!fromAccount || !fromAccount.address) throw new Error('Invalid sender account: missing address');
-      const fromAddress = typeof fromAccount.address === 'string' ? fromAccount.address : String(fromAccount.address);
-      const addressPattern = /^[A-Za-z0-9]{33,35}$/;
-      if (!addressPattern.test(fromAddress)) throw new Error(`Invalid sender address format: ${fromAddress}`);
+      const contract = new neonJs.experimental.SmartContract(
+        neonJs.u.HexString.fromHex(this.stripHexPrefix(scriptHash)),
+        await this.getChainConfig(fromAccount)
+      );
 
-      const script = neonJs.sc.createScript({
-        scriptHash,
-        operation,
-        args,
-      });
-      const scriptHexString = neonJs.u.HexString.fromHex(script);
-
-      // WRITE PATH ONLY - Handle WitnessScope.CalledByEntry compatibility
-      let signerScope;
-      try {
-        // Try to use WitnessScope.CalledByEntry if available
-        signerScope = neonJs.tx.WitnessScope.CalledByEntry;
-      } catch (scopeError) {
-        // Fallback to string value if enum not available
-        console.warn('WitnessScope.CalledByEntry not available, using string value:', scopeError);
-        signerScope = 'CalledByEntry';
-      }
-
-      const signer = {
-        account: neonJs.wallet.getScriptHashFromAddress(fromAddress),
-        scopes: signerScope,
-      };
-
-      // Use execute method for invokeFunction
-      let invokeResult;
-      try {
-        // Try to use invokeFunction directly
-        invokeResult = await this.rpcClient.invokeFunction(scriptHash, operation, args, [signer]);
-      } catch (invokeFunctionError) {
-        console.warn('Direct invokeFunction failed, trying execute method:', invokeFunctionError);
-        // Fallback to execute method
-        invokeResult = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'invokefunction', params: [scriptHash, operation, args, [signer]] }));
-      }
-
-      if (invokeResult.state !== 'HALT') {
-        throw new Error(`Contract execution estimation failed: ${invokeResult.exception || 'Unknown error'}`);
-      }
-
-      // Build, sign, and send the transaction
-      const txConfig = {
-        signers: [signer],
-        script: scriptHexString.toString(),
-        validUntilBlock: invokeResult.validuntilblock || (await this.getBlockCount() + 1000),
-        systemFee: invokeResult.gasconsumed || '1000000'
-      };
-
-      // Create and sign transaction
-      const tx = new neonJs.tx.Transaction(txConfig);
-
-      // Use network magic number for signing
-      const networkMagic = this.network === NeoNetwork.MAINNET ? 8675309 : 877935405;
-      tx.sign(fromAccount, networkMagic);
-
-      // Send the transaction
-      const serializedTx = tx.serialize(true);
-      const txid = await this.rpcClient.sendRawTransaction(serializedTx);
-
-      return { txid: txid, tx: serializedTx };
+      const txid = await contract.invoke(operation, args);
+      return { txid };
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`Failed to invoke write contract ${scriptHash}.${operation}: ${errorMessage}`, error);
+      logger.error('Failed to invoke write contract', { scriptHash, operation, error: errorMessage });
       throw new Error(`Failed to invoke write contract ${scriptHash}.${operation}: ${errorMessage}`);
     }
   }
@@ -560,32 +915,29 @@ export class NeoService {
       const signer = {
         account: neonJs.wallet.getScriptHashFromAddress(fromAddress),
         scopes: neonJs.tx.WitnessScope.CalledByEntry,
-      };
+      } as any;
 
-      // Use invokescript to estimate fees without sending
-      const invokeResult = await this.rpcClient.invokeScript(
-        neonJs.u.HexString.fromHex(script).toString(),
+      const tx = new neonJs.tx.Transaction();
+      tx.script = neonJs.u.HexString.fromHex(script);
+      tx.addSigner(signer);
+
+      const dummyAccount = new neonJs.wallet.Account();
+      tx.addWitness(new neonJs.tx.Witness({
+        invocationScript: '',
+        verificationScript: neonJs.u.HexString.fromBase64(dummyAccount.contract.script).toString(),
+      }));
+
+      const systemFee = await neonJs.experimental.txHelpers.getSystemFee(
+        tx.script,
+        await this.getChainConfig(),
         [signer]
       );
+      const networkFee = await neonJs.api.smartCalculateNetworkFee(tx, this.rpcClient);
 
-      if (invokeResult.state !== 'HALT') {
-        throw new Error(`Fee estimation failed: ${invokeResult.exception || 'Unknown error'}`);
-      }
-
-      // Fees are typically returned in 'gasconsumed'
-      // We need to refine how network vs system fee is determined from neon-js perspective
-      // For now, assuming gasconsumed covers both, but this might need adjustment
-      // based on how neon-js breaks down fees from invokescript results.
-      // Neon-js docs might be needed here. Let's assume gasconsumed is the systemFee
-      // and networkFee needs separate calculation (often based on tx size).
-      // For simplicity, we'll return gasconsumed as systemFee and a placeholder for networkFee.
-
-      // Placeholder: Network fee calculation usually depends on transaction size
-      // This is a simplified estimation.
-      const networkFee = 100000; // Example fixed network fee estimate
-      const systemFee = parseInt(invokeResult.gasconsumed, 10);
-
-      return { networkFee, systemFee };
+      return {
+        networkFee: Number(networkFee.toString()),
+        systemFee: Number(systemFee.toString())
+      };
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -612,20 +964,29 @@ export class NeoService {
       const signer = {
         account: neonJs.wallet.getScriptHashFromAddress(fromAddress),
         scopes: neonJs.tx.WitnessScope.CalledByEntry,
+      } as any;
+
+      const tx = new neonJs.tx.Transaction();
+      tx.script = neonJs.u.HexString.fromHex(script);
+      tx.addSigner(signer);
+
+      const dummyAccount = new neonJs.wallet.Account();
+      tx.addWitness(new neonJs.tx.Witness({
+        invocationScript: '',
+        verificationScript: neonJs.u.HexString.fromBase64(dummyAccount.contract.script).toString(),
+      }));
+
+      const systemFee = await neonJs.experimental.txHelpers.getSystemFee(
+        tx.script,
+        await this.getChainConfig(),
+        [signer]
+      );
+      const networkFee = await neonJs.api.smartCalculateNetworkFee(tx, this.rpcClient);
+
+      return {
+        networkFee: Number(networkFee.toString()),
+        systemFee: Number(systemFee.toString())
       };
-
-      // Use invokeFunction as it's designed for this and provides validUntilBlock
-      const invokeResult = await this.rpcClient.invokeFunction(scriptHash, operation, args, [signer]);
-
-      if (invokeResult.state !== 'HALT') {
-        throw new Error(`Fee estimation failed: ${invokeResult.exception || 'Unknown error'}`);
-      }
-
-      // Similar fee estimation logic as transfer
-      const networkFee = 150000; // Example fixed network fee estimate for invokes
-      const systemFee = parseInt(invokeResult.gasconsumed, 10);
-
-      return { networkFee, systemFee };
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -638,7 +999,7 @@ export class NeoService {
    * @param fromAccount Account to claim GAS for and sign the transaction.
    * @returns Transaction details { txid, tx }
    */
-  async claimGas(fromAccount: any): Promise<{ txid: string; tx: string }> {
+  async claimGas(fromAccount: any): Promise<{ txid: string }> {
     try {
       if (!fromAccount || !fromAccount.address) {
         throw new Error('Invalid account for claiming GAS: missing address');
@@ -649,17 +1010,13 @@ export class NeoService {
         throw new Error(`Invalid address format for claiming GAS: ${fromAddress}`);
       }
 
-      // GAS contract script hash (same for MainNet/TestNet)
-      const gasContractHash = '0xd2a4cff31913016155e38e474a2c06d08be276cf';
-      const operation = 'claimGas'; // Standard GAS contract method
-      const args = [neonJs.sc.ContractParam.hash160(fromAddress)]; // Argument is the address claiming GAS
-
-      // Use the existing invokeContract method to handle the write operation
-      return await this.invokeContract(fromAccount, gasContractHash, operation, args);
+      const neoToken = new neonJs.experimental.nep17.NEOContract(await this.getChainConfig(fromAccount));
+      const txid = await neoToken.claimGas(fromAddress);
+      return { txid };
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`Failed to claim GAS for ${fromAccount?.address}: ${errorMessage}`, error);
+      logger.error('Failed to claim GAS', { address: fromAccount?.address ?? null, error: errorMessage });
       throw new Error(`Failed to claim GAS: ${errorMessage}`);
     }
   }
@@ -676,7 +1033,6 @@ export class NeoService {
         address: account.address,
         publicKey: account.publicKey,
         encryptedPrivateKey: account.encrypt(password),
-        WIF: account.WIF,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -727,6 +1083,33 @@ export class NeoService {
    * @param symbol Asset symbol (e.g., 'NEO', 'GAS')
    * @returns Asset hash
    */
+  private async getNetworkMagic(): Promise<number> {
+    if (this.networkMagic !== undefined) {
+      return this.networkMagic;
+    }
+
+    const version = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getversion', params: [] }));
+    const networkMagic = version?.protocol?.network;
+    if (!Number.isInteger(networkMagic)) {
+      throw new Error('Failed to determine network magic from RPC getversion');
+    }
+
+    this.networkMagic = networkMagic;
+    return networkMagic;
+  }
+
+  private async getChainConfig(account?: any): Promise<any> {
+    return {
+      rpcAddress: this.rpcUrl,
+      networkMagic: await this.getNetworkMagic(),
+      account,
+    };
+  }
+
+  private stripHexPrefix(value: string): string {
+    return value.startsWith('0x') ? value.slice(2) : value;
+  }
+
   private getAssetHash(symbol: string): string {
     if (!symbol) {
       throw new Error('Asset symbol is required');

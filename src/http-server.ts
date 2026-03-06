@@ -6,10 +6,13 @@
  */
 
 import * as http from 'http';
-import * as url from 'url';
+import { AddressInfo } from 'net';
+import * as neonJs from '@cityofzion/neon-js';
+
 import { NeoService, NeoNetwork } from './services/neo-service';
 import { WalletService } from './services/wallet-service';
 import { ContractService } from './contracts/contract-service';
+import { logger } from './utils/logger';
 
 export class HttpServer {
   private server: http.Server;
@@ -21,7 +24,7 @@ export class HttpServer {
     neoService: NeoService,
     walletService: WalletService,
     contractService: ContractService,
-    port: number = 3002
+    port: number = 3000
   ) {
     this.neoService = neoService;
     this.walletService = walletService;
@@ -29,95 +32,294 @@ export class HttpServer {
 
     this.server = http.createServer(this.handleRequest.bind(this));
     this.server.listen(port, () => {
-      console.log(`HTTP server listening on port ${port}`);
+      logger.info('HTTP server listening', { port: this.getPort() ?? port });
     });
 
-    // Log the server initialization
-    console.log('HTTP server initialized with:');
-    console.log(`- Neo Service: ${this.neoService ? 'Available' : 'Not available'}`);
-    console.log(`- Wallet Service: ${this.walletService ? 'Available' : 'Not available'}`);
-    console.log(`- Contract Service: ${this.contractService ? 'Available' : 'Not available'}`);
+    logger.info('HTTP server initialized', {
+      neoService: Boolean(this.neoService),
+      walletService: Boolean(this.walletService),
+      contractService: Boolean(this.contractService)
+    });
   }
 
-  /**
-   * Handle HTTP requests
-   */
   private async handleRequest(req: http.IncomingMessage, res: http.ServerResponse) {
-    // Define these variables outside the try block so they're available in the catch block
-    const parsedUrl = url.parse(req.url || '', true);
+    const parsedUrl = new URL(req.url || '/', 'http://localhost');
     const path = parsedUrl.pathname || '';
     const method = req.method || 'GET';
 
     try {
-      console.log(`HTTP ${method} ${path}`);
+      logger.info('HTTP request', { method, path });
 
-      // Set CORS headers
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-      // Handle preflight requests
       if (method === 'OPTIONS') {
         res.writeHead(200);
         res.end();
         return;
       }
 
-      // Parse request body for POST/PUT requests
+      if (path === '/health' && method === 'GET') {
+        const health = await this.getHealthStatus();
+        const statusCode = health.status === 'healthy' ? 200 : 503;
+        res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(health));
+        logger.info('HTTP response', { method, path, statusCode });
+        return;
+      }
+
+      if (path === '/metrics' && method === 'GET') {
+        const metrics = await this.buildMetrics();
+        res.writeHead(200, { 'Content-Type': 'text/plain; version=0.0.4; charset=utf-8' });
+        res.end(metrics);
+        logger.info('HTTP response', { method, path, statusCode: 200 });
+        return;
+      }
+
       let body: any = {};
       if (method === 'POST' || method === 'PUT') {
         body = await this.parseRequestBody(req);
       }
 
-      // Route the request
       let result: any;
       let statusCode = 200;
 
-      // Blockchain routes
       if (path === '/api/blockchain/info' && method === 'GET') {
         result = await this.neoService.getBlockchainInfo();
       } else if (path === '/api/blockchain/height' && method === 'GET') {
         const height = await this.neoService.getBlockCount();
         result = { height };
-      } else if (path.match(/^\/api\/blocks\/\d+$/) && method === 'GET') {
-        const blockHeight = parseInt(path.split('/').pop() || '0');
-        result = await this.neoService.getBlock(blockHeight);
-      } else if (path.match(/^\/api\/transactions\/[0-9a-fA-F]+$/) && method === 'GET') {
+      } else if (path.match(/^\/api\/blocks\/[^/]+$/) && method === 'GET') {
+        const rawBlockRef = path.split('/').pop() || '';
+        const blockRef = /^\d+$/.test(rawBlockRef) ? Number.parseInt(rawBlockRef, 10) : rawBlockRef;
+        result = await this.neoService.getBlock(blockRef);
+      } else if (path.match(/^\/api\/transactions\/(?:0x)?[0-9a-fA-F]+$/) && method === 'GET') {
         const txid = path.split('/').pop() || '';
         result = await this.neoService.getTransaction(txid);
-      }
-      // Account routes
-      else if (path.match(/^\/api\/accounts\/[A-Za-z0-9]+\/balance$/) && method === 'GET') {
+      } else if (path.match(/^\/api\/transactions\/(?:0x)?[0-9a-fA-F]+\/application-log$/) && method === 'GET') {
+        const txid = path.split('/')[3] || '';
+        result = await this.neoService.getApplicationLog(txid);
+      } else if (path.match(/^\/api\/transactions\/(?:0x)?[0-9a-fA-F]+\/wait$/) && method === 'GET') {
+        const txid = path.split('/')[3] || '';
+        const timeoutMs = parsedUrl.searchParams.get('timeoutMs');
+        const pollIntervalMs = parsedUrl.searchParams.get('pollIntervalMs');
+        const includeApplicationLog = parsedUrl.searchParams.get('includeApplicationLog');
+        result = await this.neoService.waitForTransaction(txid, {
+          timeoutMs: timeoutMs ? Number.parseInt(timeoutMs, 10) : undefined,
+          pollIntervalMs: pollIntervalMs ? Number.parseInt(pollIntervalMs, 10) : undefined,
+          includeApplicationLog: includeApplicationLog === 'true'
+        });
+      } else if (path.match(/^\/api\/accounts\/[A-Za-z0-9]+\/balance$/) && method === 'GET') {
         const address = path.split('/')[3] || '';
         result = await this.neoService.getBalance(address);
-      }
-      // Wallet routes
-      else if (path === '/api/wallets' && method === 'POST') {
-        const password = body.password || 'password';
-        result = await this.walletService.createWallet(password);
+      } else if (path.match(/^\/api\/accounts\/[A-Za-z0-9]+\/unclaimed-gas$/) && method === 'GET') {
+        const address = path.split('/')[3] || '';
+        result = await this.neoService.getUnclaimedGas(address);
+      } else if (path.match(/^\/api\/accounts\/[A-Za-z0-9]+\/nep17-transfers$/) && method === 'GET') {
+        const address = path.split('/')[3] || '';
+        const fromTimestampMs = parsedUrl.searchParams.get('fromTimestampMs');
+        const toTimestampMs = parsedUrl.searchParams.get('toTimestampMs');
+        const parsedFromTimestampMs = fromTimestampMs !== null ? Number.parseInt(fromTimestampMs, 10) : undefined;
+        const parsedToTimestampMs = toTimestampMs !== null ? Number.parseInt(toTimestampMs, 10) : undefined;
+
+        if (parsedFromTimestampMs !== undefined && Number.isNaN(parsedFromTimestampMs)) {
+          throw new Error(`Invalid fromTimestampMs: ${fromTimestampMs}`);
+        }
+
+        if (parsedToTimestampMs !== undefined && Number.isNaN(parsedToTimestampMs)) {
+          throw new Error(`Invalid toTimestampMs: ${toTimestampMs}`);
+        }
+
+        result = await this.neoService.getNep17Transfers(address, {
+          ...(parsedFromTimestampMs !== undefined ? { fromTimestampMs: parsedFromTimestampMs } : {}),
+          ...(parsedToTimestampMs !== undefined ? { toTimestampMs: parsedToTimestampMs } : {}),
+        });
+      } else if (path.match(/^\/api\/accounts\/[A-Za-z0-9]+\/nep11-balances$/) && method === 'GET') {
+        const address = path.split('/')[3] || '';
+        result = await this.neoService.getNep11Balances(address);
+      } else if (path.match(/^\/api\/accounts\/[A-Za-z0-9]+\/nep11-transfers$/) && method === 'GET') {
+        const address = path.split('/')[3] || '';
+        const fromTimestampMs = parsedUrl.searchParams.get('fromTimestampMs');
+        const toTimestampMs = parsedUrl.searchParams.get('toTimestampMs');
+        const parsedFromTimestampMs = fromTimestampMs !== null ? Number.parseInt(fromTimestampMs, 10) : undefined;
+        const parsedToTimestampMs = toTimestampMs !== null ? Number.parseInt(toTimestampMs, 10) : undefined;
+
+        if (parsedFromTimestampMs !== undefined && Number.isNaN(parsedFromTimestampMs)) {
+          throw new Error(`Invalid fromTimestampMs: ${fromTimestampMs}`);
+        }
+
+        if (parsedToTimestampMs !== undefined && Number.isNaN(parsedToTimestampMs)) {
+          throw new Error(`Invalid toTimestampMs: ${toTimestampMs}`);
+        }
+
+        result = await this.neoService.getNep11Transfers(address, {
+          ...(parsedFromTimestampMs !== undefined ? { fromTimestampMs: parsedFromTimestampMs } : {}),
+          ...(parsedToTimestampMs !== undefined ? { toTimestampMs: parsedToTimestampMs } : {}),
+        });
+      } else if (path === '/api/wallets' && method === 'POST') {
+        if (!body.password) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: password' };
+        } else {
+          result = await this.walletService.createWallet(body.password);
+        }
       } else if (path.match(/^\/api\/wallets\/[A-Za-z0-9]+$/) && method === 'GET') {
         const address = path.split('/').pop() || '';
-        result = await this.walletService.getWallet(address);
-      }
-      // Network routes
-      else if (path === '/api/network/mode' && method === 'GET') {
+        const wallet = await this.walletService.getWallet(address);
+        const { encryptedPrivateKey, ...sanitizedWallet } = wallet;
+        result = sanitizedWallet;
+      } else if (path === '/api/wallets/import' && method === 'POST') {
+        const key = body.key || body.privateKeyOrWIF;
+        if (!key) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: key (WIF or private key)' };
+        } else {
+          try {
+            result = await this.walletService.importWallet(key, body.password);
+          } catch (error) {
+            statusCode = 500;
+            result = {
+              error: 'Wallet import failed',
+              details: error instanceof Error ? error.message : 'Unknown error'
+            };
+          }
+        }
+      } else if (path === '/api/transfers' && method === 'POST') {
+        const fromWIF = body.fromWIF || body.wif;
+        if (!body.confirm) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: confirm=true' };
+        } else if (!fromWIF) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: fromWIF' };
+        } else if (!body.toAddress) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: toAddress' };
+        } else if (!body.asset) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: asset' };
+        } else if (body.amount === undefined || body.amount === null || body.amount === '') {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: amount' };
+        } else {
+          const account = new neonJs.wallet.Account(fromWIF);
+          result = await this.neoService.transferAssets(account, body.toAddress, body.asset, body.amount);
+        }
+      } else if (path === '/api/transfers/estimate-fees' && method === 'POST') {
+        if (!body.fromAddress) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: fromAddress' };
+        } else if (!body.toAddress) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: toAddress' };
+        } else if (!body.asset) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: asset' };
+        } else if (body.amount === undefined || body.amount === null || body.amount === '') {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: amount' };
+        } else {
+          result = await this.neoService.calculateTransferFee(body.fromAddress, body.toAddress, body.asset, body.amount);
+        }
+      } else if (path === '/api/accounts/claim-gas' && method === 'POST') {
+        const fromWIF = body.fromWIF || body.wif;
+        if (!body.confirm) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: confirm=true' };
+        } else if (!fromWIF) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: fromWIF' };
+        } else {
+          const account = new neonJs.wallet.Account(fromWIF);
+          result = await this.neoService.claimGas(account);
+        }
+      } else if (path === '/api/network/mode' && method === 'GET') {
         const network = this.neoService.getNetwork();
-        const mode = network === NeoNetwork.MAINNET ? 'mainnet' : 'testnet';
-        result = { mode };
-      }
-      // Contract routes
-      else if (path.match(/^\/api\/contracts\/[A-Za-z0-9]+\/invoke$/) && method === 'POST') {
+        result = { mode: network === NeoNetwork.MAINNET ? 'mainnet' : 'testnet' };
+      } else if (path.match(/^\/api\/contracts\/[A-Za-z0-9]+$/) && method === 'GET') {
+        const contractReference = path.split('/')[3] || '';
+        const contract = this.contractService.getContract(contractReference);
+        const available = await this.contractService.isContractDeployed(contractReference);
+        const operations = {
+          ...this.contractService.getContractOperations(contractReference),
+          available
+        };
+        const scriptHash = this.contractService.getContractScriptHash(contractReference);
+        result = {
+          name: contract.name,
+          description: contract.description,
+          scriptHash,
+          operations,
+          network: this.contractService.getNetwork(),
+          available
+        };
+      } else if (path === '/api/contracts/invoke/estimate-fees' && method === 'POST') {
+        const hasNamedContract = typeof body.contractName === 'string' && body.contractName.trim().length > 0 && !body.scriptHash;
+        if (hasNamedContract) {
+          await this.contractService.assertContractDeployed(body.contractName.trim());
+        }
+        const scriptHash = body.scriptHash || (body.contractName ? this.contractService.getContractScriptHash(body.contractName) : '');
+        const operation = body.operation || '';
+        const args = body.args || [];
+        if (!body.signerAddress) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: signerAddress' };
+        } else if (!scriptHash) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: scriptHash or contractName' };
+        } else if (!operation) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: operation' };
+        } else {
+          result = await this.neoService.calculateInvokeFee(body.signerAddress, scriptHash, operation, args);
+        }
+      } else if (path === '/api/contracts/invoke' && method === 'POST') {
+        const scriptHash = body.scriptHash || '';
+        const contractName = typeof body.contractName === 'string' ? body.contractName.trim() : '';
+        const operation = body.operation || '';
+        const args = body.args || [];
+        const useNamedContract = !scriptHash && Boolean(contractName);
+        if (!scriptHash && !contractName) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: scriptHash or contractName' };
+        } else if (!operation) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: operation' };
+        } else {
+          if (useNamedContract) {
+            await this.contractService.assertContractDeployed(contractName);
+          }
+          if (body.fromWIF) {
+            if (!body.confirm) {
+              statusCode = 400;
+              result = { error: 'Missing required parameter: confirm=true' };
+            } else {
+              const account = new neonJs.wallet.Account(body.fromWIF);
+              result = useNamedContract
+                ? await this.contractService.invokeWriteContract(account, contractName, operation, args)
+                : await this.neoService.invokeContract(account, scriptHash, operation, args);
+            }
+          } else {
+            result = useNamedContract
+              ? await this.contractService.invokeReadContract(contractName, operation, args)
+              : await this.neoService.invokeReadContract(scriptHash, operation, args);
+          }
+        }
+      } else if (path.match(/^\/api\/contracts\/[A-Za-z0-9]+\/invoke$/) && method === 'POST') {
         const contractName = path.split('/')[3] || '';
         const operation = body.operation || '';
         const args = body.args || [];
+        await this.contractService.assertContractDeployed(contractName);
         result = await this.contractService.invokeReadContract(contractName, operation, args);
-      }
-      // Contract deployment
-      else if (path === '/api/contracts/deploy' && method === 'POST') {
-        // Validate required parameters
-        if (!body.wif) {
+      } else if (path === '/api/contracts/deploy' && method === 'POST') {
+        const fromWIF = body.fromWIF || body.wif;
+        if (!body.confirm) {
           statusCode = 400;
-          result = { error: 'Missing required parameter: wif' };
+          result = { error: 'Missing required parameter: confirm=true' };
+        } else if (!fromWIF) {
+          statusCode = 400;
+          result = { error: 'Missing required parameter: fromWIF' };
         } else if (!body.script) {
           statusCode = 400;
           result = { error: 'Missing required parameter: script' };
@@ -126,35 +328,11 @@ export class HttpServer {
           result = { error: 'Missing required parameter: manifest' };
         } else {
           try {
-            // Deploy the contract
-            result = await this.contractService.deployContract(
-              body.wif,
-              body.script,
-              body.manifest
-            );
+            result = await this.contractService.deployContract(fromWIF, body.script, body.manifest);
           } catch (error) {
             statusCode = 500;
             result = {
               error: 'Contract deployment failed',
-              details: error instanceof Error ? error.message : 'Unknown error'
-            };
-          }
-        }
-      }
-      // Wallet import
-      else if (path === '/api/wallets/import' && method === 'POST') {
-        // Validate required parameters
-        if (!body.key) {
-          statusCode = 400;
-          result = { error: 'Missing required parameter: key (WIF or private key)' };
-        } else {
-          try {
-            const password = body.password || 'password';
-            result = await this.walletService.importWallet(body.key, password);
-          } catch (error) {
-            statusCode = 500;
-            result = {
-              error: 'Wallet import failed',
               details: error instanceof Error ? error.message : 'Unknown error'
             };
           }
@@ -164,29 +342,23 @@ export class HttpServer {
         result = { error: 'Not found' };
       }
 
-      // Send the response
       res.writeHead(statusCode, { 'Content-Type': 'application/json' });
-      const responseBody = JSON.stringify(result);
-      res.end(responseBody);
-
-      console.log(`HTTP Response ${statusCode}: ${responseBody.substring(0, 100)}${responseBody.length > 100 ? '...' : ''}`);
+      res.end(JSON.stringify(result));
+      logger.info('HTTP response', { method, path, statusCode });
     } catch (error) {
-      // Log the error with detailed information
-      console.error('Error handling request:', {
-        requestMethod: method,
-        requestPath: path,
+      logger.error('Error handling HTTP request', {
+        method,
+        path,
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined
       });
 
-      // Determine the appropriate status code based on the error type
       let statusCode = 500;
       let errorMessage = 'Internal server error';
       let errorDetails = null;
 
       if (error instanceof Error) {
-        // Handle specific error types
-        if (error.message.includes('not found') || error.message.includes('Not found')) {
+        if (error.message.includes('not found') || error.message.includes('Not found') || error.message.includes('not deployed')) {
           statusCode = 404;
           errorMessage = 'Resource not found';
         } else if (error.message.includes('invalid') || error.message.includes('Invalid')) {
@@ -203,24 +375,62 @@ export class HttpServer {
           errorMessage = 'Gateway timeout';
         }
 
-        // Include the original error message as details
         errorDetails = error.message;
       }
 
-      // Send the error response
       res.writeHead(statusCode, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
         error: errorMessage,
         details: errorDetails,
-        path: path,
-        method: method
+        path,
+        method
       }));
     }
   }
 
-  /**
-   * Parse request body
-   */
+  private async getHealthStatus(): Promise<Record<string, unknown>> {
+    try {
+      const height = await this.neoService.getBlockCount();
+      return {
+        status: 'healthy',
+        network: this.neoService.getNetwork(),
+        height,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      return {
+        status: 'unhealthy',
+        network: this.neoService.getNetwork(),
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
+
+  private async buildMetrics(): Promise<string> {
+    let blockHeight = -1;
+
+    try {
+      blockHeight = await this.neoService.getBlockCount();
+    } catch {
+      blockHeight = -1;
+    }
+
+    const labels = `network="${this.neoService.getNetwork()}"`;
+    return [
+      '# HELP neo_n3_mcp_uptime_seconds Process uptime in seconds.',
+      '# TYPE neo_n3_mcp_uptime_seconds gauge',
+      `neo_n3_mcp_uptime_seconds ${process.uptime().toFixed(3)}`,
+      '# HELP neo_n3_mcp_network_info Current network mode marker.',
+      '# TYPE neo_n3_mcp_network_info gauge',
+      `neo_n3_mcp_network_info{${labels}} 1`,
+      '# HELP neo_n3_mcp_block_height Latest observed block height.',
+      '# TYPE neo_n3_mcp_block_height gauge',
+      `neo_n3_mcp_block_height{${labels}} ${blockHeight}`,
+      ''
+    ].join('\n');
+  }
+
   private parseRequestBody(req: http.IncomingMessage): Promise<any> {
     return new Promise((resolve, reject) => {
       let body = '';
@@ -240,10 +450,24 @@ export class HttpServer {
     });
   }
 
-  /**
-   * Stop the server
-   */
-  public stop() {
-    this.server.close();
+  public getAddress(): string | AddressInfo | null {
+    return this.server.address();
+  }
+
+  public getPort(): number | null {
+    const address = this.server.address();
+    return typeof address === 'object' && address ? address.port : null;
+  }
+
+  public stop(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
   }
 }

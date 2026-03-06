@@ -9,7 +9,6 @@ import { NeoNetwork } from '../src/services/neo-service';
 import { FAMOUS_CONTRACTS } from '../src/contracts/contracts';
 import { ContractError, NetworkError, ValidationError } from '../src/utils/errors';
 
-// Mock data
 const mockContractResult = {
   script: 'mock-script',
   state: 'HALT',
@@ -18,49 +17,126 @@ const mockContractResult = {
 };
 
 const mockTransactionId = '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
+const mockNetworkMagic = 894710606;
+const mockContractHash = '1234567890abcdef1234567890abcdef12345678';
 
-// Mock neon-js
-jest.mock('@cityofzion/neon-js', () => ({
-  rpc: {
-    Query: jest.fn().mockImplementation((q) => q),
-    RPCClient: jest.fn().mockImplementation(() => ({
-      execute: jest.fn().mockResolvedValue(mockContractResult),
-      invokeScript: jest.fn().mockResolvedValue(mockContractResult),
-      sendRawTransaction: jest.fn().mockResolvedValue(mockTransactionId)
-    }))
-  },
-  sc: {
-    createScript: jest.fn().mockReturnValue('mock-script'),
-    ContractParam: {
-      string: jest.fn().mockReturnValue({ type: 'String', value: 'mock' }),
-      integer: jest.fn().mockReturnValue({ type: 'Integer', value: 123 }),
-      array: jest.fn().mockReturnValue({ type: 'Array', value: [] }),
-      hash160: jest.fn().mockReturnValue({ type: 'Hash160', value: 'mock-hash' })
+jest.mock('@cityofzion/neon-js', () => {
+  const contractResult = {
+    script: 'mock-script',
+    state: 'HALT',
+    gasconsumed: '1000000',
+    stack: [{ value: '100' }]
+  };
+  const transactionId = '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
+  const networkMagic = 894710606;
+  const contractHash = '1234567890abcdef1234567890abcdef12345678';
+
+  const mockRpcExecute = jest.fn().mockImplementation((queryOrMethod: any) => {
+    let method = queryOrMethod;
+    if (typeof queryOrMethod === 'object' && queryOrMethod !== null) {
+      method = queryOrMethod.req ? queryOrMethod.req.method : queryOrMethod.method;
     }
-  },
-  wallet: {
-    getScriptHashFromAddress: jest.fn().mockReturnValue('f81a9a9ebf8cc9ae7f9ac3491f5a9f3b282b5e9e'),
-    Account: jest.fn().mockImplementation(() => ({
-      address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
-      WIF: 'mock-wif'
-    }))
-  },
-  u: {
-    HexString: { fromHex: jest.fn().mockReturnValue('hex') }
-  },
-  tx: {
-    Transaction: jest.fn().mockImplementation(() => ({
-      sign: jest.fn(),
-      serialize: jest.fn().mockReturnValue('serialized')
-    }))
-  }
-}));
+
+    if (method === 'getversion') {
+      return Promise.resolve({ protocol: { network: networkMagic } });
+    }
+
+    return Promise.resolve(contractResult);
+  });
+
+  const mockExperimentalDeployContract = jest.fn().mockResolvedValue(transactionId);
+  const mockExperimentalGetContractHash = jest.fn().mockReturnValue(contractHash);
+
+  return {
+    __esModule: true,
+    __mocked: {
+      mockRpcExecute,
+      mockExperimentalDeployContract,
+      mockExperimentalGetContractHash
+    },
+    rpc: {
+      Query: jest.fn().mockImplementation((q) => q),
+      RPCClient: jest.fn().mockImplementation(() => ({
+        execute: mockRpcExecute,
+        invokeScript: jest.fn().mockResolvedValue(contractResult),
+        sendRawTransaction: jest.fn().mockResolvedValue(transactionId)
+      }))
+    },
+    sc: {
+      createScript: jest.fn().mockReturnValue('mock-script'),
+      NEF: jest.fn().mockImplementation(({ script }) => ({
+        script,
+        checksum: 123456,
+        serialize: jest.fn().mockReturnValue(script)
+      })),
+      ContractManifest: {
+        fromJson: jest.fn().mockImplementation((manifest) => ({
+          ...manifest,
+          name: manifest.name ?? 'TestContract',
+          toJson: jest.fn().mockReturnValue(manifest)
+        }))
+      },
+      ContractParam: {
+        string: jest.fn().mockReturnValue({ type: 'String', value: 'mock' }),
+        integer: jest.fn().mockReturnValue({ type: 'Integer', value: 123 }),
+        array: jest.fn().mockReturnValue({ type: 'Array', value: [] }),
+        hash160: jest.fn().mockReturnValue({ type: 'Hash160', value: 'mock-hash' })
+      }
+    },
+    experimental: {
+      deployContract: mockExperimentalDeployContract,
+      getContractHash: mockExperimentalGetContractHash
+    },
+    wallet: {
+      getScriptHashFromAddress: jest.fn().mockReturnValue('f81a9a9ebf8cc9ae7f9ac3491f5a9f3b282b5e9e'),
+      Account: jest.fn().mockImplementation(() => ({
+        address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
+        WIF: 'mock-wif'
+      }))
+    },
+    u: {
+      HexString: { fromHex: jest.fn().mockReturnValue('hex') }
+    },
+    tx: {
+      Transaction: jest.fn().mockImplementation(() => ({
+        sign: jest.fn(),
+        serialize: jest.fn().mockReturnValue('serialized')
+      }))
+    }
+  };
+});
+
+const neonJsMock = jest.requireMock('@cityofzion/neon-js') as {
+  __mocked: {
+    mockRpcExecute: jest.Mock;
+    mockExperimentalDeployContract: jest.Mock;
+    mockExperimentalGetContractHash: jest.Mock;
+  };
+};
+
+const mockRpcExecute = neonJsMock.__mocked.mockRpcExecute;
+const mockExperimentalDeployContract = neonJsMock.__mocked.mockExperimentalDeployContract;
+const mockExperimentalGetContractHash = neonJsMock.__mocked.mockExperimentalGetContractHash;
 
 describe('ContractService', () => {
   let contractService: ContractService;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockRpcExecute.mockImplementation((queryOrMethod: any) => {
+      let method = queryOrMethod;
+      if (typeof queryOrMethod === 'object' && queryOrMethod !== null) {
+        method = queryOrMethod.req ? queryOrMethod.req.method : queryOrMethod.method;
+      }
+
+      if (method === 'getversion') {
+        return Promise.resolve({ protocol: { network: mockNetworkMagic } });
+      }
+
+      return Promise.resolve(mockContractResult);
+    });
+    mockExperimentalDeployContract.mockResolvedValue(mockTransactionId);
+    mockExperimentalGetContractHash.mockReturnValue(mockContractHash);
     contractService = new ContractService('http://localhost:10332', NeoNetwork.MAINNET);
   });
 
@@ -81,6 +157,13 @@ describe('ContractService', () => {
       const contract = contractService.getContract(firstContract.name);
       expect(contract).toBeDefined();
       expect(contract.name).toBe(firstContract.name);
+    });
+
+    test('should resolve contract by current network script hash', () => {
+      const scriptHash = contractService.getContractScriptHash('NeoFS');
+      const contract = contractService.getContract(scriptHash);
+      expect(contract.name).toBe('NeoFS');
+      expect(contractService.getContractOperations(scriptHash)).toEqual(expect.objectContaining({ contractName: 'NeoFS' }));
     });
 
     test('should throw ContractError for non-existent contract', () => {
@@ -136,18 +219,71 @@ describe('ContractService', () => {
     });
   });
 
+  describe('deployContract', () => {
+    test('should fetch network magic and pass complete deploy config', async () => {
+      const manifest = {
+        name: 'TestContract',
+        groups: [],
+        supportedstandards: [],
+        abi: { methods: [], events: [] },
+        permissions: [],
+        trusts: [],
+        extra: null
+      };
+
+      const result = await contractService.deployContract('mock-wif', Buffer.from('aa55', 'hex').toString('base64'), manifest);
+
+      expect(mockRpcExecute).toHaveBeenCalledWith(expect.objectContaining({ method: 'getversion', params: [] }));
+      expect(mockExperimentalDeployContract).toHaveBeenCalledWith(
+        expect.objectContaining({ checksum: 123456 }),
+        expect.objectContaining({ name: 'TestContract' }),
+        expect.objectContaining({
+          account: expect.objectContaining({ address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr' }),
+          rpcAddress: 'http://localhost:10332',
+          networkMagic: mockNetworkMagic
+        })
+      );
+      expect(mockExperimentalGetContractHash).toHaveBeenCalledWith('hex', 123456, 'TestContract');
+      expect(result).toEqual(expect.objectContaining({
+        txid: mockTransactionId,
+        contractHash: `0x${mockContractHash}`,
+        address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
+        network: NeoNetwork.MAINNET
+      }));
+    });
+  });
+
   describe('listSupportedContracts', () => {
-    test('should list all contracts', () => {
-      const contracts = contractService.listSupportedContracts();
+    test('should list all contracts', async () => {
+      const mockRpcClient = contractService['rpcClient'];
+      mockRpcClient.getContractState = jest.fn().mockResolvedValue({ id: 1, hash: '0x1234' });
+      const contracts = await contractService.listSupportedContracts();
       expect(Array.isArray(contracts)).toBe(true);
       expect(contracts.length).toBeGreaterThan(0);
-      
+
       contracts.forEach(contract => {
         expect(contract).toHaveProperty('name');
         expect(contract).toHaveProperty('description');
         expect(contract).toHaveProperty('available');
         expect(contract).toHaveProperty('operationCount');
       });
+    });
+  });
+
+  describe('isContractDeployed', () => {
+    test('should return true when contract state exists on chain', async () => {
+      const mockRpcClient = contractService['rpcClient'];
+      mockRpcClient.getContractState = jest.fn().mockResolvedValue({ id: 1, hash: '0x1234' });
+
+      await expect(contractService.isContractDeployed('NeoFS')).resolves.toBe(true);
+      expect(mockRpcClient.getContractState).toHaveBeenCalledWith(contractService.getContractScriptHash('NeoFS'));
+    });
+
+    test('should return false when contract state lookup fails', async () => {
+      const mockRpcClient = contractService['rpcClient'];
+      mockRpcClient.getContractState = jest.fn().mockRejectedValue(new Error('Unknown contract'));
+
+      await expect(contractService.isContractDeployed('NeoFS')).resolves.toBe(false);
     });
   });
 
@@ -198,4 +334,4 @@ describe('ContractService', () => {
       expect(result).toBeDefined();
     });
   });
-}); 
+});
