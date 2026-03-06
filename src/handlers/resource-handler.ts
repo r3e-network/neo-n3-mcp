@@ -1,27 +1,83 @@
-// src/handlers/resource-handler.ts
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { ListResourcesRequestSchema, ListResourceTemplatesRequestSchema, ReadResourceRequestSchema, ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
-import { NeoService, NeoNetwork } from '../services/neo-service';
-import { ContractService } from '../contracts/contract-service';
-import { FAMOUS_CONTRACTS, ContractDefinition, ContractNetwork } from '../contracts/contracts';
-import { config, NetworkMode } from '../config';
-import { validateAddress, validateScriptHash } from '../utils/validation';
-import { handleError, createSuccessResponse } from '../utils/error-handler';
+import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { NeoService } from '../services/neo-service';
+import { NetworkMode } from '../config';
 import { logger } from '../utils/logger';
 
-// TODO: Move resource registration logic here
-// TODO: Move resource read handling logic here
+type ResourceServer = Pick<McpServer, 'resource'>;
+type ResourceNeoService = Pick<NeoService, 'getBlockchainInfo' | 'getBlock'>;
+
+export interface ResourceHandlerDependencies {
+  networkMode: NetworkMode;
+  getNeoService(networkParam?: string): Promise<ResourceNeoService>;
+}
+
+function createJsonResponse(uri: URL, payload: unknown) {
+  return {
+    contents: [
+      {
+        uri: uri.href,
+        mimeType: 'application/json',
+        text: JSON.stringify(payload, null, 2),
+      },
+    ],
+  };
+}
 
 export function setupResourceHandlers(
-  server: Server,
-  neoServices: Map<NeoNetwork, NeoService>,
-  contractServices: Map<NeoNetwork, ContractService>
+  server: ResourceServer,
+  { networkMode, getNeoService }: ResourceHandlerDependencies,
 ) {
-  // Placeholder: Resource registration and request handling logic will be moved here
   logger.debug('Setting up resource handlers...');
 
-  // Example structures (to be filled in)
-  // server.setRequestHandler(ListResourcesRequestSchema, async () => { /* ... */ });
-  // server.setRequestHandler(ListResourceTemplatesRequestSchema, async () => { /* ... */ });
-  // server.setRequestHandler(ReadResourceRequestSchema, async (request) => { /* ... */ });
+  server.resource(
+    'neo-network-status',
+    'neo://network/status',
+    { description: 'Network status for the default configured Neo network.' },
+    async (uri) => {
+      const neoService = await getNeoService();
+      const info = await neoService.getBlockchainInfo();
+      return createJsonResponse(uri, info);
+    },
+  );
+
+  if (networkMode === NetworkMode.MAINNET_ONLY || networkMode === NetworkMode.BOTH) {
+    server.resource(
+      'neo-mainnet-status',
+      'neo://mainnet/status',
+      { description: 'Network status snapshot for Neo mainnet.' },
+      async (uri) => {
+        const neoService = await getNeoService('mainnet');
+        const info = await neoService.getBlockchainInfo();
+        return createJsonResponse(uri, info);
+      },
+    );
+  }
+
+  if (networkMode === NetworkMode.TESTNET_ONLY || networkMode === NetworkMode.BOTH) {
+    server.resource(
+      'neo-testnet-status',
+      'neo://testnet/status',
+      { description: 'Network status snapshot for Neo testnet.' },
+      async (uri) => {
+        const neoService = await getNeoService('testnet');
+        const info = await neoService.getBlockchainInfo();
+        return createJsonResponse(uri, info);
+      },
+    );
+  }
+
+  server.resource(
+    'neo-block',
+    new ResourceTemplate('neo://block/{height}', { list: undefined }),
+    { description: 'Read block details by height on the default configured network.' },
+    async (uri, { height }) => {
+      const neoService = await getNeoService();
+      const parsedHeight = Array.isArray(height) ? height[0] : height;
+      const blockHeight = typeof parsedHeight === 'string' ? parseInt(parsedHeight, 10) : parsedHeight;
+      const block = await neoService.getBlock(blockHeight as number);
+      return createJsonResponse(uri, block);
+    },
+  );
+
+  logger.info('Resources set up successfully');
 }

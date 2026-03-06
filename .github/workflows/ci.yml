@@ -83,6 +83,9 @@ jobs:
         fi
         echo "Build validation successful"
 
+    - name: Run built MCP smoke test
+      run: npm run test:mcp:smoke
+
   docker:
     name: Docker Build & Test
     runs-on: ubuntu-latest

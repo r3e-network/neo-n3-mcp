@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 
-import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { NeoService, NeoNetwork } from './services/neo-service';
 import { WalletService } from './services/wallet-service';
 import { ContractService } from './contracts/contract-service';
 import { callTool } from './handlers/tool-handler';
+import { setupResourceHandlers } from './handlers/resource-handler';
 import { config, NetworkMode } from './config';
 import { SERVER_NAME, SERVER_VERSION } from './version';
 import { logger } from './utils/logger';
@@ -747,96 +748,10 @@ class NeoN3McpServer {
   private setupResources() {
     logger.info('Setting up resources with modern API...');
 
-    // Network status resource
-    this.server.resource(
-      'neo-network-status',
-      'neo://network/status',
-      { description: 'Network status for the default configured Neo network.' },
-      async (uri) => {
-        const neoService = await this.getNeoService();
-        const info = await neoService.getBlockchainInfo();
-
-        return {
-          contents: [
-            {
-              uri: uri.href,
-              mimeType: 'application/json',
-              text: JSON.stringify(info, null, 2),
-            },
-          ],
-        };
-      }
-    );
-
-    // Mainnet status resource
-    if (config.networkMode === NetworkMode.MAINNET_ONLY || config.networkMode === NetworkMode.BOTH) {
-      this.server.resource(
-        'neo-mainnet-status',
-        'neo://mainnet/status',
-        { description: 'Network status snapshot for Neo mainnet.' },
-        async (uri) => {
-          const neoService = await this.getNeoService('mainnet');
-          const info = await neoService.getBlockchainInfo();
-
-          return {
-            contents: [
-              {
-                uri: uri.href,
-                mimeType: 'application/json',
-                text: JSON.stringify(info, null, 2),
-              },
-            ],
-          };
-        }
-      );
-    }
-
-    // Testnet status resource
-    if (config.networkMode === NetworkMode.TESTNET_ONLY || config.networkMode === NetworkMode.BOTH) {
-      this.server.resource(
-        'neo-testnet-status',
-        'neo://testnet/status',
-        { description: 'Network status snapshot for Neo testnet.' },
-        async (uri) => {
-          const neoService = await this.getNeoService('testnet');
-          const info = await neoService.getBlockchainInfo();
-
-          return {
-            contents: [
-              {
-                uri: uri.href,
-                mimeType: 'application/json',
-                text: JSON.stringify(info, null, 2),
-              },
-            ],
-          };
-        }
-      );
-    }
-
-    // Block resource by height
-    this.server.resource(
-      'neo-block',
-      new ResourceTemplate('neo://block/{height}', { list: undefined }),
-      { description: 'Read block details by height on the default configured network.' },
-      async (uri, { height }) => {
-        const neoService = await this.getNeoService();
-        const parsedHeight = Array.isArray(height) ? height[0] : height;
-        const blockHeight = typeof parsedHeight === 'string' ? parseInt(parsedHeight, 10) : parsedHeight;
-        const block = await neoService.getBlock(blockHeight as number);
-        return {
-          contents: [
-            {
-              uri: uri.href,
-              mimeType: 'application/json',
-              text: JSON.stringify(block, null, 2),
-            },
-          ],
-        };
-      }
-    );
-
-    logger.info('Resources set up successfully');
+    setupResourceHandlers(this.server, {
+      networkMode: config.networkMode,
+      getNeoService: (networkParam?: string) => this.getNeoService(networkParam),
+    });
   }
 
   /**
