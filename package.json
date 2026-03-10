@@ -78,23 +78,26 @@
     "url": "https://github.com/r3e-network/neo-n3-mcp/issues"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.26.9",
-    "@babel/preset-typescript": "^7.27.0",
+    "@babel/preset-env": "^7.29.0",
+    "@babel/preset-typescript": "^7.28.5",
     "@types/jest": "^29.5.14",
-    "@types/node": "^18.15.11",
-    "axios": "^1.8.4",
+    "@types/node": "^18.19.80",
+    "axios": "^1.13.6",
     "babel-jest": "^29.7.0",
     "jest": "^29.7.0",
-    "ts-jest": "^29.3.2",
+    "ts-jest": "^29.4.6",
     "ts-node": "^10.9.1",
-    "typescript": "^5.0.4"
+    "typescript": "^5.8.2"
   },
   "dependencies": {
-    "@cityofzion/neon-js": "^5.3.0",
-    "@modelcontextprotocol/sdk": "^1.9.0",
+    "@cityofzion/neon-js": "file:vendor/neon-js",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "zod": "^3.24.1"
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "bundledDependencies": [
+    "@cityofzion/neon-js"
+  ]
 }

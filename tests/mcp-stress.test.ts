@@ -388,9 +388,12 @@ describe('MCP Server Stress Tests', () => {
           if (i % 3 === 0) {
             // Run invalid operation
             const invalidOp = invalidOperations[i % invalidOperations.length];
-            await invalidOp();
-            // Should not reach here
-            console.error(`❌ Invalid operation ${i} unexpectedly succeeded`);
+            const result = await invalidOp();
+            if (result && typeof result === 'object' && 'isError' in result && result.isError) {
+              expectedErrors++;
+            } else {
+              console.error(`❌ Invalid operation ${i} unexpectedly succeeded`);
+            }
           } else {
             // Run valid operation
             const validOp = validOperations[i % validOperations.length];

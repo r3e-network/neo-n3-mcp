@@ -215,9 +215,15 @@ class NeoN3McpServer {
    */
   private setupTools() {
     logger.info('Setting up tools with modern API...');
+    const registerTool = this.server.tool.bind(this.server) as (
+      name: string,
+      description: string,
+      inputSchema: Record<string, z.ZodTypeAny>,
+      handler: (args: any) => Promise<any>,
+    ) => void;
 
     // Network mode tool
-    this.server.tool(
+    registerTool(
       'get_network_mode',
       'Get the active network mode and available Neo networks.',
       {},
@@ -251,7 +257,7 @@ class NeoN3McpServer {
     );
 
     // Blockchain info tool
-    this.server.tool(
+    registerTool(
       'get_blockchain_info',
       'Get blockchain height, validator info, and the active network.',
       {
@@ -273,7 +279,7 @@ class NeoN3McpServer {
     );
 
     // Block count tool
-    this.server.tool(
+    registerTool(
       'get_block_count',
       'Get the current block height for the selected network.',
       {
@@ -299,7 +305,7 @@ class NeoN3McpServer {
     );
 
     // Balance tool
-    this.server.tool(
+    registerTool(
       'get_balance',
       'Get NEO, GAS, and NEP-17 balances for an address.',
       {
@@ -322,7 +328,7 @@ class NeoN3McpServer {
       }
     );
 
-    this.server.tool(
+    registerTool(
       'get_unclaimed_gas',
       'Get the amount of GAS claimable by an address.',
       {
@@ -345,7 +351,7 @@ class NeoN3McpServer {
       }
     );
 
-    this.server.tool(
+    registerTool(
       'get_nep17_transfers',
       'Get NEP-17 transfer history for an address.',
       {
@@ -365,7 +371,7 @@ class NeoN3McpServer {
       }
     );
 
-    this.server.tool(
+    registerTool(
       'get_nep11_balances',
       'Get NEP-11 balances for an address.',
       {
@@ -383,7 +389,7 @@ class NeoN3McpServer {
       }
     );
 
-    this.server.tool(
+    registerTool(
       'get_nep11_transfers',
       'Get NEP-11 transfer history for an address.',
       {
@@ -404,7 +410,7 @@ class NeoN3McpServer {
     );
 
     // List famous contracts tool
-    this.server.tool(
+    registerTool(
       'list_famous_contracts',
       'List supported well-known contracts for the selected network.',
       {
@@ -422,7 +428,7 @@ class NeoN3McpServer {
     );
 
     // Contract info tool
-    this.server.tool(
+    registerTool(
       'get_contract_info',
       'Get metadata and operations for a contract by known name, script hash, or Neo address.',
       {
@@ -442,7 +448,7 @@ class NeoN3McpServer {
       }
     );
 
-    this.server.tool(
+    registerTool(
       'get_contract_status',
       'Check whether a contract is deployed and inspect its current on-chain status by known name, script hash, or Neo address.',
       {
@@ -463,7 +469,7 @@ class NeoN3McpServer {
     );
 
     // Create wallet tool
-    this.server.tool(
+    registerTool(
       'create_wallet',
       'Create a Neo N3 wallet, persist it locally, and return a NEP-2 encrypted private key.',
       {
@@ -479,7 +485,7 @@ class NeoN3McpServer {
       }
     );
 
-    this.server.tool(
+    registerTool(
       'get_wallet',
       'Get sanitized metadata for a locally stored wallet by address.',
       {
@@ -494,7 +500,7 @@ class NeoN3McpServer {
         }
       }
     );
-    this.server.tool(
+    registerTool(
       'set_network_mode',
       'Set the configured network mode. Restart may be required.',
       { mode: z.enum(['mainnet', 'testnet', 'mainnet_only', 'testnet_only', 'both']).describe('Network mode to set') },
@@ -513,7 +519,7 @@ class NeoN3McpServer {
       }
     );
 
-    this.server.tool(
+    registerTool(
       'get_block',
       'Get block details by height or hash.',
       { hashOrHeight: z.union([z.string(), z.number()]).describe('Block hash or height'), network: z.string().optional().describe('Optional: Network') },
@@ -528,7 +534,7 @@ class NeoN3McpServer {
       }
     );
 
-    this.server.tool(
+    registerTool(
       'get_transaction',
       'Get transaction details by hash.',
       { txid: z.string().describe('Transaction hash'), network: z.string().optional().describe('Optional: Network') },
@@ -543,7 +549,7 @@ class NeoN3McpServer {
       }
     );
 
-    this.server.tool(
+    registerTool(
       'get_application_log',
       'Get the application log for a transaction hash.',
       { txid: z.string().describe('Transaction hash'), network: z.string().optional().describe('Optional: Network') },
@@ -558,7 +564,7 @@ class NeoN3McpServer {
       }
     );
 
-    this.server.tool(
+    registerTool(
       'wait_for_transaction',
       'Wait for a transaction to be confirmed on-chain.',
       {
@@ -579,7 +585,7 @@ class NeoN3McpServer {
       }
     );
 
-    this.server.tool(
+    registerTool(
       'transfer_assets',
       'Transfer NEP-17 assets using a sender WIF.',
       { 
@@ -601,7 +607,7 @@ class NeoN3McpServer {
       }
     );
 
-    this.server.tool(
+    registerTool(
       'invoke_contract',
       'Invoke a contract read method or prepare/send a write invocation by script hash or a generic contract reference.',
       { 
@@ -627,7 +633,7 @@ class NeoN3McpServer {
       }
     );
 
-    this.server.tool(
+    registerTool(
       'import_wallet',
       'Import a wallet from a private key or WIF.',
       {
@@ -646,7 +652,7 @@ class NeoN3McpServer {
       }
     );
 
-    this.server.tool(
+    registerTool(
       'estimate_transfer_fees',
       'Estimate network and system fees for a transfer.',
       { 
@@ -667,7 +673,7 @@ class NeoN3McpServer {
       }
     );
 
-    this.server.tool(
+    registerTool(
       'estimate_invoke_fees',
       'Estimate network and system fees for a contract invocation by script hash or a generic contract reference.',
       { 
@@ -692,7 +698,7 @@ class NeoN3McpServer {
       }
     );
 
-    this.server.tool(
+    registerTool(
       'claim_gas',
       'Claim available GAS for an account.',
       { network: z.string().optional().describe('Optional: Network'), fromWIF: z.string().describe('Account WIF'), confirm: z.boolean().optional().describe('Must be true to execute') },
@@ -707,7 +713,7 @@ class NeoN3McpServer {
       }
     );
 
-    this.server.tool(
+    registerTool(
       'deploy_contract',
       'Deploy a compiled Neo N3 contract. Requires explicit confirmation.',
       {
@@ -728,7 +734,7 @@ class NeoN3McpServer {
       }
     );
 
-    this.server.tool(
+    registerTool(
       'neofs_create_container',
       'Create a NeoFS container.',
       {
@@ -750,7 +756,7 @@ class NeoN3McpServer {
       }
     );
 
-    this.server.tool(
+    registerTool(
       'neofs_get_containers',
       'List NeoFS containers for an owner.',
       { network: z.string().optional().describe('Optional: Network'), ownerAddress: z.string().describe('Address of the owner') },

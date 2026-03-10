@@ -291,46 +291,32 @@ describe('MCP Protocol Compliance Tests', () => {
     });
 
     test('should handle invalid resource URIs gracefully', async () => {
-      try {
-        await client.readResource({ uri: 'neo://invalid/resource' });
-        fail('Should have thrown an error for invalid resource');
-      } catch (error) {
-        expect(error).toBeDefined();
-        expect(error.code).toBeDefined();
-      }
+      await expect(client.readResource({ uri: 'neo://invalid/resource' })).rejects.toMatchObject({
+        code: expect.any(Number),
+      });
     });
   });
 
   describe('Error Handling & Protocol Compliance', () => {
     test('should return proper error codes for invalid requests', async () => {
-      try {
-        await client.callTool({ name: 'non_existent_tool', arguments: {} });
-        fail('Should have thrown an error');
-      } catch (error) {
-        expect(error.code).toBeDefined();
-        expect(error.message).toBeDefined();
-        // Should be a proper MCP error code
-        expect(typeof error.code).toBe('number');
-      }
+      const response = await client.callTool({ name: 'non_existent_tool', arguments: {} });
+
+      expect(response.isError).toBe(true);
+      expect(response.content?.[0]?.text).toContain('not found');
     });
 
     test('should handle malformed tool arguments', async () => {
-      try {
-        await client.callTool({ name: 'get_balance', arguments: { invalid_param: 'test' } });
-        fail('Should have thrown an error');
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
+      const response = await client.callTool({ name: 'get_balance', arguments: { invalid_param: 'test' } });
+
+      expect(response.isError).toBe(true);
+      expect(response.content?.[0]?.text).toContain('Invalid arguments');
     });
 
     test('should validate required parameters', async () => {
-      try {
-        await client.callTool({ name: 'get_balance', arguments: {} }); // Missing required 'address' parameter
-        fail('Should have thrown an error');
-      } catch (error) {
-        expect(error).toBeDefined();
-        expect(error.message).toContain('address');
-      }
+      const response = await client.callTool({ name: 'get_balance', arguments: {} }); // Missing required 'address' parameter
+
+      expect(response.isError).toBe(true);
+      expect(response.content?.[0]?.text).toContain('address');
     });
   });
 
