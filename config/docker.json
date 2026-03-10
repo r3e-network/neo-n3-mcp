@@ -16,7 +16,7 @@
   },
   "server": {
     "name": "neo-n3-mcp-server",
-    "version": "1.7.1",
+    "version": "1.7.2",
     "port": 3000
   },
   "wallets": {

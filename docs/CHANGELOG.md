@@ -5,6 +5,12 @@ All notable changes to the Neo N3 MCP project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.2] - 2026-03-10
+
+### 🐛 Fixes
+- Added the vendored NeonJS runtime bundle files to source control so CI and npm installs can resolve the local `file:vendor/neon-js` dependency during build and publish workflows.
+- Preserved the dependency vulnerability remediation from the previous patch while fixing the broken `v1.7.1` release packaging path.
+
 ## [1.7.1] - 2026-03-10
 
 ### 🐛 Fixes
