@@ -56,6 +56,7 @@ Success payloads contain tool-specific JSON. Error payloads surface an error mes
 ### Contracts
 - `list_famous_contracts`
 - `get_contract_info`
+- `get_contract_status`
 - `invoke_contract`
 - `deploy_contract`
 
@@ -74,6 +75,8 @@ Success payloads contain tool-specific JSON. Error payloads surface an error mes
 - `GET /api/accounts/:address/nep11-transfers?fromTimestampMs=0&toTimestampMs=1710000000000`
 - `POST /api/transfers` with `fromWIF`, `toAddress`, `asset`, `amount`, and `confirm: true`
 - `POST /api/transfers/estimate-fees`
+- `GET /api/contracts/:reference`
+- `GET /api/contracts/:reference/status`
 - `POST /api/contracts/invoke/estimate-fees`
 - `POST /api/accounts/claim-gas` with `fromWIF` and `confirm: true`
 - `POST /api/contracts/deploy` with `fromWIF`, `script`, `manifest`, and `confirm: true`
@@ -186,26 +189,31 @@ Builds and broadcasts a NEP-17 transfer when `confirm` is explicitly set to `tru
 
 ### `get_contract_info`
 
-Returns metadata for a supported contract, including its `scriptHash` on the selected network.
+Returns metadata for a contract reference, including deployment status, resolved `scriptHash`, and discovered operations when available.
+
+If the reference is a plain name and not found in the local famous-contract registry, the server falls back to `https://api.n3index.dev` for name-to-hash discovery, then confirms the contract on-chain via the configured Neo RPC endpoint.
 
 #### Parameters
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `contractName` | string | Yes | Supported contract name |
+| `contract` | string | No | Generic contract reference: known name, script hash, or Neo address |
+| `contractName` | string | No | Backward-compatible alias for a known contract name |
+| `nameOrHash` | string | No | Backward-compatible alias for a contract name or script hash |
 | `network` | string | No | `mainnet` or `testnet` |
 
 ### `invoke_contract`
 
-Invokes a contract by **script hash**.
+Invokes a contract by **script hash or generic contract reference**.
 
-Use `get_contract_info` first if you need to discover the script hash for a well-known contract.
+Use `get_contract_info` or `get_contract_status` first if you need to inspect a contract before invoking it.
 
 #### Parameters
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `scriptHash` | string | Yes | Target contract script hash |
+| `contract` | string | No | Generic contract reference: known name, script hash, or Neo address |
+| `scriptHash` | string | No | Target contract script hash |
 | `operation` | string | Yes | Contract method name |
 | `args` | array | No | Invocation arguments |
 | `network` | string | No | `mainnet` or `testnet` |
@@ -220,7 +228,7 @@ Use `get_contract_info` first if you need to discover the script hash for a well
   "name": "invoke_contract",
   "arguments": {
     "network": "testnet",
-    "scriptHash": "0xccca29443855a1c455d72a3318cf605debb9e384",
+    "contract": "NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M",
     "operation": "balanceOf",
     "args": [
       "NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr"
@@ -237,7 +245,7 @@ Use `get_contract_info` first if you need to discover the script hash for a well
   "arguments": {
     "network": "testnet",
     "fromWIF": "Kx...",
-    "scriptHash": "0xccca29443855a1c455d72a3318cf605debb9e384",
+    "contract": "NeoFS",
     "operation": "transfer",
     "args": [
       "NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr",
@@ -256,7 +264,20 @@ Estimates system and network fees for a transfer without broadcasting it.
 
 ### `estimate_invoke_fees`
 
-Estimates system and network fees for a contract invocation without broadcasting it.
+Estimates system and network fees for a contract invocation without broadcasting it. Accepts either `scriptHash` or the generic `contract` reference.
+
+### `get_contract_status`
+
+Checks whether a contract is deployed and returns its resolved address/hash, manifest name, and on-chain status.
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `contract` | string | No | Generic contract reference: known name, script hash, or Neo address |
+| `contractName` | string | No | Backward-compatible alias for a known contract name |
+| `nameOrHash` | string | No | Backward-compatible alias for a contract name or script hash |
+| `network` | string | No | `mainnet` or `testnet` |
 
 ### `claim_gas`
 

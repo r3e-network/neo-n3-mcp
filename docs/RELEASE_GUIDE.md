@@ -9,14 +9,14 @@ This is a quick reference for triggering releases in the Neo N3 MCP project.
 # Recommended approach
 ./scripts/prepare-release.sh --type minor
 git push
-gh release create v1.7.0 --generate-notes
+gh release create v1.8.0 --generate-notes
 ```
 
 ### For Bug Fixes (Patch Release)
 ```bash
 ./scripts/prepare-release.sh --type patch
 git push
-gh release create v1.6.5 --generate-notes
+gh release create v1.7.1 --generate-notes
 ```
 
 ### For Breaking Changes (Major Release)
@@ -76,11 +76,11 @@ npm version minor  # or patch/major
 # 3. Update CHANGELOG.md
 # 4. Commit changes
 git add .
-git commit -m "chore: bump version to 1.7.0"
+git commit -m "chore: bump version to 1.8.0"
 
 # 5. Push and create release
 git push
-gh release create v1.7.0 --generate-notes
+gh release create v1.8.0 --generate-notes
 ```
 
 ## 🐛 Troubleshooting

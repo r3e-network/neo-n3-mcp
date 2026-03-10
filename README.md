@@ -3,13 +3,13 @@
 
 # Neo N3 MCP Server
 
-**MCP Server for Neo N3 Blockchain Integration** | Version 1.6.4
+**MCP Server for Neo N3 Blockchain Integration** | Version 1.7.0
 
 [![MCP SDK](https://img.shields.io/badge/MCP%20SDK-1.9.0-blue)](https://github.com/modelcontextprotocol/typescript-sdk)
 [![Neo N3](https://img.shields.io/badge/Neo%20N3-Compatible-green)](https://neo.org/)
 [![NPM](https://img.shields.io/badge/NPM-@r3e/neo--n3--mcp-red)](https://www.npmjs.com/package/@r3e/neo-n3-mcp)
 
-A production-ready MCP server providing Neo N3 blockchain integration with 26 tools, 3 fixed resources, and a parameterized block resource for wallet management, transaction lifecycle tracking, asset transfers, contract deployment, contract interactions, and blockchain queries.
+A production-ready MCP server providing Neo N3 blockchain integration with 27 tools, 3 fixed resources, and a parameterized block resource for wallet management, transaction lifecycle tracking, asset transfers, contract deployment, contract interactions, and blockchain queries.
 
 ## 🚀 Quick Start
 
@@ -41,6 +41,7 @@ The MCP stdio server reads configuration from environment variables.
 NEO_NETWORK=both \
 NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443 \
 NEO_TESTNET_RPC=http://seed1t5.neo.org:20332 \
+N3INDEX_API_BASE_URL=https://api.n3index.dev \
 LOG_LEVEL=info \
 LOG_FILE=./logs/neo-n3-mcp.log \
 npx @r3e/neo-n3-mcp
@@ -52,6 +53,8 @@ Backward-compatible aliases are also accepted:
 - `NEO_NETWORK_MODE`
 
 When `NEO_NETWORK=both`, stdio tool calls without an explicit network default to mainnet. The HTTP entrypoint requires `NEO_NETWORK=mainnet` or `NEO_NETWORK=testnet`.
+
+When a contract reference is a plain name and it is not in the local famous-contract registry, the server can fall back to `https://api.n3index.dev` for name-to-hash resolution before validating the contract on-chain.
 
 ### 2. MCP Client Configuration
 
@@ -83,7 +86,7 @@ docker run -p 3000:3000 \
   -e NEO_NETWORK=mainnet \
   -e LOG_CONSOLE=false \
   -e LOG_FILE=/app/logs/neo-n3-mcp.log \
-  r3enetwork/neo-n3-mcp:1.6.4
+  r3enetwork/neo-n3-mcp:1.7.0
 
 # With environment variables
 docker run -p 3000:3000 \
@@ -91,14 +94,14 @@ docker run -p 3000:3000 \
   -e NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443 \
   -e NEO_TESTNET_RPC=http://seed1t5.neo.org:20332 \
   -e LOG_LEVEL=info \
-  r3enetwork/neo-n3-mcp:1.6.4
+  r3enetwork/neo-n3-mcp:1.7.0
 
 # With volume for persistent data
 docker run -p 3000:3000 \
   -v $(pwd)/wallets:/app/wallets \
   -v $(pwd)/logs:/app/logs \
   -e NEO_NETWORK=testnet \
-  r3enetwork/neo-n3-mcp:1.6.4
+  r3enetwork/neo-n3-mcp:1.7.0
 ```
 
 #### Docker Compose
@@ -108,7 +111,7 @@ Create a `docker-compose.yml`:
 version: '3.8'
 services:
   neo-mcp:
-    image: r3enetwork/neo-n3-mcp:1.6.4
+    image: r3enetwork/neo-n3-mcp:1.7.0
     ports:
       - "3000:3000"
     environment:
@@ -148,7 +151,7 @@ npm run docker:up:dev
 #### Production Docker Setup
 ```bash
 # Build production image
-./scripts/docker-build.sh --tag v1.6.4
+./scripts/docker-build.sh --tag v1.7.0
 
 # Run with custom configuration
 docker run -d \
@@ -156,7 +159,7 @@ docker run -d \
   -p 3000:3000 \
   -e NEO_NETWORK=mainnet \
   -v neo-mcp-logs:/app/logs \
-  neo-n3-mcp:v1.6.4
+  neo-n3-mcp:v1.7.0
 ```
 
 #### Development Docker Setup
@@ -176,6 +179,8 @@ docker-compose -f docker/docker-compose.dev.yml up -d
 | `NEO_NETWORK` | Network mode: `mainnet`, `testnet`, or `both` | `both` |
 | `NEO_MAINNET_RPC` | Mainnet RPC endpoint | `https://mainnet1.neo.coz.io:443` |
 | `NEO_TESTNET_RPC` | Testnet RPC endpoint | `http://seed1t5.neo.org:20332` |
+| `N3INDEX_API_BASE_URL` | Base URL for remote contract name lookup | `https://api.n3index.dev` |
+| `N3INDEX_ENABLED` | Enable N3Index-backed name resolution | `true` |
 | `LOG_LEVEL` | Logging level | `info` |
 | `LOG_FILE` | Log file path | `./logs/neo-n3-mcp.log` |
 | `RATE_LIMITING_ENABLED` | Enable HTTP rate limiting | `true` |
@@ -234,12 +239,12 @@ await client.connect(transport);
 
 ## 📊 Available Tools & Resources
 
-### 🛠️ Tools (26 available)
+### 🛠️ Tools (27 available)
 - **Network**: `get_network_mode`, `set_network_mode`
 - **Blockchain**: `get_blockchain_info`, `get_block_count`, `get_block`, `get_transaction`, `get_application_log`, `wait_for_transaction`
 - **Wallets**: `create_wallet`, `import_wallet`, `get_wallet`
 - **Assets**: `get_balance`, `get_unclaimed_gas`, `get_nep17_transfers`, `get_nep11_balances`, `get_nep11_transfers`, `transfer_assets`, `estimate_transfer_fees`
-- **Contracts**: `invoke_contract`, `deploy_contract`, `list_famous_contracts`, `get_contract_info`
+- **Contracts**: `invoke_contract`, `deploy_contract`, `list_famous_contracts`, `get_contract_info`, `get_contract_status`
 - **NeoFS**: `neofs_create_container`, `neofs_get_containers`
 - **Advanced**: `claim_gas`, `estimate_invoke_fees`
 
@@ -249,7 +254,7 @@ await client.connect(transport);
 - **Accounts**: `/api/accounts/:address/balance`, `/api/accounts/:address/unclaimed-gas`, `/api/accounts/:address/nep17-transfers`, `/api/accounts/:address/nep11-balances`, `/api/accounts/:address/nep11-transfers`, `POST /api/accounts/claim-gas`
 - **Blocks**: `GET /api/blocks/:hashOrHeight`
 - **Transfers**: `POST /api/transfers`, `POST /api/transfers/estimate-fees`
-- **Contracts**: `POST /api/contracts/invoke`, `POST /api/contracts/invoke/estimate-fees`, `POST /api/contracts/:name/invoke`, `POST /api/contracts/deploy` (requires `confirm=true`)
+- **Contracts**: `GET /api/contracts/:reference`, `GET /api/contracts/:reference/status`, `POST /api/contracts/invoke`, `POST /api/contracts/invoke/estimate-fees`, `POST /api/contracts/:name/invoke`, `POST /api/contracts/deploy` (requires `confirm=true`)
 - **Wallets**: `POST /api/wallets`, `POST /api/wallets/import`, `GET /api/wallets/:address`
 
 ### 📁 Resources (3 fixed + 1 template)
@@ -274,7 +279,7 @@ await client.connect(transport);
 
 ## 🔄 Version Management & Release Process
 
-### Current Version: 1.6.4
+### Current Version: 1.7.0
 
 This project follows [Semantic Versioning](https://semver.org/) with automated CI/CD pipeline for releases. See our [Version Management Guide](./docs/VERSION_MANAGEMENT.md) for detailed information.
 
@@ -292,7 +297,7 @@ This project follows [Semantic Versioning](https://semver.org/) with automated C
 git push
 
 # 4. Create GitHub release (triggers full CI/CD pipeline)
-gh release create v1.7.0 --generate-notes
+gh release create v1.8.0 --generate-notes
 ```
 
 #### **Method 2: Manual NPM Version Commands**
@@ -301,24 +306,24 @@ gh release create v1.7.0 --generate-notes
 npm run version:check
 
 # Bump version manually
-npm run version:patch   # 1.6.4 → 1.6.5 (bug fixes)
-npm run version:minor   # 1.6.4 → 1.7.0 (new features)
-npm run version:major   # 1.6.4 → 2.0.0 (breaking changes)
+npm run version:patch   # 1.7.0 → 1.7.1 (bug fixes)
+npm run version:minor   # 1.7.0 → 1.8.0 (new features)
+npm run version:major   # 1.7.0 → 2.0.0 (breaking changes)
 
 # Then commit and push
-git add . && git commit -m "chore: bump version to 1.7.0"
+git add . && git commit -m "chore: bump version to 1.8.0"
 git push
 ```
 
 #### **Method 3: GitHub Release (Direct)**
 ```bash
 # Using GitHub CLI
-gh release create v1.7.0 --generate-notes
+gh release create v1.8.0 --generate-notes
 
 # Or manually through GitHub web interface:
 # 1. Go to https://github.com/r3e-network/neo-n3-mcp/releases
 # 2. Click "Create a new release"
-# 3. Tag: v1.7.0, Title: "Release v1.7.0"
+# 3. Tag: v1.8.0, Title: "Release v1.8.0"
 # 4. Auto-generate release notes
 # 5. Publish release
 ```
@@ -357,9 +362,9 @@ The automated CI/CD pipeline triggers the following workflow:
 
 | Type | Version Change | Use Case | Example |
 |------|---------------|----------|---------|
-| **patch** | 1.6.4 → 1.6.5 | Bug fixes, security patches | `./scripts/prepare-release.sh --type patch` |
-| **minor** | 1.6.4 → 1.7.0 | New features, enhancements | `./scripts/prepare-release.sh --type minor` |
-| **major** | 1.6.4 → 2.0.0 | Breaking changes | `./scripts/prepare-release.sh --type major` |
+| **patch** | 1.7.0 → 1.7.1 | Bug fixes, security patches | `./scripts/prepare-release.sh --type patch` |
+| **minor** | 1.7.0 → 1.8.0 | New features, enhancements | `./scripts/prepare-release.sh --type minor` |
+| **major** | 1.7.0 → 2.0.0 | Breaking changes | `./scripts/prepare-release.sh --type major` |
 
 ### 🎯 Quick Release Commands
 
@@ -377,12 +382,12 @@ The automated CI/CD pipeline triggers the following workflow:
 ./scripts/prepare-release.sh --type minor --dry-run
 ```
 
-### 📊 Latest Changes (v1.6.4)
-- ✅ **Release Surface Hardening**: npm packaging now publishes only the intended runtime assets and consumer metadata
-- ✅ **Built Artifact CI Smoke Test**: CI now starts the compiled MCP server and validates core MCP surfaces after build
-- ✅ **Resource Handler Extraction**: MCP resource registration now lives in a focused handler module without changing public URIs or payloads
-- ✅ **Clean Checkout Packaging**: `prepack` now rebuilds `dist` before `npm pack`, preventing release tarballs from missing compiled output
-- ✅ **Versioning Documentation Refresh**: release docs and helper scripts now reflect package-driven versioning via `src/version.ts`
+### 📊 Latest Changes (v1.7.0)
+- ✅ **Generic Contract Resolution**: contracts can now be resolved by script hash, Neo address, local known name, or exact remote name from `api.n3index.dev`
+- ✅ **Contract Status Surface**: added `get_contract_status` to the MCP and HTTP surfaces, bringing the public server surface to 27 tools
+- ✅ **Safer N3Index Integration**: remote name resolution now fails closed on fuzzy matches, handles cache recovery, and enforces fetch timeouts
+- ✅ **HTTP Contract Route Hardening**: encoded contract names are supported and unresolved names now return a resource-level error instead of a generic `500`
+- ✅ **Docs and Website Sync**: active docs, examples, and website counts now match the shipped server surface
 
 ### 📚 Release Documentation
 - **[CHANGELOG.md](./docs/CHANGELOG.md)** - Complete version history

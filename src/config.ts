@@ -11,6 +11,7 @@ export enum NetworkMode {
 const DEFAULT_MAINNET_RPC = 'https://mainnet1.neo.coz.io:443';
 const DEFAULT_TESTNET_RPC = 'http://seed1t5.neo.org:20332';
 const DEFAULT_NETWORK_MODE = NetworkMode.BOTH;
+const DEFAULT_N3INDEX_BASE_URL = 'https://api.n3index.dev';
 
 function readEnv(...keys: string[]): string | undefined {
   for (const key of keys) {
@@ -69,6 +70,10 @@ export const config = {
   mainnetRpcUrl: readEnv('NEO_MAINNET_RPC', 'NEO_MAINNET_RPC_URL') || DEFAULT_MAINNET_RPC,
   testnetRpcUrl: readEnv('NEO_TESTNET_RPC', 'NEO_TESTNET_RPC_URL') || DEFAULT_TESTNET_RPC,
   networkMode: parseNetworkMode(readEnv('NEO_NETWORK', 'NEO_NETWORK_MODE')),
+  n3index: {
+    baseUrl: readEnv('N3INDEX_API_BASE_URL') || DEFAULT_N3INDEX_BASE_URL,
+    enabled: readBooleanEnv('N3INDEX_ENABLED') ?? true,
+  },
 
   rateLimiting: {
     enabled: process.env.RATE_LIMITING_ENABLED !== 'false',

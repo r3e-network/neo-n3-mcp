@@ -84,6 +84,7 @@ export class HttpServer {
 
       let result: any;
       let statusCode = 200;
+      const decodePathSegment = (index: number) => decodeURIComponent(path.split('/')[index] || '');
 
       if (path === '/api/blockchain/info' && method === 'GET') {
         result = await this.neoService.getBlockchainInfo();
@@ -237,29 +238,27 @@ export class HttpServer {
       } else if (path === '/api/network/mode' && method === 'GET') {
         const network = this.neoService.getNetwork();
         result = { mode: network === NeoNetwork.MAINNET ? 'mainnet' : 'testnet' };
-      } else if (path.match(/^\/api\/contracts\/[A-Za-z0-9]+$/) && method === 'GET') {
-        const contractReference = path.split('/')[3] || '';
-        const contract = this.contractService.getContract(contractReference);
-        const available = await this.contractService.isContractDeployed(contractReference);
-        const operations = {
-          ...this.contractService.getContractOperations(contractReference),
-          available
-        };
-        const scriptHash = this.contractService.getContractScriptHash(contractReference);
-        result = {
-          name: contract.name,
-          description: contract.description,
-          scriptHash,
-          operations,
-          network: this.contractService.getNetwork(),
-          available
-        };
+      } else if (path.match(/^\/api\/contracts\/[^/]+\/status$/) && method === 'GET') {
+        const contractReference = decodePathSegment(3);
+        result = await (this.contractService as any).getContractStatus(contractReference);
+      } else if (path.match(/^\/api\/contracts\/[^/]+$/) && method === 'GET') {
+        const contractReference = decodePathSegment(3);
+        result = await (this.contractService as any).getContractInfo(contractReference);
       } else if (path === '/api/contracts/invoke/estimate-fees' && method === 'POST') {
-        const hasNamedContract = typeof body.contractName === 'string' && body.contractName.trim().length > 0 && !body.scriptHash;
+        const contractReference = typeof body.contract === 'string' && body.contract.trim().length > 0
+          ? body.contract.trim()
+          : typeof body.contractName === 'string' && body.contractName.trim().length > 0
+            ? body.contractName.trim()
+            : '';
+        const hasNamedContract = Boolean(contractReference) && !body.scriptHash;
         if (hasNamedContract) {
-          await this.contractService.assertContractDeployed(body.contractName.trim());
+          await this.contractService.assertContractDeployed(contractReference);
         }
-        const scriptHash = body.scriptHash || (body.contractName ? this.contractService.getContractScriptHash(body.contractName) : '');
+        const scriptHash = body.scriptHash || (contractReference
+          ? (typeof (this.contractService as any).resolveContractScriptHash === 'function'
+              ? await (this.contractService as any).resolveContractScriptHash(contractReference)
+              : this.contractService.getContractScriptHash(contractReference))
+          : '');
         const operation = body.operation || '';
         const args = body.args || [];
         if (!body.signerAddress) {
@@ -276,19 +275,23 @@ export class HttpServer {
         }
       } else if (path === '/api/contracts/invoke' && method === 'POST') {
         const scriptHash = body.scriptHash || '';
-        const contractName = typeof body.contractName === 'string' ? body.contractName.trim() : '';
+        const contractReference = typeof body.contract === 'string' && body.contract.trim().length > 0
+          ? body.contract.trim()
+          : typeof body.contractName === 'string'
+            ? body.contractName.trim()
+            : '';
         const operation = body.operation || '';
         const args = body.args || [];
-        const useNamedContract = !scriptHash && Boolean(contractName);
-        if (!scriptHash && !contractName) {
+        const useNamedContract = !scriptHash && Boolean(contractReference);
+        if (!scriptHash && !contractReference) {
           statusCode = 400;
-          result = { error: 'Missing required parameter: scriptHash or contractName' };
+          result = { error: 'Missing required parameter: scriptHash or contract' };
         } else if (!operation) {
           statusCode = 400;
           result = { error: 'Missing required parameter: operation' };
         } else {
           if (useNamedContract) {
-            await this.contractService.assertContractDeployed(contractName);
+            await this.contractService.assertContractDeployed(contractReference);
           }
           if (body.fromWIF) {
             if (!body.confirm) {
@@ -297,17 +300,17 @@ export class HttpServer {
             } else {
               const account = new neonJs.wallet.Account(body.fromWIF);
               result = useNamedContract
-                ? await this.contractService.invokeWriteContract(account, contractName, operation, args)
+                ? await this.contractService.invokeWriteContract(account, contractReference, operation, args)
                 : await this.neoService.invokeContract(account, scriptHash, operation, args);
             }
           } else {
             result = useNamedContract
-              ? await this.contractService.invokeReadContract(contractName, operation, args)
+              ? await this.contractService.invokeReadContract(contractReference, operation, args)
               : await this.neoService.invokeReadContract(scriptHash, operation, args);
           }
         }
-      } else if (path.match(/^\/api\/contracts\/[A-Za-z0-9]+\/invoke$/) && method === 'POST') {
-        const contractName = path.split('/')[3] || '';
+      } else if (path.match(/^\/api\/contracts\/[^/]+\/invoke$/) && method === 'POST') {
+        const contractName = decodePathSegment(3);
         const operation = body.operation || '';
         const args = body.args || [];
         await this.contractService.assertContractDeployed(contractName);
@@ -358,7 +361,12 @@ export class HttpServer {
       let errorDetails = null;
 
       if (error instanceof Error) {
-        if (error.message.includes('not found') || error.message.includes('Not found') || error.message.includes('not deployed')) {
+        if (
+          error.message.includes('not found') ||
+          error.message.includes('Not found') ||
+          error.message.includes('not deployed') ||
+          error.message.includes('Unable to resolve contract reference')
+        ) {
           statusCode = 404;
           errorMessage = 'Resource not found';
         } else if (error.message.includes('invalid') || error.message.includes('Invalid')) {

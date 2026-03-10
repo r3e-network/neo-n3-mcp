@@ -97,6 +97,7 @@ describe('Comprehensive MCP Server Tests', () => {
         'import_wallet',
         'transfer_assets',
         'invoke_contract',
+        'get_contract_status',
         'get_network_mode'
       ];
 

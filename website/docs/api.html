@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API Reference - Neo N3 MCP Server</title>
-    <meta name="description" content="Complete API reference for Neo N3 MCP Server with 34 tools and 9 resources for blockchain integration.">
+    <meta name="description" content="Complete API reference for Neo N3 MCP Server with 27 tools and 4 resources for blockchain integration.">
     <meta name="keywords" content="neo, blockchain, mcp, api, reference, tools, resources">
     
     <!-- Favicon -->
@@ -333,8 +333,8 @@
                     <a href="#request-format" class="api-nav-link">Request Format</a>
                     <a href="#response-format" class="api-nav-link">Response Format</a>
                 </div>
-                <div class="api-nav-section">
-                    <div class="api-nav-title">Tools (34)</div>
+                    <div class="api-nav-section">
+                        <div class="api-nav-title">Tools (27)</div>
                     <a href="#blockchain-tools" class="api-nav-link">Blockchain Operations</a>
                     <a href="#wallet-tools" class="api-nav-link">Wallet Management</a>
                     <a href="#asset-tools" class="api-nav-link">Asset Operations</a>
@@ -342,10 +342,8 @@
                     <a href="#network-tools" class="api-nav-link">Network Tools</a>
                 </div>
                 <div class="api-nav-section">
-                    <div class="api-nav-title">Resources (9)</div>
+                    <div class="api-nav-title">Resources (4)</div>
                     <a href="#network-resources" class="api-nav-link">Network Resources</a>
-                    <a href="#blockchain-resources" class="api-nav-link">Blockchain Resources</a>
-                    <a href="#contract-resources" class="api-nav-link">Contract Resources</a>
                 </div>
                 <div class="api-nav-section">
                     <div class="api-nav-title">Reference</div>
@@ -360,16 +358,16 @@
             <!-- Header -->
             <header class="api-header" id="overview">
                 <h1 class="section-title">API Reference</h1>
-                <p class="section-subtitle">Complete documentation for all 34 tools and 9 resources</p>
+                    <p class="section-subtitle">Complete documentation for all 27 tools and 4 resources</p>
                 
                 <!-- Stats -->
                 <div class="api-stats">
                     <div class="api-stat">
-                        <span class="api-stat-number">34</span>
+                            <span class="api-stat-number">27</span>
                         <span class="api-stat-label">Tools Available</span>
                     </div>
                     <div class="api-stat">
-                        <span class="api-stat-number">9</span>
+                            <span class="api-stat-number">4</span>
                         <span class="api-stat-label">Resources</span>
                     </div>
                     <div class="api-stat">
@@ -391,23 +389,23 @@
                 <h2 class="quick-ref-title">Quick Reference</h2>
                 <div class="quick-ref-grid">
                     <div class="quick-ref-item">
-                        <div class="quick-ref-number">5</div>
-                        <div class="quick-ref-label">Blockchain Tools</div>
+                            <div class="quick-ref-number">6</div>
+                            <div class="quick-ref-label">Blockchain Tools</div>
+                        </div>
+                        <div class="quick-ref-item">
+                            <div class="quick-ref-number">3</div>
+                            <div class="quick-ref-label">Wallet Tools</div>
+                        </div>
+                        <div class="quick-ref-item">
+                            <div class="quick-ref-number">8</div>
+                            <div class="quick-ref-label">Asset Tools</div>
+                        </div>
+                        <div class="quick-ref-item">
+                            <div class="quick-ref-number">10</div>
+                            <div class="quick-ref-label">Contract &amp; Network Tools</div>
+                        </div>
                     </div>
-                    <div class="quick-ref-item">
-                        <div class="quick-ref-number">8</div>
-                        <div class="quick-ref-label">Wallet Tools</div>
-                    </div>
-                    <div class="quick-ref-item">
-                        <div class="quick-ref-number">12</div>
-                        <div class="quick-ref-label">Asset Tools</div>
-                    </div>
-                    <div class="quick-ref-item">
-                        <div class="quick-ref-number">9</div>
-                        <div class="quick-ref-label">Contract Tools</div>
-                    </div>
-                </div>
-            </section>
+                </section>
 
             <!-- Request/Response Format -->
             <section class="api-section" id="request-format">
@@ -658,14 +656,15 @@
                         <p class="tool-description">Claim unclaimed GAS from NEO holdings.</p>
                         <div class="tool-params">
                             <div class="tool-params-title">Parameters:</div>
-                            <div class="param-list">fromWIF: string (required)<br>network?: string (optional)</div>
+                            <div class="param-list">fromWIF: string (required)<br>confirm: boolean (required)<br>network?: string (optional)</div>
                         </div>
                         <div class="tool-example">
                             <div class="example-label">Example</div>
                             <pre class="example-code">{
   "name": "claim_gas",
   "arguments": {
-    "fromWIF": "KweTw..."
+    "fromWIF": "KweTw...",
+    "confirm": true
   }
 }</pre>
                         </div>
@@ -695,59 +694,134 @@
 
                     <div class="tool-card">
                         <h3 class="tool-name">get_contract_info</h3>
-                        <p class="tool-description">Get detailed information about a specific famous contract.</p>
+                        <p class="tool-description">Get detailed information about a contract using a known name, script hash, or Neo address.</p>
                         <div class="tool-params">
                             <div class="tool-params-title">Parameters:</div>
-                            <div class="param-list">contractName: string (required)<br>network?: string (optional)</div>
+                            <div class="param-list">contract?: string (optional)<br>contractName?: string (optional)<br>nameOrHash?: string (optional)<br>network?: string (optional)</div>
                         </div>
                         <div class="tool-example">
                             <div class="example-label">Example</div>
                             <pre class="example-code">{
   "name": "get_contract_info",
   "arguments": {
-    "contractName": "NeoFS"
+    "contract": "NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M",
+    "network": "testnet"
   }
 }</pre>
                         </div>
                     </div>
 
                     <div class="tool-card">
-                        <h3 class="tool-name">invoke_read_contract</h3>
-                        <p class="tool-description">Invoke read-only contract methods without state changes.</p>
+                        <h3 class="tool-name">get_contract_status</h3>
+                        <p class="tool-description">Check whether a contract is deployed and inspect its resolved status on-chain.</p>
                         <div class="tool-params">
                             <div class="tool-params-title">Parameters:</div>
-                            <div class="param-list">contractName: string (required)<br>operation: string (required)<br>args?: array (optional)<br>network?: string (optional)</div>
+                            <div class="param-list">contract?: string (optional)<br>contractName?: string (optional)<br>nameOrHash?: string (optional)<br>network?: string (optional)</div>
                         </div>
                         <div class="tool-example">
                             <div class="example-label">Example</div>
                             <pre class="example-code">{
-  "name": "invoke_read_contract",
+  "name": "get_contract_status",
   "arguments": {
-    "contractName": "NeoFS",
-    "operation": "getContainers",
-    "args": ["owner-id"]
+    "contract": "NeoFS",
+    "network": "mainnet"
   }
 }</pre>
                         </div>
                     </div>
 
                     <div class="tool-card">
-                        <h3 class="tool-name">invoke_write_contract</h3>
-                        <p class="tool-description">Invoke contract methods that modify blockchain state.</p>
+                        <h3 class="tool-name">invoke_contract</h3>
+                        <p class="tool-description">Invoke a contract using a generic contract reference or a direct script hash. Generic contract references can be a known name, script hash, or Neo address.</p>
                         <div class="tool-params">
                             <div class="tool-params-title">Parameters:</div>
-                            <div class="param-list">fromWIF: string (required)<br>contractName: string (required)<br>operation: string (required)<br>args?: array (optional)<br>confirm: boolean (required)<br>network?: string (optional)</div>
+                            <div class="param-list">contract?: string (optional)<br>scriptHash?: string (optional)<br>operation: string (required)<br>args?: array (optional)<br>fromWIF?: string (optional)<br>confirm?: boolean (optional for writes)<br>network?: string (optional)</div>
                         </div>
                         <div class="tool-example">
                             <div class="example-label">Example</div>
                             <pre class="example-code">{
-  "name": "invoke_write_contract",
+  "name": "invoke_contract",
+  "arguments": {
+    "contract": "NeoFS",
+    "operation": "balanceOf",
+    "args": ["NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr"],
+    "network": "testnet"
+  }
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="tool-card">
+                        <h3 class="tool-name">estimate_invoke_fees</h3>
+                        <p class="tool-description">Estimate system and network fees for a contract invocation before sending it.</p>
+                        <div class="tool-params">
+                            <div class="tool-params-title">Parameters:</div>
+                            <div class="param-list">signerAddress: string (required)<br>contract?: string (optional)<br>scriptHash?: string (optional)<br>operation: string (required)<br>args?: array (optional)<br>network?: string (optional)</div>
+                        </div>
+                        <div class="tool-example">
+                            <div class="example-label">Example</div>
+                            <pre class="example-code">{
+  "name": "estimate_invoke_fees",
+  "arguments": {
+    "signerAddress": "NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr",
+    "contract": "NeoFS",
+    "operation": "transfer",
+    "args": [],
+    "network": "testnet"
+  }
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="tool-card">
+                        <h3 class="tool-name">deploy_contract</h3>
+                        <p class="tool-description">Deploy a new contract using a NEF script and manifest. Requires explicit confirmation.</p>
+                        <div class="tool-params">
+                            <div class="tool-params-title">Parameters:</div>
+                            <div class="param-list">fromWIF: string (required)<br>script: string (required)<br>manifest: object (required)<br>confirm: boolean (required)<br>network?: string (optional)</div>
+                        </div>
+                        <div class="tool-example">
+                            <div class="example-label">Example</div>
+                            <pre class="example-code">{
+  "name": "deploy_contract",
   "arguments": {
     "fromWIF": "KweTw...",
-    "contractName": "NeoFS",
-    "operation": "createContainer",
-    "args": ["owner-id", []],
-    "confirm": true
+    "script": "base64-nef-script",
+    "manifest": {"name": "ExampleContract"},
+    "confirm": true,
+    "network": "testnet"
+  }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="api-section" id="network-tools">
+                <h2 class="section-title">Network Tools</h2>
+                <div class="tool-grid">
+                    <div class="tool-card">
+                        <h3 class="tool-name">get_network_mode</h3>
+                        <p class="tool-description">Return the currently configured network mode and the enabled Neo networks.</p>
+                        <div class="tool-params">
+                            <div class="tool-params-title">Parameters:</div>
+                            <div class="param-list">none</div>
+                        </div>
+                    </div>
+
+                    <div class="tool-card">
+                        <h3 class="tool-name">set_network_mode</h3>
+                        <p class="tool-description">Set the server network mode to mainnet-only, testnet-only, or both. Restart may be required for resource listings to refresh.</p>
+                        <div class="tool-params">
+                            <div class="tool-params-title">Parameters:</div>
+                            <div class="param-list">mode: string (required)</div>
+                        </div>
+                        <div class="tool-example">
+                            <div class="example-label">Example</div>
+                            <pre class="example-code">{
+  "name": "set_network_mode",
+  "arguments": {
+    "mode": "both"
   }
 }</pre>
                         </div>
@@ -761,29 +835,38 @@
                 <p>Resources provide read-only access to blockchain data through URI-based endpoints.</p>
                 
                 <div class="resource-card">
-                    <h3 class="resource-name">network_status</h3>
-                    <p class="tool-description">Live network status including block height, node count, and network health metrics.</p>
+                    <h3 class="resource-name">neo://network/status</h3>
+                    <p class="tool-description">Live status for the default configured Neo network.</p>
                     <div class="tool-example">
                         <div class="example-label">Resource URI</div>
-                        <pre class="example-code">mcp://neo-n3/network/status</pre>
+                        <pre class="example-code">neo://network/status</pre>
                     </div>
                 </div>
 
                 <div class="resource-card">
-                    <h3 class="resource-name">validators</h3>
-                    <p class="tool-description">Current list of consensus validators and their voting information.</p>
+                    <h3 class="resource-name">neo://mainnet/status</h3>
+                    <p class="tool-description">Read-only status snapshot for Neo mainnet.</p>
                     <div class="tool-example">
                         <div class="example-label">Resource URI</div>
-                        <pre class="example-code">mcp://neo-n3/network/validators</pre>
+                        <pre class="example-code">neo://mainnet/status</pre>
                     </div>
                 </div>
 
                 <div class="resource-card">
-                    <h3 class="resource-name">gas_price</h3>
-                    <p class="tool-description">Current network gas price and fee estimation data.</p>
+                    <h3 class="resource-name">neo://testnet/status</h3>
+                    <p class="tool-description">Read-only status snapshot for Neo testnet.</p>
                     <div class="tool-example">
                         <div class="example-label">Resource URI</div>
-                        <pre class="example-code">mcp://neo-n3/network/gas-price</pre>
+                        <pre class="example-code">neo://testnet/status</pre>
+                    </div>
+                </div>
+
+                <div class="resource-card">
+                    <h3 class="resource-name">neo://block/{height}</h3>
+                    <p class="tool-description">Parameterized block resource for fetching a block by height on the default configured network.</p>
+                    <div class="tool-example">
+                        <div class="example-label">Resource URI</div>
+                        <pre class="example-code">neo://block/123456</pre>
                     </div>
                 </div>
             </section>

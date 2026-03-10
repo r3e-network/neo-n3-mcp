@@ -218,7 +218,12 @@ const createMockWalletService = () => ({
 
 const createMockContractService = (): jest.Mocked<ContractService> => {
   const resolveReference = (reference: string) => {
-    if (reference === 'NeoFS' || reference === 'neofs' || reference === '0x1234567890abcdef1234567890abcdef12345678') {
+    if (
+      reference === 'NeoFS' ||
+      reference === 'neofs' ||
+      reference === '0x1234567890abcdef1234567890abcdef12345678' ||
+      reference === 'NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M'
+    ) {
       return {
         contract: {
           ...FAMOUS_CONTRACTS.neofs,
@@ -259,10 +264,43 @@ const createMockContractService = (): jest.Mocked<ContractService> => {
     }),
     getContract: jest.fn().mockImplementation((reference: string) => resolveReference(reference).contract),
     getContractScriptHash: jest.fn().mockImplementation((reference: string) => resolveReference(reference).scriptHash),
+    getContractInfo: jest.fn().mockImplementation(async (reference: string) => {
+      resolveReference(reference);
+      return {
+        name: 'NeoFS',
+        description: 'Decentralized storage',
+        scriptHash: '0x1234567890abcdef1234567890abcdef12345678',
+        address: 'NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M',
+        operations: {
+          operations: { transfer: { name: 'transfer', description: 'Transfer tokens' } },
+          count: 1,
+          contractName: 'NeoFS',
+          network: NeoNetwork.MAINNET,
+          available: true
+        },
+        network: NeoNetwork.MAINNET,
+        available: true,
+        status: {
+          deployed: true,
+          status: 'deployed',
+          scriptHash: '0x1234567890abcdef1234567890abcdef12345678',
+          network: NeoNetwork.MAINNET
+        }
+      };
+    }),
     queryContract: jest.fn().mockResolvedValue({ state: 'HALT', stack: [{ value: '100' }] }),
     invokeContract: jest.fn().mockResolvedValue('0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'),
     invokeReadContract: jest.fn().mockResolvedValue({ state: 'HALT', stack: [{ value: '100' }] }),
     invokeWriteContract: jest.fn().mockResolvedValue({ txid: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef' }),
+    getContractStatus: jest.fn().mockResolvedValue({
+      deployed: true,
+      status: 'deployed',
+      scriptHash: '0x1234567890abcdef1234567890abcdef12345678',
+      address: 'NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M',
+      manifestName: 'NeoFS',
+      operationCount: 1,
+      network: NeoNetwork.MAINNET
+    }),
     createNeoFSContainer: jest.fn().mockResolvedValue('0xneofscreate'),
     getNeoFSContainers: jest.fn().mockResolvedValue([{ id: 'container-1' }]),
     deployContract: jest.fn().mockResolvedValue({
@@ -567,6 +605,23 @@ describe('Tool Handlers', () => {
       expect((mockNeoServices.get(NeoNetwork.MAINNET) ).invokeReadContract).not.toHaveBeenCalled();
     });
 
+    test('should accept a generic contract reference by Neo address for read-only invocation', async () => {
+      const input = {
+        network: 'mainnet',
+        contract: 'NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M',
+        operation: 'balanceOf',
+        args: []
+      };
+      const result = await callTool('invoke_contract', input, mockNeoServices, mockContractServices);
+
+      expect(result).toHaveProperty('result');
+      expect((mockContractServices.get(NeoNetwork.MAINNET) as any).invokeReadContract).toHaveBeenCalledWith(
+        'NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M',
+        'balanceOf',
+        []
+      );
+    });
+
     test('should reject named contract invocation when the contract is not live on the current network', async () => {
       const contractService = mockContractServices.get(NeoNetwork.MAINNET) as any;
       contractService.isContractDeployed.mockResolvedValue(false);
@@ -865,6 +920,7 @@ describe('Tool Handlers', () => {
         network: NeoNetwork.MAINNET
       });
       expect(result.operations).toHaveProperty('operations');
+      expect((mockContractServices.get(NeoNetwork.MAINNET) as any).getContractInfo).toHaveBeenCalledWith('NeoFS');
     });
 
     test('should get contract info via nameOrHash alias', async () => {
@@ -875,13 +931,39 @@ describe('Tool Handlers', () => {
         name: 'NeoFS',
         scriptHash: '0x1234567890abcdef1234567890abcdef12345678'
       });
-      expect((mockContractServices.get(NeoNetwork.MAINNET) as any).getContractOperations).toHaveBeenCalledWith('0x1234567890abcdef1234567890abcdef12345678');
+      expect((mockContractServices.get(NeoNetwork.MAINNET) as any).getContractInfo).toHaveBeenCalledWith('0x1234567890abcdef1234567890abcdef12345678');
     });
 
     test('should handle invalid contract name', async () => {
       const input = { network: 'mainnet', nameOrHash: 'NonExistent' };
       const result = await callTool('get_contract_info', input, mockNeoServices, mockContractServices);
       expect(result).toHaveProperty('error');
+    });
+
+    test('should get contract info by Neo address reference', async () => {
+      const input = { network: 'mainnet', contract: 'NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M' };
+      const result = await callTool('get_contract_info', input, mockNeoServices, mockContractServices);
+
+      expect(result).toMatchObject({
+        name: 'NeoFS',
+        scriptHash: '0x1234567890abcdef1234567890abcdef12345678',
+      });
+      expect((mockContractServices.get(NeoNetwork.MAINNET) as any).getContractInfo).toHaveBeenCalledWith('NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M');
+    });
+  });
+
+  describe('get_contract_status', () => {
+    test('should return deployment status for a generic contract reference', async () => {
+      const input = { network: 'mainnet', contract: 'NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M' };
+      const result = await callTool('get_contract_status', input, mockNeoServices, mockContractServices);
+
+      expect(result).toHaveProperty('result');
+      expect(result.result).toMatchObject({
+        deployed: true,
+        status: 'deployed',
+        scriptHash: '0x1234567890abcdef1234567890abcdef12345678',
+      });
+      expect((mockContractServices.get(NeoNetwork.MAINNET) as any).getContractStatus).toHaveBeenCalledWith('NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M');
     });
   });
 

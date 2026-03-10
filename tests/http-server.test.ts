@@ -441,11 +441,14 @@ describe('HttpServer', () => {
       getNetwork: jest.fn().mockReturnValue(NeoNetwork.TESTNET)
     } as any;
     const contractService = {
-      getContract: jest.fn().mockReturnValue({ name: 'NeoFS', description: 'Decentralized storage' }),
-      getContractOperations: jest.fn().mockReturnValue({ operations: { transfer: { name: 'transfer' } }, count: 1, contractName: 'NeoFS', network: NeoNetwork.TESTNET, available: true }),
-      getContractScriptHash: jest.fn().mockReturnValue('0x1234567890abcdef1234567890abcdef12345678'),
-      isContractDeployed: jest.fn().mockResolvedValue(false),
-      getNetwork: jest.fn().mockReturnValue(NeoNetwork.TESTNET)
+      getContractInfo: jest.fn().mockResolvedValue({
+        name: 'NeoFS',
+        description: 'Decentralized storage',
+        scriptHash: '0x1234567890abcdef1234567890abcdef12345678',
+        operations: { operations: { transfer: { name: 'transfer' } }, count: 1, contractName: 'NeoFS', network: NeoNetwork.TESTNET, available: false },
+        network: NeoNetwork.TESTNET,
+        available: false
+      })
     } as any;
 
     const server = new HttpServer(neoService, {} as any, contractService, 0);
@@ -461,6 +464,151 @@ describe('HttpServer', () => {
         operations: { operations: { transfer: { name: 'transfer' } }, count: 1, contractName: 'NeoFS', network: NeoNetwork.TESTNET, available: false },
         network: NeoNetwork.TESTNET,
         available: false
+      });
+      expect(contractService.getContractInfo).toHaveBeenCalledWith('NeoFS');
+    } finally {
+      await server.stop();
+    }
+  });
+
+  test('serves contract info by Neo address reference', async () => {
+    const neoService = {
+      getNetwork: jest.fn().mockReturnValue(NeoNetwork.TESTNET)
+    } as any;
+    const contractService = {
+      getContractInfo: jest.fn().mockResolvedValue({
+        name: 'NeoFS',
+        description: 'Decentralized storage',
+        scriptHash: '0x1234567890abcdef1234567890abcdef12345678',
+        address: 'NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M',
+        operations: { operations: { transfer: { name: 'transfer' } }, count: 1, contractName: 'NeoFS', network: NeoNetwork.TESTNET, available: true },
+        network: NeoNetwork.TESTNET,
+        available: true
+      })
+    } as any;
+
+    const server = new HttpServer(neoService, {} as any, contractService, 0);
+    const port = await waitForPort(server);
+
+    try {
+      const response = await request(port, '/api/contracts/NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M');
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body)).toMatchObject({
+        name: 'NeoFS',
+        scriptHash: '0x1234567890abcdef1234567890abcdef12345678',
+        available: true
+      });
+      expect(contractService.getContractInfo).toHaveBeenCalledWith('NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M');
+    } finally {
+      await server.stop();
+    }
+  });
+
+  test('serves contract info for encoded contract names', async () => {
+    const neoService = {
+      getNetwork: jest.fn().mockReturnValue(NeoNetwork.TESTNET)
+    } as any;
+    const contractService = {
+      getContractInfo: jest.fn().mockResolvedValue({
+        name: 'Flamingo USD',
+        description: 'Indexed contract',
+        scriptHash: '0x1005d400bcc2a56b7352f09e273be3f9933a5fb1',
+        network: NeoNetwork.TESTNET,
+        available: true,
+        operations: { operations: {}, count: 0, contractName: 'Flamingo USD', network: NeoNetwork.TESTNET, available: true }
+      })
+    } as any;
+
+    const server = new HttpServer(neoService, {} as any, contractService, 0);
+    const port = await waitForPort(server);
+
+    try {
+      const response = await request(port, '/api/contracts/Flamingo%20USD');
+      expect(response.statusCode).toBe(200);
+      expect(contractService.getContractInfo).toHaveBeenCalledWith('Flamingo USD');
+    } finally {
+      await server.stop();
+    }
+  });
+
+  test('serves contract deployment status by generic reference', async () => {
+    const neoService = {
+      getNetwork: jest.fn().mockReturnValue(NeoNetwork.TESTNET)
+    } as any;
+    const contractService = {
+      getContractStatus: jest.fn().mockResolvedValue({
+        deployed: true,
+        status: 'deployed',
+        scriptHash: '0x1234567890abcdef1234567890abcdef12345678',
+        address: 'NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M',
+        manifestName: 'NeoFS',
+        operationCount: 1,
+        network: NeoNetwork.TESTNET
+      })
+    } as any;
+
+    const server = new HttpServer(neoService, {} as any, contractService, 0);
+    const port = await waitForPort(server);
+
+    try {
+      const response = await request(port, '/api/contracts/NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M/status');
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body)).toMatchObject({
+        deployed: true,
+        status: 'deployed',
+        scriptHash: '0x1234567890abcdef1234567890abcdef12345678',
+      });
+      expect(contractService.getContractStatus).toHaveBeenCalledWith('NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M');
+    } finally {
+      await server.stop();
+    }
+  });
+
+  test('serves contract deployment status for encoded contract names', async () => {
+    const neoService = {
+      getNetwork: jest.fn().mockReturnValue(NeoNetwork.TESTNET)
+    } as any;
+    const contractService = {
+      getContractStatus: jest.fn().mockResolvedValue({
+        deployed: true,
+        status: 'deployed',
+        scriptHash: '0x1005d400bcc2a56b7352f09e273be3f9933a5fb1',
+        manifestName: 'Flamingo USD',
+        network: NeoNetwork.TESTNET
+      })
+    } as any;
+
+    const server = new HttpServer(neoService, {} as any, contractService, 0);
+    const port = await waitForPort(server);
+
+    try {
+      const response = await request(port, '/api/contracts/Flamingo%20USD/status');
+      expect(response.statusCode).toBe(200);
+      expect(contractService.getContractStatus).toHaveBeenCalledWith('Flamingo USD');
+    } finally {
+      await server.stop();
+    }
+  });
+
+  test('returns a resource error for unresolved contract names', async () => {
+    const neoService = {
+      getNetwork: jest.fn().mockReturnValue(NeoNetwork.TESTNET)
+    } as any;
+    const contractService = {
+      getContractInfo: jest.fn().mockRejectedValue(new Error('Unable to resolve contract reference "bridge". Provide a known contract name, script hash, or Neo address.'))
+    } as any;
+
+    const server = new HttpServer(neoService, {} as any, contractService, 0);
+    const port = await waitForPort(server);
+
+    try {
+      const response = await request(port, '/api/contracts/bridge');
+      expect(response.statusCode).toBe(404);
+      expect(JSON.parse(response.body)).toEqual({
+        error: 'Resource not found',
+        details: 'Unable to resolve contract reference "bridge". Provide a known contract name, script hash, or Neo address.',
+        path: '/api/contracts/bridge',
+        method: 'GET'
       });
     } finally {
       await server.stop();
@@ -527,6 +675,37 @@ describe('HttpServer', () => {
       expect(response.statusCode).toBe(200);
       expect(JSON.parse(response.body)).toEqual({ state: 'HALT', stack: [{ value: '100' }] });
       expect(contractService.invokeReadContract).toHaveBeenCalledWith('NeoFS', 'balanceOf', []);
+      expect(neoService.invokeReadContract).not.toHaveBeenCalled();
+    } finally {
+      await server.stop();
+    }
+  });
+
+  test('invokes contracts via generic HTTP route using a Neo address reference', async () => {
+    const neoService = {
+      getNetwork: jest.fn().mockReturnValue(NeoNetwork.TESTNET),
+      invokeReadContract: jest.fn().mockResolvedValue({ state: 'HALT', stack: [{ value: '100' }] })
+    } as any;
+    const contractService = {
+      assertContractDeployed: jest.fn().mockResolvedValue(undefined),
+      invokeReadContract: jest.fn().mockResolvedValue({ state: 'HALT', stack: [{ value: '100' }] })
+    } as any;
+
+    const server = new HttpServer(neoService, {} as any, contractService, 0);
+    const port = await waitForPort(server);
+
+    try {
+      const response = await request(port, '/api/contracts/invoke', {
+        method: 'POST',
+        body: {
+          contract: 'NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M',
+          operation: 'balanceOf',
+          args: []
+        }
+      });
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body)).toEqual({ state: 'HALT', stack: [{ value: '100' }] });
+      expect(contractService.invokeReadContract).toHaveBeenCalledWith('NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M', 'balanceOf', []);
       expect(neoService.invokeReadContract).not.toHaveBeenCalled();
     } finally {
       await server.stop();

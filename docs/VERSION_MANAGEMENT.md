@@ -10,7 +10,7 @@ The project follows [Semantic Versioning (SemVer)](https://semver.org/) with the
 - **MINOR** (0.X.0): New features that are backwards compatible
 - **PATCH** (0.0.X): Bug fixes that are backwards compatible
 
-### Current Version: 1.6.4
+### Current Version: 1.7.0
 
 ## Version Management Scripts
 
@@ -20,13 +20,13 @@ The project follows [Semantic Versioning (SemVer)](https://semver.org/) with the
 # Check current version
 npm run version:check
 
-# Bump patch version (1.6.4 → 1.6.5)
+# Bump patch version (1.7.0 → 1.7.1)
 npm run version:patch
 
-# Bump minor version (1.6.4 → 1.7.0)
+# Bump minor version (1.7.0 → 1.8.0)
 npm run version:minor
 
-# Bump major version (1.6.4 → 2.0.0)
+# Bump major version (1.7.0 → 2.0.0)
 npm run version:major
 
 # Prepare for release (build, test, type-check)
@@ -91,7 +91,7 @@ Use the comprehensive release preparation script:
    
    # Commit changes
    git add .
-   git commit -m "chore: bump version to 1.7.0"
+   git commit -m "chore: bump version to 1.8.0"
    ```
 
 ### 3. Release Phase
@@ -104,7 +104,7 @@ Use the comprehensive release preparation script:
 2. **Create GitHub Release**:
    ```bash
    # Using GitHub CLI (recommended)
-   gh release create v1.7.0 --generate-notes
+   gh release create v1.8.0 --generate-notes
    
    # Or manually through GitHub web interface
    ```
@@ -123,7 +123,7 @@ When updating versions, ensure consistency across these files:
 1. **`package.json`**: Main version source
    ```json
    {
-     "version": "1.6.4"
+     "version": "1.7.0"
    }
    ```
 
@@ -138,19 +138,19 @@ When updating versions, ensure consistency across these files:
    ```json
    {
      "server": {
-       "version": "1.6.4"
+       "version": "1.7.0"
      }
    }
    ```
 
 4. **`docs/CHANGELOG.md`**: Version history
    ```markdown
-   ## [1.6.4] - 2026-03-06
+   ## [1.7.0] - 2026-03-10
    ```
 
 ## Release Types and Examples
 
-### Patch Release (1.6.4 → 1.6.5)
+### Patch Release (1.7.0 → 1.7.1)
 **When to use**: Bug fixes, security patches, minor improvements
 
 **Examples**:
@@ -164,7 +164,7 @@ When updating versions, ensure consistency across these files:
 ./scripts/prepare-release.sh --type patch
 ```
 
-### Minor Release (1.6.4 → 1.7.0)
+### Minor Release (1.7.0 → 1.8.0)
 **When to use**: New features, enhancements, non-breaking changes
 
 **Examples**:
@@ -179,7 +179,7 @@ When updating versions, ensure consistency across these files:
 ./scripts/prepare-release.sh --type minor
 ```
 
-### Major Release (1.6.4 → 2.0.0)
+### Major Release (1.7.0 → 2.0.0)
 **When to use**: Breaking changes, major architecture changes
 
 **Examples**:
@@ -215,6 +215,7 @@ The release process triggers automated workflows:
 
 | Version | Date | Type | Description |
 |---------|------|------|-------------|
+| 1.7.0 | 2026-03-10 | Minor | Generic contract resolution, contract status tool/route, api.n3index.dev exact-name lookup, stdio/HTTP surface alignment |
 | 1.6.4 | 2026-03-06 | Patch | Packaging hardening, built-artifact CI smoke validation, resource handler extraction |
 | 1.6.0 | 2025-06-25 | Minor | Enterprise CI/CD, Docker infrastructure, project organization |
 | 1.5.0 | Previous | Minor | Neo N3 MCP integration, multi-network support |
@@ -247,7 +248,7 @@ The release process triggers automated workflows:
 1. **Version Mismatch**:
    ```bash
    # Check all version locations
-   rg -n "1\.6\.4" package.json package-lock.json src/version.ts config/docker.json docs/CHANGELOG.md
+   rg -n "1\.7\.0" package.json package-lock.json src/version.ts config/docker.json docs/CHANGELOG.md
    ```
 
 2. **Failed NPM Publish**:

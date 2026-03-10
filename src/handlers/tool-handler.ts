@@ -251,20 +251,24 @@ async function handleTransferAssets(input: any, neoService: NeoService): Promise
 
 
 function resolveContractReference(input: any): string {
-  const reference = input?.contractName ?? input?.nameOrHash;
+  const reference = input?.contract ?? input?.contractReference ?? input?.contractName ?? input?.nameOrHash;
   if (typeof reference === 'string' && reference.trim()) {
     return reference.trim();
   }
 
   throw new McpError(
     ErrorCode.InvalidParams,
-    'Either scriptHash or contractName must be provided.'
+    'Either scriptHash or a contract reference must be provided.'
   );
 }
 
-function resolveInvocationScriptHash(input: any, contractService: ContractService): string {
+async function resolveInvocationScriptHash(input: any, contractService: ContractService): Promise<string> {
   if (typeof input?.scriptHash === 'string' && input.scriptHash.trim()) {
     return validateScriptHash(input.scriptHash);
+  }
+
+  if (typeof (contractService as any).resolveContractScriptHash === 'function') {
+    return await (contractService as any).resolveContractScriptHash(resolveContractReference(input));
   }
 
   return contractService.getContractScriptHash(resolveContractReference(input));
@@ -272,11 +276,13 @@ function resolveInvocationScriptHash(input: any, contractService: ContractServic
 
 async function handleInvokeReadContract(input: any, neoService: NeoService, contractService: ContractService): Promise<any> {
   try {
-    const namedContractReference = !input?.scriptHash && (typeof input?.contractName === 'string' && input.contractName.trim()
-      ? input.contractName.trim()
-      : typeof input?.nameOrHash === 'string' && input.nameOrHash.trim()
-        ? input.nameOrHash.trim()
-        : undefined);
+    const namedContractReference = !input?.scriptHash && (() => {
+      try {
+        return resolveContractReference(input);
+      } catch {
+        return undefined;
+      }
+    })();
 
     if (namedContractReference) {
       await contractService.assertContractDeployed(namedContractReference);
@@ -284,7 +290,7 @@ async function handleInvokeReadContract(input: any, neoService: NeoService, cont
 
     const result = namedContractReference
       ? await contractService.invokeReadContract(namedContractReference, input.operation, input.args || [])
-      : await neoService.invokeReadContract(resolveInvocationScriptHash(input, contractService), input.operation, input.args || []);
+      : await neoService.invokeReadContract(await resolveInvocationScriptHash(input, contractService), input.operation, input.args || []);
 
     return createSuccessResponse(result);
   } catch (error) {
@@ -302,18 +308,20 @@ async function handleInvokeWriteContract(input: any, neoService: NeoService, con
       throw new McpError(ErrorCode.InvalidParams, 'Invalid sender WIF provided.');
     }
 
-    const namedContractReference = !input?.scriptHash && (typeof input?.contractName === 'string' && input.contractName.trim()
-      ? input.contractName.trim()
-      : typeof input?.nameOrHash === 'string' && input.nameOrHash.trim()
-        ? input.nameOrHash.trim()
-        : undefined);
+    const namedContractReference = !input?.scriptHash && (() => {
+      try {
+        return resolveContractReference(input);
+      } catch {
+        return undefined;
+      }
+    })();
     if (namedContractReference) {
       await contractService.assertContractDeployed(namedContractReference);
     }
     const account = new neonJs.wallet.Account(input.fromWIF);
     const result = namedContractReference
       ? await contractService.invokeWriteContract(account, namedContractReference, input.operation, input.args || [])
-      : await neoService.invokeContract(account, resolveInvocationScriptHash(input, contractService), input.operation, input.args || []);
+      : await neoService.invokeContract(account, await resolveInvocationScriptHash(input, contractService), input.operation, input.args || []);
     return createSuccessResponse(result);
   } catch (error) {
     return handleError(error);
@@ -413,17 +421,19 @@ async function handleEstimateInvokeFees(input: any, neoService: NeoService, cont
       throw new McpError(ErrorCode.InvalidParams, 'Signer address is required to estimate invocation fees.');
     }
 
-    const namedContractReference = !input?.scriptHash && (typeof input?.contractName === 'string' && input.contractName.trim()
-      ? input.contractName.trim()
-      : typeof input?.nameOrHash === 'string' && input.nameOrHash.trim()
-        ? input.nameOrHash.trim()
-        : undefined);
+    const namedContractReference = !input?.scriptHash && (() => {
+      try {
+        return resolveContractReference(input);
+      } catch {
+        return undefined;
+      }
+    })();
 
     if (namedContractReference) {
       await contractService.assertContractDeployed(namedContractReference);
     }
 
-    const scriptHash = resolveInvocationScriptHash(input, contractService);
+    const scriptHash = await resolveInvocationScriptHash(input, contractService);
     validateAddress(input.signerAddress);
     const fees = await neoService.calculateInvokeFee(input.signerAddress, scriptHash, input.operation, input.args || []);
     return createSuccessResponse(fees);
@@ -490,24 +500,17 @@ async function handleListFamousContracts(input: any, contractService: ContractSe
 
 async function handleGetContractInfo(input: any, contractService: ContractService): Promise<any> {
   try {
-    const contractReference = typeof input?.contractName === 'string' && input.contractName.trim()
-      ? input.contractName.trim()
-      : resolveContractReference(input);
-    const contract = contractService.getContract(contractReference);
-    const available = await contractService.isContractDeployed(contractReference);
-    const operations = {
-      ...contractService.getContractOperations(contractReference),
-      available
-    };
-    const scriptHash = contractService.getContractScriptHash(contractReference);
-    return {
-      name: contract.name,
-      description: contract.description,
-      scriptHash,
-      operations,
-      network: contractService.getNetwork(),
-      available
-    };
+    const contractReference = resolveContractReference(input);
+    return await (contractService as any).getContractInfo(contractReference);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleGetContractStatus(input: any, contractService: ContractService): Promise<any> {
+  try {
+    const contractReference = resolveContractReference(input);
+    return createSuccessResponse(await (contractService as any).getContractStatus(contractReference));
   } catch (error) {
     return handleError(error);
   }
@@ -635,6 +638,8 @@ export async function callTool(name: string, input: any, neoServices: Map<NeoNet
         return await handleListFamousContracts(input, contractService);
       case 'get_contract_info':
         return await handleGetContractInfo(input, contractService);
+      case 'get_contract_status':
+        return await handleGetContractStatus(input, contractService);
       case 'neofs_create_container':
         return await handleCreateContainer(input, neoService, contractService);
       case 'neofs_get_containers':
@@ -856,13 +861,17 @@ export function setupToolHandlers(
       },
       {
         name: 'invoke_contract',
-        description: 'Prepare invocation details for a smart contract method. Accepts either a scriptHash or a supported contractName. If fromWIF is provided, prepares a write transaction (client signs/sends); otherwise, performs a read-only query.',
+        description: 'Prepare invocation details for a smart contract method. Accepts either a scriptHash or a generic contract reference such as a known name, script hash, or Neo address. If fromWIF is provided, prepares a write transaction; otherwise, performs a read-only query.',
         inputSchema: {
           type: 'object',
           properties: {
             fromWIF: {
               type: 'string',
               description: 'Optional: WIF of the account to sign the transaction (for write operations)',
+            },
+            contract: {
+              type: 'string',
+              description: 'Generic contract reference: known name, script hash, or Neo address',
             },
             scriptHash: {
               type: 'string',
@@ -980,13 +989,17 @@ export function setupToolHandlers(
       },
       {
         name: 'estimate_invoke_fees',
-        description: 'Estimate network and system fees for a contract invocation by script hash or supported contract name',
+        description: 'Estimate network and system fees for a contract invocation by script hash or a generic contract reference',
         inputSchema: {
           type: 'object',
           properties: {
             signerAddress: {
               type: 'string',
               description: 'Address of the account that will sign the transaction',
+            },
+            contract: {
+              type: 'string',
+              description: 'Generic contract reference: known name, script hash, or Neo address',
             },
             scriptHash: {
               type: 'string',
@@ -1177,10 +1190,14 @@ export function setupToolHandlers(
       },
       {
         name: 'get_contract_info',
-        description: 'Get details about a known famous contract by name or script hash',
+        description: 'Get details about a contract by known name, script hash, or Neo address',
         inputSchema: {
           type: 'object',
           properties: {
+            contract: {
+              type: 'string',
+              description: 'Generic contract reference: known name, script hash, or Neo address',
+            },
             contractName: {
               type: 'string',
               description: 'Supported contract name',
@@ -1188,6 +1205,33 @@ export function setupToolHandlers(
             nameOrHash: {
               type: 'string',
               description: 'Name (e.g., "flamingo") or script hash (hex string) of the famous contract',
+            },
+            network: {
+              type: 'string',
+              description: 'Optional: Network to use ("mainnet" or "testnet"). Defaults based on config.',
+              enum: [NeoNetwork.MAINNET, NeoNetwork.TESTNET],
+            },
+          },
+          required: [],
+        },
+      },
+      {
+        name: 'get_contract_status',
+        description: 'Check whether a contract is deployed and inspect its current on-chain status by known name, script hash, or Neo address',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            contract: {
+              type: 'string',
+              description: 'Generic contract reference: known name, script hash, or Neo address',
+            },
+            contractName: {
+              type: 'string',
+              description: 'Supported contract name',
+            },
+            nameOrHash: {
+              type: 'string',
+              description: 'Backward-compatible alias for contract name or script hash',
             },
             network: {
               type: 'string',

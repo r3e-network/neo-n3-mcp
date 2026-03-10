@@ -115,8 +115,8 @@ const balance = await client.callTool({
 const contractInfo = await client.callTool({
   name: 'get_contract_info',
   arguments: {
-    contractName: 'NeoFS',
-    network: 'testnet',
+    contract: 'NeoXBridgeManagement',
+    network: 'mainnet',
   },
 });
 
@@ -124,16 +124,18 @@ const info = JSON.parse(contractInfo.content[0].text);
 const scriptHash = info.scriptHash;
 ```
 
+The server resolves plain contract names through `https://api.n3index.dev` when they are not already known locally.
+
 ### Read invocation
 
 ```javascript
 const readResult = await client.callTool({
   name: 'invoke_contract',
   arguments: {
-    network: 'testnet',
-    scriptHash,
-    operation: 'balanceOf',
-    args: ['NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr'],
+    network: 'mainnet',
+    contract: 'NeoXBridgeManagement',
+    operation: 'owner',
+    args: [],
   },
 });
 ```

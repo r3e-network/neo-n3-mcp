@@ -424,16 +424,37 @@ class NeoN3McpServer {
     // Contract info tool
     this.server.tool(
       'get_contract_info',
-      'Get metadata and operations for a supported contract by name or script hash.',
+      'Get metadata and operations for a contract by known name, script hash, or Neo address.',
       {
+        contract: z.string().optional().describe('Generic contract reference: known name, script hash, or Neo address'),
         contractName: z.string().optional().describe('Supported contract name'),
-        nameOrHash: z.string().optional().describe('Supported contract name or script hash'),
+        nameOrHash: z.string().optional().describe('Backward-compatible alias for contract name or script hash'),
         network: z.string().optional().describe('Network to use: "mainnet" or "testnet"'),
       },
       async (args) => {
         try {
           await this.ensureServicesInitialized();
           const result = await callTool('get_contract_info', args, this.neoServices, this.contractServices);
+          return this.formatDelegatedToolResponse(result);
+        } catch (error: any) {
+          return this.createErrorResponse(error);
+        }
+      }
+    );
+
+    this.server.tool(
+      'get_contract_status',
+      'Check whether a contract is deployed and inspect its current on-chain status by known name, script hash, or Neo address.',
+      {
+        contract: z.string().optional().describe('Generic contract reference: known name, script hash, or Neo address'),
+        contractName: z.string().optional().describe('Supported contract name'),
+        nameOrHash: z.string().optional().describe('Backward-compatible alias for contract name or script hash'),
+        network: z.string().optional().describe('Network to use: "mainnet" or "testnet"'),
+      },
+      async (args) => {
+        try {
+          await this.ensureServicesInitialized();
+          const result = await callTool('get_contract_status', args, this.neoServices, this.contractServices);
           return this.formatDelegatedToolResponse(result);
         } catch (error: any) {
           return this.createErrorResponse(error);
@@ -582,12 +603,14 @@ class NeoN3McpServer {
 
     this.server.tool(
       'invoke_contract',
-      'Invoke a contract read method or prepare/send a write invocation by script hash or supported contract name.',
+      'Invoke a contract read method or prepare/send a write invocation by script hash or a generic contract reference.',
       { 
       network: z.string().optional().describe('Optional: Network'),
       fromWIF: z.string().optional().describe('Optional: Sender WIF for write operations'),
+      contract: z.string().optional().describe('Generic contract reference: known name, script hash, or Neo address'),
       scriptHash: z.string().optional().describe('Contract script hash'),
       contractName: z.string().optional().describe('Supported contract name'),
+      nameOrHash: z.string().optional().describe('Backward-compatible alias for contract name or script hash'),
       operation: z.string().describe('Method name'),
       args: z.array(z.any()).optional().describe('Optional: Method arguments'),
       signers: z.array(z.any()).optional().describe('Optional: Signer scopes'),
@@ -646,12 +669,14 @@ class NeoN3McpServer {
 
     this.server.tool(
       'estimate_invoke_fees',
-      'Estimate network and system fees for a contract invocation by script hash or supported contract name.',
+      'Estimate network and system fees for a contract invocation by script hash or a generic contract reference.',
       { 
       network: z.string().optional().describe('Optional: Network'),
       signerAddress: z.string().describe('Signer address'),
+      contract: z.string().optional().describe('Generic contract reference: known name, script hash, or Neo address'),
       scriptHash: z.string().optional().describe('Contract script hash'),
       contractName: z.string().optional().describe('Supported contract name'),
+      nameOrHash: z.string().optional().describe('Backward-compatible alias for contract name or script hash'),
       operation: z.string().describe('Method name'),
       args: z.array(z.any()).optional().describe('Optional: Method arguments'),
       signers: z.array(z.any()).optional().describe('Optional: Signer scopes')

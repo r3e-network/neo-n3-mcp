@@ -117,9 +117,12 @@ const neonJsMock = jest.requireMock('@cityofzion/neon-js') as {
 const mockRpcExecute = neonJsMock.__mocked.mockRpcExecute;
 const mockExperimentalDeployContract = neonJsMock.__mocked.mockExperimentalDeployContract;
 const mockExperimentalGetContractHash = neonJsMock.__mocked.mockExperimentalGetContractHash;
+const mockFetch = jest.fn();
 
 describe('ContractService', () => {
   let contractService: ContractService;
+  const genericContractHash = '0xabcdef1234567890abcdef1234567890abcdef12';
+  const genericContractAddress = 'NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M';
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -137,6 +140,11 @@ describe('ContractService', () => {
     });
     mockExperimentalDeployContract.mockResolvedValue(mockTransactionId);
     mockExperimentalGetContractHash.mockReturnValue(mockContractHash);
+    (globalThis as any).fetch = mockFetch;
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    } as any);
     contractService = new ContractService('http://localhost:10332', NeoNetwork.MAINNET);
   });
 
@@ -171,6 +179,154 @@ describe('ContractService', () => {
     });
   });
 
+  describe('generic contract references', () => {
+    test('should resolve script hash from a Neo address', () => {
+      const resolved = contractService.getContractScriptHash(genericContractAddress);
+
+      expect(resolved).toBe('0xf81a9a9ebf8cc9ae7f9ac3491f5a9f3b282b5e9e');
+    });
+
+    test('should return contract status for an arbitrary script hash', async () => {
+      const mockRpcClient = contractService['rpcClient'];
+      mockRpcClient.getContractState = jest.fn().mockResolvedValue({
+        id: 7,
+        hash: genericContractHash,
+        updatecounter: 3,
+        manifest: {
+          name: 'GenericContract',
+          abi: {
+            methods: [{ name: 'balanceOf', parameters: [] }],
+            events: []
+          }
+        }
+      });
+
+      const status = await (contractService as any).getContractStatus(genericContractHash);
+
+      expect(status).toMatchObject({
+        deployed: true,
+        scriptHash: genericContractHash,
+        manifestName: 'GenericContract',
+        operationCount: 1,
+        status: 'deployed'
+      });
+    });
+
+    test('should surface network errors instead of marking the contract as not deployed', async () => {
+      const mockRpcClient = contractService['rpcClient'];
+      mockRpcClient.getContractState = jest.fn().mockRejectedValue(new Error('ECONNREFUSED api node unavailable'));
+
+      await expect((contractService as any).getContractStatus(genericContractHash))
+        .rejects.toThrow('ECONNREFUSED');
+    });
+
+    test('should resolve an unknown contract name through api.n3index.dev metadata', async () => {
+      const remoteHash = '0x148b3e0ca4f77476252862645e58f06b2562c414';
+      mockFetch.mockImplementation(async (input: any) => {
+        const url = String(input);
+        if (url.includes('/contract_metadata_cache')) {
+          return {
+            ok: true,
+            json: async () => [
+              {
+                contract_hash: remoteHash,
+                display_name: 'NeoXBridgeManagement',
+                symbol: '',
+                logo_url: 'https://x.neo.org/favicon.ico',
+                network: 'mainnet',
+                source: 'manual'
+              }
+            ]
+          } as any;
+        }
+
+        if (url.includes('/contracts')) {
+          return {
+            ok: true,
+            json: async () => [
+              {
+                network: 'mainnet',
+                contract_hash: remoteHash,
+                update_counter: 0,
+                first_seen_block: 100,
+                last_seen_block: 200,
+                manifest: {
+                  name: 'NeoXBridgeManagement',
+                  abi: {
+                    methods: [{ name: 'owner', parameters: [] }],
+                    events: []
+                  }
+                }
+              }
+            ]
+          } as any;
+        }
+
+        return {
+          ok: true,
+          json: async () => [],
+        } as any;
+      });
+
+      const mockRpcClient = contractService['rpcClient'];
+      mockRpcClient.getContractState = jest.fn().mockResolvedValue({
+        id: 9,
+        hash: remoteHash,
+        updatecounter: 0,
+        manifest: {
+          name: 'NeoXBridgeManagement',
+          abi: {
+            methods: [{ name: 'owner', parameters: [] }],
+            events: []
+          }
+        }
+      });
+
+      const scriptHash = await contractService.resolveContractScriptHash('NeoXBridgeManagement');
+      const info = await contractService.getContractInfo('NeoXBridgeManagement');
+
+      expect(scriptHash).toBe(remoteHash);
+      expect(info).toMatchObject({
+        name: 'NeoXBridgeManagement',
+        scriptHash: remoteHash,
+        available: true,
+      });
+      expect(info.status).toMatchObject({
+        deployed: true,
+        logoUrl: 'https://x.neo.org/favicon.ico',
+      });
+    });
+
+    test('should reject fuzzy remote contract names that only match a substring', async () => {
+      mockFetch.mockImplementation(async (input: any) => {
+        const url = String(input);
+        if (url.includes('/contract_metadata_cache')) {
+          return {
+            ok: true,
+            json: async () => [
+              {
+                contract_hash: '0x148b3e0ca4f77476252862645e58f06b2562c414',
+                display_name: 'NeoXBridgeManagement',
+                symbol: '',
+                logo_url: 'https://x.neo.org/favicon.ico',
+                network: 'mainnet',
+                source: 'manual'
+              }
+            ]
+          } as any;
+        }
+
+        return {
+          ok: true,
+          json: async () => [],
+        } as any;
+      });
+
+      await expect(contractService.resolveContractScriptHash('bridge'))
+        .rejects.toThrow('Unable to resolve contract reference');
+    });
+  });
+
   describe('queryContract', () => {
     test('should query contract successfully', async () => {
       const contract = Object.values(FAMOUS_CONTRACTS)[0];
@@ -193,6 +349,13 @@ describe('ContractService', () => {
 
       await expect(contractService.queryContract(contract.name, operation.name, []))
         .rejects.toThrow(ContractError);
+    });
+
+    test('should query an arbitrary contract by script hash', async () => {
+      const result = await contractService.invokeReadContract(genericContractHash, 'balanceOf', []);
+
+      expect(result).toBeDefined();
+      expect(result.state).toBe('HALT');
     });
   });
 

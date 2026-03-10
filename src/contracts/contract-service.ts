@@ -5,12 +5,15 @@
  * like NeoFS, NeoBurger, Flamingo, NeoCompound, GrandShare, and GhostMarket.
  */
 import * as neonJs from '@cityofzion/neon-js';
+import { config } from '../config';
 import { NeoNetwork } from '../services/neo-service';
 import {
   FAMOUS_CONTRACTS,
   ContractDefinition,
   ContractNetwork
 } from './contracts';
+import { N3IndexClient, N3IndexResolvedContract } from './n3index-client';
+import { normalizeScriptHash, tryGetAddressFromScriptHash, tryGetScriptHashFromAddress } from '../metadata/known-accounts';
 import {
   validateScriptHash,
   validateAmount,
@@ -22,6 +25,35 @@ import {
 import { ContractError, NetworkError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
+type ContractReferenceSource = 'known_name' | 'known_hash' | 'script_hash' | 'address' | 'manifest_name' | 'n3index_metadata' | 'n3index_manifest';
+
+interface ResolvedContractTarget {
+  reference: string;
+  scriptHash: string;
+  address?: string;
+  source: ContractReferenceSource;
+  knownContract?: ContractDefinition;
+  remoteMetadata?: N3IndexResolvedContract;
+}
+
+interface ContractOperationSummary {
+  operations: Record<string, { name: string; description: string; args?: Array<{ name: string; type: string; description: string }> }>;
+  count: number;
+  contractName: string;
+  network: NeoNetwork;
+  available: boolean;
+}
+
+function isMissingContractStateError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  const normalized = message.toLowerCase();
+  return normalized.includes('unknown contract')
+    || normalized.includes('contract not found')
+    || normalized.includes('unknown entity')
+    || normalized.includes('unknown item')
+    || normalized.includes('not deployed');
+}
+
 /**
  * Service for interacting with famous Neo N3 contracts
  */
@@ -31,6 +63,9 @@ export class ContractService {
 
   private readonly rpcUrl: string;
   private networkMagic?: number;
+  private readonly discoveredContractsByName = new Map<string, string>();
+  private readonly n3indexClient: N3IndexClient | null;
+  private readonly remotelyResolvedContractsByName = new Map<string, N3IndexResolvedContract>();
 
   /**
    * Create a new ContractService
@@ -45,6 +80,7 @@ export class ContractService {
 
     this.network = network;
     this.rpcUrl = rpcUrl;
+    this.n3indexClient = config.n3index.enabled ? new N3IndexClient(config.n3index.baseUrl) : null;
 
     try {
       this.rpcClient = new neonJs.rpc.RPCClient(rpcUrl);
@@ -55,6 +91,220 @@ export class ContractService {
       logger.error(`Failed to initialize Neo RPC client`, { error: errorMessage, rpcUrl, network });
       throw new NetworkError(`Failed to initialize Neo RPC client: ${errorMessage}`);
     }
+  }
+
+  private getNetworkKey(): ContractNetwork {
+    return this.network === NeoNetwork.MAINNET ? ContractNetwork.MAINNET : ContractNetwork.TESTNET;
+  }
+
+  private rememberDiscoveredContract(name: string | undefined, scriptHash: string) {
+    if (!name || typeof name !== 'string') {
+      return;
+    }
+
+    const normalizedName = name.trim().toLowerCase();
+    if (!normalizedName) {
+      return;
+    }
+
+    this.discoveredContractsByName.set(normalizedName, scriptHash);
+  }
+
+  private rememberRemoteContract(name: string | undefined, metadata: N3IndexResolvedContract) {
+    if (!name || typeof name !== 'string') {
+      return;
+    }
+
+    const normalizedName = name.trim().toLowerCase();
+    if (!normalizedName) {
+      return;
+    }
+
+    this.remotelyResolvedContractsByName.set(normalizedName, metadata);
+    this.rememberDiscoveredContract(name, metadata.contractHash);
+  }
+
+  private getKnownContractByHash(scriptHash: string): ContractDefinition | undefined {
+    const normalizedHash = validateScriptHash(scriptHash).toLowerCase();
+    const networkKey = this.getNetworkKey();
+
+    return Object.values(FAMOUS_CONTRACTS).find((contract) => {
+      const knownHash = contract.scriptHash[networkKey];
+      return typeof knownHash === 'string' && validateScriptHash(knownHash).toLowerCase() === normalizedHash;
+    });
+  }
+
+  private getKnownContractByName(reference: string): ContractDefinition | undefined {
+    const availableContracts = Object.values(FAMOUS_CONTRACTS).map((contract) => contract.name);
+    const validContractName = validateContractName(reference, availableContracts);
+    const contractKey = validContractName.toLowerCase();
+
+    return Object.values(FAMOUS_CONTRACTS).find((contract) => contract.name.toLowerCase() === contractKey);
+  }
+
+  private resolveContractTarget(contractReference: string): ResolvedContractTarget {
+    const reference = typeof contractReference === 'string' ? contractReference.trim() : '';
+    if (!reference) {
+      throw new ValidationError('Contract name, script hash, or Neo address is required');
+    }
+
+    const normalizedHash = normalizeScriptHash(reference);
+    if (normalizedHash) {
+      return {
+        reference,
+        scriptHash: validateScriptHash(normalizedHash),
+        address: tryGetAddressFromScriptHash(normalizedHash) ?? undefined,
+        source: this.getKnownContractByHash(normalizedHash) ? 'known_hash' : 'script_hash',
+        knownContract: this.getKnownContractByHash(normalizedHash),
+      };
+    }
+
+    let validatedAddress: string | null = null;
+    try {
+      validatedAddress = validateAddress(reference);
+    } catch {
+      validatedAddress = null;
+    }
+
+    const addressScriptHash = validatedAddress ? tryGetScriptHashFromAddress(validatedAddress) : null;
+    if (validatedAddress && addressScriptHash) {
+      return {
+        reference,
+        scriptHash: validateScriptHash(addressScriptHash),
+        address: validatedAddress,
+        source: 'address',
+        knownContract: this.getKnownContractByHash(addressScriptHash),
+      };
+    }
+
+    try {
+      const knownContract = this.getKnownContractByName(reference);
+      if (knownContract) {
+        const scriptHash = knownContract.scriptHash[this.getNetworkKey()];
+        if (!scriptHash) {
+          throw new ContractError(
+            `Contract ${knownContract.name} is not available on ${this.network}. ` +
+            `It's only available on ${Object.keys(knownContract.scriptHash).join(', ')}.`
+          );
+        }
+
+        const normalizedKnownHash = validateScriptHash(scriptHash);
+        return {
+          reference,
+          scriptHash: normalizedKnownHash,
+          address: tryGetAddressFromScriptHash(normalizedKnownHash) ?? undefined,
+          source: 'known_name',
+          knownContract,
+        };
+      }
+    } catch (error) {
+      if (!(error instanceof ValidationError)) {
+        throw error;
+      }
+    }
+
+    const discoveredHash = this.discoveredContractsByName.get(reference.toLowerCase());
+    if (discoveredHash) {
+      return {
+        reference,
+        scriptHash: validateScriptHash(discoveredHash),
+        address: tryGetAddressFromScriptHash(discoveredHash) ?? undefined,
+        source: 'manifest_name',
+      };
+    }
+
+    throw new ContractError(
+      `Unable to resolve contract reference "${reference}". Provide a known contract name, script hash, or Neo address.`,
+      { contractReference: reference, network: this.network }
+    );
+  }
+
+  private buildRemoteTarget(reference: string, metadata: N3IndexResolvedContract): ResolvedContractTarget {
+    return {
+      reference,
+      scriptHash: validateScriptHash(metadata.contractHash),
+      address: tryGetAddressFromScriptHash(metadata.contractHash) ?? undefined,
+      source: metadata.source === 'contract_metadata_cache' ? 'n3index_metadata' : 'n3index_manifest',
+      remoteMetadata: metadata,
+      knownContract: this.getKnownContractByHash(metadata.contractHash),
+    };
+  }
+
+  private async resolveContractTargetAsync(contractReference: string): Promise<ResolvedContractTarget> {
+    try {
+      return this.resolveContractTarget(contractReference);
+    } catch (error) {
+      if (!(error instanceof ContractError)) {
+        throw error;
+      }
+
+      const reference = typeof contractReference === 'string' ? contractReference.trim() : '';
+      if (!reference || !this.n3indexClient) {
+        throw error;
+      }
+
+      const cachedRemote = this.remotelyResolvedContractsByName.get(reference.toLowerCase());
+      if (cachedRemote) {
+        return this.buildRemoteTarget(reference, cachedRemote);
+      }
+
+      const remoteMetadata = await this.n3indexClient.resolveByName(this.network, reference);
+      if (!remoteMetadata) {
+        throw error;
+      }
+
+      this.rememberRemoteContract(remoteMetadata.displayName ?? reference, remoteMetadata);
+      if (remoteMetadata.symbol) {
+        this.rememberRemoteContract(remoteMetadata.symbol, remoteMetadata);
+      }
+
+      return this.buildRemoteTarget(reference, remoteMetadata);
+    }
+  }
+
+  private buildOperationSummary(target: ResolvedContractTarget, contractState?: any): ContractOperationSummary {
+    if (target.knownContract) {
+      return {
+        operations: target.knownContract.operations,
+        count: Object.keys(target.knownContract.operations).length,
+        contractName: target.knownContract.name,
+        network: this.network,
+        available: true,
+      };
+    }
+
+    const manifestMethods = Array.isArray(contractState?.manifest?.abi?.methods)
+      ? contractState.manifest.abi.methods
+      : [];
+    const operations = manifestMethods.reduce((accumulator: ContractOperationSummary['operations'], method: any) => {
+      const methodName = typeof method?.name === 'string' ? method.name.trim() : '';
+      if (!methodName) {
+        return accumulator;
+      }
+
+      accumulator[methodName] = {
+        name: methodName,
+        description: 'Method discovered from on-chain contract manifest',
+        args: Array.isArray(method.parameters)
+          ? method.parameters.map((parameter: any) => ({
+              name: typeof parameter?.name === 'string' ? parameter.name : 'arg',
+              type: typeof parameter?.type === 'string' ? parameter.type : 'Any',
+              description: 'Manifest parameter'
+            }))
+          : undefined,
+      };
+      return accumulator;
+    }, {});
+
+    return {
+      operations,
+      count: Object.keys(operations).length,
+      contractName: typeof contractState?.manifest?.name === 'string' && contractState.manifest.name.trim()
+        ? contractState.manifest.name.trim()
+        : target.remoteMetadata?.displayName ?? target.remoteMetadata?.manifestName ?? target.address ?? target.scriptHash,
+      network: this.network,
+      available: true,
+    };
   }
 
   /**
@@ -108,37 +358,29 @@ export class ContractService {
    * @returns Script hash for the current network
    * @throws ContractError if contract not available on current network
    */
-  getContractScriptHash(contractName: string): string {
+  getContractScriptHash(contractReference: string): string {
     try {
-      // Get the contract definition
-      const contract = this.getContract(contractName);
-
-      // Determine the network key
-      const networkKey = this.network === NeoNetwork.MAINNET
-        ? ContractNetwork.MAINNET
-        : ContractNetwork.TESTNET;
-
-      // Get the script hash for the current network
-      const scriptHash = contract.scriptHash[networkKey];
-
-      if (!scriptHash) {
-        throw new ContractError(
-          `Contract ${contract.name} is not available on ${this.network}. ` +
-          `It's only available on ${Object.keys(contract.scriptHash).join(', ')}.`
-        );
-      }
-
-      // Validate and normalize the script hash
-      return validateScriptHash(scriptHash);
+      return this.resolveContractTarget(contractReference).scriptHash;
     } catch (error) {
-      // If it's already a ContractError, rethrow it
       if (error instanceof ContractError) {
         throw error;
       }
 
-      // Otherwise, wrap it in a ContractError
       const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new ContractError(`Failed to get script hash for ${contractName}: ${errorMessage}`);
+      throw new ContractError(`Failed to get script hash for ${contractReference}: ${errorMessage}`);
+    }
+  }
+
+  async resolveContractScriptHash(contractReference: string): Promise<string> {
+    try {
+      return (await this.resolveContractTargetAsync(contractReference)).scriptHash;
+    } catch (error) {
+      if (error instanceof ContractError) {
+        throw error;
+      }
+
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new ContractError(`Failed to resolve script hash for ${contractReference}: ${errorMessage}`);
     }
   }
 
@@ -150,24 +392,16 @@ export class ContractService {
    * @returns Operation result
    * @throws ContractError if contract execution fails
    */
-  async queryContract(contractName: string, operation: string, args: any[] = []): Promise<any> {
+  async queryContract(contractReference: string, operation: string, args: any[] = []): Promise<any> {
     try {
-      await this.assertContractDeployed(contractName);
-
-      // Get the contract definition
-      const contract = this.getContract(contractName);
-
-      // Get available operations
-      const availableOperations = Object.values(contract.operations).map(op => op.name);
-
-      // Validate operation
-      const validOperation = validateContractOperation(operation, availableOperations);
-
-      // Get the script hash
-      const scriptHash = this.getContractScriptHash(contractName);
+      const target = await this.resolveContractTargetAsync(contractReference);
+      await this.assertContractDeployed(contractReference);
+      const validOperation = target.knownContract
+        ? validateContractOperation(operation, Object.values(target.knownContract.operations).map((op) => op.name))
+        : validateContractOperation(operation, []);
 
       // Log the query
-      logger.info(`Querying contract ${contractName}`, {
+      logger.info(`Querying contract ${contractReference}`, {
         operation: validOperation,
         args: JSON.stringify(args),
         network: this.network
@@ -181,14 +415,14 @@ export class ContractService {
         const formattedArgs = this.formatContractArgs(args);
 
         // Execute the function through the RPC client
-        result = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'invokefunction', params: [scriptHash, validOperation, formattedArgs] }));
+        result = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'invokefunction', params: [target.scriptHash, validOperation, formattedArgs] }));
       } catch (invokeError) {
-        logger.warn('invokefunction failed; falling back to invokeScript for read invocation', { contractName, operation: validOperation, error: invokeError instanceof Error ? invokeError.message : String(invokeError) });
+        logger.warn('invokefunction failed; falling back to invokeScript for read invocation', { contractReference, operation: validOperation, error: invokeError instanceof Error ? invokeError.message : String(invokeError) });
 
         // Fallback to invokeScript if invokefunction fails
         // Create a script to execute the operation
         const script = neonJs.sc.createScript({
-          scriptHash,
+          scriptHash: target.scriptHash,
           operation: validOperation,
           args
         });
@@ -203,7 +437,7 @@ export class ContractService {
       if (result && result.state === 'FAULT') {
         throw new ContractError(
           `Contract execution failed: ${result.exception || 'Unknown error'}`,
-          { contractName, operation: validOperation, args }
+          { contractReference, operation: validOperation, args, scriptHash: target.scriptHash }
         );
       }
 
@@ -222,8 +456,8 @@ export class ContractService {
       // Otherwise, wrap it in a ContractError
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new ContractError(
-        `Failed to query contract ${contractName}: ${errorMessage}`,
-        { contractName, operation, args }
+        `Failed to query contract ${contractReference}: ${errorMessage}`,
+        { contractReference, operation, args }
       );
     }
   }
@@ -240,25 +474,17 @@ export class ContractService {
    */
   async invokeContract(
     fromAccount: any,
-    contractName: string,
+    contractReference: string,
     operation: string,
     args: any[] = [],
     additionalScriptAttributes: any[] = []
   ): Promise<string> {
     try {
-      await this.assertContractDeployed(contractName);
-
-      // Get the contract definition
-      const contract = this.getContract(contractName);
-
-      // Get available operations
-      const availableOperations = Object.values(contract.operations).map(op => op.name);
-
-      // Validate operation
-      const validOperation = validateContractOperation(operation, availableOperations);
-
-      // Get the script hash
-      const scriptHash = this.getContractScriptHash(contractName);
+      const target = await this.resolveContractTargetAsync(contractReference);
+      await this.assertContractDeployed(contractReference);
+      const validOperation = target.knownContract
+        ? validateContractOperation(operation, Object.values(target.knownContract.operations).map((op) => op.name))
+        : validateContractOperation(operation, []);
 
       // Validate account
       if (!fromAccount || !fromAccount.address) {
@@ -269,7 +495,7 @@ export class ContractService {
       validateAddress(fromAccount.address);
 
       // Log the invocation
-      logger.info(`Invoking contract ${contractName}`, {
+      logger.info(`Invoking contract ${contractReference}`, {
         operation: validOperation,
         args: JSON.stringify(args),
         network: this.network,
@@ -278,7 +504,7 @@ export class ContractService {
 
       // Create a script to execute the operation
       const script = neonJs.sc.createScript({
-        scriptHash,
+        scriptHash: target.scriptHash,
         operation: validOperation,
         args
       });
@@ -301,14 +527,14 @@ export class ContractService {
       // Use invokefunction RPC method as per Neo N3 documentation
       try {
         // Execute the function through the RPC client
-        tx = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'invokefunction', params: [scriptHash, validOperation, formattedArgs, [signer]] }));
+        tx = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'invokefunction', params: [target.scriptHash, validOperation, formattedArgs, [signer]] }));
 
         // If invokefunction succeeds, use the result
         if (!tx || !tx.script) {
           throw new Error('Invalid response from invokefunction');
         }
       } catch (invokeError) {
-        logger.warn('invokefunction failed; falling back to invokeScript for write invocation', { contractName, operation: validOperation, address: fromAccount.address, error: invokeError instanceof Error ? invokeError.message : String(invokeError) });
+        logger.warn('invokefunction failed; falling back to invokeScript for write invocation', { contractReference, operation: validOperation, address: fromAccount.address, error: invokeError instanceof Error ? invokeError.message : String(invokeError) });
 
         // Fallback to invokeScript if invokefunction fails
         // Create transaction intent
@@ -336,7 +562,7 @@ export class ContractService {
       if (tx.state === 'FAULT') {
         throw new ContractError(
           `Contract execution failed: ${tx.exception || 'Unknown error'}`,
-          { contractName, operation: validOperation, args }
+          { contractReference, operation: validOperation, args, scriptHash: target.scriptHash }
         );
       }
 
@@ -364,8 +590,8 @@ export class ContractService {
       // Otherwise, wrap it in a ContractError
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new ContractError(
-        `Failed to invoke contract ${contractName}: ${errorMessage}`,
-        { contractName, operation, args }
+        `Failed to invoke contract ${contractReference}: ${errorMessage}`,
+        { contractReference, operation, args }
       );
     }
   }
@@ -380,16 +606,113 @@ export class ContractService {
     );
   }
 
+  async getContractStatus(contractReference: string): Promise<any> {
+    const target = await this.resolveContractTargetAsync(contractReference);
+    if (!target.remoteMetadata && this.n3indexClient) {
+      try {
+        const remoteMetadata = await this.n3indexClient.getContractByHash(this.network, target.scriptHash);
+        if (remoteMetadata) {
+          target.remoteMetadata = remoteMetadata;
+          this.rememberRemoteContract(remoteMetadata.displayName ?? contractReference, remoteMetadata);
+          if (remoteMetadata.symbol) {
+            this.rememberRemoteContract(remoteMetadata.symbol, remoteMetadata);
+          }
+        }
+      } catch (error) {
+        logger.debug('N3Index hash enrichment failed', {
+          contractReference,
+          scriptHash: target.scriptHash,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    try {
+      const contractState = await this.getContractState(target.scriptHash);
+      const manifestName = typeof contractState?.manifest?.name === 'string' && contractState.manifest.name.trim()
+        ? contractState.manifest.name.trim()
+        : target.remoteMetadata?.displayName ?? target.remoteMetadata?.manifestName ?? target.knownContract?.name ?? target.address ?? target.scriptHash;
+      const operations = this.buildOperationSummary(target, contractState);
+
+      this.rememberDiscoveredContract(manifestName, target.scriptHash);
+
+      return {
+        reference: target.reference,
+        referenceType: target.source,
+        scriptHash: target.scriptHash,
+        address: target.address ?? tryGetAddressFromScriptHash(target.scriptHash) ?? undefined,
+        name: target.remoteMetadata?.displayName ?? target.knownContract?.name ?? manifestName,
+        manifestName,
+        symbol: target.remoteMetadata?.symbol ?? undefined,
+        logoUrl: target.remoteMetadata?.logoUrl ?? undefined,
+        description: target.knownContract?.description ?? `Neo N3 smart contract at ${target.scriptHash}`,
+        deployed: true,
+        status: 'deployed',
+        operationCount: operations.count,
+        operations: operations.operations,
+        network: this.network,
+        contractState,
+      };
+    } catch (error) {
+      if (!isMissingContractStateError(error)) {
+        throw error;
+      }
+
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        reference: target.reference,
+        referenceType: target.source,
+        scriptHash: target.scriptHash,
+        address: target.address ?? tryGetAddressFromScriptHash(target.scriptHash) ?? undefined,
+        name: target.remoteMetadata?.displayName ?? target.knownContract?.name ?? target.address ?? target.scriptHash,
+        symbol: target.remoteMetadata?.symbol ?? undefined,
+        logoUrl: target.remoteMetadata?.logoUrl ?? undefined,
+        description: target.knownContract?.description ?? `Neo N3 smart contract at ${target.scriptHash}`,
+        deployed: false,
+        status: 'not_deployed',
+        operationCount: target.knownContract ? Object.keys(target.knownContract.operations).length : 0,
+        operations: target.knownContract?.operations ?? {},
+        network: this.network,
+        error: errorMessage,
+      };
+    }
+  }
+
+  async getContractInfo(contractReference: string): Promise<any> {
+    const status = await this.getContractStatus(contractReference);
+
+    return {
+      name: status.name,
+      description: status.description,
+      scriptHash: status.scriptHash,
+      ...(status.address ? { address: status.address } : {}),
+      operations: {
+        operations: status.operations,
+        count: status.operationCount,
+        contractName: status.name,
+        network: this.network,
+        available: status.deployed,
+      },
+      network: this.network,
+      available: status.deployed,
+      status,
+    };
+  }
+
   async isContractDeployed(contractNameOrHash: string): Promise<boolean> {
     try {
       if (!contractNameOrHash || typeof contractNameOrHash !== 'string') {
         return false;
       }
 
-      const scriptHash = this.getContractScriptHash(contractNameOrHash);
-      await this.getContractState(scriptHash);
+      const target = await this.resolveContractTargetAsync(contractNameOrHash);
+      await this.getContractState(target.scriptHash);
       return true;
     } catch (error) {
+      if (!isMissingContractStateError(error)) {
+        throw error;
+      }
+
       logger.debug(`Contract is not deployed on current network: ${contractNameOrHash}`, {
         error: error instanceof Error ? error.message : String(error),
         network: this.network
@@ -399,10 +722,13 @@ export class ContractService {
   }
 
   async assertContractDeployed(contractNameOrHash: string): Promise<void> {
-    const contract = this.getContract(contractNameOrHash);
+    const target = await this.resolveContractTargetAsync(contractNameOrHash);
     const isDeployed = await this.isContractDeployed(contractNameOrHash);
     if (!isDeployed) {
-      throw new ContractError(`Contract ${contract.name} is not deployed on ${this.network}`);
+      throw new ContractError(
+        `Contract ${target.remoteMetadata?.displayName ?? target.knownContract?.name ?? target.address ?? target.scriptHash} is not deployed on ${this.network}`,
+        { contractReference: contractNameOrHash, scriptHash: target.scriptHash, network: this.network }
+      );
     }
   }
 
@@ -450,15 +776,10 @@ export class ContractService {
    */
   getContractOperations(contractNameOrHash: string): any {
     try {
-      const contract = this.getContract(contractNameOrHash);
+      const target = this.resolveContractTarget(contractNameOrHash);
+      const operations = this.buildOperationSummary(target);
 
-      return {
-        operations: contract.operations,
-        count: Object.keys(contract.operations).length,
-        contractName: contract.name,
-        network: this.network,
-        available: this.isContractAvailable(contract.name)
-      };
+      return operations;
     } catch (error) {
       if (error instanceof ContractError) {
         throw error;
@@ -480,7 +801,7 @@ export class ContractService {
         return false;
       }
 
-      return Boolean(this.getContractScriptHash(contractNameOrHash));
+      return Boolean(this.resolveContractTarget(contractNameOrHash).scriptHash);
     } catch (error) {
       logger.debug(`Error checking contract availability: ${contractNameOrHash}`, {
         error: error instanceof Error ? error.message : String(error),

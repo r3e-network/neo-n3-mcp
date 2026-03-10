@@ -155,12 +155,13 @@ To add a new tool to the MCP:
 
 ### Supporting New Contracts
 
-To add support for a new famous contract:
+The contract layer now supports three resolution paths:
 
-1. Define the contract in the Contract Service.
-2. Implement the contract's operations.
-3. Add the contract to the list of famous contracts.
-4. Add tests for the new contract.
+1. Local famous-contract registry for curated aliases and hand-authored operation metadata.
+2. Direct Neo address or script-hash references.
+3. Remote name lookup through `https://api.n3index.dev`, using the documented `contract_metadata_cache` and `contracts` REST surfaces.
+
+That means new contracts do not need a code change if the caller already knows the contract hash, address, or a name that N3Index can resolve. The local registry remains useful for curated operation descriptions and compatibility aliases, but it is no longer the only way a contract can be addressed.
 
 ### Custom Extensions
 

@@ -5,6 +5,23 @@ All notable changes to the Neo N3 MCP project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-03-10
+
+### 🚀 New Features
+- Added exact-name contract resolution through `https://api.n3index.dev` so contracts can be addressed by local known name, exact remote name, Neo address, or script hash.
+- Added a public `get_contract_status` MCP tool and matching HTTP status route for on-chain contract inspection.
+
+### ✨ Enhancements
+- Expanded the live MCP stdio surface to 27 tools and aligned the handler, HTTP, and stdio registrations.
+- Hardened HTTP contract routes to support encoded contract names such as `Flamingo%20USD`.
+- Refreshed the website and docs so active public pages reflect the shipped tool/resource counts and contract interaction flow.
+
+### 🐛 Fixes
+- Fixed unsafe fuzzy remote name matches by failing closed on ambiguous or partial contract names.
+- Fixed N3Index metadata cache poisoning after transient upstream failures by allowing retry after rejected fetches.
+- Fixed contract status handling so RPC/network failures are surfaced instead of being mislabeled as `not_deployed`.
+- Fixed unresolved HTTP contract references to return a resource-level `404` response instead of a generic `500`.
+
 ## [1.6.4] - 2026-03-06
 
 ### ✨ Enhancements

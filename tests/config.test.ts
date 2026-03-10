@@ -42,6 +42,17 @@ describe('Config environment variable compatibility', () => {
     });
   });
 
+  test('supports overriding and disabling the N3Index resolver', () => {
+    process.env.N3INDEX_API_BASE_URL = 'https://example-n3index.test';
+    process.env.N3INDEX_ENABLED = 'false';
+
+    jest.isolateModules(() => {
+      const { config } = require('../src/config');
+      expect(config.n3index.baseUrl).toBe('https://example-n3index.test');
+      expect(config.n3index.enabled).toBe(false);
+    });
+  });
+
 
   test('http entrypoint requires an explicit single network mode', () => {
     jest.isolateModules(() => {
