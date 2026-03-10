@@ -3,7 +3,7 @@
 
 # Neo N3 MCP Server
 
-**MCP Server for Neo N3 Blockchain Integration** | Version 1.7.0
+**MCP Server for Neo N3 Blockchain Integration** | Version 1.7.1
 
 [![MCP SDK](https://img.shields.io/badge/MCP%20SDK-1.9.0-blue)](https://github.com/modelcontextprotocol/typescript-sdk)
 [![Neo N3](https://img.shields.io/badge/Neo%20N3-Compatible-green)](https://neo.org/)
@@ -86,7 +86,7 @@ docker run -p 3000:3000 \
   -e NEO_NETWORK=mainnet \
   -e LOG_CONSOLE=false \
   -e LOG_FILE=/app/logs/neo-n3-mcp.log \
-  r3enetwork/neo-n3-mcp:1.7.0
+  r3enetwork/neo-n3-mcp:1.7.1
 
 # With environment variables
 docker run -p 3000:3000 \
@@ -94,14 +94,14 @@ docker run -p 3000:3000 \
   -e NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443 \
   -e NEO_TESTNET_RPC=http://seed1t5.neo.org:20332 \
   -e LOG_LEVEL=info \
-  r3enetwork/neo-n3-mcp:1.7.0
+  r3enetwork/neo-n3-mcp:1.7.1
 
 # With volume for persistent data
 docker run -p 3000:3000 \
   -v $(pwd)/wallets:/app/wallets \
   -v $(pwd)/logs:/app/logs \
   -e NEO_NETWORK=testnet \
-  r3enetwork/neo-n3-mcp:1.7.0
+  r3enetwork/neo-n3-mcp:1.7.1
 ```
 
 #### Docker Compose
@@ -111,7 +111,7 @@ Create a `docker-compose.yml`:
 version: '3.8'
 services:
   neo-mcp:
-    image: r3enetwork/neo-n3-mcp:1.7.0
+    image: r3enetwork/neo-n3-mcp:1.7.1
     ports:
       - "3000:3000"
     environment:
@@ -151,7 +151,7 @@ npm run docker:up:dev
 #### Production Docker Setup
 ```bash
 # Build production image
-./scripts/docker-build.sh --tag v1.7.0
+./scripts/docker-build.sh --tag v1.7.1
 
 # Run with custom configuration
 docker run -d \
@@ -159,7 +159,7 @@ docker run -d \
   -p 3000:3000 \
   -e NEO_NETWORK=mainnet \
   -v neo-mcp-logs:/app/logs \
-  neo-n3-mcp:v1.7.0
+  neo-n3-mcp:v1.7.1
 ```
 
 #### Development Docker Setup
@@ -279,7 +279,7 @@ await client.connect(transport);
 
 ## 🔄 Version Management & Release Process
 
-### Current Version: 1.7.0
+### Current Version: 1.7.1
 
 This project follows [Semantic Versioning](https://semver.org/) with automated CI/CD pipeline for releases. See our [Version Management Guide](./docs/VERSION_MANAGEMENT.md) for detailed information.
 
@@ -306,9 +306,9 @@ gh release create v1.8.0 --generate-notes
 npm run version:check
 
 # Bump version manually
-npm run version:patch   # 1.7.0 → 1.7.1 (bug fixes)
-npm run version:minor   # 1.7.0 → 1.8.0 (new features)
-npm run version:major   # 1.7.0 → 2.0.0 (breaking changes)
+npm run version:patch   # 1.7.1 → 1.7.2 (bug fixes)
+npm run version:minor   # 1.7.1 → 1.8.0 (new features)
+npm run version:major   # 1.7.1 → 2.0.0 (breaking changes)
 
 # Then commit and push
 git add . && git commit -m "chore: bump version to 1.8.0"
@@ -362,9 +362,9 @@ The automated CI/CD pipeline triggers the following workflow:
 
 | Type | Version Change | Use Case | Example |
 |------|---------------|----------|---------|
-| **patch** | 1.7.0 → 1.7.1 | Bug fixes, security patches | `./scripts/prepare-release.sh --type patch` |
-| **minor** | 1.7.0 → 1.8.0 | New features, enhancements | `./scripts/prepare-release.sh --type minor` |
-| **major** | 1.7.0 → 2.0.0 | Breaking changes | `./scripts/prepare-release.sh --type major` |
+| **patch** | 1.7.1 → 1.7.2 | Bug fixes, security patches | `./scripts/prepare-release.sh --type patch` |
+| **minor** | 1.7.1 → 1.8.0 | New features, enhancements | `./scripts/prepare-release.sh --type minor` |
+| **major** | 1.7.1 → 2.0.0 | Breaking changes | `./scripts/prepare-release.sh --type major` |
 
 ### 🎯 Quick Release Commands
 
@@ -382,12 +382,11 @@ The automated CI/CD pipeline triggers the following workflow:
 ./scripts/prepare-release.sh --type minor --dry-run
 ```
 
-### 📊 Latest Changes (v1.7.0)
-- ✅ **Generic Contract Resolution**: contracts can now be resolved by script hash, Neo address, local known name, or exact remote name from `api.n3index.dev`
-- ✅ **Contract Status Surface**: added `get_contract_status` to the MCP and HTTP surfaces, bringing the public server surface to 27 tools
-- ✅ **Safer N3Index Integration**: remote name resolution now fails closed on fuzzy matches, handles cache recovery, and enforces fetch timeouts
-- ✅ **HTTP Contract Route Hardening**: encoded contract names are supported and unresolved names now return a resource-level error instead of a generic `500`
-- ✅ **Docs and Website Sync**: active docs, examples, and website counts now match the shipped server surface
+### 📊 Latest Changes (v1.7.1)
+- ✅ **Dependency Vulnerability Remediation**: cleared all GitHub/`npm audit` findings by upgrading the patchable direct dependencies and refreshing the lockfile
+- ✅ **Vendored NeonJS Runtime**: replaced the vulnerable published NeonJS dependency chain with a vendored runtime bundle so the MCP server keeps the same API surface without shipping the old transitive alerts
+- ✅ **MCP Upgrade Hardening**: updated stdio registration and MCP compliance/stress tests to match the current SDK error semantics
+- ✅ **Release Gate Stability**: verified build, unit, MCP, stress, and integration paths on the security-remediated dependency set
 
 ### 📚 Release Documentation
 - **[CHANGELOG.md](./docs/CHANGELOG.md)** - Complete version history
