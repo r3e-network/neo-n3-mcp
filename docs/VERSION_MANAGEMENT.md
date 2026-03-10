@@ -10,7 +10,7 @@ The project follows [Semantic Versioning (SemVer)](https://semver.org/) with the
 - **MINOR** (0.X.0): New features that are backwards compatible
 - **PATCH** (0.0.X): Bug fixes that are backwards compatible
 
-### Current Version: 1.7.2
+### Current Version: 1.7.3
 
 ## Version Management Scripts
 
@@ -20,13 +20,13 @@ The project follows [Semantic Versioning (SemVer)](https://semver.org/) with the
 # Check current version
 npm run version:check
 
-# Bump patch version (1.7.2 → 1.7.3)
+# Bump patch version (1.7.3 → 1.7.4)
 npm run version:patch
 
-# Bump minor version (1.7.2 → 1.8.0)
+# Bump minor version (1.7.3 → 1.8.0)
 npm run version:minor
 
-# Bump major version (1.7.2 → 2.0.0)
+# Bump major version (1.7.3 → 2.0.0)
 npm run version:major
 
 # Prepare for release (build, test, type-check)
@@ -123,7 +123,7 @@ When updating versions, ensure consistency across these files:
 1. **`package.json`**: Main version source
    ```json
    {
-     "version": "1.7.2"
+     "version": "1.7.3"
    }
    ```
 
@@ -138,19 +138,19 @@ When updating versions, ensure consistency across these files:
    ```json
    {
      "server": {
-       "version": "1.7.2"
+       "version": "1.7.3"
      }
    }
    ```
 
 4. **`docs/CHANGELOG.md`**: Version history
    ```markdown
-   ## [1.7.2] - 2026-03-10
+   ## [1.7.3] - 2026-03-10
    ```
 
 ## Release Types and Examples
 
-### Patch Release (1.7.2 → 1.7.3)
+### Patch Release (1.7.3 → 1.7.4)
 **When to use**: Bug fixes, security patches, minor improvements
 
 **Examples**:
@@ -164,7 +164,7 @@ When updating versions, ensure consistency across these files:
 ./scripts/prepare-release.sh --type patch
 ```
 
-### Minor Release (1.7.2 → 1.8.0)
+### Minor Release (1.7.3 → 1.8.0)
 **When to use**: New features, enhancements, non-breaking changes
 
 **Examples**:
@@ -179,7 +179,7 @@ When updating versions, ensure consistency across these files:
 ./scripts/prepare-release.sh --type minor
 ```
 
-### Major Release (1.7.2 → 2.0.0)
+### Major Release (1.7.3 → 2.0.0)
 **When to use**: Breaking changes, major architecture changes
 
 **Examples**:
@@ -215,6 +215,7 @@ The release process triggers automated workflows:
 
 | Version | Date | Type | Description |
 |---------|------|------|-------------|
+| 1.7.3 | 2026-03-10 | Patch | Docker workflow fix for vendored NeonJS runtime so release builds can publish from the remediated dependency graph |
 | 1.7.2 | 2026-03-10 | Patch | Added the vendored NeonJS runtime bundle files to source control so CI and npm release installs can resolve the local dependency correctly |
 | 1.7.1 | 2026-03-10 | Patch | Dependency vulnerability remediation, vendored NeonJS runtime, MCP compliance/stress alignment |
 | 1.7.0 | 2026-03-10 | Minor | Generic contract resolution, contract status tool/route, api.n3index.dev exact-name lookup, stdio/HTTP surface alignment |
@@ -250,7 +251,7 @@ The release process triggers automated workflows:
 1. **Version Mismatch**:
    ```bash
    # Check all version locations
-   rg -n "1\.7\.2" package.json package-lock.json src/version.ts config/docker.json docs/CHANGELOG.md
+   rg -n "1\.7\.3" package.json package-lock.json src/version.ts config/docker.json docs/CHANGELOG.md
    ```
 
 2. **Failed NPM Publish**:

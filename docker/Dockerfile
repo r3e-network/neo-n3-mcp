@@ -7,6 +7,7 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 COPY tsconfig.json ./
+COPY vendor/ ./vendor/
 
 # Install all dependencies (including dev dependencies for building)
 RUN npm ci
@@ -32,6 +33,7 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
+COPY vendor/ ./vendor/
 
 # Install only production dependencies
 RUN npm ci --omit=dev && npm cache clean --force

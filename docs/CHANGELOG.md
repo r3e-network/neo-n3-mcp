@@ -5,6 +5,12 @@ All notable changes to the Neo N3 MCP project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.3] - 2026-03-10
+
+### 🐛 Fixes
+- Updated the Docker build contexts to copy the vendored NeonJS runtime before `npm ci`, so CI release workflows can build and publish from the patched dependency graph.
+- Preserved the zero-vulnerability dependency graph while fixing the remaining `v1.7.2` workflow blocker.
+
 ## [1.7.2] - 2026-03-10
 
 ### 🐛 Fixes

@@ -16,7 +16,7 @@ gh release create v1.8.0 --generate-notes
 ```bash
 ./scripts/prepare-release.sh --type patch
 git push
-gh release create v1.7.3 --generate-notes
+gh release create v1.7.4 --generate-notes
 ```
 
 ### For Breaking Changes (Major Release)
