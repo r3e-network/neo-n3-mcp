@@ -90,14 +90,11 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
-    "@cityofzion/neon-js": "file:vendor/neon-js",
+    "@cityofzion/neon-js": "^5.8.1",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "zod": "^3.24.1"
   },
   "publishConfig": {
     "access": "public"
-  },
-  "bundledDependencies": [
-    "@cityofzion/neon-js"
-  ]
+  }
 }

@@ -1,9 +1,0 @@
-{
-  "name": "@cityofzion/neon-js",
-  "version": "3.11.10-r3e.0",
-  "description": "Vendored Neon-JS runtime bundle for neo-n3-mcp",
-  "main": "dist/index.js",
-  "browser": "dist/browser.js",
-  "types": "index.d.ts",
-  "license": "MIT"
-}

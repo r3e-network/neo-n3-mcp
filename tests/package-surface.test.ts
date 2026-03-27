@@ -18,8 +18,8 @@ describe('published package surface', () => {
     expect(filePaths).toContain('dist/index.js');
     expect(filePaths).toContain('README.md');
     expect(filePaths).toContain('LICENSE');
-    expect(filePaths).toContain('node_modules/@cityofzion/neon-js/dist/index.js');
-    expect(filePaths).toContain('node_modules/@cityofzion/neon-js/package.json');
+    // neon-js is now a regular npm dependency, not bundled
+    expect(filePaths.some((filePath) => filePath.startsWith('node_modules/'))).toBe(false);
 
     expect(filePaths).not.toContain('docs/plans/2026-03-06-production-hardening-followup.md');
     expect(filePaths).not.toContain('docs/IMPROVEMENTS_APPLIED.md');
