@@ -9,7 +9,6 @@ import { ContractService } from './contracts/contract-service';
 import { callTool } from './handlers/tool-handler';
 import { setupResourceHandlers } from './handlers/resource-handler';
 import { config, NetworkMode, validateConfig } from './config';
-validateConfig();
 import { SERVER_NAME, SERVER_VERSION } from './version';
 import { logger } from './utils/logger';
 import {
@@ -804,6 +803,7 @@ class NeoN3McpServer {
 
 // Start the server if run directly
 if (require.main === module) {
+  validateConfig();
   const server = new NeoN3McpServer();
   server.run().catch((error) => {
     logger.error('Fatal error starting server', { error: error instanceof Error ? error.message : String(error) });

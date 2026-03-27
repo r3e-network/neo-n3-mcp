@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 import { config, NetworkMode, validateConfig } from './config';
-validateConfig();
 import { ContractService } from './contracts/contract-service';
 import { HttpServer } from './http-server';
 import { NeoNetwork, NeoService } from './services/neo-service';
@@ -67,6 +66,7 @@ async function main() {
 }
 
 if (require.main === module) {
+  validateConfig();
   main().catch((error) => {
     logger.error('Failed to start HTTP entrypoint', {
       error: error instanceof Error ? error.message : String(error)

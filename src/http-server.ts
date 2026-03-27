@@ -58,6 +58,7 @@ export class HttpServer {
         res.end(JSON.stringify({ error: error.message }));
         return;
       }
+      throw error;
     }
 
     try {
