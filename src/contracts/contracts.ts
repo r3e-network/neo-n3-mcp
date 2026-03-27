@@ -168,9 +168,9 @@ export const NeoBurger: ContractDefinition = {
  */
 export const Flamingo: ContractDefinition = {
   name: 'Flamingo',
-  description: 'Neo N3 DeFi platform',
+  description: 'FLM token contract on Neo N3 (the Flamingo DeFi platform token)',
   scriptHash: {
-    [ContractNetwork.MAINNET]: '0xf970f4ccecd765b63732b821775dc38c25d74b39', // Flamingo token contract
+    [ContractNetwork.MAINNET]: '0xf970f4ccecd765b63732b821775dc38c25d74b39',
   },
   operations: {
     balanceOf: {
@@ -184,48 +184,46 @@ export const Flamingo: ContractDefinition = {
         }
       ]
     },
-    stake: {
-      name: 'stake',
-      description: 'Stake FLM tokens',
+    transfer: {
+      name: 'transfer',
+      description: 'Transfer FLM tokens',
       args: [
         {
-          name: 'account',
+          name: 'from',
           type: 'hash160',
-          description: 'Account staking tokens'
+          description: 'Sender account'
+        },
+        {
+          name: 'to',
+          type: 'hash160',
+          description: 'Recipient account'
         },
         {
           name: 'amount',
           type: 'integer',
-          description: 'Amount to stake'
-        }
-      ]
-    },
-    unstake: {
-      name: 'unstake',
-      description: 'Unstake FLM tokens',
-      args: [
-        {
-          name: 'account',
-          type: 'hash160',
-          description: 'Account unstaking tokens'
+          description: 'Amount to transfer'
         },
         {
-          name: 'amount',
-          type: 'integer',
-          description: 'Amount to unstake'
+          name: 'data',
+          type: 'any',
+          description: 'Optional transfer data'
         }
       ]
     },
-    claimRewards: {
-      name: 'claimRewards',
-      description: 'Claim staking rewards',
-      args: [
-        {
-          name: 'account',
-          type: 'hash160',
-          description: 'Account claiming rewards'
-        }
-      ]
+    decimals: {
+      name: 'decimals',
+      description: 'Get FLM token decimals',
+      args: []
+    },
+    symbol: {
+      name: 'symbol',
+      description: 'Get FLM token symbol',
+      args: []
+    },
+    totalSupply: {
+      name: 'totalSupply',
+      description: 'Get FLM total supply',
+      args: []
     }
   }
 };
