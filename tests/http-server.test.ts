@@ -890,7 +890,8 @@ describe('HttpServer', () => {
     } as any;
     const contractService = {
       assertContractDeployed: jest.fn().mockResolvedValue(undefined),
-      getContractScriptHash: jest.fn().mockReturnValue('0x1234567890abcdef1234567890abcdef12345678')
+      getContractScriptHash: jest.fn().mockReturnValue('0x1234567890abcdef1234567890abcdef12345678'),
+      resolveContractScriptHash: jest.fn().mockResolvedValue('0x1234567890abcdef1234567890abcdef12345678')
     } as any;
 
     const server = new HttpServer(neoService, {} as any, contractService, 0);
@@ -908,7 +909,7 @@ describe('HttpServer', () => {
       });
       expect(response.statusCode).toBe(200);
       expect(JSON.parse(response.body)).toEqual({ networkFee: 0.2, systemFee: 0.07 });
-      expect(contractService.getContractScriptHash).toHaveBeenCalledWith('NeoFS');
+      expect(contractService.resolveContractScriptHash).toHaveBeenCalledWith('NeoFS');
       expect(neoService.calculateInvokeFee).toHaveBeenCalledWith('NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr', '0x1234567890abcdef1234567890abcdef12345678', 'transfer', []);
     } finally {
       await server.stop();

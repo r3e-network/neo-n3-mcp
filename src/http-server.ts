@@ -269,9 +269,7 @@ export class HttpServer {
           await this.contractService.assertContractDeployed(contractReference);
         }
         const scriptHash = body.scriptHash || (contractReference
-          ? (typeof (this.contractService as unknown as Record<string, unknown>).resolveContractScriptHash === 'function'
-              ? await this.contractService.resolveContractScriptHash(contractReference)
-              : this.contractService.getContractScriptHash(contractReference))
+          ? await this.contractService.resolveContractScriptHash(contractReference)
           : '');
         const operation = body.operation || '';
         const args = body.args || [];

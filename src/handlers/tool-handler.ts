@@ -269,11 +269,7 @@ async function resolveInvocationScriptHash(input: Record<string, unknown>, contr
     return validateScriptHash(input.scriptHash);
   }
 
-  if (typeof (contractService as unknown as Record<string, unknown>).resolveContractScriptHash === 'function') {
-    return await contractService.resolveContractScriptHash(resolveContractReference(input));
-  }
-
-  return contractService.getContractScriptHash(resolveContractReference(input));
+  return await contractService.resolveContractScriptHash(resolveContractReference(input));
 }
 
 async function handleInvokeReadContract(input: Record<string, unknown>, neoService: NeoService, contractService: ContractService): Promise<unknown> {

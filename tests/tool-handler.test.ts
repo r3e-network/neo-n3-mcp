@@ -264,6 +264,7 @@ const createMockContractService = (): jest.Mocked<ContractService> => {
     }),
     getContract: jest.fn().mockImplementation((reference: string) => resolveReference(reference).contract),
     getContractScriptHash: jest.fn().mockImplementation((reference: string) => resolveReference(reference).scriptHash),
+    resolveContractScriptHash: jest.fn().mockImplementation(async (reference: string) => resolveReference(reference).scriptHash),
     getContractInfo: jest.fn().mockImplementation(async (reference: string) => {
       resolveReference(reference);
       return {
@@ -1012,7 +1013,7 @@ describe('Tool Handlers', () => {
       const result = await callTool('estimate_invoke_fees', input, mockNeoServices, mockContractServices);
 
       expect(result).toHaveProperty('result');
-      expect((mockContractServices.get(NeoNetwork.MAINNET) as any).getContractScriptHash).toHaveBeenCalledWith('NeoFS');
+      expect((mockContractServices.get(NeoNetwork.MAINNET) as any).resolveContractScriptHash).toHaveBeenCalledWith('NeoFS');
       expect((mockNeoServices.get(NeoNetwork.MAINNET) ).calculateInvokeFee).toHaveBeenCalledWith(
         'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
         '0x1234567890abcdef1234567890abcdef12345678',
