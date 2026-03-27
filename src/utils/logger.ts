@@ -7,6 +7,42 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { config } from '../config';
 
+const MAX_LOG_SIZE = 10 * 1024 * 1024; // 10 MB
+const MAX_LOG_FILES = 3;
+
+/**
+ * Rotate log file: current → .1 → .2 → .3 (oldest deleted)
+ */
+export function rotateLogFile(
+  logPath: string,
+  maxSize: number = MAX_LOG_SIZE,
+  maxFiles: number = MAX_LOG_FILES
+): void {
+  try {
+    if (!fs.existsSync(logPath)) return;
+
+    const stats = fs.statSync(logPath);
+    if (stats.size < maxSize) return;
+
+    // Cascade: .2→.3, .1→.2, current→.1
+    for (let i = maxFiles; i >= 1; i--) {
+      const from = i === 1 ? logPath : `${logPath}.${i - 1}`;
+      const to = `${logPath}.${i}`;
+      if (fs.existsSync(from)) {
+        fs.renameSync(from, to);
+      }
+    }
+
+    // Delete anything beyond maxFiles
+    const beyond = `${logPath}.${maxFiles + 1}`;
+    if (fs.existsSync(beyond)) {
+      fs.unlinkSync(beyond);
+    }
+  } catch (error) {
+    console.error(`Log rotation failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
 const DEFAULT_LOG_LEVEL = 'info';
 const DEFAULT_LOG_CONSOLE = !(process.env.NODE_ENV || '').toLowerCase().includes('test');
 const DEFAULT_LOG_FILE_PATH = './logs/neo-n3-mcp.log';
@@ -26,6 +62,7 @@ export class Logger {
   private logToFile: boolean;
   private logFilePath: string;
   private logStream: fs.WriteStream | null = null;
+  private writeCount = 0;
 
   private constructor() {
     const loggingConfig = config.logging;
@@ -94,6 +131,15 @@ export class Logger {
         this.logStream.write(formattedMessage + '\n');
       } catch (error) {
         console.error(`Failed to write to log file: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+    this.writeCount++;
+    if (this.writeCount % 100 === 0) {
+      rotateLogFile(this.logFilePath);
+      if (!fs.existsSync(this.logFilePath)) {
+        this.logStream?.end();
+        this.logStream = fs.createWriteStream(this.logFilePath, { flags: 'a' });
       }
     }
   }
