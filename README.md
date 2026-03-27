@@ -3,7 +3,7 @@
 
 # Neo N3 MCP Server
 
-**MCP Server for Neo N3 Blockchain Integration** | Version 1.7.3
+**MCP Server for Neo N3 Blockchain Integration** | Version 2.0.0
 
 [![MCP SDK](https://img.shields.io/badge/MCP%20SDK-1.9.0-blue)](https://github.com/modelcontextprotocol/typescript-sdk)
 [![Neo N3](https://img.shields.io/badge/Neo%20N3-Compatible-green)](https://neo.org/)
@@ -86,7 +86,7 @@ docker run -p 3000:3000 \
   -e NEO_NETWORK=mainnet \
   -e LOG_CONSOLE=false \
   -e LOG_FILE=/app/logs/neo-n3-mcp.log \
-  r3enetwork/neo-n3-mcp:1.7.3
+  r3enetwork/neo-n3-mcp:2.0.0
 
 # With environment variables
 docker run -p 3000:3000 \
@@ -94,14 +94,14 @@ docker run -p 3000:3000 \
   -e NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443 \
   -e NEO_TESTNET_RPC=http://seed1t5.neo.org:20332 \
   -e LOG_LEVEL=info \
-  r3enetwork/neo-n3-mcp:1.7.3
+  r3enetwork/neo-n3-mcp:2.0.0
 
 # With volume for persistent data
 docker run -p 3000:3000 \
   -v $(pwd)/wallets:/app/wallets \
   -v $(pwd)/logs:/app/logs \
   -e NEO_NETWORK=testnet \
-  r3enetwork/neo-n3-mcp:1.7.3
+  r3enetwork/neo-n3-mcp:2.0.0
 ```
 
 #### Docker Compose
@@ -111,7 +111,7 @@ Create a `docker-compose.yml`:
 version: '3.8'
 services:
   neo-mcp:
-    image: r3enetwork/neo-n3-mcp:1.7.3
+    image: r3enetwork/neo-n3-mcp:2.0.0
     ports:
       - "3000:3000"
     environment:
@@ -151,7 +151,7 @@ npm run docker:up:dev
 #### Production Docker Setup
 ```bash
 # Build production image
-./scripts/docker-build.sh --tag v1.7.3
+./scripts/docker-build.sh --tag v2.0.0
 
 # Run with custom configuration
 docker run -d \
@@ -159,7 +159,7 @@ docker run -d \
   -p 3000:3000 \
   -e NEO_NETWORK=mainnet \
   -v neo-mcp-logs:/app/logs \
-  neo-n3-mcp:v1.7.3
+  neo-n3-mcp:v2.0.0
 ```
 
 #### Development Docker Setup
@@ -279,7 +279,7 @@ await client.connect(transport);
 
 ## 🔄 Version Management & Release Process
 
-### Current Version: 1.7.3
+### Current Version: 2.0.0
 
 This project follows [Semantic Versioning](https://semver.org/) with automated CI/CD pipeline for releases. See our [Version Management Guide](./docs/VERSION_MANAGEMENT.md) for detailed information.
 
@@ -297,7 +297,7 @@ This project follows [Semantic Versioning](https://semver.org/) with automated C
 git push
 
 # 4. Create GitHub release (triggers full CI/CD pipeline)
-gh release create v1.8.0 --generate-notes
+gh release create v2.1.0 --generate-notes
 ```
 
 #### **Method 2: Manual NPM Version Commands**
@@ -306,24 +306,24 @@ gh release create v1.8.0 --generate-notes
 npm run version:check
 
 # Bump version manually
-npm run version:patch   # 1.7.3 → 1.7.4 (bug fixes)
-npm run version:minor   # 1.7.3 → 1.8.0 (new features)
-npm run version:major   # 1.7.3 → 2.0.0 (breaking changes)
+npm run version:patch   # 2.0.0 → 2.0.1 (bug fixes)
+npm run version:minor   # 2.0.0 → 2.1.0 (new features)
+npm run version:major   # 2.0.0 → 3.0.0 (breaking changes)
 
 # Then commit and push
-git add . && git commit -m "chore: bump version to 1.8.0"
+git add . && git commit -m "chore: bump version to 2.1.0"
 git push
 ```
 
 #### **Method 3: GitHub Release (Direct)**
 ```bash
 # Using GitHub CLI
-gh release create v1.8.0 --generate-notes
+gh release create v2.1.0 --generate-notes
 
 # Or manually through GitHub web interface:
 # 1. Go to https://github.com/r3e-network/neo-n3-mcp/releases
 # 2. Click "Create a new release"
-# 3. Tag: v1.8.0, Title: "Release v1.8.0"
+# 3. Tag: v2.1.0, Title: "Release v2.1.0"
 # 4. Auto-generate release notes
 # 5. Publish release
 ```
@@ -362,9 +362,9 @@ The automated CI/CD pipeline triggers the following workflow:
 
 | Type | Version Change | Use Case | Example |
 |------|---------------|----------|---------|
-| **patch** | 1.7.3 → 1.7.4 | Bug fixes, security patches | `./scripts/prepare-release.sh --type patch` |
-| **minor** | 1.7.3 → 1.8.0 | New features, enhancements | `./scripts/prepare-release.sh --type minor` |
-| **major** | 1.7.3 → 2.0.0 | Breaking changes | `./scripts/prepare-release.sh --type major` |
+| **patch** | 2.0.0 → 2.0.1 | Bug fixes, security patches | `./scripts/prepare-release.sh --type patch` |
+| **minor** | 2.0.0 → 2.1.0 | New features, enhancements | `./scripts/prepare-release.sh --type minor` |
+| **major** | 2.0.0 → 3.0.0 | Breaking changes | `./scripts/prepare-release.sh --type major` |
 
 ### 🎯 Quick Release Commands
 
@@ -382,10 +382,13 @@ The automated CI/CD pipeline triggers the following workflow:
 ./scripts/prepare-release.sh --type minor --dry-run
 ```
 
-### 📊 Latest Changes (v1.7.3)
-- ✅ **Docker Build Fix**: Docker builder and production stages now copy the vendored NeonJS runtime before `npm ci`, so CI can build images from the patched dependency graph
-- ✅ **Security Remediation Preserved**: kept the zero-vulnerability dependency graph from the `1.7.1` remediation work
-- ✅ **Release Workflow Recovery**: fixes the remaining blocker that prevented the `v1.7.2` workflow from reaching the npm publish job
+### 📊 Latest Changes (v2.0.0)
+- ✅ **npm Dependency**: Replaced vendored neon-js 3.x with `@cityofzion/neon-js@5.x` from npm — no more bundled vendor code
+- ✅ **Full Type Safety**: Zero `any` types in production code — proper neon-js types flow through the entire codebase
+- ✅ **Rate Limiting Enforced**: Rate limiting is now integrated into HTTP and MCP request pipelines (was defined but never called)
+- ✅ **Config Validation**: Server validates environment variables at startup and fails fast with descriptive errors
+- ✅ **Log Rotation**: Logs rotate at 10MB with up to 3 rotated files retained
+- ✅ **Clean Package Surface**: Only dist/, README.md, and LICENSE ship in the npm tarball
 
 ### 📚 Release Documentation
 - **[CHANGELOG.md](./docs/CHANGELOG.md)** - Complete version history
@@ -411,6 +414,18 @@ The automated CI/CD pipeline triggers the following workflow:
 - **[Release Guide](./docs/RELEASE_GUIDE.md)** - Quick reference for triggering releases
 - **[Workflow Guide](./docs/WORKFLOW.md)** - CI/CD pipeline documentation
 - **[Changelog](./docs/CHANGELOG.md)** - Version history and changes
+- **[Migration Guide](./docs/MIGRATION.md)** - Upgrading from v1.x to v2.0
+
+## Troubleshooting
+
+### Installation Issues
+- **neon-js fails to install**: Ensure you have Node.js >= 18. Run `npm cache clean --force` and retry.
+- **TypeScript errors**: This package ships with type definitions. Ensure your `@types/node` version matches your Node.js version.
+
+### Runtime Issues
+- **"Rate limit exceeded"**: The server enforces rate limits (default: 60 req/min). Configure with `MAX_REQUESTS_PER_MINUTE` or disable with `RATE_LIMITING_ENABLED=false`.
+- **"Invalid configuration"**: The server validates config at startup. Check the error message for which value is wrong.
+- **RPC connection errors**: Verify your RPC URL is reachable. Default mainnet: `https://mainnet1.neo.coz.io:443`
 
 ## 📄 License
 

@@ -5,6 +5,26 @@ All notable changes to the Neo N3 MCP project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-03-27
+
+### Breaking Changes
+- Replaced vendored neon-js 3.x with `@cityofzion/neon-js@5.x` from npm
+- Configuration validation now rejects invalid values at startup
+- Rate limiting now enforced (was previously configured but ignored)
+- Package no longer bundles neon-js or ships config/examples in npm tarball
+
+### Improvements
+- Full TypeScript type safety — zero `any` types in production code
+- Proper neon-js types flow through entire codebase
+- Rate limiting integrated into HTTP and MCP request pipelines
+- Log rotation (10MB max, 3 rotated files)
+- Config validation at startup with clear error messages
+- Clean npm package surface (only dist/, README, LICENSE)
+
+### Fixes
+- Fixed rate limiter config access (was reading wrong config path)
+- Fixed logger config access (was casting config to any)
+
 ## [1.7.3] - 2026-03-10
 
 ### 🐛 Fixes
