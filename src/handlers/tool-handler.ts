@@ -10,6 +10,7 @@ import { config, NetworkMode } from '../config';
 import { validateAddress, validateHash, validateAmount, validatePassword, validateScriptHash, validateNetwork, validateContractName, validateInteger } from '../utils/validation';
 import { handleError, createSuccessResponse } from '../utils/error-handler';
 import { logger } from '../utils/logger';
+import { rateLimiter } from '../utils/rate-limiter';
 import * as neonJs from '@cityofzion/neon-js'; // Needed for Account creation
 
 // --- Individual Tool Handlers ---
@@ -553,6 +554,7 @@ async function handleGetContainers(input: Record<string, unknown>, neoService: N
 // --- Tool Setup Function ---
 
 export async function callTool(name: string, input: Record<string, unknown>, neoServices: Map<NeoNetwork, NeoService>, contractServices: Map<NeoNetwork, ContractService>, walletService?: WalletService): Promise<Record<string, unknown>> {
+  rateLimiter.checkLimit('mcp-client');
   switch (name) {
     case 'get_network_mode':
       return await handleGetNetworkMode();

@@ -3,9 +3,9 @@
  * Prevents abuse by limiting request frequency
  */
 
-import { config } from '../config.js';
-import { logger } from './logger.js';
-import { RateLimitError } from './errors.js';
+import { config } from '../config';
+import { logger } from './logger';
+import { RateLimitError } from './errors';
 
 /**
  * Rate limit entry interface
@@ -151,15 +151,8 @@ export class RateLimiter {
   }
 }
 
-// Define defaults for rate limiting
-const DEFAULT_MAX_REQUESTS = 60;
-const DEFAULT_RATE_LIMIT_ENABLED = true;
-
-// Create instance with config values or defaults
-const maxRequests = config.rateLimiting?.maxRequestsPerMinute ?? DEFAULT_MAX_REQUESTS;
-
 export const rateLimiter = new RateLimiter(
-  maxRequests,
-  60000, // 1 minute window
-  DEFAULT_RATE_LIMIT_ENABLED // Use a simple default for enabled status
+  config.rateLimiting.maxRequestsPerMinute,
+  60000,
+  config.rateLimiting.enabled
 ); 

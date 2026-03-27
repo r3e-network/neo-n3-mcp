@@ -13,6 +13,8 @@ import { NeoService, NeoNetwork } from './services/neo-service';
 import { WalletService } from './services/wallet-service';
 import { ContractService } from './contracts/contract-service';
 import { logger } from './utils/logger';
+import { rateLimiter } from './utils/rate-limiter';
+import { RateLimitError } from './utils/errors';
 
 export class HttpServer {
   private server: http.Server;
@@ -46,6 +48,17 @@ export class HttpServer {
     const parsedUrl = new URL(req.url || '/', 'http://localhost');
     const path = parsedUrl.pathname || '';
     const method = req.method || 'GET';
+
+    const clientIp = req.socket.remoteAddress || 'unknown';
+    try {
+      rateLimiter.checkLimit(clientIp);
+    } catch (error) {
+      if (error instanceof RateLimitError) {
+        res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': String((error.details as Record<string, unknown>)?.retryAfter || 60) });
+        res.end(JSON.stringify({ error: error.message }));
+        return;
+      }
+    }
 
     try {
       logger.info('HTTP request', { method, path });
