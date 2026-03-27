@@ -14,10 +14,6 @@ import { SERVER_NAME, SERVER_VERSION } from './version';
 import { logger } from './utils/logger';
 import {
   validateAddress,
-  validateHash,
-  validateAmount,
-
-  validateScriptHash,
   validateNetwork
 } from './utils/validation';
 

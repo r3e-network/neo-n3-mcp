@@ -38,8 +38,8 @@ export class RateLimiter {
     
     logger.info(`Rate limiter initialized: ${maxRequests} requests per ${windowMs}ms (${enabled ? 'enabled' : 'disabled'})`);
     
-    // Clean up expired entries periodically
-    setInterval(() => this.cleanup(), windowMs);
+    // Clean up expired entries periodically (unref so it doesn't block process exit)
+    setInterval(() => this.cleanup(), windowMs).unref();
   }
   
   /**
