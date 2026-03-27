@@ -172,6 +172,9 @@ export class N3IndexClient {
       };
     }
 
+    // Skip manifest scan for short, all-lowercase names (e.g. "gas", "neo") — these are
+    // handled by the famous contracts list. Only scan N3Index manifests for longer names
+    // (likely full contract names) or names with uppercase/spaces (e.g. "NeoFS", "Ghost Market").
     const shouldScanManifestFallback = reference.trim().length >= 8 || /[\sA-Z]/.test(reference);
     if (!shouldScanManifestFallback) {
       return null;
