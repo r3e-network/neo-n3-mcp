@@ -1,6 +1,6 @@
 {
   "name": "@r3e/neo-n3-mcp",
-  "version": "1.7.3",
+  "version": "2.0.0",
   "description": "MCP server and HTTP API for Neo N3 blockchain integration",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -50,9 +50,7 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE",
-    "config/docker.json",
-    "examples/core-functionality.js"
+    "LICENSE"
   ],
   "keywords": [
     "neo",
