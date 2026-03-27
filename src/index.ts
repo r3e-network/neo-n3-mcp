@@ -518,7 +518,7 @@ class NeoN3McpServer {
     registerTool(
       'get_block',
       'Get block details by height or hash.',
-      { hashOrHeight: z.union([z.string(), z.number()]).describe('Block hash or height'), network: z.string().optional().describe('Optional: Network') },
+      { hashOrHeight: z.union([z.string(), z.number()]).describe('Block hash (64 hex chars) or block height (number)'), network: z.string().optional().describe('Optional: Network') },
       async (args) => {
         try {
           await this.ensureServicesInitialized();
@@ -533,7 +533,7 @@ class NeoN3McpServer {
     registerTool(
       'get_transaction',
       'Get transaction details by hash.',
-      { txid: z.string().describe('Transaction hash'), network: z.string().optional().describe('Optional: Network') },
+      { txid: z.string().describe('Transaction hash (64 hex chars, optional 0x prefix)'), network: z.string().optional().describe('Optional: Network') },
       async (args) => {
         try {
           await this.ensureServicesInitialized();
@@ -548,7 +548,7 @@ class NeoN3McpServer {
     registerTool(
       'get_application_log',
       'Get the application log for a transaction hash.',
-      { txid: z.string().describe('Transaction hash'), network: z.string().optional().describe('Optional: Network') },
+      { txid: z.string().describe('Transaction hash (64 hex chars, optional 0x prefix)'), network: z.string().optional().describe('Optional: Network') },
       async (args) => {
         try {
           await this.ensureServicesInitialized();
@@ -564,7 +564,7 @@ class NeoN3McpServer {
       'wait_for_transaction',
       'Wait for a transaction to be confirmed on-chain.',
       {
-        txid: z.string().describe('Transaction hash'),
+        txid: z.string().describe('Transaction hash (64 hex chars, optional 0x prefix)'),
         timeoutMs: z.number().int().positive().optional().describe('Optional timeout in milliseconds'),
         pollIntervalMs: z.number().int().positive().optional().describe('Optional polling interval in milliseconds'),
         includeApplicationLog: z.boolean().optional().describe('Include the application log once the transaction confirms'),
@@ -605,18 +605,18 @@ class NeoN3McpServer {
 
     registerTool(
       'invoke_contract',
-      'Invoke a contract read method or prepare/send a write invocation by script hash or a generic contract reference.',
-      { 
-      network: z.string().optional().describe('Optional: Network'),
-      fromWIF: z.string().optional().describe('Optional: Sender WIF for write operations'),
-      contract: z.string().optional().describe('Generic contract reference: known name, script hash, or Neo address'),
-      scriptHash: z.string().optional().describe('Contract script hash'),
-      contractName: z.string().optional().describe('Supported contract name'),
-      nameOrHash: z.string().optional().describe('Backward-compatible alias for contract name or script hash'),
-      operation: z.string().describe('Method name'),
-      args: z.array(z.any()).optional().describe('Optional: Method arguments'),
-      signers: z.array(z.any()).optional().describe('Optional: Signer scopes'),
-      confirm: z.boolean().optional().describe('Must be true to execute write operations')
+      'Invoke a smart contract method. Read operations run without a wallet. Write operations require fromWIF and confirm=true.',
+      {
+      network: z.string().optional().describe('Network to use: mainnet or testnet'),
+      fromWIF: z.string().optional().describe('Sender WIF private key (required for write operations)'),
+      contract: z.string().optional().describe('Contract reference: known name (e.g. "NeoFS"), script hash (0x...), or Neo address'),
+      scriptHash: z.string().optional().describe('Contract script hash (40 hex chars, optional 0x prefix)'),
+      contractName: z.string().optional().describe('Known contract name (e.g. "GAS", "NEO", "NeoFS")'),
+      nameOrHash: z.string().optional().describe('Contract name or script hash (alias for contract)'),
+      operation: z.string().describe('Contract method name to invoke'),
+      args: z.array(z.any()).optional().describe('Method arguments as an array of values'),
+      signers: z.array(z.any()).optional().describe('Transaction signer scopes for write operations'),
+      confirm: z.boolean().optional().describe('Set to true to execute write operations (safety confirmation)')
     },
       async (args) => {
         try {

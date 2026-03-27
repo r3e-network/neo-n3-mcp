@@ -241,7 +241,7 @@ async function handleTransferAssets(input: Record<string, unknown>, neoService: 
     validateAmount(input.amount as string | number);
     // Basic WIF validation
     if (!input.fromWIF || typeof input.fromWIF !== 'string' || !neonJs.wallet.isWIF(input.fromWIF)) {
-      throw new McpError(ErrorCode.InvalidParams, 'Invalid sender WIF provided.');
+      throw new McpError(ErrorCode.InvalidParams, 'fromWIF is required and must be a valid WIF (Wallet Import Format) private key string.');
     }
     const account = new neonJs.wallet.Account(input.fromWIF);
     const txid = await neoService.transferAssets(account, input.toAddress as string, input.asset as string, input.amount as string | number);
@@ -303,7 +303,7 @@ async function handleInvokeWriteContract(input: Record<string, unknown>, neoServ
     }
 
     if (!input.fromWIF || typeof input.fromWIF !== 'string' || !neonJs.wallet.isWIF(input.fromWIF)) {
-      throw new McpError(ErrorCode.InvalidParams, 'Invalid sender WIF provided.');
+      throw new McpError(ErrorCode.InvalidParams, 'fromWIF is required and must be a valid WIF (Wallet Import Format) private key string.');
     }
 
     const namedContractReference = !input?.scriptHash && (() => {
@@ -446,7 +446,7 @@ async function handleClaimGas(input: Record<string, unknown>, neoService: NeoSer
       throw new McpError(ErrorCode.InvalidParams, 'GAS claim requires explicit confirmation. Set confirm=true.');
     }
     if (!input.fromWIF || typeof input.fromWIF !== 'string' || !neonJs.wallet.isWIF(input.fromWIF)) {
-      throw new McpError(ErrorCode.InvalidParams, 'Invalid sender WIF provided.');
+      throw new McpError(ErrorCode.InvalidParams, 'fromWIF is required and must be a valid WIF (Wallet Import Format) private key string.');
     }
     const account = new neonJs.wallet.Account(input.fromWIF);
     const txid = await neoService.claimGas(account);
@@ -522,7 +522,7 @@ async function handleCreateContainer(input: Record<string, unknown>, neoService:
 
     const fromWIF = input?.fromWIF ?? input?.wif;
     if (!fromWIF || typeof fromWIF !== 'string' || !neonJs.wallet.isWIF(fromWIF)) {
-      throw new McpError(ErrorCode.InvalidParams, 'Invalid sender WIF provided.');
+      throw new McpError(ErrorCode.InvalidParams, 'fromWIF is required and must be a valid WIF (Wallet Import Format) private key string.');
     }
 
     if (!input.ownerId || typeof input.ownerId !== 'string') {
