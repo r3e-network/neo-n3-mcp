@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { config, NetworkMode } from './config';
+import { config, NetworkMode, validateConfig } from './config';
+validateConfig();
 import { ContractService } from './contracts/contract-service';
 import { HttpServer } from './http-server';
 import { NeoNetwork, NeoService } from './services/neo-service';

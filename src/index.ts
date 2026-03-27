@@ -8,7 +8,8 @@ import { WalletService } from './services/wallet-service';
 import { ContractService } from './contracts/contract-service';
 import { callTool } from './handlers/tool-handler';
 import { setupResourceHandlers } from './handlers/resource-handler';
-import { config, NetworkMode } from './config';
+import { config, NetworkMode, validateConfig } from './config';
+validateConfig();
 import { SERVER_NAME, SERVER_VERSION } from './version';
 import { logger } from './utils/logger';
 import {

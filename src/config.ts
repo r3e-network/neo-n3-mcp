@@ -88,3 +88,43 @@ export const config = {
     filePath: logFilePath,
   },
 };
+
+/**
+ * Validate configuration values at startup.
+ * Throws descriptive errors for invalid values.
+ */
+export function validateConfig(): void {
+  const validLogLevels = ['debug', 'info', 'warn', 'error'];
+  if (process.env.LOG_LEVEL && !validLogLevels.includes(process.env.LOG_LEVEL.toLowerCase())) {
+    throw new Error(
+      `Invalid LOG_LEVEL "${process.env.LOG_LEVEL}". Must be one of: ${validLogLevels.join(', ')}`
+    );
+  }
+
+  if (process.env.MAX_REQUESTS_PER_MINUTE && isNaN(Number(process.env.MAX_REQUESTS_PER_MINUTE))) {
+    throw new Error(
+      `Invalid MAX_REQUESTS_PER_MINUTE "${process.env.MAX_REQUESTS_PER_MINUTE}". Must be a number.`
+    );
+  }
+
+  if (process.env.MAX_REQUESTS_PER_HOUR && isNaN(Number(process.env.MAX_REQUESTS_PER_HOUR))) {
+    throw new Error(
+      `Invalid MAX_REQUESTS_PER_HOUR "${process.env.MAX_REQUESTS_PER_HOUR}". Must be a number.`
+    );
+  }
+
+  const urlPattern = /^https?:\/\/.+/;
+  const mainnetRpc = readEnv('NEO_MAINNET_RPC', 'NEO_MAINNET_RPC_URL');
+  if (mainnetRpc && !urlPattern.test(mainnetRpc)) {
+    throw new Error(
+      `Invalid NEO_MAINNET_RPC "${mainnetRpc}". Must be a valid HTTP/HTTPS URL.`
+    );
+  }
+
+  const testnetRpc = readEnv('NEO_TESTNET_RPC', 'NEO_TESTNET_RPC_URL');
+  if (testnetRpc && !urlPattern.test(testnetRpc)) {
+    throw new Error(
+      `Invalid NEO_TESTNET_RPC "${testnetRpc}". Must be a valid HTTP/HTTPS URL.`
+    );
+  }
+}
