@@ -76,7 +76,7 @@ export const config = {
   },
 
   rateLimiting: {
-    enabled: process.env.RATE_LIMITING_ENABLED !== 'false',
+    enabled: process.env.RATE_LIMITING_ENABLED !== 'false' && !isTestLikeEnvironment,
     maxRequestsPerMinute: parseInt(process.env.MAX_REQUESTS_PER_MINUTE || '60', 10),
     maxRequestsPerHour: parseInt(process.env.MAX_REQUESTS_PER_HOUR || '1000', 10),
   },
