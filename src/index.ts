@@ -614,8 +614,8 @@ class NeoN3McpServer {
       contractName: z.string().optional().describe('Known contract name (e.g. "GAS", "NEO", "NeoFS")'),
       nameOrHash: z.string().optional().describe('Contract name or script hash (alias for contract)'),
       operation: z.string().describe('Contract method name to invoke'),
-      args: z.array(z.any()).optional().describe('Method arguments as an array of values'),
-      signers: z.array(z.any()).optional().describe('Transaction signer scopes for write operations'),
+      args: z.array(z.unknown()).optional().describe('Method arguments as an array of values'),
+      signers: z.array(z.unknown()).optional().describe('Transaction signer scopes for write operations'),
       confirm: z.boolean().optional().describe('Set to true to execute write operations (safety confirmation)')
     },
       async (args) => {
@@ -680,8 +680,8 @@ class NeoN3McpServer {
       contractName: z.string().optional().describe('Supported contract name'),
       nameOrHash: z.string().optional().describe('Backward-compatible alias for contract name or script hash'),
       operation: z.string().describe('Method name'),
-      args: z.array(z.any()).optional().describe('Optional: Method arguments'),
-      signers: z.array(z.any()).optional().describe('Optional: Signer scopes')
+      args: z.array(z.unknown()).optional().describe('Optional: Method arguments'),
+      signers: z.array(z.unknown()).optional().describe('Optional: Signer scopes')
     },
       async (args) => {
         try {
@@ -716,7 +716,7 @@ class NeoN3McpServer {
         network: z.string().optional().describe('Optional: Network'),
         fromWIF: z.string().describe('Deployer account WIF'),
         script: z.string().describe('NEF script as hex or base64'),
-        manifest: z.record(z.any()).describe('Contract manifest JSON object'),
+        manifest: z.record(z.unknown()).describe('Contract manifest JSON object'),
         confirm: z.boolean().optional().describe('Must be true to execute')
       },
       async (args) => {
@@ -738,7 +738,7 @@ class NeoN3McpServer {
         fromWIF: z.string().optional().describe('Owner account WIF'),
         wif: z.string().optional().describe('Legacy alias for the owner account WIF'),
         ownerId: z.string().describe('Owner identifier for the container'),
-        rules: z.array(z.any()).optional().describe('Optional: Container placement rules'),
+        rules: z.array(z.unknown()).optional().describe('Optional: Container placement rules'),
         confirm: z.boolean().optional().describe('Must be true to execute')
       },
       async (args) => {
