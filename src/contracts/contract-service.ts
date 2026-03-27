@@ -5,6 +5,10 @@
  * like NeoFS, NeoBurger, Flamingo, NeoCompound, GrandShare, and GhostMarket.
  */
 import * as neonJs from '@cityofzion/neon-js';
+import type { RPCClient } from '@cityofzion/neon-core/lib/rpc/RPCClient';
+import type { Account } from '@cityofzion/neon-core/lib/wallet/Account';
+import type { ContractParamJson } from '@cityofzion/neon-core/lib/sc/ContractParam';
+import type { ContractManifestJson } from '@cityofzion/neon-core/lib/sc/manifest/ContractManifest';
 import { config } from '../config';
 import { NeoNetwork } from '../services/neo-service';
 import {
@@ -58,7 +62,7 @@ function isMissingContractStateError(error: unknown): boolean {
  * Service for interacting with famous Neo N3 contracts
  */
 export class ContractService {
-  private rpcClient: any;
+  private rpcClient: RPCClient;
   private network: NeoNetwork;
 
   private readonly rpcUrl: string;
@@ -262,7 +266,7 @@ export class ContractService {
     }
   }
 
-  private buildOperationSummary(target: ResolvedContractTarget, contractState?: any): ContractOperationSummary {
+  private buildOperationSummary(target: ResolvedContractTarget, contractState?: Record<string, unknown>): ContractOperationSummary {
     if (target.knownContract) {
       return {
         operations: target.knownContract.operations,
@@ -273,10 +277,12 @@ export class ContractService {
       };
     }
 
-    const manifestMethods = Array.isArray(contractState?.manifest?.abi?.methods)
-      ? contractState.manifest.abi.methods
+    const csManifest = contractState?.manifest as Record<string, unknown> | undefined;
+    const csAbi = csManifest?.abi as Record<string, unknown> | undefined;
+    const manifestMethods = Array.isArray(csAbi?.methods)
+      ? (csAbi.methods as Record<string, unknown>[])
       : [];
-    const operations = manifestMethods.reduce((accumulator: ContractOperationSummary['operations'], method: any) => {
+    const operations = manifestMethods.reduce((accumulator: ContractOperationSummary['operations'], method: Record<string, unknown>) => {
       const methodName = typeof method?.name === 'string' ? method.name.trim() : '';
       if (!methodName) {
         return accumulator;
@@ -286,7 +292,7 @@ export class ContractService {
         name: methodName,
         description: 'Method discovered from on-chain contract manifest',
         args: Array.isArray(method.parameters)
-          ? method.parameters.map((parameter: any) => ({
+          ? (method.parameters as Record<string, unknown>[]).map((parameter: Record<string, unknown>) => ({
               name: typeof parameter?.name === 'string' ? parameter.name : 'arg',
               type: typeof parameter?.type === 'string' ? parameter.type : 'Any',
               description: 'Manifest parameter'
@@ -296,11 +302,12 @@ export class ContractService {
       return accumulator;
     }, {});
 
+    const csManifestName = typeof csManifest?.name === 'string' ? csManifest.name.trim() : '';
     return {
       operations,
       count: Object.keys(operations).length,
-      contractName: typeof contractState?.manifest?.name === 'string' && contractState.manifest.name.trim()
-        ? contractState.manifest.name.trim()
+      contractName: csManifestName
+        ? csManifestName
         : target.remoteMetadata?.displayName ?? target.remoteMetadata?.manifestName ?? target.address ?? target.scriptHash,
       network: this.network,
       available: true,
@@ -392,7 +399,7 @@ export class ContractService {
    * @returns Operation result
    * @throws ContractError if contract execution fails
    */
-  async queryContract(contractReference: string, operation: string, args: any[] = []): Promise<any> {
+  async queryContract(contractReference: string, operation: string, args: unknown[] = []): Promise<Record<string, unknown>> {
     try {
       const target = await this.resolveContractTargetAsync(contractReference);
       await this.assertContractDeployed(contractReference);
@@ -407,7 +414,7 @@ export class ContractService {
         network: this.network
       });
 
-      let result;
+      let result: Record<string, unknown>;
 
       // Use invokefunction RPC method as per Neo N3 documentation
       try {
@@ -415,7 +422,7 @@ export class ContractService {
         const formattedArgs = this.formatContractArgs(args);
 
         // Execute the function through the RPC client
-        result = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'invokefunction', params: [target.scriptHash, validOperation, formattedArgs] }));
+        result = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'invokefunction', params: [target.scriptHash, validOperation, formattedArgs] })) as Record<string, unknown>;
       } catch (invokeError) {
         logger.warn('invokefunction failed; falling back to invokeScript for read invocation', { contractReference, operation: validOperation, error: invokeError instanceof Error ? invokeError.message : String(invokeError) });
 
@@ -424,13 +431,13 @@ export class ContractService {
         const script = neonJs.sc.createScript({
           scriptHash: target.scriptHash,
           operation: validOperation,
-          args
+          args: args as ContractParamJson[]
         });
 
         // Execute the script through the RPC client
         result = await this.rpcClient.invokeScript(
           neonJs.u.HexString.fromHex(script)
-        );
+        ) as unknown as Record<string, unknown>;
       }
 
       // Check for execution errors
@@ -473,11 +480,11 @@ export class ContractService {
    * @throws ContractError if contract execution fails
    */
   async invokeContract(
-    fromAccount: any,
+    fromAccount: Account,
     contractReference: string,
     operation: string,
-    args: any[] = [],
-    additionalScriptAttributes: any[] = []
+    args: unknown[] = [],
+    additionalScriptAttributes: unknown[] = []
   ): Promise<string> {
     try {
       const target = await this.resolveContractTargetAsync(contractReference);
@@ -506,7 +513,7 @@ export class ContractService {
       const script = neonJs.sc.createScript({
         scriptHash: target.scriptHash,
         operation: validOperation,
-        args
+        args: args as ContractParamJson[]
       });
 
       // Create signer object
@@ -522,12 +529,12 @@ export class ContractService {
       // Format the arguments according to Neo N3 RPC specification
       const formattedArgs = this.formatContractArgs(args);
 
-      let tx;
+      let tx: Record<string, unknown>;
 
       // Use invokefunction RPC method as per Neo N3 documentation
       try {
         // Execute the function through the RPC client
-        tx = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'invokefunction', params: [target.scriptHash, validOperation, formattedArgs, [signer]] }));
+        tx = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'invokefunction', params: [target.scriptHash, validOperation, formattedArgs, [signer]] })) as Record<string, unknown>;
 
         // If invokefunction succeeds, use the result
         if (!tx || !tx.script) {
@@ -537,25 +544,10 @@ export class ContractService {
         logger.warn('invokefunction failed; falling back to invokeScript for write invocation', { contractReference, operation: validOperation, address: fromAccount.address, error: invokeError instanceof Error ? invokeError.message : String(invokeError) });
 
         // Fallback to invokeScript if invokefunction fails
-        // Create transaction intent
-        const txIntent = {
-          script,
-          attributes: additionalScriptAttributes,
-          signers: [
-            {
-              account: neonJs.u.HexString.fromHex(
-                neonJs.wallet.getScriptHashFromAddress(fromAccount.address)
-              ),
-              scopes: 'CalledByEntry',
-            },
-          ],
-        };
-
         // Get transaction information from RPC
         tx = await this.rpcClient.invokeScript(
-          neonJs.u.HexString.fromHex(script),
-          txIntent.signers
-        );
+          neonJs.u.HexString.fromHex(script)
+        ) as unknown as Record<string, unknown>;
       }
 
       // Check for execution errors
@@ -567,7 +559,7 @@ export class ContractService {
       }
 
       // Sign the transaction
-      const transaction = new neonJs.tx.Transaction(tx);
+      const transaction = new neonJs.tx.Transaction(tx as unknown as Partial<typeof neonJs.tx.Transaction.prototype>);
       transaction.sign(fromAccount);
 
       // Send the transaction
@@ -596,17 +588,17 @@ export class ContractService {
     }
   }
 
-  private async getContractState(scriptHash: string): Promise<any> {
+  private async getContractState(scriptHash: string): Promise<Record<string, unknown>> {
     if (typeof this.rpcClient.getContractState === 'function') {
-      return await this.rpcClient.getContractState(scriptHash);
+      return await this.rpcClient.getContractState(scriptHash) as unknown as Record<string, unknown>;
     }
 
     return await this.rpcClient.execute(
       new neonJs.rpc.Query({ method: 'getcontractstate', params: [scriptHash] })
-    );
+    ) as Record<string, unknown>;
   }
 
-  async getContractStatus(contractReference: string): Promise<any> {
+  async getContractStatus(contractReference: string): Promise<Record<string, unknown>> {
     const target = await this.resolveContractTargetAsync(contractReference);
     if (!target.remoteMetadata && this.n3indexClient) {
       try {
@@ -629,8 +621,10 @@ export class ContractService {
 
     try {
       const contractState = await this.getContractState(target.scriptHash);
-      const manifestName = typeof contractState?.manifest?.name === 'string' && contractState.manifest.name.trim()
-        ? contractState.manifest.name.trim()
+      const csStatusManifest = contractState?.manifest as Record<string, unknown> | undefined;
+      const csStatusManifestName = typeof csStatusManifest?.name === 'string' ? csStatusManifest.name.trim() : '';
+      const manifestName = csStatusManifestName
+        ? csStatusManifestName
         : target.remoteMetadata?.displayName ?? target.remoteMetadata?.manifestName ?? target.knownContract?.name ?? target.address ?? target.scriptHash;
       const operations = this.buildOperationSummary(target, contractState);
 
@@ -678,7 +672,7 @@ export class ContractService {
     }
   }
 
-  async getContractInfo(contractReference: string): Promise<any> {
+  async getContractInfo(contractReference: string): Promise<Record<string, unknown>> {
     const status = await this.getContractStatus(contractReference);
 
     return {
@@ -774,7 +768,7 @@ export class ContractService {
    * @returns Contract operations details
    * @throws ContractError if contract not found
    */
-  getContractOperations(contractNameOrHash: string): any {
+  getContractOperations(contractNameOrHash: string): ContractOperationSummary {
     try {
       const target = this.resolveContractTarget(contractNameOrHash);
       const operations = this.buildOperationSummary(target);
@@ -812,19 +806,19 @@ export class ContractService {
   }
 
   // NeoFS specific methods
-  async createNeoFSContainer(fromAccount: any, ownerId: string, rules: any[]): Promise<string> {
+  async createNeoFSContainer(fromAccount: Account, ownerId: string, rules: unknown[]): Promise<string> {
     return this.invokeContract(
       fromAccount,
       'neofs',
       FAMOUS_CONTRACTS.neofs.operations.createContainer.name,
       [
         neonJs.sc.ContractParam.string(ownerId),
-        neonJs.sc.ContractParam.array({ type: 'Array', value: rules })
+        neonJs.sc.ContractParam.array({ type: 'Array', value: rules as ContractParamJson[] })
       ]
     );
   }
 
-  async getNeoFSContainers(ownerId: string): Promise<any> {
+  async getNeoFSContainers(ownerId: string): Promise<Record<string, unknown>> {
     return this.queryContract(
       'neofs',
       FAMOUS_CONTRACTS.neofs.operations.getContainers.name,
@@ -840,7 +834,7 @@ export class ContractService {
    * @returns Transaction hash and contract hash
    * @throws ContractError if deployment fails
    */
-  async deployContract(wif: string, script: string, manifest: any): Promise<any> {
+  async deployContract(wif: string, script: string, manifest: Record<string, unknown>): Promise<Record<string, unknown>> {
     try {
       const account = new neonJs.wallet.Account(wif);
 
@@ -857,7 +851,7 @@ export class ContractService {
         : script.replace(/^0x/i, '');
 
       const nef = new neonJs.sc.NEF({ script: scriptHex });
-      const contractManifest = neonJs.sc.ContractManifest.fromJson(manifest);
+      const contractManifest = neonJs.sc.ContractManifest.fromJson(manifest as unknown as ContractManifestJson);
       const txid = await neonJs.experimental.deployContract(nef, contractManifest, {
         account,
         rpcAddress: this.rpcUrl,
@@ -901,7 +895,7 @@ export class ContractService {
   }
 
   // NeoBurger specific methods
-  async depositNeoToNeoBurger(fromAccount: any): Promise<string> {
+  async depositNeoToNeoBurger(fromAccount: Account): Promise<string> {
     return this.invokeContract(
       fromAccount,
       'neoburger',
@@ -910,7 +904,7 @@ export class ContractService {
     );
   }
 
-  async withdrawNeoFromNeoBurger(fromAccount: any, amount: string | number): Promise<string> {
+  async withdrawNeoFromNeoBurger(fromAccount: Account, amount: string | number): Promise<string> {
     // Validate amount
     const validAmount = validateAmount(amount);
 
@@ -925,7 +919,7 @@ export class ContractService {
     );
   }
 
-  async getNeoBurgerBalance(address: string): Promise<any> {
+  async getNeoBurgerBalance(address: string): Promise<Record<string, unknown>> {
     return this.queryContract(
       'neoburger',
       FAMOUS_CONTRACTS.neoburger.operations.balanceOf.name,
@@ -933,7 +927,7 @@ export class ContractService {
     );
   }
 
-  async claimNeoBurgerGas(fromAccount: any): Promise<string> {
+  async claimNeoBurgerGas(fromAccount: Account): Promise<string> {
     return this.invokeContract(
       fromAccount,
       'neoburger',
@@ -943,7 +937,7 @@ export class ContractService {
   }
 
   // Flamingo specific methods
-  async stakeFlamingo(fromAccount: any, amount: string | number): Promise<string> {
+  async stakeFlamingo(fromAccount: Account, amount: string | number): Promise<string> {
     // Validate amount
     const validAmount = validateAmount(amount);
 
@@ -958,7 +952,7 @@ export class ContractService {
     );
   }
 
-  async unstakeFlamingo(fromAccount: any, amount: string | number): Promise<string> {
+  async unstakeFlamingo(fromAccount: Account, amount: string | number): Promise<string> {
     // Validate amount
     const validAmount = validateAmount(amount);
 
@@ -973,7 +967,7 @@ export class ContractService {
     );
   }
 
-  async getFlamingoBalance(address: string): Promise<any> {
+  async getFlamingoBalance(address: string): Promise<Record<string, unknown>> {
     return this.queryContract(
       'flamingo',
       FAMOUS_CONTRACTS.flamingo.operations.balanceOf.name,
@@ -982,7 +976,7 @@ export class ContractService {
   }
 
   // NeoCompound specific methods
-  async depositToNeoCompound(fromAccount: any, assetId: string, amount: string | number): Promise<string> {
+  async depositToNeoCompound(fromAccount: Account, assetId: string, amount: string | number): Promise<string> {
     // Validate parameters
     const validAmount = validateAmount(amount);
     const validAssetId = validateScriptHash(assetId);
@@ -999,7 +993,7 @@ export class ContractService {
     );
   }
 
-  async withdrawFromNeoCompound(fromAccount: any, assetId: string, amount: string | number): Promise<string> {
+  async withdrawFromNeoCompound(fromAccount: Account, assetId: string, amount: string | number): Promise<string> {
     // Validate parameters
     const validAmount = validateAmount(amount);
     const validAssetId = validateScriptHash(assetId);
@@ -1016,7 +1010,7 @@ export class ContractService {
     );
   }
 
-  async getNeoCompoundBalance(address: string, assetId: string): Promise<any> {
+  async getNeoCompoundBalance(address: string, assetId: string): Promise<Record<string, unknown>> {
     // Validate parameters
     const validAssetId = validateScriptHash(assetId);
 
@@ -1031,7 +1025,7 @@ export class ContractService {
   }
 
   // GrandShare specific methods
-  async depositToGrandShare(fromAccount: any, poolId: number | string, amount: string | number): Promise<string> {
+  async depositToGrandShare(fromAccount: Account, poolId: number | string, amount: string | number): Promise<string> {
     // Validate parameters
     const validAmount = validateAmount(amount);
     const validPoolId = validateInteger(poolId);
@@ -1051,7 +1045,7 @@ export class ContractService {
     );
   }
 
-  async withdrawFromGrandShare(fromAccount: any, poolId: number | string, amount: string | number): Promise<string> {
+  async withdrawFromGrandShare(fromAccount: Account, poolId: number | string, amount: string | number): Promise<string> {
     // Validate parameters
     const validAmount = validateAmount(amount);
     const validPoolId = validateInteger(poolId);
@@ -1071,7 +1065,7 @@ export class ContractService {
     );
   }
 
-  async getGrandSharePoolDetails(poolId: number | string): Promise<any> {
+  async getGrandSharePoolDetails(poolId: number | string): Promise<Record<string, unknown>> {
     // Validate parameters
     const validPoolId = validateInteger(poolId);
 
@@ -1083,7 +1077,7 @@ export class ContractService {
   }
 
   // GhostMarket specific methods
-  async createGhostMarketNFT(fromAccount: any, tokenURI: string, properties: any[]): Promise<string> {
+  async createGhostMarketNFT(fromAccount: Account, tokenURI: string, properties: unknown[]): Promise<string> {
     // Validate address
     validateAddress(fromAccount.address);
 
@@ -1099,12 +1093,12 @@ export class ContractService {
       [
         neonJs.sc.ContractParam.hash160(fromAccount.address),
         neonJs.sc.ContractParam.string(tokenURI),
-        neonJs.sc.ContractParam.array({ type: 'Array', value: properties })
+        neonJs.sc.ContractParam.array({ type: 'Array', value: properties as ContractParamJson[] })
       ]
     );
   }
 
-  async listGhostMarketNFT(fromAccount: any, tokenId: number | string, price: string | number, paymentToken: string): Promise<string> {
+  async listGhostMarketNFT(fromAccount: Account, tokenId: number | string, price: string | number, paymentToken: string): Promise<string> {
     // Validate parameters
     const validTokenId = validateInteger(tokenId);
     const validPrice = validateAmount(price);
@@ -1125,7 +1119,7 @@ export class ContractService {
     );
   }
 
-  async buyGhostMarketNFT(fromAccount: any, tokenId: number | string): Promise<string> {
+  async buyGhostMarketNFT(fromAccount: Account, tokenId: number | string): Promise<string> {
     // Validate parameters
     const validTokenId = validateInteger(tokenId);
 
@@ -1143,7 +1137,7 @@ export class ContractService {
     );
   }
 
-  async getGhostMarketTokenInfo(tokenId: number | string): Promise<any> {
+  async getGhostMarketTokenInfo(tokenId: number | string): Promise<Record<string, unknown>> {
     // Validate parameters
     const validTokenId = validateInteger(tokenId);
 
@@ -1164,11 +1158,14 @@ export class ContractService {
       return this.networkMagic;
     }
 
-    const version = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getversion', params: [] }));
-    const networkMagic = version?.protocol?.network;
-    if (!Number.isInteger(networkMagic)) {
+    const versionRaw = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getversion', params: [] }));
+    const version = versionRaw as Record<string, unknown>;
+    const versionProtocol = version?.protocol as Record<string, unknown> | undefined;
+    const networkMagicRaw = versionProtocol?.network;
+    if (!Number.isInteger(networkMagicRaw)) {
       throw new Error('Failed to determine network magic from RPC getversion');
     }
+    const networkMagic = networkMagicRaw as number;
 
     this.networkMagic = networkMagic;
     return networkMagic;
@@ -1183,7 +1180,7 @@ export class ContractService {
    * @param args Arguments to format
    * @returns Formatted arguments
    */
-  private formatContractArgs(args: any[]): any[] {
+  private formatContractArgs(args: unknown[]): Record<string, unknown>[] {
     if (!args || !Array.isArray(args)) {
       return [];
     }
@@ -1248,8 +1245,8 @@ export class ContractService {
   async invokeReadContract(
     contractName: string,
     operation: string,
-    args: any[] = []
-  ): Promise<any> {
+    args: unknown[] = []
+  ): Promise<Record<string, unknown>> {
     try {
       // Use the queryContract method to execute the read-only operation
       return await this.queryContract(contractName, operation, args);
@@ -1279,11 +1276,11 @@ export class ContractService {
    * @throws ContractError if contract execution fails
    */
   async invokeWriteContract(
-    fromAccount: any,
+    fromAccount: Account,
     contractName: string,
     operation: string,
-    args: any[] = [],
-    additionalScriptAttributes: any[] = []
+    args: unknown[] = [],
+    additionalScriptAttributes: unknown[] = []
   ): Promise<{ txid: string }> {
     try {
       // Only pass additionalScriptAttributes if it's explicitly provided

@@ -492,8 +492,18 @@ describe('Blockchain Operations', () => {
 
     test('should handle malformed responses', async () => {
       const mockRpcClient = neoService['rpcClient'];
-      mockRpcClient.getValidators = jest.fn().mockResolvedValue('not-an-array');
+      // Mock execute to return non-array for both validator RPC methods
+      const originalExecute = mockRpcClient.execute;
+      mockRpcClient.execute = jest.fn().mockImplementation((queryOrMethod: unknown) => {
+        const q = queryOrMethod as Record<string, unknown>;
+        const method = typeof queryOrMethod === 'string' ? queryOrMethod : q?.method;
+        if (method === 'getvalidators' || method === 'getnextblockvalidators') {
+          return Promise.resolve('not-an-array');
+        }
+        return originalExecute(queryOrMethod);
+      });
       const info = await neoService.getBlockchainInfo();
+      mockRpcClient.execute = originalExecute;
 
       expect(info.validators).toEqual([]);
       expect(info.height).toBe(12345);

@@ -107,9 +107,10 @@ function findErrorMapping(errorMessage: string): { message: string, code: ErrorC
  * @param error Error to handle
  * @returns MCP-compatible error response
  */
-export function handleError(error: any): { error: { message: string, code: ErrorCode } } {
+export function handleError(error: unknown): { error: { message: string, code: ErrorCode } } {
   // Log the error for debugging
-  logger.error('Error occurred:', { error: error.toString(), stack: error.stack });
+  const errObj = error as Record<string, unknown>;
+  logger.error('Error occurred:', { error: String(error), stack: typeof errObj?.stack === 'string' ? errObj.stack : undefined });
 
   // If it's already an MCP error, use it directly
   if (error instanceof McpError) {
@@ -136,8 +137,8 @@ export function handleError(error: any): { error: { message: string, code: Error
   }
 
   // Handle connection errors
-  if (error.code && typeof error.code === 'string') {
-    const mapping = ERROR_MAPPINGS[error.code];
+  if (errObj.code && typeof errObj.code === 'string') {
+    const mapping = ERROR_MAPPINGS[errObj.code];
     if (mapping) {
       return {
         error: {
@@ -149,8 +150,8 @@ export function handleError(error: any): { error: { message: string, code: Error
   }
 
   // Handle errors with messages
-  if (error.message && typeof error.message === 'string') {
-    const mapping = findErrorMapping(error.message);
+  if (errObj.message && typeof errObj.message === 'string') {
+    const mapping = findErrorMapping(errObj.message);
     if (mapping) {
       return {
         error: {
@@ -163,7 +164,7 @@ export function handleError(error: any): { error: { message: string, code: Error
     // If no mapping found, use the original message
     return {
       error: {
-        message: error.message,
+        message: errObj.message,
         code: ErrorCode.InternalError
       }
     };
@@ -203,7 +204,7 @@ export function handleError(error: any): { error: { message: string, code: Error
  * @param data Data to include in the response
  * @returns MCP-compatible success response
  */
-export function createSuccessResponse(data: any): { result: any } {
+export function createSuccessResponse(data: unknown): { result: unknown } {
   return {
     result: data
   };
@@ -214,7 +215,7 @@ export function createSuccessResponse(data: any): { result: any } {
  * @param data Data to include in the response
  * @returns MCP-compatible tool response
  */
-export function createToolResponse(data: any): { content: Array<{ type: string; text: string }> } {
+export function createToolResponse(data: unknown): { content: Array<{ type: string; text: string }> } {
   return {
     content: [
       {
@@ -247,7 +248,7 @@ export function createErrorResponse(message: string, code: ErrorCode = ErrorCode
  * @param mimeType Optional MIME type (defaults to application/json)
  * @returns MCP-compatible resource response
  */
-export function createResourceResponse(uri: string, data: any, mimeType: string = 'application/json'): { contents: Array<{ uri: string; mimeType: string; text: string }> } {
+export function createResourceResponse(uri: string, data: unknown, mimeType: string = 'application/json'): { contents: Array<{ uri: string; mimeType: string; text: string }> } {
   return {
     contents: [
       {

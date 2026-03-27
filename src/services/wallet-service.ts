@@ -5,9 +5,11 @@
  */
 
 import * as neonJs from '@cityofzion/neon-js';
+import type { Account } from '@cityofzion/neon-core/lib/wallet/Account';
 import * as fs from 'fs';
 import * as path from 'path';
 import { validatePassword } from '../utils/validation';
+import { WalletInfo } from '../types/neo';
 
 export class WalletService {
   private walletsDir: string;
@@ -23,7 +25,7 @@ export class WalletService {
     }
   }
 
-  async createWallet(password: string): Promise<any> {
+  async createWallet(password: string): Promise<WalletInfo> {
     try {
       validatePassword(password);
       const account = new neonJs.wallet.Account();
@@ -37,7 +39,7 @@ export class WalletService {
     }
   }
 
-  async getWallet(address: string): Promise<any> {
+  async getWallet(address: string): Promise<WalletInfo> {
     try {
       const walletPath = path.join(this.walletsDir, `${address}.json`);
 
@@ -53,7 +55,7 @@ export class WalletService {
     }
   }
 
-  async importWallet(key: string, password?: string): Promise<any> {
+  async importWallet(key: string, password?: string): Promise<WalletInfo> {
     try {
       const account = new neonJs.wallet.Account(key);
 
@@ -74,7 +76,7 @@ export class WalletService {
     }
   }
 
-  private async buildEncryptedWalletInfo(account: any, password: string): Promise<any> {
+  private async buildEncryptedWalletInfo(account: Account, password: string): Promise<WalletInfo> {
     const encryptedPrivateKey = await neonJs.wallet.encrypt(account.WIF, password);
     return {
       address: account.address,
@@ -85,7 +87,7 @@ export class WalletService {
     };
   }
 
-  private saveWallet(address: string, walletInfo: any) {
+  private saveWallet(address: string, walletInfo: WalletInfo) {
     try {
       const walletPath = path.join(this.walletsDir, `${address}.json`);
       fs.writeFileSync(walletPath, JSON.stringify(walletInfo, null, 2));

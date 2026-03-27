@@ -28,7 +28,7 @@ export class Logger {
   private logStream: fs.WriteStream | null = null;
 
   private constructor() {
-    const loggingConfig = (config as any)?.logging;
+    const loggingConfig = config.logging;
     this.logLevel = this.stringToLogLevel(loggingConfig?.level || DEFAULT_LOG_LEVEL);
     this.logToConsole = loggingConfig?.console !== undefined ? loggingConfig.console : DEFAULT_LOG_CONSOLE;
     this.logToFile = Boolean(loggingConfig?.fileEnabled);
@@ -66,13 +66,13 @@ export class Logger {
     return Logger.instance;
   }
 
-  private formatMessage(level: string, message: string, context?: Record<string, any>): string {
+  private formatMessage(level: string, message: string, context?: Record<string, unknown>): string {
     const timestamp = new Date().toISOString();
     const contextStr = context ? ` ${JSON.stringify(context)}` : '';
     return `[${timestamp}] [${level}] ${message}${contextStr}`;
   }
 
-  private log(level: LogLevel, levelStr: string, message: string, context?: Record<string, any>): void {
+  private log(level: LogLevel, levelStr: string, message: string, context?: Record<string, unknown>): void {
     if (level < this.logLevel) {
       return;
     }
@@ -98,19 +98,19 @@ export class Logger {
     }
   }
 
-  public debug(message: string, context?: Record<string, any>): void {
+  public debug(message: string, context?: Record<string, unknown>): void {
     this.log(LogLevel.DEBUG, 'DEBUG', message, context);
   }
 
-  public info(message: string, context?: Record<string, any>): void {
+  public info(message: string, context?: Record<string, unknown>): void {
     this.log(LogLevel.INFO, 'INFO', message, context);
   }
 
-  public warn(message: string, context?: Record<string, any>): void {
+  public warn(message: string, context?: Record<string, unknown>): void {
     this.log(LogLevel.WARN, 'WARN', message, context);
   }
 
-  public error(message: string, context?: Record<string, any>): void {
+  public error(message: string, context?: Record<string, unknown>): void {
     this.log(LogLevel.ERROR, 'ERROR', message, context);
   }
 

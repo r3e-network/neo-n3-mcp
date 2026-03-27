@@ -1,6 +1,7 @@
 // src/handlers/tool-handler.ts
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema, ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { NeoService, NeoNetwork } from '../services/neo-service';
 import { ContractService } from '../contracts/contract-service';
 import { WalletService } from '../services/wallet-service';
@@ -13,7 +14,7 @@ import * as neonJs from '@cityofzion/neon-js'; // Needed for Account creation
 
 // --- Individual Tool Handlers ---
 
-async function handleGetNetworkMode(): Promise<any> {
+async function handleGetNetworkMode(): Promise<Record<string, unknown>> {
   const availableNetworks = [];
 
   if (config.networkMode === NetworkMode.MAINNET_ONLY || config.networkMode === NetworkMode.BOTH) {
@@ -36,7 +37,7 @@ async function handleGetNetworkMode(): Promise<any> {
   });
 }
 
-async function handleSetNetworkMode(input: any): Promise<any> {
+async function handleSetNetworkMode(input: Record<string, unknown>): Promise<unknown> {
   const normalizedMode = typeof input?.mode === 'string' ? input.mode.toLowerCase().trim() : '';
 
   let newMode: NetworkMode;
@@ -80,7 +81,7 @@ async function handleSetNetworkMode(input: any): Promise<any> {
   });
 }
 
-async function handleGetBlockchainInfo(input: any, neoService: NeoService): Promise<any> {
+async function handleGetBlockchainInfo(input: Record<string, unknown>, neoService: NeoService): Promise<unknown> {
   try {
     const info = await neoService.getBlockchainInfo();
     return createSuccessResponse(info);
@@ -89,7 +90,7 @@ async function handleGetBlockchainInfo(input: any, neoService: NeoService): Prom
   }
 }
 
-async function handleGetBlockCount(input: any, neoService: NeoService): Promise<any> {
+async function handleGetBlockCount(input: Record<string, unknown>, neoService: NeoService): Promise<unknown> {
   try {
     const count = await neoService.getBlockCount();
     return createSuccessResponse({ blockCount: count });
@@ -98,7 +99,7 @@ async function handleGetBlockCount(input: any, neoService: NeoService): Promise<
   }
 }
 
-async function handleGetBlock(input: any, neoService: NeoService): Promise<any> {
+async function handleGetBlock(input: Record<string, unknown>, neoService: NeoService): Promise<unknown> {
   try {
     if (typeof input.hashOrHeight === 'string') {
       validateHash(input.hashOrHeight);
@@ -114,10 +115,10 @@ async function handleGetBlock(input: any, neoService: NeoService): Promise<any> 
   }
 }
 
-async function handleGetTransaction(input: any, neoService: NeoService): Promise<any> {
+async function handleGetTransaction(input: Record<string, unknown>, neoService: NeoService): Promise<unknown> {
   try {
-    validateHash(input.txid);
-    const tx = await neoService.getTransaction(input.txid);
+    validateHash(input.txid as string);
+    const tx = await neoService.getTransaction(input.txid as string);
     return createSuccessResponse(tx);
   } catch (error) {
     return handleError(error);
@@ -125,21 +126,21 @@ async function handleGetTransaction(input: any, neoService: NeoService): Promise
 }
 
 
-async function handleGetApplicationLog(input: any, neoService: NeoService): Promise<any> {
+async function handleGetApplicationLog(input: Record<string, unknown>, neoService: NeoService): Promise<unknown> {
   try {
-    validateHash(input.txid);
-    const applicationLog = await neoService.getApplicationLog(input.txid);
+    validateHash(input.txid as string);
+    const applicationLog = await neoService.getApplicationLog(input.txid as string);
     return createSuccessResponse(applicationLog);
   } catch (error) {
     return handleError(error);
   }
 }
 
-async function handleWaitForTransaction(input: any, neoService: NeoService): Promise<any> {
+async function handleWaitForTransaction(input: Record<string, unknown>, neoService: NeoService): Promise<unknown> {
   try {
-    validateHash(input.txid);
-    const timeoutMs = input.timeoutMs !== undefined ? validateInteger(input.timeoutMs) : 30000;
-    const pollIntervalMs = input.pollIntervalMs !== undefined ? validateInteger(input.pollIntervalMs) : 1000;
+    validateHash(input.txid as string);
+    const timeoutMs = input.timeoutMs !== undefined ? validateInteger(input.timeoutMs as string | number) : 30000;
+    const pollIntervalMs = input.pollIntervalMs !== undefined ? validateInteger(input.pollIntervalMs as string | number) : 1000;
 
     if (timeoutMs <= 0) {
       throw new McpError(ErrorCode.InvalidParams, 'timeoutMs must be greater than zero.');
@@ -149,7 +150,7 @@ async function handleWaitForTransaction(input: any, neoService: NeoService): Pro
       throw new McpError(ErrorCode.InvalidParams, 'pollIntervalMs must be greater than zero.');
     }
 
-    const result = await neoService.waitForTransaction(input.txid, {
+    const result = await neoService.waitForTransaction(input.txid as string, {
       timeoutMs,
       pollIntervalMs,
       includeApplicationLog: Boolean(input.includeApplicationLog),
@@ -160,27 +161,27 @@ async function handleWaitForTransaction(input: any, neoService: NeoService): Pro
   }
 }
 
-async function handleGetUnclaimedGas(input: any, neoService: NeoService): Promise<any> {
+async function handleGetUnclaimedGas(input: Record<string, unknown>, neoService: NeoService): Promise<unknown> {
   try {
-    validateAddress(input.address);
-    const result = await neoService.getUnclaimedGas(input.address);
+    validateAddress(input.address as string);
+    const result = await neoService.getUnclaimedGas(input.address as string);
     return createSuccessResponse(result);
   } catch (error) {
     return handleError(error);
   }
 }
 
-async function handleGetNep17Transfers(input: any, neoService: NeoService): Promise<any> {
+async function handleGetNep17Transfers(input: Record<string, unknown>, neoService: NeoService): Promise<unknown> {
   try {
-    validateAddress(input.address);
-    const fromTimestampMs = input.fromTimestampMs !== undefined ? validateInteger(input.fromTimestampMs) : undefined;
-    const toTimestampMs = input.toTimestampMs !== undefined ? validateInteger(input.toTimestampMs) : undefined;
+    validateAddress(input.address as string);
+    const fromTimestampMs = input.fromTimestampMs !== undefined ? validateInteger(input.fromTimestampMs as string | number) : undefined;
+    const toTimestampMs = input.toTimestampMs !== undefined ? validateInteger(input.toTimestampMs as string | number) : undefined;
 
     if (fromTimestampMs !== undefined && toTimestampMs !== undefined && fromTimestampMs > toTimestampMs) {
       throw new McpError(ErrorCode.InvalidParams, 'fromTimestampMs must be less than or equal to toTimestampMs.');
     }
 
-    const result = await neoService.getNep17Transfers(input.address, {
+    const result = await neoService.getNep17Transfers(input.address as string, {
       ...(fromTimestampMs !== undefined ? { fromTimestampMs } : {}),
       ...(toTimestampMs !== undefined ? { toTimestampMs } : {}),
     });
@@ -190,27 +191,27 @@ async function handleGetNep17Transfers(input: any, neoService: NeoService): Prom
   }
 }
 
-async function handleGetNep11Balances(input: any, neoService: NeoService): Promise<any> {
+async function handleGetNep11Balances(input: Record<string, unknown>, neoService: NeoService): Promise<unknown> {
   try {
-    validateAddress(input.address);
-    const result = await neoService.getNep11Balances(input.address);
+    validateAddress(input.address as string);
+    const result = await neoService.getNep11Balances(input.address as string);
     return createSuccessResponse(result);
   } catch (error) {
     return handleError(error);
   }
 }
 
-async function handleGetNep11Transfers(input: any, neoService: NeoService): Promise<any> {
+async function handleGetNep11Transfers(input: Record<string, unknown>, neoService: NeoService): Promise<unknown> {
   try {
-    validateAddress(input.address);
-    const fromTimestampMs = input.fromTimestampMs !== undefined ? validateInteger(input.fromTimestampMs) : undefined;
-    const toTimestampMs = input.toTimestampMs !== undefined ? validateInteger(input.toTimestampMs) : undefined;
+    validateAddress(input.address as string);
+    const fromTimestampMs = input.fromTimestampMs !== undefined ? validateInteger(input.fromTimestampMs as string | number) : undefined;
+    const toTimestampMs = input.toTimestampMs !== undefined ? validateInteger(input.toTimestampMs as string | number) : undefined;
 
     if (fromTimestampMs !== undefined && toTimestampMs !== undefined && fromTimestampMs > toTimestampMs) {
       throw new McpError(ErrorCode.InvalidParams, 'fromTimestampMs must be less than or equal to toTimestampMs.');
     }
 
-    const result = await neoService.getNep11Transfers(input.address, {
+    const result = await neoService.getNep11Transfers(input.address as string, {
       ...(fromTimestampMs !== undefined ? { fromTimestampMs } : {}),
       ...(toTimestampMs !== undefined ? { toTimestampMs } : {}),
     });
@@ -220,29 +221,29 @@ async function handleGetNep11Transfers(input: any, neoService: NeoService): Prom
   }
 }
 
-async function handleGetBalance(input: any, neoService: NeoService): Promise<any> {
+async function handleGetBalance(input: Record<string, unknown>, neoService: NeoService): Promise<unknown> {
   try {
-    validateAddress(input.address);
-    const balance = await neoService.getBalance(input.address); 
+    validateAddress(input.address as string);
+    const balance = await neoService.getBalance(input.address as string); 
     return createSuccessResponse({ ...balance });
   } catch (error) {
     return handleError(error);
   }
 }
 
-async function handleTransferAssets(input: any, neoService: NeoService): Promise<any> {
+async function handleTransferAssets(input: Record<string, unknown>, neoService: NeoService): Promise<unknown> {
   try {
     if (!input.confirm) {
       throw new McpError(ErrorCode.InvalidParams, 'Transfer requires explicit confirmation. Set confirm=true.');
     }
-    validateAddress(input.toAddress);
-    validateAmount(input.amount);
+    validateAddress(input.toAddress as string);
+    validateAmount(input.amount as string | number);
     // Basic WIF validation
     if (!input.fromWIF || typeof input.fromWIF !== 'string' || !neonJs.wallet.isWIF(input.fromWIF)) {
       throw new McpError(ErrorCode.InvalidParams, 'Invalid sender WIF provided.');
     }
     const account = new neonJs.wallet.Account(input.fromWIF);
-    const txid = await neoService.transferAssets(account, input.toAddress, input.asset, input.amount);
+    const txid = await neoService.transferAssets(account, input.toAddress as string, input.asset as string, input.amount as string | number);
     return createSuccessResponse({ txid });
   } catch (error) {
     return handleError(error);
@@ -250,7 +251,7 @@ async function handleTransferAssets(input: any, neoService: NeoService): Promise
 }
 
 
-function resolveContractReference(input: any): string {
+function resolveContractReference(input: Record<string, unknown>): string {
   const reference = input?.contract ?? input?.contractReference ?? input?.contractName ?? input?.nameOrHash;
   if (typeof reference === 'string' && reference.trim()) {
     return reference.trim();
@@ -262,19 +263,19 @@ function resolveContractReference(input: any): string {
   );
 }
 
-async function resolveInvocationScriptHash(input: any, contractService: ContractService): Promise<string> {
+async function resolveInvocationScriptHash(input: Record<string, unknown>, contractService: ContractService): Promise<string> {
   if (typeof input?.scriptHash === 'string' && input.scriptHash.trim()) {
     return validateScriptHash(input.scriptHash);
   }
 
-  if (typeof (contractService as any).resolveContractScriptHash === 'function') {
-    return await (contractService as any).resolveContractScriptHash(resolveContractReference(input));
+  if (typeof (contractService as unknown as Record<string, unknown>).resolveContractScriptHash === 'function') {
+    return await contractService.resolveContractScriptHash(resolveContractReference(input));
   }
 
   return contractService.getContractScriptHash(resolveContractReference(input));
 }
 
-async function handleInvokeReadContract(input: any, neoService: NeoService, contractService: ContractService): Promise<any> {
+async function handleInvokeReadContract(input: Record<string, unknown>, neoService: NeoService, contractService: ContractService): Promise<unknown> {
   try {
     const namedContractReference = !input?.scriptHash && (() => {
       try {
@@ -289,8 +290,8 @@ async function handleInvokeReadContract(input: any, neoService: NeoService, cont
     }
 
     const result = namedContractReference
-      ? await contractService.invokeReadContract(namedContractReference, input.operation, input.args || [])
-      : await neoService.invokeReadContract(await resolveInvocationScriptHash(input, contractService), input.operation, input.args || []);
+      ? await contractService.invokeReadContract(namedContractReference, input.operation as string, (input.args as unknown[]) || [])
+      : await neoService.invokeReadContract(await resolveInvocationScriptHash(input, contractService), input.operation as string, (input.args as unknown[]) || []);
 
     return createSuccessResponse(result);
   } catch (error) {
@@ -298,7 +299,7 @@ async function handleInvokeReadContract(input: any, neoService: NeoService, cont
   }
 }
 
-async function handleInvokeWriteContract(input: any, neoService: NeoService, contractService: ContractService): Promise<any> {
+async function handleInvokeWriteContract(input: Record<string, unknown>, neoService: NeoService, contractService: ContractService): Promise<unknown> {
   try {
     if (!input.confirm) {
       throw new McpError(ErrorCode.InvalidParams, 'Contract invocation requires explicit confirmation. Set confirm=true.');
@@ -320,20 +321,20 @@ async function handleInvokeWriteContract(input: any, neoService: NeoService, con
     }
     const account = new neonJs.wallet.Account(input.fromWIF);
     const result = namedContractReference
-      ? await contractService.invokeWriteContract(account, namedContractReference, input.operation, input.args || [])
-      : await neoService.invokeContract(account, await resolveInvocationScriptHash(input, contractService), input.operation, input.args || []);
+      ? await contractService.invokeWriteContract(account, namedContractReference, input.operation as string, (input.args as unknown[]) || [])
+      : await neoService.invokeContract(account, await resolveInvocationScriptHash(input, contractService), input.operation as string, (input.args as unknown[]) || []);
     return createSuccessResponse(result);
   } catch (error) {
     return handleError(error);
   }
 }
 
-async function handleCreateWallet(input: any, walletService?: WalletService): Promise<any> {
+async function handleCreateWallet(input: Record<string, unknown>, walletService?: WalletService): Promise<unknown> {
   try {
-    validatePassword(input.password);
+    validatePassword(input.password as string);
 
     if (walletService) {
-      const wallet = await walletService.createWallet(input.password);
+      const wallet = await walletService.createWallet(input.password as string);
       return createSuccessResponse({
         ...wallet,
         encryptedWIF: wallet.encryptedPrivateKey,
@@ -341,7 +342,7 @@ async function handleCreateWallet(input: any, walletService?: WalletService): Pr
     }
 
     const account = new neonJs.wallet.Account();
-    const encryptedWIF = await neonJs.wallet.encrypt(account.WIF, input.password);
+    const encryptedWIF = await neonJs.wallet.encrypt(account.WIF, input.password as string);
     return createSuccessResponse({
       address: account.address,
       publicKey: account.publicKey,
@@ -353,7 +354,7 @@ async function handleCreateWallet(input: any, walletService?: WalletService): Pr
   }
 }
 
-async function handleImportWallet(input: any, walletService?: WalletService): Promise<any> {
+async function handleImportWallet(input: Record<string, unknown>, walletService?: WalletService): Promise<unknown> {
   try {
     const key = input?.key ?? input?.privateKeyOrWIF;
     if (typeof key !== 'string' || !(neonJs.wallet.isWIF(key) || neonJs.wallet.isPrivateKey(key))) {
@@ -361,7 +362,7 @@ async function handleImportWallet(input: any, walletService?: WalletService): Pr
     }
 
     if (walletService) {
-      const wallet = await walletService.importWallet(key, input.password);
+      const wallet = await walletService.importWallet(key, input.password as string | undefined);
       if ('encryptedPrivateKey' in wallet) {
         return createSuccessResponse({
           ...wallet,
@@ -373,8 +374,8 @@ async function handleImportWallet(input: any, walletService?: WalletService): Pr
 
     let account = new neonJs.wallet.Account(key);
     if (input.password) {
-      validatePassword(input.password);
-      const encryptedWIF = await neonJs.wallet.encrypt(account.WIF, input.password);
+      validatePassword(input.password as string);
+      const encryptedWIF = await neonJs.wallet.encrypt(account.WIF, input.password as string);
       return createSuccessResponse({
         address: account.address,
         publicKey: account.publicKey,
@@ -389,13 +390,13 @@ async function handleImportWallet(input: any, walletService?: WalletService): Pr
   }
 }
 
-async function handleGetWallet(input: any, walletService?: WalletService): Promise<any> {
+async function handleGetWallet(input: Record<string, unknown>, walletService?: WalletService): Promise<unknown> {
   try {
-    validateAddress(input.address);
+    validateAddress(input.address as string);
     if (!walletService) {
       throw new McpError(ErrorCode.InternalError, 'Wallet service is not available.');
     }
-    const wallet = await walletService.getWallet(input.address);
+    const wallet = await walletService.getWallet(input.address as string);
     const { encryptedPrivateKey, ...sanitizedWallet } = wallet;
     return createSuccessResponse(sanitizedWallet);
   } catch (error) {
@@ -403,19 +404,19 @@ async function handleGetWallet(input: any, walletService?: WalletService): Promi
   }
 }
 
-async function handleEstimateTransferFees(input: any, neoService: NeoService): Promise<any> {
+async function handleEstimateTransferFees(input: Record<string, unknown>, neoService: NeoService): Promise<unknown> {
   try {
-    validateAddress(input.fromAddress);
-    validateAddress(input.toAddress);
-    validateAmount(input.amount);
-    const fees = await neoService.calculateTransferFee(input.fromAddress, input.toAddress, input.asset, input.amount); 
+    validateAddress(input.fromAddress as string);
+    validateAddress(input.toAddress as string);
+    validateAmount(input.amount as string | number);
+    const fees = await neoService.calculateTransferFee(input.fromAddress as string, input.toAddress as string, input.asset as string, input.amount as string | number); 
     return createSuccessResponse(fees);
   } catch (error) {
     return handleError(error);
   }
 }
 
-async function handleEstimateInvokeFees(input: any, neoService: NeoService, contractService: ContractService): Promise<any> {
+async function handleEstimateInvokeFees(input: Record<string, unknown>, neoService: NeoService, contractService: ContractService): Promise<unknown> {
   try {
     if (!input.signerAddress) {
       throw new McpError(ErrorCode.InvalidParams, 'Signer address is required to estimate invocation fees.');
@@ -434,15 +435,15 @@ async function handleEstimateInvokeFees(input: any, neoService: NeoService, cont
     }
 
     const scriptHash = await resolveInvocationScriptHash(input, contractService);
-    validateAddress(input.signerAddress);
-    const fees = await neoService.calculateInvokeFee(input.signerAddress, scriptHash, input.operation, input.args || []);
+    validateAddress(input.signerAddress as string);
+    const fees = await neoService.calculateInvokeFee(input.signerAddress as string, scriptHash, input.operation as string, (input.args as unknown[]) || []);
     return createSuccessResponse(fees);
   } catch (error) {
     return handleError(error);
   }
 }
 
-async function handleClaimGas(input: any, neoService: NeoService): Promise<any> {
+async function handleClaimGas(input: Record<string, unknown>, neoService: NeoService): Promise<unknown> {
   try {
     if (!input.confirm) {
       throw new McpError(ErrorCode.InvalidParams, 'GAS claim requires explicit confirmation. Set confirm=true.');
@@ -459,7 +460,7 @@ async function handleClaimGas(input: any, neoService: NeoService): Promise<any> 
 }
 
 
-async function handleDeployContract(input: any, contractService: ContractService): Promise<any> {
+async function handleDeployContract(input: Record<string, unknown>, contractService: ContractService): Promise<unknown> {
   try {
     if (!input.confirm) {
       throw new McpError(ErrorCode.InvalidParams, 'Contract deployment requires explicit confirmation. Set confirm=true.');
@@ -478,14 +479,14 @@ async function handleDeployContract(input: any, contractService: ContractService
       throw new McpError(ErrorCode.InvalidParams, 'Contract manifest must be an object.');
     }
 
-    const result = await contractService.deployContract(fromWIF, input.script, input.manifest);
+    const result = await contractService.deployContract(fromWIF, input.script as string, input.manifest as Record<string, unknown>);
     return createSuccessResponse(result);
   } catch (error) {
     return handleError(error);
   }
 }
 
-async function handleListFamousContracts(input: any, contractService: ContractService): Promise<any> {
+async function handleListFamousContracts(input: Record<string, unknown>, contractService: ContractService): Promise<unknown> {
   try {
     const contracts = await contractService.listSupportedContracts();
     const availableContracts = contracts.filter(contract => contract.available);
@@ -498,25 +499,25 @@ async function handleListFamousContracts(input: any, contractService: ContractSe
   }
 }
 
-async function handleGetContractInfo(input: any, contractService: ContractService): Promise<any> {
+async function handleGetContractInfo(input: Record<string, unknown>, contractService: ContractService): Promise<unknown> {
   try {
     const contractReference = resolveContractReference(input);
-    return await (contractService as any).getContractInfo(contractReference);
+    return await contractService.getContractInfo(contractReference);
   } catch (error) {
     return handleError(error);
   }
 }
 
-async function handleGetContractStatus(input: any, contractService: ContractService): Promise<any> {
+async function handleGetContractStatus(input: Record<string, unknown>, contractService: ContractService): Promise<unknown> {
   try {
     const contractReference = resolveContractReference(input);
-    return createSuccessResponse(await (contractService as any).getContractStatus(contractReference));
+    return createSuccessResponse(await contractService.getContractStatus(contractReference));
   } catch (error) {
     return handleError(error);
   }
 }
 
-async function handleCreateContainer(input: any, neoService: NeoService, contractService: ContractService): Promise<any> {
+async function handleCreateContainer(input: Record<string, unknown>, neoService: NeoService, contractService: ContractService): Promise<unknown> {
   try {
     if (!input.confirm) {
       throw new McpError(ErrorCode.InvalidParams, 'NeoFS container creation requires explicit confirmation. Set confirm=true.');
@@ -532,17 +533,17 @@ async function handleCreateContainer(input: any, neoService: NeoService, contrac
     }
 
     const fromAccount = new neonJs.wallet.Account(fromWIF);
-    const txid = await contractService.createNeoFSContainer(fromAccount, input.ownerId, input.rules || []);
+    const txid = await contractService.createNeoFSContainer(fromAccount, input.ownerId, (input.rules as unknown[]) || []);
     return createSuccessResponse({ txid });
   } catch (error) {
     return handleError(error);
   }
 }
 
-async function handleGetContainers(input: any, neoService: NeoService, contractService: ContractService): Promise<any> {
+async function handleGetContainers(input: Record<string, unknown>, neoService: NeoService, contractService: ContractService): Promise<unknown> {
   try {
-    validateAddress(input.ownerAddress);
-    const containers = await contractService.getNeoFSContainers(input.ownerAddress);
+    validateAddress(input.ownerAddress as string);
+    const containers = await contractService.getNeoFSContainers(input.ownerAddress as string);
     return createSuccessResponse({ containers });
   } catch (error) {
     return handleError(error);
@@ -551,18 +552,18 @@ async function handleGetContainers(input: any, neoService: NeoService, contractS
 
 // --- Tool Setup Function ---
 
-export async function callTool(name: string, input: any, neoServices: Map<NeoNetwork, NeoService>, contractServices: Map<NeoNetwork, ContractService>, walletService?: WalletService): Promise<any> {
+export async function callTool(name: string, input: Record<string, unknown>, neoServices: Map<NeoNetwork, NeoService>, contractServices: Map<NeoNetwork, ContractService>, walletService?: WalletService): Promise<Record<string, unknown>> {
   switch (name) {
     case 'get_network_mode':
       return await handleGetNetworkMode();
     case 'set_network_mode':
-      return await handleSetNetworkMode(input);
+      return await handleSetNetworkMode(input) as Record<string, unknown>;
     case 'create_wallet':
-      return await handleCreateWallet(input, walletService);
+      return await handleCreateWallet(input, walletService) as Record<string, unknown>;
     case 'import_wallet':
-      return await handleImportWallet(input, walletService);
+      return await handleImportWallet(input, walletService) as Record<string, unknown>;
     case 'get_wallet':
-      return await handleGetWallet(input, walletService);
+      return await handleGetWallet(input, walletService) as Record<string, unknown>;
   }
 
   if (!input || typeof input !== 'object') {
@@ -598,52 +599,52 @@ export async function callTool(name: string, input: any, neoServices: Map<NeoNet
   try {
     switch (name) {
       case 'get_blockchain_info':
-        return await handleGetBlockchainInfo(input, neoService);
+        return await handleGetBlockchainInfo(input, neoService) as Record<string, unknown>;
       case 'get_block_count':
-        return await handleGetBlockCount(input, neoService);
+        return await handleGetBlockCount(input, neoService) as Record<string, unknown>;
       case 'get_block':
-        return await handleGetBlock(input, neoService);
+        return await handleGetBlock(input, neoService) as Record<string, unknown>;
       case 'get_transaction':
-        return await handleGetTransaction(input, neoService);
+        return await handleGetTransaction(input, neoService) as Record<string, unknown>;
       case 'get_application_log':
-        return await handleGetApplicationLog(input, neoService);
+        return await handleGetApplicationLog(input, neoService) as Record<string, unknown>;
       case 'wait_for_transaction':
-        return await handleWaitForTransaction(input, neoService);
+        return await handleWaitForTransaction(input, neoService) as Record<string, unknown>;
       case 'get_balance':
-        return await handleGetBalance(input, neoService);
+        return await handleGetBalance(input, neoService) as Record<string, unknown>;
       case 'get_unclaimed_gas':
-        return await handleGetUnclaimedGas(input, neoService);
+        return await handleGetUnclaimedGas(input, neoService) as Record<string, unknown>;
       case 'get_nep17_transfers':
-        return await handleGetNep17Transfers(input, neoService);
+        return await handleGetNep17Transfers(input, neoService) as Record<string, unknown>;
       case 'get_nep11_balances':
-        return await handleGetNep11Balances(input, neoService);
+        return await handleGetNep11Balances(input, neoService) as Record<string, unknown>;
       case 'get_nep11_transfers':
-        return await handleGetNep11Transfers(input, neoService);
+        return await handleGetNep11Transfers(input, neoService) as Record<string, unknown>;
       case 'transfer_assets':
-        return await handleTransferAssets(input, neoService);
+        return await handleTransferAssets(input, neoService) as Record<string, unknown>;
       case 'invoke_contract':
         if (input.fromWIF) {
-          return await handleInvokeWriteContract(input, neoService, contractService);
+          return await handleInvokeWriteContract(input, neoService, contractService) as Record<string, unknown>;
         }
-        return await handleInvokeReadContract(input, neoService, contractService);
+        return await handleInvokeReadContract(input, neoService, contractService) as Record<string, unknown>;
       case 'estimate_transfer_fees':
-        return await handleEstimateTransferFees(input, neoService);
+        return await handleEstimateTransferFees(input, neoService) as Record<string, unknown>;
       case 'estimate_invoke_fees':
-        return await handleEstimateInvokeFees(input, neoService, contractService);
+        return await handleEstimateInvokeFees(input, neoService, contractService) as Record<string, unknown>;
       case 'claim_gas':
-        return await handleClaimGas(input, neoService);
+        return await handleClaimGas(input, neoService) as Record<string, unknown>;
       case 'deploy_contract':
-        return await handleDeployContract(input, contractService);
+        return await handleDeployContract(input, contractService) as Record<string, unknown>;
       case 'list_famous_contracts':
-        return await handleListFamousContracts(input, contractService);
+        return await handleListFamousContracts(input, contractService) as Record<string, unknown>;
       case 'get_contract_info':
-        return await handleGetContractInfo(input, contractService);
+        return await handleGetContractInfo(input, contractService) as Record<string, unknown>;
       case 'get_contract_status':
-        return await handleGetContractStatus(input, contractService);
+        return await handleGetContractStatus(input, contractService) as Record<string, unknown>;
       case 'neofs_create_container':
-        return await handleCreateContainer(input, neoService, contractService);
+        return await handleCreateContainer(input, neoService, contractService) as Record<string, unknown>;
       case 'neofs_get_containers':
-        return await handleGetContainers(input, neoService, contractService);
+        return await handleGetContainers(input, neoService, contractService) as Record<string, unknown>;
       default:
         throw new McpError(ErrorCode.InvalidParams, `Tool ${name} not found or requires network parameter.`);
     }
@@ -1282,7 +1283,7 @@ export function setupToolHandlers(
   // Register CallTool handler
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: input = {} } = request.params;
-    return await callTool(name, input, neoServices, contractServices, walletService);
+    return await callTool(name, input, neoServices, contractServices, walletService) as CallToolResult;
   });
 
   logger.debug('Tool handlers setup complete.');

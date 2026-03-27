@@ -155,6 +155,6 @@ export class Cache<T> {
 }
 
 // Create common caches
-export const contractCache = new Cache<any>('contract', 300000); // 5 minute TTL
-export const transactionCache = new Cache<any>('transaction', 600000); // 10 minute TTL
-export const rpcResultCache = new Cache<any>('rpc', 30000); // 30 second TTL 
+export const contractCache = new Cache<unknown>('contract', 300000); // 5 minute TTL
+export const transactionCache = new Cache<unknown>('transaction', 600000); // 10 minute TTL
+export const rpcResultCache = new Cache<unknown>('rpc', 30000); // 30 second TTL 

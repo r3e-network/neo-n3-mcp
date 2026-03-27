@@ -219,7 +219,7 @@ class NeoN3McpServer {
       name: string,
       description: string,
       inputSchema: Record<string, z.ZodTypeAny>,
-      handler: (args: any) => Promise<any>,
+      handler: (args: Record<string, unknown>) => Promise<unknown>,
     ) => void;
 
     // Network mode tool
@@ -264,7 +264,7 @@ class NeoN3McpServer {
         network: z.string().optional().describe('Network to use: "mainnet" or "testnet"'),
       },
       async ({ network }) => {
-        const neoService = await this.getNeoService(network);
+        const neoService = await this.getNeoService(network as string | undefined);
         const info = await neoService.getBlockchainInfo();
 
         return {
@@ -286,7 +286,7 @@ class NeoN3McpServer {
         network: z.string().optional().describe('Network to use: "mainnet" or "testnet"'),
       },
       async ({ network }) => {
-        const neoService = await this.getNeoService(network);
+        const neoService = await this.getNeoService(network as string | undefined);
         const info = await neoService.getBlockchainInfo();
         const result = {
           height: info.height,
@@ -313,8 +313,8 @@ class NeoN3McpServer {
         network: z.string().optional().describe('Network to use: "mainnet" or "testnet"'),
       },
       async ({ address, network }) => {
-        const validatedAddress = validateAddress(address);
-        const neoService = await this.getNeoService(network);
+        const validatedAddress = validateAddress(address as string);
+        const neoService = await this.getNeoService(network as string | undefined);
         const balance = await neoService.getBalance(validatedAddress);
 
         return {
@@ -336,8 +336,8 @@ class NeoN3McpServer {
         network: z.string().optional().describe('Network to use: "mainnet" or "testnet"'),
       },
       async ({ address, network }) => {
-        const validatedAddress = validateAddress(address);
-        const neoService = await this.getNeoService(network);
+        const validatedAddress = validateAddress(address as string);
+        const neoService = await this.getNeoService(network as string | undefined);
         const result = await neoService.getUnclaimedGas(validatedAddress);
 
         return {
@@ -365,7 +365,7 @@ class NeoN3McpServer {
           await this.ensureServicesInitialized();
           const result = await callTool('get_nep17_transfers', args, this.neoServices, this.contractServices);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -383,7 +383,7 @@ class NeoN3McpServer {
           await this.ensureServicesInitialized();
           const result = await callTool('get_nep11_balances', args, this.neoServices, this.contractServices);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -403,7 +403,7 @@ class NeoN3McpServer {
           await this.ensureServicesInitialized();
           const result = await callTool('get_nep11_transfers', args, this.neoServices, this.contractServices);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -421,7 +421,7 @@ class NeoN3McpServer {
           await this.ensureServicesInitialized();
           const result = await callTool('list_famous_contracts', args, this.neoServices, this.contractServices);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -442,7 +442,7 @@ class NeoN3McpServer {
           await this.ensureServicesInitialized();
           const result = await callTool('get_contract_info', args, this.neoServices, this.contractServices);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -462,7 +462,7 @@ class NeoN3McpServer {
           await this.ensureServicesInitialized();
           const result = await callTool('get_contract_status', args, this.neoServices, this.contractServices);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -479,7 +479,7 @@ class NeoN3McpServer {
         try {
           const result = await callTool('create_wallet', args, this.neoServices, this.contractServices, this.walletService);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -495,7 +495,7 @@ class NeoN3McpServer {
         try {
           const result = await callTool('get_wallet', args, this.neoServices, this.contractServices, this.walletService);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -513,7 +513,7 @@ class NeoN3McpServer {
             this.servicesInitialized = false;
           }
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -528,7 +528,7 @@ class NeoN3McpServer {
           await this.ensureServicesInitialized();
           const result = await callTool('get_block', args, this.neoServices, this.contractServices);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -543,7 +543,7 @@ class NeoN3McpServer {
           await this.ensureServicesInitialized();
           const result = await callTool('get_transaction', args, this.neoServices, this.contractServices);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -558,7 +558,7 @@ class NeoN3McpServer {
           await this.ensureServicesInitialized();
           const result = await callTool('get_application_log', args, this.neoServices, this.contractServices);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -579,7 +579,7 @@ class NeoN3McpServer {
           await this.ensureServicesInitialized();
           const result = await callTool('wait_for_transaction', args, this.neoServices, this.contractServices);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -601,7 +601,7 @@ class NeoN3McpServer {
           await this.ensureServicesInitialized();
           const result = await callTool('transfer_assets', args, this.neoServices, this.contractServices);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -627,7 +627,7 @@ class NeoN3McpServer {
           await this.ensureServicesInitialized();
           const result = await callTool('invoke_contract', args, this.neoServices, this.contractServices);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -646,7 +646,7 @@ class NeoN3McpServer {
           await this.ensureServicesInitialized();
           const result = await callTool('import_wallet', args, this.neoServices, this.contractServices, this.walletService);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -667,7 +667,7 @@ class NeoN3McpServer {
           await this.ensureServicesInitialized();
           const result = await callTool('estimate_transfer_fees', args, this.neoServices, this.contractServices);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -692,7 +692,7 @@ class NeoN3McpServer {
           await this.ensureServicesInitialized();
           const result = await callTool('estimate_invoke_fees', args, this.neoServices, this.contractServices);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -707,7 +707,7 @@ class NeoN3McpServer {
           await this.ensureServicesInitialized();
           const result = await callTool('claim_gas', args, this.neoServices, this.contractServices);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -728,7 +728,7 @@ class NeoN3McpServer {
           await this.ensureServicesInitialized();
           const result = await callTool('deploy_contract', args, this.neoServices, this.contractServices);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -750,7 +750,7 @@ class NeoN3McpServer {
           await this.ensureServicesInitialized();
           const result = await callTool('neofs_create_container', args, this.neoServices, this.contractServices);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }
@@ -765,7 +765,7 @@ class NeoN3McpServer {
           await this.ensureServicesInitialized();
           const result = await callTool('neofs_get_containers', args, this.neoServices, this.contractServices);
           return this.formatDelegatedToolResponse(result);
-        } catch (error: any) {
+        } catch (error: unknown) {
           return this.createErrorResponse(error);
         }
       }

@@ -77,12 +77,12 @@ export class HttpServer {
         return;
       }
 
-      let body: any = {};
+      let body: Record<string, unknown> = {};
       if (method === 'POST' || method === 'PUT') {
         body = await this.parseRequestBody(req);
       }
 
-      let result: any;
+      let result: unknown;
       let statusCode = 200;
       const decodePathSegment = (index: number) => decodeURIComponent(path.split('/')[index] || '');
 
@@ -163,7 +163,7 @@ export class HttpServer {
           statusCode = 400;
           result = { error: 'Missing required parameter: password' };
         } else {
-          result = await this.walletService.createWallet(body.password);
+          result = await this.walletService.createWallet(body.password as string);
         }
       } else if (path.match(/^\/api\/wallets\/[A-Za-z0-9]+$/) && method === 'GET') {
         const address = path.split('/').pop() || '';
@@ -177,7 +177,7 @@ export class HttpServer {
           result = { error: 'Missing required parameter: key (WIF or private key)' };
         } else {
           try {
-            result = await this.walletService.importWallet(key, body.password);
+            result = await this.walletService.importWallet(key as string, body.password as string | undefined);
           } catch (error) {
             statusCode = 500;
             result = {
@@ -204,8 +204,8 @@ export class HttpServer {
           statusCode = 400;
           result = { error: 'Missing required parameter: amount' };
         } else {
-          const account = new neonJs.wallet.Account(fromWIF);
-          result = await this.neoService.transferAssets(account, body.toAddress, body.asset, body.amount);
+          const account = new neonJs.wallet.Account(fromWIF as string);
+          result = await this.neoService.transferAssets(account, body.toAddress as string, body.asset as string, body.amount as string | number);
         }
       } else if (path === '/api/transfers/estimate-fees' && method === 'POST') {
         if (!body.fromAddress) {
@@ -221,7 +221,7 @@ export class HttpServer {
           statusCode = 400;
           result = { error: 'Missing required parameter: amount' };
         } else {
-          result = await this.neoService.calculateTransferFee(body.fromAddress, body.toAddress, body.asset, body.amount);
+          result = await this.neoService.calculateTransferFee(body.fromAddress as string, body.toAddress as string, body.asset as string, body.amount as string | number);
         }
       } else if (path === '/api/accounts/claim-gas' && method === 'POST') {
         const fromWIF = body.fromWIF || body.wif;
@@ -240,10 +240,10 @@ export class HttpServer {
         result = { mode: network === NeoNetwork.MAINNET ? 'mainnet' : 'testnet' };
       } else if (path.match(/^\/api\/contracts\/[^/]+\/status$/) && method === 'GET') {
         const contractReference = decodePathSegment(3);
-        result = await (this.contractService as any).getContractStatus(contractReference);
+        result = await this.contractService.getContractStatus(contractReference);
       } else if (path.match(/^\/api\/contracts\/[^/]+$/) && method === 'GET') {
         const contractReference = decodePathSegment(3);
-        result = await (this.contractService as any).getContractInfo(contractReference);
+        result = await this.contractService.getContractInfo(contractReference);
       } else if (path === '/api/contracts/invoke/estimate-fees' && method === 'POST') {
         const contractReference = typeof body.contract === 'string' && body.contract.trim().length > 0
           ? body.contract.trim()
@@ -255,8 +255,8 @@ export class HttpServer {
           await this.contractService.assertContractDeployed(contractReference);
         }
         const scriptHash = body.scriptHash || (contractReference
-          ? (typeof (this.contractService as any).resolveContractScriptHash === 'function'
-              ? await (this.contractService as any).resolveContractScriptHash(contractReference)
+          ? (typeof (this.contractService as unknown as Record<string, unknown>).resolveContractScriptHash === 'function'
+              ? await this.contractService.resolveContractScriptHash(contractReference)
               : this.contractService.getContractScriptHash(contractReference))
           : '');
         const operation = body.operation || '';
@@ -271,7 +271,7 @@ export class HttpServer {
           statusCode = 400;
           result = { error: 'Missing required parameter: operation' };
         } else {
-          result = await this.neoService.calculateInvokeFee(body.signerAddress, scriptHash, operation, args);
+          result = await this.neoService.calculateInvokeFee(body.signerAddress as string, scriptHash as string, operation as string, args as unknown[]);
         }
       } else if (path === '/api/contracts/invoke' && method === 'POST') {
         const scriptHash = body.scriptHash || '';
@@ -298,15 +298,15 @@ export class HttpServer {
               statusCode = 400;
               result = { error: 'Missing required parameter: confirm=true' };
             } else {
-              const account = new neonJs.wallet.Account(body.fromWIF);
+              const account = new neonJs.wallet.Account(body.fromWIF as string);
               result = useNamedContract
-                ? await this.contractService.invokeWriteContract(account, contractReference, operation, args)
-                : await this.neoService.invokeContract(account, scriptHash, operation, args);
+                ? await this.contractService.invokeWriteContract(account, contractReference, operation as string, args as unknown[])
+                : await this.neoService.invokeContract(account, scriptHash as string, operation as string, args as unknown[]);
             }
           } else {
             result = useNamedContract
-              ? await this.contractService.invokeReadContract(contractReference, operation, args)
-              : await this.neoService.invokeReadContract(scriptHash, operation, args);
+              ? await this.contractService.invokeReadContract(contractReference, operation as string, args as unknown[])
+              : await this.neoService.invokeReadContract(scriptHash as string, operation as string, args as unknown[]);
           }
         }
       } else if (path.match(/^\/api\/contracts\/[^/]+\/invoke$/) && method === 'POST') {
@@ -314,7 +314,7 @@ export class HttpServer {
         const operation = body.operation || '';
         const args = body.args || [];
         await this.contractService.assertContractDeployed(contractName);
-        result = await this.contractService.invokeReadContract(contractName, operation, args);
+        result = await this.contractService.invokeReadContract(contractName, operation as string, args as unknown[]);
       } else if (path === '/api/contracts/deploy' && method === 'POST') {
         const fromWIF = body.fromWIF || body.wif;
         if (!body.confirm) {
@@ -331,7 +331,7 @@ export class HttpServer {
           result = { error: 'Missing required parameter: manifest' };
         } else {
           try {
-            result = await this.contractService.deployContract(fromWIF, body.script, body.manifest);
+            result = await this.contractService.deployContract(fromWIF as string, body.script as string, body.manifest as Record<string, unknown>);
           } catch (error) {
             statusCode = 500;
             result = {
@@ -439,7 +439,7 @@ export class HttpServer {
     ].join('\n');
   }
 
-  private parseRequestBody(req: http.IncomingMessage): Promise<any> {
+  private parseRequestBody(req: http.IncomingMessage): Promise<Record<string, unknown>> {
     return new Promise((resolve, reject) => {
       let body = '';
       req.on('data', (chunk) => {

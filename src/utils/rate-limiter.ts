@@ -156,10 +156,7 @@ const DEFAULT_MAX_REQUESTS = 60;
 const DEFAULT_RATE_LIMIT_ENABLED = true;
 
 // Create instance with config values or defaults
-const securityConfig = (config as any)?.security;
-const maxRequests = securityConfig?.maxRequestsPerMinute ?? DEFAULT_MAX_REQUESTS;
-const enabled = securityConfig?.requireConfirmation !== undefined ? securityConfig.requireConfirmation : DEFAULT_RATE_LIMIT_ENABLED; // Assuming requireConfirmation maps to enabled status?
-                                                                                                        // Let's stick to a simple enabled flag or default.
+const maxRequests = config.rateLimiting?.maxRequestsPerMinute ?? DEFAULT_MAX_REQUESTS;
 
 export const rateLimiter = new RateLimiter(
   maxRequests,

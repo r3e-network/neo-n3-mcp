@@ -4,6 +4,7 @@
  */
 
 import * as neonJs from '@cityofzion/neon-js';
+import type { RPCClient } from '@cityofzion/neon-core/lib/rpc/RPCClient';
 import { logger } from '../utils/logger.js';
 import { Cache } from '../utils/cache.js';
 import { NetworkError, TransactionError } from '../utils/errors.js';
@@ -36,7 +37,7 @@ export interface TransactionInfo {
  * Transaction monitor service
  */
 export class TransactionMonitor {
-  private rpcClient: any;
+  private rpcClient: RPCClient;
   private transactions: Cache<TransactionInfo>;
   private pollingInterval: NodeJS.Timeout | null = null;
   private checkIntervalMs: number;
@@ -179,22 +180,23 @@ export class TransactionMonitor {
       
       try {
         // Try to get transaction
-        const tx = await this.rpcClient.getRawTransaction(info.txid, 1);
-        
+        const txRaw = await this.rpcClient.getRawTransaction(info.txid, 1);
+        const tx = txRaw as unknown as Record<string, unknown> & { confirmations?: number; blocktime?: number };
+
         if (tx) {
           // Transaction found
-          if (tx.confirmations === 0) {
+          if (!tx.confirmations || tx.confirmations === 0) {
             // Still pending
             info.lastChecked = Date.now();
             this.transactions.set(cacheKey, info);
-            
+
             logger.debug(`Transaction ${info.txid} still pending on ${this.network}`);
           } else {
             // Confirmed
             info.status = TransactionStatus.CONFIRMED;
             info.confirmations = tx.confirmations;
-            info.blockHeight = tx.blockheight;
-            info.timestamp = tx.blocktime * 1000; // Convert to milliseconds
+            info.blockHeight = typeof tx.blockindex === 'number' ? tx.blockindex : typeof tx.blockheight === 'number' ? tx.blockheight : undefined;
+            info.timestamp = typeof tx.blocktime === 'number' ? tx.blocktime * 1000 : undefined; // Convert to milliseconds
             info.lastChecked = Date.now();
             this.transactions.set(cacheKey, info);
             

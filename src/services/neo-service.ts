@@ -1,6 +1,9 @@
 import * as neonJs from '@cityofzion/neon-js';
+import type { RPCClient } from '@cityofzion/neon-core/lib/rpc/RPCClient';
+import type { Account } from '@cityofzion/neon-core/lib/wallet/Account';
 import { KnownAccountMetadata, normalizeScriptHash, resolveKnownAccount, tryGetAddressFromScriptHash, tryGetScriptHashFromAddress } from '../metadata/known-accounts';
 import { logger } from '../utils/logger';
+import { ChainConfig, Nep17TransferEntry, Nep17TransfersResponse, Nep11BalanceEntry, Nep11BalancesResponse, Nep11TransfersResponse, StackItem } from '../types/neo';
 
 /**
  * Supported Neo N3 networks
@@ -14,7 +17,7 @@ export enum NeoNetwork {
  * Service for interacting with the Neo N3 blockchain
  */
 export class NeoService {
-  private rpcClient: any;
+  private rpcClient: RPCClient;
   private rpcUrl: string;
   private networkMagic?: number;
   private network: NeoNetwork;
@@ -83,30 +86,21 @@ export class NeoService {
       // Try to get validators using multiple approaches
       let validators = [];
       try {
-        // Try direct getValidators method first
+        // Try to get validators using multiple approaches
+        let validatorsResult: unknown = undefined;
         try {
-          const validatorsResult = await this.rpcClient.getValidators();
-          if (validatorsResult && Array.isArray(validatorsResult)) {
-            validators = validatorsResult;
-          }
-        } catch (directError) {
-          // Fallback to execute method
+          // Try execute method first
+          validatorsResult = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getvalidators', params: [] }));
+        } catch (executeError) {
+          // Fallback to getnextblockvalidators
           try {
-            const validatorsResult = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getvalidators', params: [] }));
-            if (validatorsResult && Array.isArray(validatorsResult)) {
-              validators = validatorsResult;
-            }
-          } catch (executeError) {
-            // Last fallback - try getnextblockvalidators
-            try {
-              const validatorsResult = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getnextblockvalidators', params: [] }));
-              if (validatorsResult && Array.isArray(validatorsResult)) {
-                validators = validatorsResult;
-              }
-            } catch (nextError) {
-              logger.warn('All validator query methods failed; continuing without validators', { network: this.network });
-            }
+            validatorsResult = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getnextblockvalidators', params: [] }));
+          } catch (nextError) {
+            logger.warn('All validator query methods failed; continuing without validators', { network: this.network });
           }
+        }
+        if (validatorsResult && Array.isArray(validatorsResult)) {
+          validators = validatorsResult;
         }
       } catch (validatorError) {
         logger.warn('Failed to get validators; continuing without validators', { network: this.network, error: validatorError instanceof Error ? validatorError.message : String(validatorError) });
@@ -162,7 +156,7 @@ export class NeoService {
     };
   }
 
-  private normalizeHash160FromStackItem(item: any): string | null {
+  private normalizeHash160FromStackItem(item: StackItem): string | null {
     if (!item || typeof item !== 'object') {
       return null;
     }
@@ -202,7 +196,7 @@ export class NeoService {
     return null;
   }
 
-  private parseTransferParticipant(item: any) {
+  private parseTransferParticipant(item: StackItem) {
     if (!item || item.type === 'Any' || item.type === 'Null') {
       return null;
     }
@@ -219,7 +213,7 @@ export class NeoService {
     return null;
   }
 
-  private parseTransferAmount(item: any): string | null {
+  private parseTransferAmount(item: StackItem): string | null {
     if (!item || typeof item !== 'object') {
       return null;
     }
@@ -258,7 +252,7 @@ export class NeoService {
     };
   }
 
-  private buildTransferHistoryEntry(entry: any, accountAddress: string, direction: 'sent' | 'received') {
+  private buildTransferHistoryEntry(entry: Nep17TransferEntry, accountAddress: string, direction: 'sent' | 'received') {
     if (!entry || typeof entry !== 'object') {
       return entry;
     }
@@ -284,7 +278,7 @@ export class NeoService {
     };
   }
 
-  private enrichNep17Transfers(transfers: any, accountAddress: string) {
+  private enrichNep17Transfers(transfers: Nep17TransfersResponse, accountAddress: string) {
     if (!transfers || typeof transfers !== 'object') {
       return transfers;
     }
@@ -292,15 +286,15 @@ export class NeoService {
     return {
       ...transfers,
       sent: Array.isArray(transfers.sent)
-        ? transfers.sent.map((entry: any) => this.buildTransferHistoryEntry(entry, accountAddress, 'sent'))
+        ? transfers.sent.map((entry: Nep17TransferEntry) => this.buildTransferHistoryEntry(entry, accountAddress, 'sent'))
         : transfers.sent,
       received: Array.isArray(transfers.received)
-        ? transfers.received.map((entry: any) => this.buildTransferHistoryEntry(entry, accountAddress, 'received'))
+        ? transfers.received.map((entry: Nep17TransferEntry) => this.buildTransferHistoryEntry(entry, accountAddress, 'received'))
         : transfers.received,
     };
   }
 
-  private buildNep11BalanceEntry(entry: any) {
+  private buildNep11BalanceEntry(entry: Nep11BalanceEntry) {
     if (!entry || typeof entry !== 'object') {
       return entry;
     }
@@ -312,7 +306,7 @@ export class NeoService {
     };
   }
 
-  private enrichNep11Balances(balances: any) {
+  private enrichNep11Balances(balances: Nep11BalancesResponse) {
     if (!balances || typeof balances !== 'object') {
       return balances;
     }
@@ -320,12 +314,12 @@ export class NeoService {
     return {
       ...balances,
       balance: Array.isArray(balances.balance)
-        ? balances.balance.map((entry: any) => this.buildNep11BalanceEntry(entry))
+        ? balances.balance.map((entry: Nep11BalanceEntry) => this.buildNep11BalanceEntry(entry))
         : balances.balance,
     };
   }
 
-  private enrichNep11Transfers(transfers: any, accountAddress: string) {
+  private enrichNep11Transfers(transfers: Nep11TransfersResponse, accountAddress: string) {
     if (!transfers || typeof transfers !== 'object') {
       return transfers;
     }
@@ -333,28 +327,28 @@ export class NeoService {
     return {
       ...transfers,
       sent: Array.isArray(transfers.sent)
-        ? transfers.sent.map((entry: any) => this.buildTransferHistoryEntry(entry, accountAddress, 'sent'))
+        ? transfers.sent.map((entry: Nep17TransferEntry) => this.buildTransferHistoryEntry(entry, accountAddress, 'sent'))
         : transfers.sent,
       received: Array.isArray(transfers.received)
-        ? transfers.received.map((entry: any) => this.buildTransferHistoryEntry(entry, accountAddress, 'received'))
+        ? transfers.received.map((entry: Nep17TransferEntry) => this.buildTransferHistoryEntry(entry, accountAddress, 'received'))
         : transfers.received,
     };
   }
 
-  private enrichNotification(notification: any): any {
+  private enrichNotification(notification: Record<string, unknown>): Record<string, unknown> {
     if (!notification || typeof notification !== 'object') {
       return notification;
     }
 
     const eventName = notification.eventname ?? notification.eventName;
-    const stateValues = Array.isArray(notification.state?.value) ? notification.state.value : null;
+    const notifState = notification.state as Record<string, unknown> | undefined;
+    const stateValues = Array.isArray(notifState?.value) ? notifState.value as StackItem[] : null;
     if (eventName !== 'Transfer' || !stateValues || stateValues.length < 3) {
       return notification;
     }
 
-    const contractReference = typeof (notification.contract ?? notification.scriptHash) === 'string'
-      ? (notification.contract ?? notification.scriptHash)
-      : undefined;
+    const contractOrHash = notification.contract ?? notification.scriptHash;
+    const contractReference = typeof contractOrHash === 'string' ? contractOrHash : undefined;
     const parsed = {
       type: 'nep17_transfer',
       contract: this.enrichKnownParty(contractReference) ?? { ...(normalizeScriptHash(contractReference) ? { scriptHash: normalizeScriptHash(contractReference) } : {}) },
@@ -370,23 +364,23 @@ export class NeoService {
     };
   }
 
-  private enrichApplicationLog(applicationLog: any) {
+  private enrichApplicationLog(applicationLog: Record<string, unknown>) {
     if (!applicationLog || typeof applicationLog !== 'object' || !Array.isArray(applicationLog.executions)) {
       return applicationLog;
     }
 
     return {
       ...applicationLog,
-      executions: applicationLog.executions.map((execution: any) => ({
+      executions: (applicationLog.executions as Record<string, unknown>[]).map((execution: Record<string, unknown>) => ({
         ...execution,
         notifications: Array.isArray(execution?.notifications)
-          ? execution.notifications.map((notification: any) => this.enrichNotification(notification))
+          ? (execution.notifications as Record<string, unknown>[]).map((notification: Record<string, unknown>) => this.enrichNotification(notification))
           : execution?.notifications,
       })),
     };
   }
 
-  private enrichTransaction(transaction: any) {
+  private enrichTransaction(transaction: Record<string, unknown>) {
     if (!transaction || typeof transaction !== 'object') {
       return transaction;
     }
@@ -411,10 +405,10 @@ export class NeoService {
   async getTransaction(txid: string) {
     try {
       try {
-        return this.enrichTransaction(await this.rpcClient.getRawTransaction(txid, true));
+        return this.enrichTransaction(await this.rpcClient.getRawTransaction(txid, true) as unknown as Record<string, unknown>);
       } catch (directError) {
         logger.warn('Direct getRawTransaction failed; trying query fallback', { txid, error: directError instanceof Error ? directError.message : String(directError) });
-        return this.enrichTransaction(await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getrawtransaction', params: [txid, 1] })));
+        return this.enrichTransaction(await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getrawtransaction', params: [txid, 1] })) as Record<string, unknown>);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -429,7 +423,7 @@ export class NeoService {
    */
   async getApplicationLog(txid: string) {
     try {
-      return this.enrichApplicationLog(await this.rpcClient.getApplicationLog(txid));
+      return this.enrichApplicationLog(await this.rpcClient.getApplicationLog(txid) as unknown as Record<string, unknown>);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to get application log for ${txid}: ${errorMessage}`);
@@ -500,7 +494,7 @@ export class NeoService {
         params,
       }));
 
-      return this.enrichNep17Transfers(transfers, address);
+      return this.enrichNep17Transfers(transfers as Nep17TransfersResponse, address);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to get NEP-17 transfers for address ${address}: ${errorMessage}`);
@@ -523,7 +517,7 @@ export class NeoService {
         params: [address],
       }));
 
-      return this.enrichNep11Balances(balances);
+      return this.enrichNep11Balances(balances as Nep11BalancesResponse);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to get NEP-11 balances for address ${address}: ${errorMessage}`);
@@ -576,7 +570,7 @@ export class NeoService {
         params,
       }));
 
-      return this.enrichNep11Transfers(transfers, address);
+      return this.enrichNep11Transfers(transfers as Nep11TransfersResponse, address);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to get NEP-11 transfers for address ${address}: ${errorMessage}`);
@@ -602,7 +596,7 @@ export class NeoService {
       try {
         const blockHeight = await this.rpcClient.getTransactionHeight(txid);
         const transaction = await this.getTransaction(txid);
-        const result: any = {
+        const result: Record<string, unknown> = {
           txid,
           confirmed: true,
           blockHeight,
@@ -647,14 +641,15 @@ export class NeoService {
       try {
         // Try to use execute method for getNep17Balances
         const query = new neonJs.rpc.Query({ method: 'getnep17balances', params: [address] });
-        const balanceResult = await this.rpcClient.execute(query);
+        const balanceResultRaw = await this.rpcClient.execute(query);
+        const balanceResult = balanceResultRaw as Record<string, unknown> | undefined;
         if (balanceResult && balanceResult.balance) {
           return {
             address: balanceResult.address,
-            balance: balanceResult.balance.map((item: any) => ({
+            balance: (balanceResult.balance as Record<string, unknown>[]).map((item: Record<string, unknown>) => ({
               asset_hash: item.assethash,
               amount: item.amount,
-              asset_name: this.getAssetNameByHash(item.assethash),
+              asset_name: typeof item.assethash === 'string' ? this.getAssetNameByHash(item.assethash) : '',
               last_updated_block: item.lastupdatedblock
             }))
           };
@@ -749,11 +744,11 @@ export class NeoService {
    * @returns Transaction details
    */
   async transferAssets(
-    fromAccount: any,
+    fromAccount: Account,
     toAddress: string,
     asset: string,
     amount: string | number,
-    additionalScriptAttributes: any[] = []
+    additionalScriptAttributes: unknown[] = []
   ) {
     try {
       if (!fromAccount || !fromAccount.address) {
@@ -809,7 +804,7 @@ export class NeoService {
   async invokeReadContract(
     scriptHash: string,
     operation: string,
-    args: any[] = []
+    args: unknown[] = []
   ) {
     try {
       if (!scriptHash) throw new Error('Script hash is required');
@@ -818,7 +813,7 @@ export class NeoService {
       const script = neonJs.sc.createScript({
         scriptHash,
         operation,
-        args,
+        args: args as import('@cityofzion/neon-core/lib/sc/ContractParam').ContractParamJson[],
       });
       const scriptHexString = neonJs.u.HexString.fromHex(script);
 
@@ -847,11 +842,11 @@ export class NeoService {
    * @returns { txid, tx } Transaction details
    */
   async invokeContract(
-    fromAccount: any, // Removed null/undefined types - required for writes
+    fromAccount: Account,
     scriptHash: string,
     operation: string,
-    args: any[] = [],
-    additionalScriptAttributes: any[] = []
+    args: unknown[] = [],
+    additionalScriptAttributes: unknown[] = []
   ) {
     try {
       if (!scriptHash) throw new Error('Script hash is required');
@@ -863,7 +858,7 @@ export class NeoService {
         await this.getChainConfig(fromAccount)
       );
 
-      const txid = await contract.invoke(operation, args);
+      const txid = await contract.invoke(operation, args as import('@cityofzion/neon-core/lib/sc/ContractParam').ContractParam[]);
       return { txid };
 
     } catch (error) {
@@ -915,7 +910,7 @@ export class NeoService {
       const signer = {
         account: neonJs.wallet.getScriptHashFromAddress(fromAddress),
         scopes: neonJs.tx.WitnessScope.CalledByEntry,
-      } as any;
+      } as unknown as import('@cityofzion/neon-core/lib/tx/components/Signer').Signer;
 
       const tx = new neonJs.tx.Transaction();
       tx.script = neonJs.u.HexString.fromHex(script);
@@ -957,14 +952,14 @@ export class NeoService {
     fromAddress: string,
     scriptHash: string,
     operation: string,
-    args: any[] = []
+    args: unknown[] = []
   ): Promise<{ networkFee: number; systemFee: number }> {
     try {
-      const script = neonJs.sc.createScript({ scriptHash, operation, args });
+      const script = neonJs.sc.createScript({ scriptHash, operation, args: args as import('@cityofzion/neon-core/lib/sc/ContractParam').ContractParamJson[] });
       const signer = {
         account: neonJs.wallet.getScriptHashFromAddress(fromAddress),
         scopes: neonJs.tx.WitnessScope.CalledByEntry,
-      } as any;
+      } as unknown as import('@cityofzion/neon-core/lib/tx/components/Signer').Signer;
 
       const tx = new neonJs.tx.Transaction();
       tx.script = neonJs.u.HexString.fromHex(script);
@@ -999,7 +994,7 @@ export class NeoService {
    * @param fromAccount Account to claim GAS for and sign the transaction.
    * @returns Transaction details { txid, tx }
    */
-  async claimGas(fromAccount: any): Promise<{ txid: string }> {
+  async claimGas(fromAccount: Account): Promise<{ txid: string }> {
     try {
       if (!fromAccount || !fromAccount.address) {
         throw new Error('Invalid account for claiming GAS: missing address');
@@ -1048,23 +1043,26 @@ export class NeoService {
    */
   importWallet(key: string, password?: string) {
     try {
-      let account: any;
+      let account: Account;
 
       if (password) {
-        // Import from encrypted key
-        account = new neonJs.wallet.Account();
+        // Import from NEP2-encrypted key: Account constructor takes the encrypted WIF,
+        // then decrypt() takes the passphrase.
+        account = new neonJs.wallet.Account(key);
 
         try {
-          account.decrypt(key, password);
-        } catch (decryptError: any) {
-          throw new Error(`Failed to decrypt wallet: ${decryptError.message}`);
+          account.decrypt(password);
+        } catch (decryptError: unknown) {
+          const msg = decryptError instanceof Error ? decryptError.message : String(decryptError);
+          throw new Error(`Failed to decrypt wallet: ${msg}`);
         }
       } else {
         // Import from WIF
         try {
           account = new neonJs.wallet.Account(key);
-        } catch (wifError: any) {
-          throw new Error(`Invalid WIF key: ${wifError.message}`);
+        } catch (wifError: unknown) {
+          const msg = wifError instanceof Error ? wifError.message : String(wifError);
+          throw new Error(`Invalid WIF key: ${msg}`);
         }
       }
 
@@ -1088,17 +1086,20 @@ export class NeoService {
       return this.networkMagic;
     }
 
-    const version = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getversion', params: [] }));
-    const networkMagic = version?.protocol?.network;
-    if (!Number.isInteger(networkMagic)) {
+    const versionRaw = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getversion', params: [] }));
+    const version = versionRaw as Record<string, unknown>;
+    const versionProtocol = version?.protocol as Record<string, unknown> | undefined;
+    const networkMagicRaw = versionProtocol?.network;
+    if (!Number.isInteger(networkMagicRaw)) {
       throw new Error('Failed to determine network magic from RPC getversion');
     }
+    const networkMagic = networkMagicRaw as number;
 
     this.networkMagic = networkMagic;
     return networkMagic;
   }
 
-  private async getChainConfig(account?: any): Promise<any> {
+  private async getChainConfig(account?: Account): Promise<ChainConfig> {
     return {
       rpcAddress: this.rpcUrl,
       networkMagic: await this.getNetworkMagic(),
