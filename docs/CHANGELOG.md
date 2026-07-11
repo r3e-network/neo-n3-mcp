@@ -5,6 +5,22 @@ All notable changes to the Neo N3 MCP project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-07-11
+
+- Prepared the production-ready write-safety, RPC hardening, HTTP protection, Docker, packaging, and documentation improvements for the next minor release.
+- Added durable write-operation recovery, idempotency, exact approval fingerprints, server-only signing, and fail-closed defaults.
+- Kept read-only MCP behavior backward compatible while exposing controlled write tools only when explicitly enabled.
+
+## [3.0.0] - 2026-07-11
+
+- Made all state-changing operations fail closed and disabled by default.
+- Replaced request-supplied WIFs with one owner-only server signer file.
+- Added durable idempotency journals, exact fingerprint approval, reconciliation, and byte-identical replay.
+- Split read-only `invoke_contract` from `invoke_contract_write`.
+- Removed model-facing wallet creation and import.
+- Added independent HTTP write approval and intent status routes.
+- Hardened RPC deadlines, response bounds, VM-state checks, network validation, fees, Docker, and release workflows.
+
 ## [2.0.0] - 2026-03-27
 
 ### Breaking Changes

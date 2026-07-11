@@ -20,7 +20,9 @@ interface RateLimitEntry {
  */
 export class RateLimiter {
   private limits: Map<string, RateLimitEntry>;
+  private hourlyLimits: Map<string, RateLimitEntry>;
   private maxRequests: number;
+  private maxRequestsPerHour?: number;
   private windowMs: number;
   private enabled: boolean;
   
@@ -30,16 +32,29 @@ export class RateLimiter {
    * @param windowMs Window size in milliseconds
    * @param enabled Whether rate limiting is enabled
    */
-  constructor(maxRequests: number = 60, windowMs: number = 60000, enabled: boolean = true) {
+  constructor(
+    maxRequests: number = 60,
+    windowMs: number = 60000,
+    enabled: boolean = true,
+    maxRequestsPerHour?: number
+  ) {
+    this.assertPositiveInteger(maxRequests, 'maxRequests');
+    this.assertPositiveInteger(windowMs, 'windowMs');
+    if (maxRequestsPerHour !== undefined) {
+      this.assertPositiveInteger(maxRequestsPerHour, 'maxRequestsPerHour');
+    }
+
     this.limits = new Map();
+    this.hourlyLimits = new Map();
     this.maxRequests = maxRequests;
+    this.maxRequestsPerHour = maxRequestsPerHour;
     this.windowMs = windowMs;
     this.enabled = enabled;
     
     logger.info(`Rate limiter initialized: ${maxRequests} requests per ${windowMs}ms (${enabled ? 'enabled' : 'disabled'})`);
     
     // Clean up expired entries periodically (unref so it doesn't block process exit)
-    setInterval(() => this.cleanup(), windowMs).unref();
+    setInterval(() => this.cleanup(), Math.min(windowMs, 60000)).unref();
   }
   
   /**
@@ -53,44 +68,9 @@ export class RateLimiter {
       return true;
     }
     
-    const now = Date.now();
-    let entry = this.limits.get(clientId);
-    
-    // Clean up expired entry
-    if (entry && entry.resetTime <= now) {
-      this.limits.delete(clientId);
-      entry = undefined;
-    }
-    
-    // If no entry or expired, create new entry
-    if (!entry) {
-      this.limits.set(clientId, {
-        count: 1,
-        resetTime: now + this.windowMs
-      });
-      return true;
-    }
-    
-    // Increment count
-    entry.count++;
-    
-    // Check if over limit
-    if (entry.count > this.maxRequests) {
-      const retryAfterMs = entry.resetTime - now;
-      const retryAfterSec = Math.ceil(retryAfterMs / 1000);
-      
-      logger.warn(`Rate limit exceeded for client ${clientId}`, {
-        count: entry.count,
-        maxRequests: this.maxRequests,
-        windowMs: this.windowMs,
-        retryAfter: retryAfterSec
-      });
-      
-      throw new RateLimitError(`Rate limit exceeded. Try again in ${retryAfterSec} seconds.`, {
-        limit: this.maxRequests,
-        current: entry.count,
-        retryAfter: retryAfterSec
-      });
+    this.consumeWindow(this.limits, clientId, this.maxRequests, this.windowMs, 'minute');
+    if (this.maxRequestsPerHour !== undefined) {
+      this.consumeWindow(this.hourlyLimits, clientId, this.maxRequestsPerHour, 60 * 60 * 1000, 'hour');
     }
     
     return true;
@@ -102,6 +82,7 @@ export class RateLimiter {
    */
   resetLimit(clientId: string): void {
     this.limits.delete(clientId);
+    this.hourlyLimits.delete(clientId);
     logger.debug(`Rate limit reset for client ${clientId}`);
   }
   
@@ -112,10 +93,12 @@ export class RateLimiter {
     const now = Date.now();
     let expiredCount = 0;
     
-    for (const [clientId, entry] of this.limits.entries()) {
-      if (entry.resetTime <= now) {
-        this.limits.delete(clientId);
-        expiredCount++;
+    for (const limits of [this.limits, this.hourlyLimits]) {
+      for (const [clientId, entry] of limits.entries()) {
+        if (entry.resetTime <= now) {
+          limits.delete(clientId);
+          expiredCount++;
+        }
       }
     }
     
@@ -138,21 +121,70 @@ export class RateLimiter {
    * @param maxRequests Maximum requests per window
    * @param windowMs Window size in milliseconds
    */
-  updateSettings(maxRequests?: number, windowMs?: number): void {
+  updateSettings(maxRequests?: number, windowMs?: number, maxRequestsPerHour?: number): void {
     if (maxRequests !== undefined) {
+      this.assertPositiveInteger(maxRequests, 'maxRequests');
       this.maxRequests = maxRequests;
     }
     
     if (windowMs !== undefined) {
+      this.assertPositiveInteger(windowMs, 'windowMs');
       this.windowMs = windowMs;
+    }
+
+    if (maxRequestsPerHour !== undefined) {
+      this.assertPositiveInteger(maxRequestsPerHour, 'maxRequestsPerHour');
+      this.maxRequestsPerHour = maxRequestsPerHour;
     }
     
     logger.info(`Rate limiter settings updated: ${this.maxRequests} requests per ${this.windowMs}ms`);
+  }
+
+  private consumeWindow(
+    limits: Map<string, RateLimitEntry>,
+    clientId: string,
+    maxRequests: number,
+    windowMs: number,
+    window: 'minute' | 'hour'
+  ): void {
+    const now = Date.now();
+    let entry = limits.get(clientId);
+    if (!entry || entry.resetTime <= now) {
+      entry = { count: 0, resetTime: now + windowMs };
+      limits.set(clientId, entry);
+    }
+
+    entry.count++;
+    if (entry.count <= maxRequests) {
+      return;
+    }
+
+    const retryAfter = Math.max(1, Math.ceil((entry.resetTime - now) / 1000));
+    logger.warn(`Rate limit exceeded for client ${clientId}`, {
+      count: entry.count,
+      maxRequests,
+      window,
+      windowMs,
+      retryAfter
+    });
+    throw new RateLimitError(`Rate limit exceeded. Try again in ${retryAfter} seconds.`, {
+      limit: maxRequests,
+      current: entry.count,
+      retryAfter,
+      window
+    });
+  }
+
+  private assertPositiveInteger(value: number, name: string): void {
+    if (!Number.isSafeInteger(value) || value <= 0) {
+      throw new RangeError(`${name} must be a positive integer`);
+    }
   }
 }
 
 export const rateLimiter = new RateLimiter(
   config.rateLimiting.maxRequestsPerMinute,
   60000,
-  config.rateLimiting.enabled
-); 
+  config.rateLimiting.enabled,
+  config.rateLimiting.maxRequestsPerHour
+);

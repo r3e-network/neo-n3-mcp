@@ -7,7 +7,7 @@
  */
 
 import * as neonJs from '@cityofzion/neon-js';
-import { NeoNetwork } from '../services/neo-service';
+import type { NeoNetwork } from '../services/neo-service';
 import { ValidationError } from './errors';
 import { logger } from './logger';
 
@@ -39,7 +39,9 @@ export function validateAddress(address: string): string {
   }
 
   try {
-    // Use NeonJS to verify address
+    if (!neonJs.wallet.isAddress(address, neonJs.CONST.DEFAULT_ADDRESS_VERSION)) {
+      throw new Error('Invalid address checksum or version');
+    }
     const scriptHash = neonJs.wallet.getScriptHashFromAddress(address);
     if (!scriptHash || scriptHash.length !== SCRIPT_HASH_LENGTH) {
       throw new Error('Invalid address conversion');
@@ -149,6 +151,22 @@ export function validateAmount(amount: string | number): string {
 }
 
 /**
+ * Validate a token amount without converting through JavaScript floating point.
+ */
+export function validateTokenAmount(amount: unknown): string {
+  if (typeof amount !== 'string' || amount !== amount.trim() || amount.length === 0) {
+    throw new ValidationError('Token amount must be provided as a non-empty decimal string');
+  }
+  if (amount.length > 1_024 || !/^\d+(?:\.\d+)?$/.test(amount)) {
+    throw new ValidationError('Token amount must be a positive decimal string without exponent notation');
+  }
+  if (!/[1-9]/.test(amount)) {
+    throw new ValidationError('Token amount must be greater than zero');
+  }
+  return amount;
+}
+
+/**
  * Validate password
  * @param password Password to validate
  * @returns Validated password
@@ -162,6 +180,9 @@ export function validatePassword(password: string): string {
   // Check minimum length
   if (password.length < MIN_PASSWORD_LENGTH) {
     throw new ValidationError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters long`);
+  }
+  if (!/\S/.test(password)) {
+    throw new ValidationError('Password must contain at least one non-whitespace character');
   }
 
   // Check maximum length to prevent DoS attacks
@@ -181,7 +202,7 @@ export function validatePassword(password: string): string {
  */
 export function validateNetwork(network?: string): NeoNetwork {
   if (!network) {
-    return NeoNetwork.MAINNET; // Default to mainnet
+    return 'mainnet' as NeoNetwork;
   }
 
   if (typeof network !== 'string') {
@@ -190,11 +211,11 @@ export function validateNetwork(network?: string): NeoNetwork {
 
   const normalizedNetwork = network.toLowerCase().trim();
 
-  if (normalizedNetwork === NeoNetwork.MAINNET || normalizedNetwork === NeoNetwork.TESTNET) {
+  if (normalizedNetwork === 'mainnet' || normalizedNetwork === 'testnet') {
     return normalizedNetwork as NeoNetwork;
   }
 
-  throw new ValidationError(`Invalid network: ${network}. Must be one of: ${NeoNetwork.MAINNET}, ${NeoNetwork.TESTNET}`);
+  throw new ValidationError(`Invalid network: ${network}. Must be one of: mainnet, testnet`);
 }
 
 /**
@@ -265,12 +286,16 @@ export function validateInteger(value: number | string): number {
     }
     intValue = parseInt(value, 10);
   } else if (typeof value === 'number') {
-    if (!Number.isInteger(value)) {
-      throw new ValidationError('Value must be an integer');
+    if (!Number.isSafeInteger(value)) {
+      throw new ValidationError('Value must be a safe integer');
     }
     intValue = value;
   } else {
     throw new ValidationError('Value must be a number or numeric string');
+  }
+
+  if (!Number.isSafeInteger(intValue)) {
+    throw new ValidationError('Value must be a safe integer');
   }
 
   if (intValue < 0) {
@@ -335,5 +360,3 @@ export function validateContractOperation(operation: string, availableOperations
 
   return normalizedOperation;
 }
-
-

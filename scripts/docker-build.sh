@@ -1,120 +1,84 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Docker build script for Neo N3 MCP Server
-set -e
+set -euo pipefail
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+image_name="neo-n3-mcp"
+tag="latest"
+target="production"
+dockerfile="docker/Dockerfile"
+push=false
+registry=""
 
-# Default values
-IMAGE_NAME="neo-n3-mcp"
-TAG="latest"
-BUILD_TYPE="production"
-PUSH=false
-REGISTRY=""
-
-# Function to display usage
 usage() {
-    echo "Usage: $0 [OPTIONS]"
-    echo "Options:"
-    echo "  -t, --tag TAG           Set image tag (default: latest)"
-    echo "  -n, --name NAME         Set image name (default: neo-n3-mcp)"
-    echo "  -d, --dev               Build development image"
-    echo "  -p, --push              Push image to registry"
-    echo "  -r, --registry REGISTRY Set registry URL"
-    echo "  -h, --help              Show this help message"
-    exit 1
+  cat <<'EOF'
+Usage: scripts/docker-build.sh [options]
+
+Options:
+  -t, --tag TAG            Image tag (default: latest)
+  -n, --name NAME          Image name (default: neo-n3-mcp)
+  -d, --dev                Build the development image
+  -p, --push               Push the image after a successful build
+  -r, --registry REGISTRY  Prefix the image with a registry
+  -h, --help               Show this help
+EOF
 }
 
-# Parse command line arguments
+require_value() {
+  if [[ $# -lt 2 || -z "$2" ]]; then
+    echo "Missing value for $1" >&2
+    usage >&2
+    exit 2
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
-    case $1 in
-        -t|--tag)
-            TAG="$2"
-            shift 2
-            ;;
-        -n|--name)
-            IMAGE_NAME="$2"
-            shift 2
-            ;;
-        -d|--dev)
-            BUILD_TYPE="development"
-            shift
-            ;;
-        -p|--push)
-            PUSH=true
-            shift
-            ;;
-        -r|--registry)
-            REGISTRY="$2"
-            shift 2
-            ;;
-        -h|--help)
-            usage
-            ;;
-        *)
-            echo "Unknown option $1"
-            usage
-            ;;
-    esac
+  case "$1" in
+    -t|--tag)
+      require_value "$@"
+      tag="$2"
+      shift 2
+      ;;
+    -n|--name)
+      require_value "$@"
+      image_name="$2"
+      shift 2
+      ;;
+    -d|--dev)
+      target="development"
+      dockerfile="docker/Dockerfile.dev"
+      shift
+      ;;
+    -p|--push)
+      push=true
+      shift
+      ;;
+    -r|--registry)
+      require_value "$@"
+      registry="${2%/}"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
 done
 
-# Set full image name
-if [ -n "$REGISTRY" ]; then
-    FULL_IMAGE_NAME="$REGISTRY/$IMAGE_NAME:$TAG"
-else
-    FULL_IMAGE_NAME="$IMAGE_NAME:$TAG"
+image_ref="${image_name}:${tag}"
+if [[ -n "$registry" ]]; then
+  image_ref="${registry}/${image_ref}"
 fi
 
-echo -e "${GREEN}Building Neo N3 MCP Docker image...${NC}"
-echo -e "Image: ${YELLOW}$FULL_IMAGE_NAME${NC}"
-echo -e "Build type: ${YELLOW}$BUILD_TYPE${NC}"
+echo "Building ${image_ref} from ${dockerfile} (${target})"
+docker build --file "$dockerfile" --target "$target" --tag "$image_ref" .
 
-# Build the image
-if [ "$BUILD_TYPE" = "development" ]; then
-    echo -e "${GREEN}Building development image...${NC}"
-    # Copy development .dockerignore temporarily
-    cp docker/.dockerignore .dockerignore.dev
-    mv .dockerignore .dockerignore.prod
-    mv .dockerignore.dev .dockerignore
-    
-    docker build -f docker/Dockerfile.dev -t "$FULL_IMAGE_NAME" --target development .
-    
-    # Restore original .dockerignore
-    mv .dockerignore .dockerignore.dev
-    mv .dockerignore.prod .dockerignore
-else
-    echo -e "${GREEN}Building production image...${NC}"
-    docker build -f docker/Dockerfile -t "$FULL_IMAGE_NAME" --target production .
+if [[ "$push" == true ]]; then
+  docker push "$image_ref"
 fi
 
-if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✅ Build completed successfully!${NC}"
-    
-    # Show image info
-    echo -e "${GREEN}Image details:${NC}"
-    docker images "$FULL_IMAGE_NAME"
-    
-    # Push if requested
-    if [ "$PUSH" = true ]; then
-        echo -e "${GREEN}Pushing image to registry...${NC}"
-        docker push "$FULL_IMAGE_NAME"
-        
-        if [ $? -eq 0 ]; then
-            echo -e "${GREEN}✅ Push completed successfully!${NC}"
-        else
-            echo -e "${RED}❌ Push failed!${NC}"
-            exit 1
-        fi
-    fi
-else
-    echo -e "${RED}❌ Build failed!${NC}"
-    exit 1
-fi
-
-echo -e "${GREEN}🚀 Ready to run with:${NC}"
-echo -e "  ${YELLOW}docker run -p 3000:3000 $FULL_IMAGE_NAME${NC}"
-echo -e "  ${YELLOW}docker-compose up${NC}"
+echo "Built ${image_ref}"

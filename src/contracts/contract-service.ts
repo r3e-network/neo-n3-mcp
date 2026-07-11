@@ -1,16 +1,9 @@
 /**
- * Famous Neo N3 Contracts Service
- *
- * This service provides methods to interact with well-known Neo N3 contracts
- * like NeoFS, NeoBurger, Flamingo, NeoCompound, GrandShare, and GhostMarket.
+ * Neo N3 contract discovery and invocation service.
  */
 import * as neonJs from '@cityofzion/neon-js';
-import type { RPCClient } from '@cityofzion/neon-core/lib/rpc/RPCClient';
-import type { Account } from '@cityofzion/neon-core/lib/wallet/Account';
-import type { ContractParamJson } from '@cityofzion/neon-core/lib/sc/ContractParam';
-import type { ContractManifestJson } from '@cityofzion/neon-core/lib/sc/manifest/ContractManifest';
 import { config } from '../config';
-import { NeoNetwork } from '../services/neo-service';
+import { NEO_NETWORK_MAGIC, NeoNetwork, PreparedNeoTransaction } from '../services/neo-service';
 import {
   FAMOUS_CONTRACTS,
   ContractDefinition,
@@ -20,16 +13,20 @@ import { N3IndexClient, N3IndexResolvedContract } from './n3index-client';
 import { normalizeScriptHash, tryGetAddressFromScriptHash, tryGetScriptHashFromAddress } from '../metadata/known-accounts';
 import {
   validateScriptHash,
-  validateAmount,
   validateContractName,
   validateContractOperation,
-  validateAddress,
-  validateInteger
+  validateAddress
 } from '../utils/validation';
 import { ContractError, NetworkError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
+import { createRpcClient, isDefinitiveRpcRejection, isUnsupportedRpcMethodError } from '../utils/rpc-client';
+import { RpcDeadlineError, SubmissionOutcomeUnknownError, withRpcDeadline } from '../utils/rpc-deadline';
+import { formatContractParameters } from '../utils/contract-params';
+import type { NeonAccount, NeonContractManifestJson, NeonRpcClient } from '../types/neon';
+import { parseGasAmountToDatos, prepareTransactionForSigning } from '../utils/transaction-preparation';
+import { assertValidRpcUrl } from '../utils/rpc-url';
 
-type ContractReferenceSource = 'known_name' | 'known_hash' | 'script_hash' | 'address' | 'manifest_name' | 'n3index_metadata' | 'n3index_manifest';
+type ContractReferenceSource = 'known_name' | 'known_hash' | 'script_hash' | 'address' | 'manifest_name' | 'n3index_metadata' | 'n3index_contracts';
 
 interface ResolvedContractTarget {
   reference: string;
@@ -48,6 +45,24 @@ interface ContractOperationSummary {
   available: boolean;
 }
 
+interface ContractServiceOptions {
+  rpcTimeoutMs?: number;
+  allowInsecureRpc?: boolean;
+  maxTransactionFeeGas?: string;
+}
+
+export interface EncodedNef {
+  encoding: 'base64' | 'hex';
+  data: string;
+}
+
+export interface PreparedContractDeployment {
+  transaction: PreparedNeoTransaction;
+  contractHash: string;
+  address: string;
+  network: NeoNetwork;
+}
+
 function isMissingContractStateError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   const normalized = message.toLowerCase();
@@ -59,14 +74,17 @@ function isMissingContractStateError(error: unknown): boolean {
 }
 
 /**
- * Service for interacting with famous Neo N3 contracts
+ * Service for discovering and interacting with Neo N3 contracts.
  */
 export class ContractService {
-  private rpcClient: RPCClient;
+  private rpcClient: NeonRpcClient;
+  private fetchRpcVersion!: () => Promise<unknown>;
   private network: NeoNetwork;
 
-  private readonly rpcUrl: string;
+  private readonly rpcTimeoutMs: number;
   private networkMagic?: number;
+  private networkMagicRequest?: Promise<number>;
+  private readonly maxTransactionFeeDatos: bigint;
   private readonly discoveredContractsByName = new Map<string, string>();
   private readonly n3indexClient: N3IndexClient | null;
   private readonly remotelyResolvedContractsByName = new Map<string, N3IndexResolvedContract>();
@@ -77,17 +95,39 @@ export class ContractService {
    * @param network Network type (mainnet or testnet)
    * @throws NetworkError if RPC client initialization fails
    */
-  constructor(rpcUrl: string, network: NeoNetwork = NeoNetwork.MAINNET) {
+  constructor(
+    rpcUrl: string,
+    network: NeoNetwork = NeoNetwork.MAINNET,
+    options: ContractServiceOptions = {}
+  ) {
     if (!rpcUrl) {
       throw new NetworkError('RPC URL is required');
     }
 
+    if (!Object.values(NeoNetwork).includes(network)) {
+      throw new NetworkError(
+        `Invalid network: ${network}. Must be one of: ${Object.values(NeoNetwork).join(', ')}`
+      );
+    }
     this.network = network;
-    this.rpcUrl = rpcUrl;
+    this.rpcTimeoutMs = options.rpcTimeoutMs ?? config.rpcTimeoutMs;
+    if (!Number.isSafeInteger(this.rpcTimeoutMs) || this.rpcTimeoutMs <= 0) {
+      throw new NetworkError(`Invalid RPC timeout: ${this.rpcTimeoutMs}. Must be a positive integer.`);
+    }
     this.n3indexClient = config.n3index.enabled ? new N3IndexClient(config.n3index.baseUrl) : null;
+    this.maxTransactionFeeDatos = parseGasAmountToDatos(
+      options.maxTransactionFeeGas ?? config.maxTransactionFeeGas
+    );
 
     try {
-      this.rpcClient = new neonJs.rpc.RPCClient(rpcUrl);
+      assertValidRpcUrl(rpcUrl, {
+        allowInsecureRemote: options.allowInsecureRpc ?? config.allowInsecureRpc,
+      });
+      this.rpcClient = createRpcClient(rpcUrl, this.rpcTimeoutMs);
+      const executeRpc = this.rpcClient.execute.bind(this.rpcClient);
+      this.fetchRpcVersion = () => executeRpc(
+        new neonJs.rpc.Query({ method: 'getversion', params: [] })
+      );
 
       logger.info(`ContractService initialized for ${network}`, { rpcUrl });
     } catch (error) {
@@ -228,7 +268,7 @@ export class ContractService {
       reference,
       scriptHash: validateScriptHash(metadata.contractHash),
       address: tryGetAddressFromScriptHash(metadata.contractHash) ?? undefined,
-      source: metadata.source === 'contract_metadata_cache' ? 'n3index_metadata' : 'n3index_manifest',
+      source: metadata.source === 'contract_metadata_cache' ? 'n3index_metadata' : 'n3index_contracts',
       remoteMetadata: metadata,
       knownContract: this.getKnownContractByHash(metadata.contractHash),
     };
@@ -257,10 +297,7 @@ export class ContractService {
         throw error;
       }
 
-      this.rememberRemoteContract(remoteMetadata.displayName ?? reference, remoteMetadata);
-      if (remoteMetadata.symbol) {
-        this.rememberRemoteContract(remoteMetadata.symbol, remoteMetadata);
-      }
+      this.rememberRemoteContract(reference, remoteMetadata);
 
       return this.buildRemoteTarget(reference, remoteMetadata);
     }
@@ -401,6 +438,7 @@ export class ContractService {
    */
   async queryContract(contractReference: string, operation: string, args: unknown[] = []): Promise<Record<string, unknown>> {
     try {
+      const formattedArgs = formatContractParameters(args);
       const target = await this.resolveContractTargetAsync(contractReference);
       await this.assertContractDeployed(contractReference);
       const validOperation = target.knownContract
@@ -410,20 +448,21 @@ export class ContractService {
       // Log the query
       logger.info(`Querying contract ${contractReference}`, {
         operation: validOperation,
-        args: JSON.stringify(args),
+        args,
         network: this.network
       });
 
       let result: Record<string, unknown>;
-
       // Use invokefunction RPC method as per Neo N3 documentation
       try {
-        // Format the arguments according to Neo N3 RPC specification
-        const formattedArgs = this.formatContractArgs(args);
-
         // Execute the function through the RPC client
-        result = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'invokefunction', params: [target.scriptHash, validOperation, formattedArgs] })) as Record<string, unknown>;
+        result = await this.withRpcDeadline(
+          () => this.rpcClient.execute(new neonJs.rpc.Query({ method: 'invokefunction', params: [target.scriptHash, validOperation, formattedArgs] }))
+        ) as Record<string, unknown>;
       } catch (invokeError) {
+        if (!isUnsupportedRpcMethodError(invokeError)) {
+          throw invokeError;
+        }
         logger.warn('invokefunction failed; falling back to invokeScript for read invocation', { contractReference, operation: validOperation, error: invokeError instanceof Error ? invokeError.message : String(invokeError) });
 
         // Fallback to invokeScript if invokefunction fails
@@ -431,27 +470,28 @@ export class ContractService {
         const script = neonJs.sc.createScript({
           scriptHash: target.scriptHash,
           operation: validOperation,
-          args: args as ContractParamJson[]
+          args: formattedArgs
         });
 
         // Execute the script through the RPC client
-        result = await this.rpcClient.invokeScript(
-          neonJs.u.HexString.fromHex(script)
+        result = await this.withRpcDeadline(
+          () => this.rpcClient.invokeScript(neonJs.u.HexString.fromHex(script))
         ) as unknown as Record<string, unknown>;
       }
 
       // Check for execution errors
-      if (result && result.state === 'FAULT') {
+      if (!result || result.state !== 'HALT') {
         throw new ContractError(
-          `Contract execution failed: ${result.exception || 'Unknown error'}`,
+          `Contract execution failed with VM state ${String(result?.state || 'missing')}: `
+          + `${result?.exception || 'Unknown error'}`,
           { contractReference, operation: validOperation, args, scriptHash: target.scriptHash }
         );
       }
 
       return result;
     } catch (error) {
-      // If it's already a ContractError, rethrow it
-      if (error instanceof ContractError) {
+      // Preserve typed client errors for transport-level status mapping.
+      if (error instanceof ContractError || error instanceof ValidationError) {
         throw error;
       }
 
@@ -480,15 +520,32 @@ export class ContractService {
    * @throws ContractError if contract execution fails
    */
   async invokeContract(
-    fromAccount: Account,
+    fromAccount: NeonAccount,
     contractReference: string,
     operation: string,
     args: unknown[] = [],
     additionalScriptAttributes: unknown[] = []
   ): Promise<string> {
     try {
-      const target = await this.resolveContractTargetAsync(contractReference);
-      await this.assertContractDeployed(contractReference);
+      const normalizedHash = normalizeScriptHash(contractReference);
+      let addressHash: string | null = null;
+      if (!normalizedHash) {
+        try {
+          validateAddress(contractReference);
+          addressHash = tryGetScriptHashFromAddress(contractReference);
+        } catch {
+          addressHash = null;
+        }
+      }
+      const explicitScriptHash = normalizedHash ?? addressHash;
+      if (!explicitScriptHash) {
+        throw new ValidationError(
+          'Signed contract writes require an explicit script hash or Neo address; name-based resolution is read-only.'
+        );
+      }
+
+      const target = this.resolveContractTarget(explicitScriptHash);
+      await this.assertContractDeployed(explicitScriptHash);
       const validOperation = target.knownContract
         ? validateContractOperation(operation, Object.values(target.knownContract.operations).map((op) => op.name))
         : validateContractOperation(operation, []);
@@ -504,73 +561,30 @@ export class ContractService {
       // Log the invocation
       logger.info(`Invoking contract ${contractReference}`, {
         operation: validOperation,
-        args: JSON.stringify(args),
+        args,
         network: this.network,
         address: fromAccount.address
       });
 
-      // Create a script to execute the operation
+      if (additionalScriptAttributes.length > 0) {
+        throw new ValidationError('Additional transaction attributes are not supported for contract invocations');
+      }
+
       const script = neonJs.sc.createScript({
         scriptHash: target.scriptHash,
         operation: validOperation,
-        args: args as ContractParamJson[]
+        args: formatContractParameters(args),
       });
-
-      // Create signer object
-      const signer = {
-        account: neonJs.u.HexString.fromHex(
-          neonJs.wallet.getScriptHashFromAddress(fromAccount.address)
-        ),
-        scopes: 'CalledByEntry',
-        allowedcontracts: [],
-        allowedgroups: []
-      };
-
-      // Format the arguments according to Neo N3 RPC specification
-      const formattedArgs = this.formatContractArgs(args);
-
-      let tx: Record<string, unknown>;
-
-      // Use invokefunction RPC method as per Neo N3 documentation
-      try {
-        // Execute the function through the RPC client
-        tx = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'invokefunction', params: [target.scriptHash, validOperation, formattedArgs, [signer]] })) as Record<string, unknown>;
-
-        // If invokefunction succeeds, use the result
-        if (!tx || !tx.script) {
-          throw new Error('Invalid response from invokefunction');
-        }
-      } catch (invokeError) {
-        logger.warn('invokefunction failed; falling back to invokeScript for write invocation', { contractReference, operation: validOperation, address: fromAccount.address, error: invokeError instanceof Error ? invokeError.message : String(invokeError) });
-
-        // Fallback to invokeScript if invokefunction fails
-        // Get transaction information from RPC
-        tx = await this.rpcClient.invokeScript(
-          neonJs.u.HexString.fromHex(script)
-        ) as unknown as Record<string, unknown>;
-      }
-
-      // Check for execution errors
-      if (tx.state === 'FAULT') {
-        throw new ContractError(
-          `Contract execution failed: ${tx.exception || 'Unknown error'}`,
-          { contractReference, operation: validOperation, args, scriptHash: target.scriptHash }
-        );
-      }
-
-      // Sign the transaction
-      const transaction = new neonJs.tx.Transaction(tx as unknown as Partial<typeof neonJs.tx.Transaction.prototype>);
-      transaction.sign(fromAccount);
-
-      // Send the transaction
-      const txid = await this.rpcClient.sendRawTransaction(
-        transaction.serialize(true)
+      return await this.signAndSubmitTransaction(
+        fromAccount,
+        neonJs.u.HexString.fromHex(script)
       );
-
-      return txid;
     } catch (error) {
-      // If it's already a ContractError, rethrow it
-      if (error instanceof ContractError) {
+      if (error instanceof SubmissionOutcomeUnknownError) {
+        throw error;
+      }
+      // Preserve typed client errors for transport-level status mapping.
+      if (error instanceof ContractError || error instanceof ValidationError) {
         throw error;
       }
 
@@ -590,11 +604,15 @@ export class ContractService {
 
   private async getContractState(scriptHash: string): Promise<Record<string, unknown>> {
     if (typeof this.rpcClient.getContractState === 'function') {
-      return await this.rpcClient.getContractState(scriptHash) as unknown as Record<string, unknown>;
+      return await this.withRpcDeadline(
+        () => this.rpcClient.getContractState(scriptHash)
+      ) as unknown as Record<string, unknown>;
     }
 
-    return await this.rpcClient.execute(
-      new neonJs.rpc.Query({ method: 'getcontractstate', params: [scriptHash] })
+    return await this.withRpcDeadline(
+      () => this.rpcClient.execute(
+        new neonJs.rpc.Query({ method: 'getcontractstate', params: [scriptHash] })
+      )
     ) as Record<string, unknown>;
   }
 
@@ -605,10 +623,6 @@ export class ContractService {
         const remoteMetadata = await this.n3indexClient.getContractByHash(this.network, target.scriptHash);
         if (remoteMetadata) {
           target.remoteMetadata = remoteMetadata;
-          this.rememberRemoteContract(remoteMetadata.displayName ?? contractReference, remoteMetadata);
-          if (remoteMetadata.symbol) {
-            this.rememberRemoteContract(remoteMetadata.symbol, remoteMetadata);
-          }
         }
       } catch (error) {
         logger.debug('N3Index hash enrichment failed', {
@@ -737,29 +751,38 @@ export class ContractService {
     operationCount: number,
     network: NeoNetwork
   }>> {
-    try {
-      const contracts = await Promise.all(Object.values(FAMOUS_CONTRACTS).map(async (contract) => {
-        const contractName = contract.name;
-        const isAvailable = await this.isContractDeployed(contractName);
-        const operationCount = Object.keys(contract.operations).length;
+    const networkKey = this.network === NeoNetwork.MAINNET
+      ? ContractNetwork.MAINNET
+      : ContractNetwork.TESTNET;
 
-        return {
-          name: contractName,
-          description: contract.description,
-          available: isAvailable,
-          operationCount,
-          network: this.network
-        };
-      }));
+    return await Promise.all(Object.values(FAMOUS_CONTRACTS).map(async (contract) => {
+      const scriptHash = contract.scriptHash[networkKey];
+      let available = false;
 
-      return contracts;
-    } catch (error) {
-      logger.error(`Error listing supported contracts`, {
-        error: error instanceof Error ? error.message : String(error),
+      if (scriptHash) {
+        try {
+          await this.getContractState(scriptHash);
+          available = true;
+        } catch (error) {
+          if (!isMissingContractStateError(error)) {
+            logger.error('Failed to check supported contract availability', {
+              contract: contract.name,
+              error: error instanceof Error ? error.message : String(error),
+              network: this.network,
+            });
+            throw error;
+          }
+        }
+      }
+
+      return {
+        name: contract.name,
+        description: contract.description,
+        available,
+        operationCount: Object.keys(contract.operations).length,
         network: this.network
-      });
-      return [];
-    }
+      };
+    }));
   }
 
   /**
@@ -775,7 +798,7 @@ export class ContractService {
 
       return operations;
     } catch (error) {
-      if (error instanceof ContractError) {
+      if (error instanceof ContractError || error instanceof ValidationError) {
         throw error;
       }
 
@@ -805,78 +828,39 @@ export class ContractService {
     }
   }
 
-  // NeoFS specific methods
-  async createNeoFSContainer(fromAccount: Account, ownerId: string, rules: unknown[]): Promise<string> {
-    return this.invokeContract(
-      fromAccount,
-      'neofs',
-      FAMOUS_CONTRACTS.neofs.operations.createContainer.name,
-      [
-        neonJs.sc.ContractParam.string(ownerId),
-        neonJs.sc.ContractParam.array({ type: 'Array', value: rules as ContractParamJson[] })
-      ]
-    );
-  }
-
-  async getNeoFSContainers(ownerId: string): Promise<Record<string, unknown>> {
-    return this.queryContract(
-      'neofs',
-      FAMOUS_CONTRACTS.neofs.operations.getContainers.name,
-      [neonJs.sc.ContractParam.string(ownerId)]
-    );
-  }
-
   /**
    * Deploy a smart contract
-   * @param wif WIF private key of the account that will deploy the contract
-   * @param script Base64-encoded contract script
+   * @param account Configured signing account that will deploy the contract
+   * @param encodedNef Complete serialized NEF artifact with an explicit encoding
    * @param manifest Contract manifest
    * @returns Transaction hash and contract hash
    * @throws ContractError if deployment fails
    */
-  async deployContract(wif: string, script: string, manifest: Record<string, unknown>): Promise<Record<string, unknown>> {
+  async deployContract(
+    account: NeonAccount,
+    encodedNef: EncodedNef,
+    manifest: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
     try {
-      const account = new neonJs.wallet.Account(wif);
-
-      if (!script || typeof script !== 'string') {
-        throw new ValidationError('Invalid script: must be a non-empty string');
-      }
-
-      if (!manifest || typeof manifest !== 'object') {
-        throw new ValidationError('Invalid manifest: must be a non-empty object');
-      }
-
-      const scriptHex = /^[A-Za-z0-9+/=]+$/.test(script)
-        ? Buffer.from(script, 'base64').toString('hex')
-        : script.replace(/^0x/i, '');
-
-      const nef = new neonJs.sc.NEF({ script: scriptHex });
-      const contractManifest = neonJs.sc.ContractManifest.fromJson(manifest as unknown as ContractManifestJson);
-      const txid = await neonJs.experimental.deployContract(nef, contractManifest, {
-        account,
-        rpcAddress: this.rpcUrl,
-        networkMagic: await this.getNetworkMagic(),
-      });
-      const contractHash = neonJs.experimental.getContractHash(
-        neonJs.u.HexString.fromHex(neonJs.wallet.getScriptHashFromAddress(account.address), true),
-        nef.checksum,
-        contractManifest.name
-      );
+      const prepared = await this.prepareContractDeployment(account, encodedNef, manifest);
+      const txid = await this.submitPreparedTransaction(prepared.transaction);
 
       logger.info('Deploying contract', {
         network: this.network,
         address: account.address,
-        manifestName: contractManifest.name,
-        contractHash,
+        contractHash: prepared.contractHash,
       });
 
       return {
         txid,
-        contractHash: `0x${contractHash}`,
-        address: account.address,
-        network: this.network,
+        contractHash: prepared.contractHash,
+        address: prepared.address,
+        network: prepared.network,
       };
     } catch (error) {
+      if (error instanceof SubmissionOutcomeUnknownError) {
+        throw error;
+      }
       if (error instanceof ContractError) {
         throw error;
       }
@@ -894,258 +878,55 @@ export class ContractService {
     }
   }
 
-  // NeoBurger specific methods
-  async depositNeoToNeoBurger(fromAccount: Account): Promise<string> {
-    return this.invokeContract(
-      fromAccount,
-      'neoburger',
-      FAMOUS_CONTRACTS.neoburger.operations.depositNeo.name,
-      [neonJs.sc.ContractParam.hash160(fromAccount.address)]
-    );
-  }
-
-  async withdrawNeoFromNeoBurger(fromAccount: Account, amount: string | number): Promise<string> {
-    // Validate amount
-    const validAmount = validateAmount(amount);
-
-    return this.invokeContract(
-      fromAccount,
-      'neoburger',
-      FAMOUS_CONTRACTS.neoburger.operations.withdrawNeo.name,
-      [
-        neonJs.sc.ContractParam.hash160(fromAccount.address),
-        neonJs.sc.ContractParam.integer(validAmount)
-      ]
-    );
-  }
-
-  async getNeoBurgerBalance(address: string): Promise<Record<string, unknown>> {
-    return this.queryContract(
-      'neoburger',
-      FAMOUS_CONTRACTS.neoburger.operations.balanceOf.name,
-      [neonJs.sc.ContractParam.hash160(address)]
-    );
-  }
-
-  async claimNeoBurgerGas(fromAccount: Account): Promise<string> {
-    return this.invokeContract(
-      fromAccount,
-      'neoburger',
-      FAMOUS_CONTRACTS.neoburger.operations.claimGas.name,
-      [neonJs.sc.ContractParam.hash160(fromAccount.address)]
-    );
-  }
-
-  // Flamingo specific methods
-  async stakeFlamingo(fromAccount: Account, amount: string | number): Promise<string> {
-    // Validate amount
-    const validAmount = validateAmount(amount);
-
-    return this.invokeContract(
-      fromAccount,
-      'flamingo',
-      FAMOUS_CONTRACTS.flamingo.operations.stake.name,
-      [
-        neonJs.sc.ContractParam.hash160(fromAccount.address),
-        neonJs.sc.ContractParam.integer(validAmount)
-      ]
-    );
-  }
-
-  async unstakeFlamingo(fromAccount: Account, amount: string | number): Promise<string> {
-    // Validate amount
-    const validAmount = validateAmount(amount);
-
-    return this.invokeContract(
-      fromAccount,
-      'flamingo',
-      FAMOUS_CONTRACTS.flamingo.operations.unstake.name,
-      [
-        neonJs.sc.ContractParam.hash160(fromAccount.address),
-        neonJs.sc.ContractParam.integer(validAmount)
-      ]
-    );
-  }
-
-  async getFlamingoBalance(address: string): Promise<Record<string, unknown>> {
-    return this.queryContract(
-      'flamingo',
-      FAMOUS_CONTRACTS.flamingo.operations.balanceOf.name,
-      [neonJs.sc.ContractParam.hash160(address)]
-    );
-  }
-
-  // NeoCompound specific methods
-  async depositToNeoCompound(fromAccount: Account, assetId: string, amount: string | number): Promise<string> {
-    // Validate parameters
-    const validAmount = validateAmount(amount);
-    const validAssetId = validateScriptHash(assetId);
-
-    return this.invokeContract(
-      fromAccount,
-      'neocompound',
-      FAMOUS_CONTRACTS.neocompound.operations.deposit.name,
-      [
-        neonJs.sc.ContractParam.hash160(fromAccount.address),
-        neonJs.sc.ContractParam.hash160(validAssetId),
-        neonJs.sc.ContractParam.integer(validAmount)
-      ]
-    );
-  }
-
-  async withdrawFromNeoCompound(fromAccount: Account, assetId: string, amount: string | number): Promise<string> {
-    // Validate parameters
-    const validAmount = validateAmount(amount);
-    const validAssetId = validateScriptHash(assetId);
-
-    return this.invokeContract(
-      fromAccount,
-      'neocompound',
-      FAMOUS_CONTRACTS.neocompound.operations.withdraw.name,
-      [
-        neonJs.sc.ContractParam.hash160(fromAccount.address),
-        neonJs.sc.ContractParam.hash160(validAssetId),
-        neonJs.sc.ContractParam.integer(validAmount)
-      ]
-    );
-  }
-
-  async getNeoCompoundBalance(address: string, assetId: string): Promise<Record<string, unknown>> {
-    // Validate parameters
-    const validAssetId = validateScriptHash(assetId);
-
-    return this.queryContract(
-      'neocompound',
-      FAMOUS_CONTRACTS.neocompound.operations.getBalance.name,
-      [
-        neonJs.sc.ContractParam.hash160(address),
-        neonJs.sc.ContractParam.hash160(validAssetId)
-      ]
-    );
-  }
-
-  // GrandShare specific methods
-  async depositToGrandShare(fromAccount: Account, poolId: number | string, amount: string | number): Promise<string> {
-    // Validate parameters
-    const validAmount = validateAmount(amount);
-    const validPoolId = validateInteger(poolId);
-
-    // Validate address
-    validateAddress(fromAccount.address);
-
-    return this.invokeContract(
-      fromAccount,
-      'grandshare',
-      FAMOUS_CONTRACTS.grandshare.operations.deposit.name,
-      [
-        neonJs.sc.ContractParam.hash160(fromAccount.address),
-        neonJs.sc.ContractParam.integer(validPoolId),
-        neonJs.sc.ContractParam.integer(validAmount)
-      ]
-    );
-  }
-
-  async withdrawFromGrandShare(fromAccount: Account, poolId: number | string, amount: string | number): Promise<string> {
-    // Validate parameters
-    const validAmount = validateAmount(amount);
-    const validPoolId = validateInteger(poolId);
-
-    // Validate address
-    validateAddress(fromAccount.address);
-
-    return this.invokeContract(
-      fromAccount,
-      'grandshare',
-      FAMOUS_CONTRACTS.grandshare.operations.withdraw.name,
-      [
-        neonJs.sc.ContractParam.hash160(fromAccount.address),
-        neonJs.sc.ContractParam.integer(validPoolId),
-        neonJs.sc.ContractParam.integer(validAmount)
-      ]
-    );
-  }
-
-  async getGrandSharePoolDetails(poolId: number | string): Promise<Record<string, unknown>> {
-    // Validate parameters
-    const validPoolId = validateInteger(poolId);
-
-    return this.queryContract(
-      'grandshare',
-      FAMOUS_CONTRACTS.grandshare.operations.getPoolDetails.name,
-      [neonJs.sc.ContractParam.integer(validPoolId)]
-    );
-  }
-
-  // GhostMarket specific methods
-  async createGhostMarketNFT(fromAccount: Account, tokenURI: string, properties: unknown[]): Promise<string> {
-    // Validate address
-    validateAddress(fromAccount.address);
-
-    // Validate tokenURI (basic validation)
-    if (!tokenURI || typeof tokenURI !== 'string') {
-      throw new ValidationError('Token URI must be a non-empty string');
+  async prepareContractDeployment(
+    account: NeonAccount,
+    encodedNef: EncodedNef,
+    manifest: Record<string, unknown>
+  ): Promise<PreparedContractDeployment> {
+    const nef = this.parseEncodedNef(encodedNef);
+    if (!account?.address) {
+      throw new ValidationError('A configured signing account is required for deployment');
+    }
+    if (!manifest || typeof manifest !== 'object') {
+      throw new ValidationError('Invalid manifest: must be a non-empty object');
     }
 
-    return this.invokeContract(
-      fromAccount,
-      'ghostmarket',
-      FAMOUS_CONTRACTS.ghostmarket.operations.createNFT.name,
-      [
-        neonJs.sc.ContractParam.hash160(fromAccount.address),
-        neonJs.sc.ContractParam.string(tokenURI),
-        neonJs.sc.ContractParam.array({ type: 'Array', value: properties as ContractParamJson[] })
-      ]
+    const contractManifest = neonJs.sc.ContractManifest.fromJson(manifest as unknown as NeonContractManifestJson);
+    const builder = new neonJs.sc.ScriptBuilder();
+    builder.emitContractCall({
+      scriptHash: neonJs.CONST.NATIVE_CONTRACT_HASH.ManagementContract,
+      operation: 'deploy',
+      callFlags: neonJs.sc.CallFlags.All,
+      args: [
+        neonJs.sc.ContractParam.byteArray(neonJs.u.HexString.fromHex(nef.serialize(), true)),
+        neonJs.sc.ContractParam.string(JSON.stringify(contractManifest.toJson())),
+      ],
+    });
+    const contractHash = neonJs.experimental.getContractHash(
+      neonJs.u.HexString.fromHex(neonJs.wallet.getScriptHashFromAddress(account.address)),
+      nef.checksum,
+      contractManifest.name
     );
+    return {
+      transaction: await this.prepareSignedTransaction(
+        account,
+        neonJs.u.HexString.fromHex(builder.build())
+      ),
+      contractHash: `0x${contractHash}`,
+      address: account.address,
+      network: this.network,
+    };
   }
 
-  async listGhostMarketNFT(fromAccount: Account, tokenId: number | string, price: string | number, paymentToken: string): Promise<string> {
-    // Validate parameters
-    const validTokenId = validateInteger(tokenId);
-    const validPrice = validateAmount(price);
-    const validPaymentToken = validateScriptHash(paymentToken);
-
-    // Validate address
-    validateAddress(fromAccount.address);
-
-    return this.invokeContract(
-      fromAccount,
-      'ghostmarket',
-      FAMOUS_CONTRACTS.ghostmarket.operations.listNFT.name,
-      [
-        neonJs.sc.ContractParam.integer(validTokenId),
-        neonJs.sc.ContractParam.integer(validPrice),
-        neonJs.sc.ContractParam.hash160(validPaymentToken)
-      ]
-    );
-  }
-
-  async buyGhostMarketNFT(fromAccount: Account, tokenId: number | string): Promise<string> {
-    // Validate parameters
-    const validTokenId = validateInteger(tokenId);
-
-    // Validate address
-    validateAddress(fromAccount.address);
-
-    return this.invokeContract(
-      fromAccount,
-      'ghostmarket',
-      FAMOUS_CONTRACTS.ghostmarket.operations.buyNFT.name,
-      [
-        neonJs.sc.ContractParam.integer(validTokenId),
-        neonJs.sc.ContractParam.hash160(fromAccount.address)
-      ]
-    );
-  }
-
-  async getGhostMarketTokenInfo(tokenId: number | string): Promise<Record<string, unknown>> {
-    // Validate parameters
-    const validTokenId = validateInteger(tokenId);
-
-    return this.queryContract(
-      'ghostmarket',
-      FAMOUS_CONTRACTS.ghostmarket.operations.getTokenInfo.name,
-      [neonJs.sc.ContractParam.integer(validTokenId)]
-    );
+  validateDeploymentArtifacts(
+    encodedNef: EncodedNef,
+    manifest: Record<string, unknown>,
+  ): void {
+    this.parseEncodedNef(encodedNef);
+    if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
+      throw new ValidationError('Invalid manifest: must be a non-empty object');
+    }
+    neonJs.sc.ContractManifest.fromJson(manifest as unknown as NeonContractManifestJson);
   }
 
   /**
@@ -1157,81 +938,151 @@ export class ContractService {
     if (this.networkMagic !== undefined) {
       return this.networkMagic;
     }
-
-    const versionRaw = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getversion', params: [] }));
-    const version = versionRaw as Record<string, unknown>;
-    const versionProtocol = version?.protocol as Record<string, unknown> | undefined;
-    const networkMagicRaw = versionProtocol?.network;
-    if (!Number.isInteger(networkMagicRaw)) {
-      throw new Error('Failed to determine network magic from RPC getversion');
+    if (this.networkMagicRequest) {
+      return await this.networkMagicRequest;
     }
-    const networkMagic = networkMagicRaw as number;
 
-    this.networkMagic = networkMagic;
-    return networkMagic;
+    this.networkMagicRequest = withRpcDeadline(
+      this.fetchRpcVersion,
+      this.rpcTimeoutMs,
+    ).then((versionRaw) => {
+      const version = versionRaw as Record<string, unknown>;
+      const versionProtocol = version?.protocol as Record<string, unknown> | undefined;
+      const networkMagicRaw = versionProtocol?.network;
+      if (!Number.isInteger(networkMagicRaw)) {
+        throw new Error('Failed to determine network magic from RPC getversion');
+      }
+      const networkMagic = networkMagicRaw as number;
+      const expectedNetworkMagic = NEO_NETWORK_MAGIC[this.network];
+      if (networkMagic !== expectedNetworkMagic) {
+        throw new NetworkError(
+          `RPC network mismatch for ${this.network}: expected magic ${expectedNetworkMagic}, ` +
+          `but endpoint reported ${networkMagic}`
+        );
+      }
+
+      this.networkMagic = networkMagic;
+      return networkMagic;
+    }).finally(() => {
+      this.networkMagicRequest = undefined;
+    });
+    return await this.networkMagicRequest;
+  }
+
+  private async prepareSignedTransaction(
+    account: NeonAccount,
+    script: ReturnType<typeof neonJs.u.HexString.fromHex>
+  ): Promise<PreparedNeoTransaction> {
+    const networkMagic = await this.getNetworkMagic();
+    const transaction = new neonJs.tx.Transaction();
+    transaction.script = script;
+    transaction.addSigner({
+      account: account.scriptHash || neonJs.wallet.getScriptHashFromAddress(account.address),
+      scopes: neonJs.tx.WitnessScope.CalledByEntry,
+    });
+    await prepareTransactionForSigning(transaction, account, this.rpcClient, {
+      maxTransactionFeeDatos: this.maxTransactionFeeDatos,
+    });
+    transaction.sign(account, networkMagic);
+
+    const transactionHash = transaction.hash();
+    const txid = transactionHash.startsWith('0x')
+      ? transactionHash
+      : `0x${transactionHash}`;
+    return {
+      rawTransaction: transaction.serialize(true),
+      txid,
+      validUntilBlock: transaction.validUntilBlock,
+    };
+  }
+
+  async submitPreparedTransaction(prepared: PreparedNeoTransaction): Promise<string> {
+    if (!/^[0-9a-fA-F]+$/.test(prepared.rawTransaction) || prepared.rawTransaction.length % 2 !== 0) {
+      throw new ValidationError('Prepared transaction must contain even-length hexadecimal bytes');
+    }
+    try {
+      const submittedTxid = await this.withRpcDeadline(
+        () => this.rpcClient.sendRawTransaction(neonJs.u.HexString.fromHex(prepared.rawTransaction))
+      );
+      const normalizedSubmittedTxid = typeof submittedTxid === 'string'
+        ? (submittedTxid.startsWith('0x') ? submittedTxid : `0x${submittedTxid}`).toLowerCase()
+        : '';
+      if (normalizedSubmittedTxid !== prepared.txid.toLowerCase()) {
+        throw new SubmissionOutcomeUnknownError(prepared.txid, 'inconsistent_response');
+      }
+      return prepared.txid;
+    } catch (error) {
+      if (error instanceof SubmissionOutcomeUnknownError) {
+        throw error;
+      }
+      if (error instanceof RpcDeadlineError) {
+        throw new SubmissionOutcomeUnknownError(prepared.txid, this.rpcTimeoutMs);
+      }
+      if (isDefinitiveRpcRejection(error)) {
+        throw error;
+      }
+      throw new SubmissionOutcomeUnknownError(prepared.txid, 'transport_error');
+    }
+  }
+
+  private async signAndSubmitTransaction(
+    account: NeonAccount,
+    script: ReturnType<typeof neonJs.u.HexString.fromHex>
+  ): Promise<string> {
+    return await this.submitPreparedTransaction(await this.prepareSignedTransaction(account, script));
   }
 
   getNetwork(): NeoNetwork {
     return this.network;
   }
 
-  /**
-   * Format contract arguments according to Neo N3 RPC specification
-   * @param args Arguments to format
-   * @returns Formatted arguments
-   */
-  private formatContractArgs(args: unknown[]): Record<string, unknown>[] {
-    if (!args || !Array.isArray(args)) {
-      return [];
+  private async withRpcDeadline<T>(operation: () => Promise<T>): Promise<T> {
+    await this.getNetworkMagic();
+    return await withRpcDeadline(operation, this.rpcTimeoutMs);
+  }
+
+  private parseEncodedNef(encodedNef: EncodedNef): InstanceType<typeof neonJs.sc.NEF> {
+    if (!encodedNef || typeof encodedNef !== 'object' || Array.isArray(encodedNef)) {
+      throw new ValidationError('Invalid NEF: expected an encoded NEF object');
+    }
+    if (encodedNef.encoding !== 'hex' && encodedNef.encoding !== 'base64') {
+      throw new ValidationError('Invalid NEF encoding: expected "hex" or "base64"');
+    }
+    if (typeof encodedNef.data !== 'string' || encodedNef.data.length === 0) {
+      throw new ValidationError('Invalid NEF data: expected a non-empty string');
+    }
+    if (encodedNef.data.length > 2_000_000) {
+      throw new ValidationError('Invalid NEF data: encoded artifact is too large');
     }
 
-    return args.map(arg => {
-      // Handle null or undefined
-      if (arg === null || arg === undefined) {
-        return { type: 'Any', value: null };
+    let bytes: Buffer;
+    if (encodedNef.encoding === 'hex') {
+      if (encodedNef.data.length % 2 !== 0 || !/^[0-9a-fA-F]+$/.test(encodedNef.data)) {
+        throw new ValidationError('Invalid NEF data: expected an even-length hexadecimal string');
       }
-
-      // Handle numbers
-      if (typeof arg === 'number') {
-        if (Number.isInteger(arg)) {
-          return { type: 'Integer', value: arg.toString() };
-        } else {
-          return { type: 'Float', value: arg.toString() };
-        }
+      bytes = Buffer.from(encodedNef.data, 'hex');
+    } else {
+      const base64Pattern = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+      if (!base64Pattern.test(encodedNef.data)) {
+        throw new ValidationError('Invalid NEF data: expected canonical base64');
       }
-
-      // Handle booleans
-      if (typeof arg === 'boolean') {
-        return { type: 'Boolean', value: arg };
+      bytes = Buffer.from(encodedNef.data, 'base64');
+      if (bytes.length === 0 || bytes.toString('base64') !== encodedNef.data) {
+        throw new ValidationError('Invalid NEF data: expected canonical base64');
       }
+    }
 
-      // Handle strings
-      if (typeof arg === 'string') {
-        // Check if it's a hex string (script hash)
-        if (arg.startsWith('0x') && /^0x[0-9a-fA-F]{40}$/.test(arg)) {
-          return { type: 'Hash160', value: arg };
-        }
-
-        // Regular string
-        return { type: 'String', value: arg };
+    try {
+      const nef = neonJs.sc.NEF.fromBuffer(bytes);
+      if (nef.serialize().toLowerCase() !== bytes.toString('hex').toLowerCase()) {
+        throw new Error('serialized NEF contains trailing or noncanonical bytes');
       }
-
-      // Handle arrays
-      if (Array.isArray(arg)) {
-        return { type: 'Array', value: this.formatContractArgs(arg) };
-      }
-
-      // Handle objects (as Map)
-      if (typeof arg === 'object') {
-        return { type: 'Map', value: Object.entries(arg).map(([k, v]) => ({
-          key: this.formatContractArgs([k])[0],
-          value: this.formatContractArgs([v])[0]
-        }))};
-      }
-
-      // Default to ByteArray for unknown types
-      return { type: 'ByteArray', value: Buffer.from(String(arg)).toString('hex') };
-    });
+      return nef;
+    } catch (error) {
+      throw new ValidationError(
+        `Invalid serialized NEF: ${error instanceof Error ? error.message : 'unable to decode artifact'}`
+      );
+    }
   }
 
   /**
@@ -1251,8 +1102,11 @@ export class ContractService {
       // Use the queryContract method to execute the read-only operation
       return await this.queryContract(contractName, operation, args);
     } catch (error) {
-      // If it's already a ContractError, rethrow it
-      if (error instanceof ContractError) {
+      if (error instanceof SubmissionOutcomeUnknownError) {
+        throw error;
+      }
+      // Preserve typed client errors for transport-level status mapping.
+      if (error instanceof ContractError || error instanceof ValidationError) {
         throw error;
       }
 
@@ -1276,7 +1130,7 @@ export class ContractService {
    * @throws ContractError if contract execution fails
    */
   async invokeWriteContract(
-    fromAccount: Account,
+    fromAccount: NeonAccount,
     contractName: string,
     operation: string,
     args: unknown[] = [],
@@ -1292,6 +1146,9 @@ export class ContractService {
 
       return { txid };
     } catch (error) {
+      if (error instanceof SubmissionOutcomeUnknownError) {
+        throw error;
+      }
       // If it's already a ContractError, rethrow it
       if (error instanceof ContractError) {
         throw error;

@@ -1,137 +1,138 @@
 # GitHub Actions Workflow
 
-This document describes the CI/CD pipeline for the Neo N3 MCP project.
+The repository workflow is defined in `.github/workflows/ci.yml`. It validates source, package, dependency, Compose, and container surfaces, then publishes artifacts for a GitHub release.
 
-## Overview
+## Triggers
 
-The workflow is designed to ensure code quality, security, and reliable deployments. It runs on the latest Ubuntu and includes comprehensive testing, building, and deployment stages.
+| Event | Scope |
+| --- | --- |
+| Push | `master`, `main`, and `develop` |
+| Pull request | `master` and `main` |
+| Release | Published GitHub releases |
 
-## Workflow Triggers
-
-- **Push**: Triggers on pushes to `master`, `main`, or `develop` branches
-- **Pull Request**: Triggers on PRs to `master` or `main` branches  
-- **Release**: Triggers on published releases for deployment
+The workflow does not trigger artifact publishing from a tag push alone.
 
 ## Jobs
 
-### 1. Test & Lint
-- **Runs on**: `ubuntu-latest`
-- **Node versions**: 18.x, 20.x, 22.x (matrix strategy)
-- **Steps**:
-  - Install dependencies
-  - Run linting (`npm run lint`)
-  - Run type checking (`npm run type-check`)
-  - Run tests (`npm test`)
-  - Generate coverage report (`npm run test:coverage`)
-  - Upload coverage to Codecov
+### Test
 
-### 2. Build & Validate
-- **Runs on**: `ubuntu-latest`
-- **Dependencies**: Requires `test` job to pass
-- **Steps**:
-  - Build project (`npm run build`)
-  - Validate build artifacts exist
-  - Ensure main entry point is created
+The test matrix runs on Node.js 22 and 24:
 
-### 3. Docker Build & Test
-- **Runs on**: `ubuntu-latest`
-- **Dependencies**: Requires `test` and `build` jobs to pass
-- **Steps**:
-  - Build development Docker image
-  - Build production Docker image
-  - Test both images functionality
-  - Validate Docker Compose configurations
+```bash
+npm ci
+npm run type-check
+npm run test:unit -- --runInBand
+```
 
-### 4. Security Audit
-- **Runs on**: `ubuntu-latest`
-- **Steps**:
-  - Run npm security audit
-  - Check dependencies with audit-ci
-  - Report outdated packages
+Node.js 22 also runs:
 
-### 5. Publish Package (Release only)
-- **Runs on**: `ubuntu-latest`
-- **Trigger**: Only on release events
-- **Dependencies**: All previous jobs must pass
-- **Steps**:
-  - Build project
-  - Publish to NPM registry
-  - **Requires**: `NPM_TOKEN` secret
+```bash
+npm run test:coverage -- --runInBand
+```
 
-### 6. Publish Docker Images (Release only)
-- **Runs on**: `ubuntu-latest`
-- **Trigger**: Only on release events
-- **Dependencies**: All previous jobs must pass
-- **Steps**:
-  - Build and push Docker images
-  - Tag with version and latest
-  - **Requires**: `DOCKER_USERNAME` and `DOCKER_PASSWORD` secrets
+Coverage is retained in the job output only. The workflow does not upload to Codecov and the Jest configuration does not define a minimum coverage threshold.
 
-### 7. Deploy to Production (Release only)
-- **Runs on**: `ubuntu-latest`
-- **Trigger**: Only on release events
-- **Environment**: `production`
-- **Dependencies**: Requires publish jobs to complete
-- **Steps**:
-  - Deployment notification
-  - Custom deployment steps (to be configured)
+### Build and Package
 
-## Required Secrets
+After the test matrix passes, the build job uses Node.js 22:
 
-To fully utilize the workflow, configure these secrets in your GitHub repository:
+```bash
+npm ci
+npm run build
+npm run test:mcp
+npm pack --dry-run
+```
 
-### NPM Publishing
-- `NPM_TOKEN`: Token for publishing to NPM registry
+It also checks that `dist/index.js`, `dist/http.js`, and `dist/index.d.ts` exist. `test:mcp` covers deterministic built-server smoke, stdio lifecycle, and modern tool-registration behavior.
 
-### Docker Publishing  
-- `DOCKER_USERNAME`: Docker Hub username
-- `DOCKER_PASSWORD`: Docker Hub password or access token
+The build job then creates one npm tarball, validates its metadata and integrity, and uploads it as the `npm-package-artifact` workflow artifact. Publication reuses this exact tarball rather than rebuilding the package.
 
-## Environment Protection
+### Dependency Audit
 
-The `production` environment is protected and requires manual approval for deployments. This ensures that releases are intentionally deployed to production.
+The independent security job runs both audits on Node.js 22:
 
-## Coverage Reporting
+```bash
+npm audit --audit-level=high
+npm audit --omit=dev --audit-level=high
+```
 
-Test coverage is automatically uploaded to Codecov when tests run on Node.js 20.x. This provides visibility into code coverage trends and helps maintain quality standards.
+The dependency graph currently uses a scoped `lodash@4.18.1` override under `@cityofzion/neon-core`.
 
-## Matrix Testing
+### Container Validation
 
-The workflow tests against multiple Node.js versions (18.x, 20.x, 22.x) to ensure compatibility across different runtime environments.
+After test, build, and audit jobs pass, the container job:
 
-## Docker Multi-Architecture
+1. Validates `docker/docker-compose.yml` with a CI-only API key.
+2. Validates `docker/docker-compose.dev.yml`.
+3. Builds `docker/Dockerfile.dev`.
+4. Builds `docker/Dockerfile`.
+5. Starts the production image with `NEO_NETWORK=testnet` and an API key.
+6. Waits for the image health check to report healthy.
 
-The Docker build process uses Docker Buildx for advanced build features and caching. Images are optimized for production use with multi-stage builds.
+The workflow uses Docker Buildx setup, but it does not declare a multi-platform build matrix.
 
-## Workflow Status
+### Release Gate
 
-You can monitor workflow status through:
-- GitHub Actions tab in the repository
-- Status badges (can be added to README.md)
-- Email notifications (configurable in GitHub settings)
+For a published GitHub release, `release-gate` waits for all validation jobs. It requires the release tag, after an optional leading `v`, to equal `package.json`, requires GitHub's prerelease flag to match the SemVer version, and rejects versions that cannot be represented exactly as Docker tags. It derives a collision-resistant per-version npm candidate tag, the final npm channel, and stable Docker aliases.
 
-## Customization
+### Candidate Publication
 
-To customize the workflow for your specific needs:
+The npm job downloads the validated tarball and publishes it under a per-version candidate tag. On retry, it accepts an existing version only when the registry integrity equals the tarball; otherwise it fails without overwriting anything.
 
-1. **Add deployment steps**: Modify the `deploy` job to include your deployment logic
-2. **Configure environments**: Set up additional environments in GitHub repository settings
-3. **Add more checks**: Include additional security scans, performance tests, etc.
-4. **Modify triggers**: Adjust branch names or add additional trigger conditions
+```bash
+npm publish "$PACKAGE_TARBALL" --access public --provenance --tag "$NPM_STAGING_TAG"
+```
 
-## Best Practices
+It requires `NPM_TOKEN` through `NODE_AUTH_TOKEN`.
 
-- All jobs run in parallel where possible to minimize CI time
-- Dependencies between jobs ensure proper order of operations
-- Security audits catch vulnerabilities early
-- Multi-stage validation prevents broken releases
-- Environment protection ensures controlled deployments
+The Docker job publishes only the full version tag. A new image is built with release revision/version labels, run under the production resource and filesystem restrictions, and required to become healthy before that exact local image is pushed. On retry, an existing image is pulled, its labels are verified, and that exact remote image is health-tested.
 
-## Troubleshooting
+### Channel Promotion
 
-Common issues and solutions:
+`promote-release` waits for both candidate jobs and serializes all channel movement. It verifies both candidates, rejects a version older than the current npm channel, and then promotes stable Docker aliases plus npm `latest`, or npm `next` for a prerelease. Prereleases never update a floating Docker tag. The per-version npm candidate tag is removed after promotion.
 
-- **Test failures**: Check test logs and ensure all dependencies are properly installed
-- **Build failures**: Verify TypeScript compilation and check for syntax errors
-- **Docker failures**: Ensure Dockerfile syntax is correct and base images are available
-- **Publishing failures**: Verify secrets are configured and have proper permissions
+Required secrets:
+
+- `DOCKER_USERNAME`
+- `DOCKER_PASSWORD`
+
+## Deliberately Excluded
+
+The current workflow does not run:
+
+- `npm run test:mcp:live`
+- `npm run test:mcp:stress`
+- `npm run test:integration`
+- automated production deployment or rollback
+- dashboards, alerting, or a monitoring backend
+- Codecov upload
+
+Run live and stress checks explicitly when their external-network or load behavior is relevant.
+
+## Local Reproduction
+
+Use the deterministic project verification command first:
+
+```bash
+npm run verify
+```
+
+Then reproduce audit and container gates as needed:
+
+```bash
+npm audit --audit-level=high
+npm audit --omit=dev --audit-level=high
+npm pack --dry-run
+
+HTTP_API_KEY=local-ci-check-key-0000000000000000 \
+  docker compose -f docker/docker-compose.yml config
+docker compose -f docker/docker-compose.dev.yml config
+```
+
+## Failure Triage
+
+- Test matrix: reproduce the failing Node version and run `test:unit` with `--runInBand`.
+- Build job: run `npm run build`, then `npm run test:mcp` against the fresh `dist/` output.
+- Audit job: inspect the advisory path before changing or broadening dependency overrides.
+- Container job: validate Compose interpolation, image startup environment, and `/live` output.
+- Publish job: verify artifact version, credentials, and registry access.

@@ -106,13 +106,13 @@
         <header style="text-align: center; margin-bottom: 3rem;">
             <h1 class="section-title">Blockchain Explorer</h1>
             <p class="section-subtitle">
-                Query and explore Neo N3 blockchain data with comprehensive tools
+                Query Neo N3 network state, blocks, transactions, accounts, tokens, and contracts
             </p>
         </header>
 
         <div class="example-section">
             <h2>🌐 Blockchain Information</h2>
-            <p>Get current blockchain status and network information:</p>
+            <p>Inspect the active network configuration, chain height, and validator information:</p>
             
             <div class="code-window">
                 <div class="code-header">
@@ -120,52 +120,28 @@
                 </div>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <div class="code-content">
-                    <pre>// Get blockchain information
-const blockchainInfo = await tools.get_blockchain_info();
+                    <pre>const networkMode = await tools.get_network_mode();
 
-// Get current block count
-const blockCount = await tools.get_block_count();
-
-// Get network fee information
-const networkFee = await tools.get_network_fee();
-
-// Get version information
-const version = await tools.get_version();
-
-console.log("Network status:", {
-  blockchain: blockchainInfo,
-  blockCount: blockCount,
-  networkFee: networkFee,
-  version: version
+const blockchain = await tools.get_blockchain_info({
+  network: "mainnet"
 });
 
-// Output:
-// {
-//   "blockchain": {
-//     "network": "testnet",
-//     "blockHeight": 5678901,
-//     "blockHash": "0x1234567890abcdef...",
-//     "nextConsensus": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj"
-//   },
-//   "blockCount": 5678901,
-//   "networkFee": {
-//     "gasPerByte": "0.00001",
-//     "executionFee": "0.01"
-//   },
-//   "version": {
-//     "tcpPort": 10333,
-//     "wsPort": 10334,
-//     "nonce": 1234567890,
-//     "userAgent": "/Neo:3.6.0/"
-//   }
-// }</pre>
+const blocks = await tools.get_block_count({
+  network: "mainnet"
+});
+
+console.log("Mode:", networkMode.mode);
+console.log("Available networks:", networkMode.availableNetworks);
+console.log("Block count:", blocks.blockCount);
+console.log("Latest height:", blocks.height);
+console.log("Validators:", blockchain.validators);</pre>
                 </div>
             </div>
         </div>
 
         <div class="example-section">
             <h2>🔗 Block Information</h2>
-            <p>Query blocks by height or hash and explore block contents:</p>
+            <p>Query complete block details by numeric height or 64-character block hash:</p>
             
             <div class="code-window">
                 <div class="code-header">
@@ -173,68 +149,27 @@ console.log("Network status:", {
                 </div>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <div class="code-content">
-                    <pre>// Get block by height
-const blockByHeight = await tools.get_block({
-  height: 5678900
+                    <pre>const blocks = await tools.get_block_count({ network: "mainnet" });
+
+const latestBlock = await tools.get_block({
+  hashOrHeight: blocks.height,
+  network: "mainnet"
 });
 
-// Get block by hash
 const blockByHash = await tools.get_block({
-  hash: "0x1234567890abcdef9876543210fedcba0123456789abcdef"
+  hashOrHeight: process.env.NEO_BLOCK_HASH,
+  network: "mainnet"
 });
 
-// Get latest block
-const latestBlock = await tools.get_latest_block();
-
-// Get block header only (faster)
-const blockHeader = await tools.get_block_header({
-  height: 5678900
-});
-
-console.log("Block information:", {
-  byHeight: blockByHeight,
-  byHash: blockByHash,
-  latest: latestBlock,
-  header: blockHeader
-});
-
-// Output:
-// {
-//   "byHeight": {
-//     "hash": "0x1234567890abcdef...",
-//     "size": 2048,
-//     "version": 0,
-//     "previousblockhash": "0xfedcba0987654321...",
-//     "merkleroot": "0xabcdef1234567890...",
-//     "time": 1640995200000,
-//     "index": 5678900,
-//     "nextconsensus": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-//     "witnesses": [...],
-//     "tx": [
-//       {
-//         "hash": "0x9876543210fedcba...",
-//         "size": 256,
-//         "version": 0,
-//         "nonce": 1234567890,
-//         "sender": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-//         "sysfee": "0.00234567",
-//         "netfee": "0.00012345",
-//         "validuntilblock": 5678910,
-//         "script": "0x110c14...",
-//         "witnesses": [...]
-//       }
-//     ],
-//     "confirmations": 1,
-//     "nextblockhash": "0x5432109876543210..."
-//   }
-// }</pre>
+console.log("Latest block:", latestBlock);
+console.log("Block selected by hash:", blockByHash);</pre>
                 </div>
             </div>
         </div>
 
         <div class="example-section">
             <h2>📄 Transaction Queries</h2>
-            <p>Look up transaction details and track transaction status:</p>
+            <p>Look up a transaction, inspect VM execution, and wait for confirmation when it is still pending:</p>
             
             <div class="code-window">
                 <div class="code-header">
@@ -242,80 +177,34 @@ console.log("Block information:", {
                 </div>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <div class="code-content">
-                    <pre>// Get transaction by hash
+                    <pre>const txid = process.env.NEO_TXID;
+
 const transaction = await tools.get_transaction({
-  txid: "0x9876543210fedcba0123456789abcdef1234567890"
+  txid,
+  network: "mainnet"
 });
 
-// Get transaction with verbose output
-const verboseTransaction = await tools.get_transaction({
-  txid: "0x9876543210fedcba0123456789abcdef1234567890",
-  verbose: true
+const applicationLog = await tools.get_application_log({
+  txid,
+  network: "mainnet"
 });
 
-// Get application log for transaction
-const appLog = await tools.get_application_log({
-  txid: "0x9876543210fedcba0123456789abcdef1234567890"
+const receipt = await tools.wait_for_transaction({
+  txid,
+  timeoutMs: 60000,
+  pollIntervalMs: 3000,
+  includeApplicationLog: true,
+  network: "mainnet"
 });
 
-// Check if transaction is confirmed
-const confirmations = await tools.get_transaction_confirmations({
-  txid: "0x9876543210fedcba0123456789abcdef1234567890"
-});
-
-console.log("Transaction information:", {
-  transaction: transaction,
-  verbose: verboseTransaction,
-  applicationLog: appLog,
-  confirmations: confirmations
-});
-
-// Output:
-// {
-//   "transaction": {
-//     "hash": "0x9876543210fedcba...",
-//     "size": 256,
-//     "version": 0,
-//     "nonce": 1234567890,
-//     "sender": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-//     "sysfee": "0.00234567",
-//     "netfee": "0.00012345",
-//     "validuntilblock": 5678910,
-//     "signers": [...],
-//     "attributes": [],
-//     "script": "0x110c14...",
-//     "witnesses": [...]
-//   },
-//   "applicationLog": {
-//     "txid": "0x9876543210fedcba...",
-//     "executions": [
-//       {
-//         "trigger": "Application",
-//         "vmstate": "HALT",
-//         "gasconsumed": "2340000",
-//         "stack": [...],
-//         "notifications": [
-//           {
-//             "contract": "0xd2a4cff31913016155e38e474a2c06d08be276cf",
-//             "eventname": "Transfer",
-//             "state": {
-//               "type": "Array",
-//               "value": [...]
-//             }
-//           }
-//         ]
-//       }
-//     ]
-//   },
-//   "confirmations": 15
-// }</pre>
+console.log({ transaction, applicationLog, receipt });</pre>
                 </div>
             </div>
         </div>
 
         <div class="example-section">
             <h2>👤 Address Analytics</h2>
-            <p>Analyze address activity and transaction history:</p>
+            <p>Inspect fungible-token balances, claimable GAS, and timestamp-filtered NEP-17 activity:</p>
             
             <div class="code-window">
                 <div class="code-header">
@@ -323,234 +212,89 @@ console.log("Transaction information:", {
                 </div>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <div class="code-content">
-                    <pre>// Get address balance
+                    <pre>const address = "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj";
+
 const balance = await tools.get_balance({
-  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj"
+  address,
+  network: "testnet"
 });
 
-// Get address transaction history
-const txHistory = await tools.get_address_transactions({
-  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  limit: 50,
-  offset: 0
+const unclaimedGas = await tools.get_unclaimed_gas({
+  address,
+  network: "testnet"
 });
 
-// Get NEP-17 transfers for address
-const nep17Transfers = await tools.get_nep17_transfers({
-  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  startTime: 1640995200000, // Timestamp
-  endTime: 1641081600000
+const transfers = await tools.get_nep17_transfers({
+  address,
+  fromTimestampMs: Date.now() - (7 * 24 * 60 * 60 * 1000),
+  toTimestampMs: Date.now(),
+  network: "testnet"
 });
 
-// Get address UTXO (for NEO/GAS)
-const utxos = await tools.get_unspent({
-  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  asset: "NEO"
-});
-
-console.log("Address analytics:", {
-  balance: balance,
-  transactions: txHistory,
-  nep17Transfers: nep17Transfers,
-  utxos: utxos
-});
-
-// Output:
-// {
-//   "balance": {
-//     "NEO": "100",
-//     "GAS": "15.5234",
-//     "tokens": {
-//       "fWMP2dkWM": "1000.00"
-//     },
-//     "totalValueUSD": "1250.75"
-//   },
-//   "transactions": {
-//     "total": 156,
-//     "transactions": [
-//       {
-//         "txid": "0xabcdef1234567890...",
-//         "blockHeight": 5678901,
-//         "timestamp": 1640995200,
-//         "type": "NEP17Transfer",
-//         "amount": "10.00000000",
-//         "asset": "NEO",
-//         "from": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-//         "to": "NYjzhdekseMYWvYpSoAeypqMiwMuEUDhKB"
-//       }
-//     ]
-//   },
-//   "nep17Transfers": {
-//     "sent": [...],
-//     "received": [...],
-//     "totalSent": "500.00",
-//     "totalReceived": "750.00"
-//   }
-// }</pre>
+console.log({ balance, unclaimedGas, transfers });</pre>
                 </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>📋 Smart Contract State</h2>
-            <p>Query smart contract storage and state information:</p>
+            <h2>Smart Contract State</h2>
+            <p>Resolve a live contract, inspect its manifest, and execute a read-only method:</p>
             
             <div class="code-window">
                 <div class="code-header">
-                    <span class="code-lang">Contract State Queries</span>
+                    <span class="code-lang">Contract Inspection</span>
                 </div>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <div class="code-content">
-                    <pre>// Get contract state
-const contractState = await tools.get_contract_state({
-  contractHash: "0xd2a4cff31913016155e38e474a2c06d08be276cf"
+                    <pre>const GAS_HASH = "0xd2a4cff31913016155e38e474a2c06d08be276cf";
+
+const status = await tools.get_contract_status({
+  contract: GAS_HASH,
+  network: "mainnet"
 });
 
-// Get contract storage value
-const storageValue = await tools.get_storage({
-  contractHash: "0xd2a4cff31913016155e38e474a2c06d08be276cf",
-  key: "746f74616c537570706c79" // hex encoded "totalSupply"
+const info = await tools.get_contract_info({
+  contract: GAS_HASH,
+  network: "mainnet"
 });
 
-// Find storage values by prefix
-const storageItems = await tools.find_storage({
-  contractHash: "0xd2a4cff31913016155e38e474a2c06d08be276cf",
-  prefix: "62616c616e6365" // hex encoded "balance"
+const symbol = await tools.invoke_contract({
+  scriptHash: GAS_HASH,
+  operation: "symbol",
+  args: [],
+  network: "mainnet"
 });
 
-// Get all contract storage
-const allStorage = await tools.get_contract_storage({
-  contractHash: "0xd2a4cff31913016155e38e474a2c06d08be276cf"
-});
-
-// Test invoke contract method (read-only)
-const testInvoke = await tools.invoke_function({
-  contractHash: "0xd2a4cff31913016155e38e474a2c06d08be276cf",
-  method: "balanceOf",
-  parameters: [
-    {
-      type: "Hash160",
-      value: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj"
-    }
-  ]
-});
-
-console.log("Contract state:", {
-  state: contractState,
-  storage: storageValue,
-  storageItems: storageItems,
-  allStorage: allStorage,
-  testInvoke: testInvoke
-});
-
-// Output:
-// {
-//   "state": {
-//     "id": 5,
-//     "updatecounter": 1,
-//     "hash": "0xd2a4cff31913016155e38e474a2c06d08be276cf",
-//     "nef": {
-//       "magic": 860243278,
-//       "compiler": "neo-vm",
-//       "source": "",
-//       "tokens": [],
-//       "script": "0x110c14...",
-//       "checksum": 1234567890
-//     },
-//     "manifest": {
-//       "name": "FlamingoCoin",
-//       "groups": [],
-//       "features": {},
-//       "supportedstandards": ["NEP-17"],
-//       "abi": {
-//         "methods": [...],
-//         "events": [...]
-//       },
-//       "permissions": [...],
-//       "trusts": [],
-//       "extra": null
-//     }
-//   },
-//   "testInvoke": {
-//     "script": "0x110c14...",
-//     "state": "HALT",
-//     "gasconsumed": "2034810",
-//     "stack": [
-//       {
-//         "type": "Integer",
-//         "value": "100000000000"
-//       }
-//     ]
-//   }
-// }</pre>
+console.log({ status, info, symbol });</pre>
                 </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>🔍 Network Monitoring</h2>
-            <p>Monitor network health and consensus nodes:</p>
+            <h2>NFT Activity</h2>
+            <p>Explore an address's NEP-11 holdings and timestamp-filtered transfer history:</p>
             
             <div class="code-window">
                 <div class="code-header">
-                    <span class="code-lang">Network Health</span>
+                    <span class="code-lang">NEP-11 Queries</span>
                 </div>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <div class="code-content">
-                    <pre>// Get connected peers
-const peers = await tools.get_peers();
+                    <pre>const address = "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj";
 
-// Get consensus nodes
-const validators = await tools.get_next_block_validators();
-
-// Get committee members
-const committee = await tools.get_committee();
-
-// Get memory pool
-const memPool = await tools.get_memory_pool();
-
-// Get node connection count
-const connectionCount = await tools.get_connection_count();
-
-console.log("Network monitoring:", {
-  peers: peers,
-  validators: validators,
-  committee: committee,
-  memoryPool: memPool,
-  connections: connectionCount
+const balances = await tools.get_nep11_balances({
+  address,
+  network: "testnet"
 });
 
-// Output:
-// {
-//   "peers": {
-//     "unconnected": [],
-//     "bad": [],
-//     "connected": [
-//       {
-//         "address": "192.168.1.100",
-//         "port": 10333
-//       }
-//     ]
-//   },
-//   "validators": [
-//     "03c6aa6e12638b36c...",
-//     "02ca0e27697b9c24..."
-//   ],
-//   "committee": [
-//     "03c6aa6e12638b36c...",
-//     "02ca0e27697b9c24...",
-//     "03d281aeb61c0d2b..."
-//   ],
-//   "memoryPool": {
-//     "height": 5678901,
-//     "verified": [
-//       "0x1234567890abcdef...",
-//       "0xfedcba0987654321..."
-//     ],
-//     "unverified": []
-//   },
-//   "connections": 8
-// }</pre>
+const transfers = await tools.get_nep11_transfers({
+  address,
+  fromTimestampMs: Date.now() - (30 * 24 * 60 * 60 * 1000),
+  toTimestampMs: Date.now(),
+  network: "testnet"
+});
+
+console.log({ balances, transfers });</pre>
                 </div>
             </div>
         </div>
@@ -581,8 +325,8 @@ console.log("Network monitoring:", {
                 <div>
                     <div class="footer-brand">Neo N3 MCP</div>
                     <p class="footer-description">
-                        The most advanced Neo N3 blockchain development platform. 
-                        Build powerful dApps with enterprise-grade tools and security.
+                        A focused MCP and HTTP integration surface for Neo N3 data, assets,
+                        wallets, transactions, and smart contracts.
                     </p>
                 </div>
                 <div>
@@ -641,4 +385,4 @@ console.log("Network monitoring:", {
         }
     </script>
 </body>
-</html> 
+</html>

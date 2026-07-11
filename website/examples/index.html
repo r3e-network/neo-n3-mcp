@@ -325,7 +325,7 @@
         <!-- Header -->
         <header class="page-header">
             <h1 class="section-title">Examples & Use Cases</h1>
-            <p class="section-subtitle">Explore real-world implementations and learn through practical examples. From basic blockchain queries to complex DeFi integrations.</p>
+            <p class="section-subtitle">Explore practical Neo N3 queries, wallet workflows, contract inspection, and confirmed transactions.</p>
         </header>
 
         <!-- Navigation Filters -->
@@ -334,68 +334,52 @@
             <button class="nav-filter" data-filter="basic">Basic Operations</button>
             <button class="nav-filter" data-filter="wallet">Wallet Management</button>
             <button class="nav-filter" data-filter="contract">Smart Contracts</button>
-            <button class="nav-filter" data-filter="defi">DeFi Integration</button>
+            <button class="nav-filter" data-filter="transaction">Transactions</button>
             <button class="nav-filter" data-filter="advanced">Advanced</button>
         </nav>
 
         <!-- Featured Example -->
-        <div class="card featured-example" data-category="defi advanced">
+        <div class="card featured-example" data-category="transaction advanced">
             <div class="featured-content">
                 <span class="featured-badge">🌟 Featured Example</span>
-                <h2 class="featured-title">DeFi Portfolio Manager</h2>
-                <p class="featured-description">Build a complete DeFi portfolio management system that tracks assets across multiple protocols, calculates yields, and automates rebalancing strategies.</p>
+                <h2 class="featured-title">Transaction Confirmation Workflow</h2>
+                <p class="featured-description">Broadcast a controlled testnet transfer, wait for confirmation, and optionally retrieve its application log.</p>
                 
                 <ul class="featured-features">
-                    <li>Multi-protocol asset tracking</li>
-                    <li>Automated rebalancing strategies</li>
-                    <li>Real-time yield calculations</li>
-                    <li>Risk assessment tools</li>
-                    <li>Portfolio analytics dashboard</li>
+                    <li>Exact decimal transfer amounts</li>
+                    <li>Explicit write confirmation</li>
+                    <li>Bounded RPC polling</li>
+                    <li>Optional application logs</li>
+                    <li>Mainnet or testnet selection</li>
                 </ul>
                 
                 <div class="example-actions">
-                    <button class="action-btn btn-primary" onclick="viewExample('defi-portfolio')">
-                        🚀 View Full Example
-                    </button>
+                    <a class="action-btn btn-primary" href="/examples/wallet">
+                        View Full Example
+                    </a>
                     <span class="difficulty-badge difficulty-advanced">Advanced</span>
                 </div>
             </div>
             
             <div class="featured-code">
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                <pre class="code-content">// DeFi Portfolio Manager Example
-class PortfolioManager {
-  constructor() {
-    this.protocols = ['Flamingo', 'NeoFS', 'NeoBurger'];
-    this.rebalanceThreshold = 0.05; // 5%
-  }
+                <pre class="code-content">const transfer = await neo.callTool('transfer_assets', {
+  idempotencyKey: 'transfer-2026-07-11-001',
+  network: 'testnet',
+  toAddress: 'NNLi44dJNXtDNSBkofB48aTVYtb1zZrNEs',
+  asset: 'GAS',
+  amount: '0.1'
+});
 
-  async getPortfolioValue() {
-    const balances = await Promise.all(
-      this.protocols.map(protocol => 
-        this.getProtocolBalance(protocol)
-      )
-    );
-    
-    return balances.reduce((total, balance) => 
-      total + balance.usdValue, 0
-    );
-  }
+const confirmation = await neo.callTool('wait_for_transaction', {
+  network: 'testnet',
+  txid: transfer.txid,
+  timeoutMs: 30000,
+  pollIntervalMs: 1000,
+  includeApplicationLog: true
+});
 
-  async autoRebalance() {
-    const currentAllocation = await this.getCurrentAllocation();
-    const targetAllocation = this.getTargetAllocation();
-    
-    for (const [protocol, current] of Object.entries(currentAllocation)) {
-      const target = targetAllocation[protocol];
-      const deviation = Math.abs(current - target);
-      
-      if (deviation > this.rebalanceThreshold) {
-        await this.rebalanceProtocol(protocol, target - current);
-      }
-    }
-  }
-}</pre>
+console.log('Confirmed:', confirmation.confirmed);</pre>
             </div>
         </div>
 
@@ -419,15 +403,18 @@ class PortfolioManager {
                         <div class="code-content">
                             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                             <pre>// Get blockchain information
-const blockchainInfo = await neo.callTool('get_blockchain_info');
+const blockchainInfo = await neo.callTool('get_blockchain_info', {
+  network: 'testnet'
+});
 
-console.log('Current block height:', blockchainInfo.blockcount);
+console.log('Block count:', blockchainInfo.blockCount);
+console.log('Latest height:', blockchainInfo.height);
 console.log('Network:', blockchainInfo.network);
-console.log('Protocol version:', blockchainInfo.protocol);
 
-// Get specific block
+// Get the latest block by its numeric height
 const block = await neo.callTool('get_block', {
-  block_identifier: 'latest'
+  network: 'testnet',
+  hashOrHeight: blockchainInfo.height
 });
 
 console.log('Latest block hash:', block.hash);
@@ -437,9 +424,7 @@ console.log('Transactions:', block.tx.length);</pre>
                 </div>
                 
                 <div class="example-actions">
-                    <button class="action-btn btn-primary" onclick="runExample('blockchain-info')">
-                        ▶️ Run Example
-                    </button>
+                    <a class="action-btn btn-primary" href="/examples/explorer">View Explorer Guide</a>
                     <span class="difficulty-badge difficulty-beginner">Beginner</span>
                 </div>
             </div>
@@ -461,37 +446,28 @@ console.log('Transactions:', block.tx.length);</pre>
                     <div class="code-window">
                         <div class="code-content">
                             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                            <pre>// Create a new wallet
-const wallet = await neo.callTool('create_wallet', {
-  password: 'securePassword123!'
+                            <pre>// Read metadata for a provisioned wallet
+const wallet = await neo.callTool('get_wallet', {
+  address: accountAddress
 });
 
-console.log('New wallet address:', wallet.address);
+console.log('Wallet address:', wallet.address);
 
 // Check wallet balance
 const balance = await neo.callTool('get_balance', {
-  address: wallet.address
+  address: wallet.address,
+  network: 'testnet'
 });
 
-console.log('NEO balance:', balance.NEO);
-console.log('GAS balance:', balance.GAS);
-
-// Get all balances for multiple tokens
-const allBalances = await neo.callTool('get_all_balances', {
-  address: wallet.address
-});
-
-allBalances.forEach(token => {
-  console.log(`${token.symbol}: ${token.amount}`);
+balance.balance.forEach(asset => {
+  console.log(`${asset.asset_name}: ${asset.amount}`);
 });</pre>
                         </div>
                     </div>
                 </div>
                 
                 <div class="example-actions">
-                    <button class="action-btn btn-primary" onclick="runExample('wallet-ops')">
-                        ▶️ Run Example
-                    </button>
+                    <a class="action-btn btn-primary" href="/examples/wallet">View Wallet Guide</a>
                     <span class="difficulty-badge difficulty-beginner">Beginner</span>
                 </div>
             </div>
@@ -515,48 +491,42 @@ allBalances.forEach(token => {
                             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                             <pre>// Invoke a smart contract method
 const result = await neo.callTool('invoke_contract', {
-  contract_hash: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
-  method: 'symbol',
-  parameters: []
+  network: 'testnet',
+  contract: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
+  operation: 'symbol',
+  args: []
 });
 
 console.log('Contract result:', result.stack[0].value);
 
-// Invoke with parameters
-const transferResult = await neo.callTool('invoke_contract', {
-  contract_hash: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
-  method: 'transfer',
-  parameters: [
-    { type: 'Hash160', value: fromAddress },
-    { type: 'Hash160', value: toAddress },
-    { type: 'Integer', value: '1000000000' },
-    { type: 'Any', value: null }
-  ]
+// Inspect the live manifest before invoking another method
+const status = await neo.callTool('get_contract_status', {
+  network: 'testnet',
+  contract: '0xd2a4cff31913016155e38e474a2c06d08be276cf'
 });
 
-console.log('Transfer successful:', transferResult.state === 'HALT');</pre>
+console.log('Manifest:', status.manifestName);
+console.log('Methods:', Object.keys(status.operations));</pre>
                         </div>
                     </div>
                 </div>
                 
                 <div class="example-actions">
-                    <button class="action-btn btn-primary" onclick="runExample('contract-interaction')">
-                        ▶️ Run Example
-                    </button>
+                    <a class="action-btn btn-primary" href="/examples/contracts">View Contract Guide</a>
                     <span class="difficulty-badge difficulty-intermediate">Intermediate</span>
                 </div>
             </div>
 
-            <!-- DeFi Integration Example -->
-            <div class="card example-card" data-category="defi">
+            <!-- Contract Discovery Example -->
+            <div class="card example-card" data-category="contract advanced">
                 <div class="example-header">
-                    <span class="example-category">DeFi</span>
-                    <h3 class="example-title">Flamingo DEX Trading</h3>
-                    <p class="example-description">Interact with Flamingo DEX for token swaps, liquidity provision, and yield farming operations.</p>
+                    <span class="example-category">Contract Discovery</span>
+                    <h3 class="example-title">Verify Before Invocation</h3>
+                    <p class="example-description">Resolve a contract reference, inspect its live manifest, and use only operations verified on the selected network.</p>
                     <div class="example-features">
-                        <span class="feature-tag">Token Swap</span>
-                        <span class="feature-tag">Liquidity</span>
-                        <span class="feature-tag">Yields</span>
+                        <span class="feature-tag">Script Hash</span>
+                        <span class="feature-tag">Manifest</span>
+                        <span class="feature-tag">Operations</span>
                     </div>
                 </div>
                 
@@ -564,42 +534,30 @@ console.log('Transfer successful:', transferResult.state === 'HALT');</pre>
                     <div class="code-window">
                         <div class="code-content">
                             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                            <pre>// Swap tokens on Flamingo DEX
-const swapResult = await neo.callTool('invoke_flamingo_swap', {
-  from_token: 'NEO',
-  to_token: 'GAS',
-  amount: '1000000000', // 1 NEO in satoshis
-  slippage_tolerance: 0.01 // 1%
+                            <pre>const reference = '0xd2a4cff31913016155e38e474a2c06d08be276cf';
+
+const status = await neo.callTool('get_contract_status', {
+  network: 'mainnet',
+  contract: reference
 });
 
-console.log('Swap transaction:', swapResult.txid);
+if (!status.deployed) {
+  throw new Error('Contract is not deployed on mainnet');
+}
 
-// Add liquidity to a pool
-const liquidityResult = await neo.callTool('invoke_flamingo_add_liquidity', {
-  token_a: 'NEO',
-  token_b: 'GAS',
-  amount_a: '1000000000',
-  amount_b: '50000000000',
-  min_liquidity: '0'
+const info = await neo.callTool('get_contract_info', {
+  network: 'mainnet',
+  contract: reference
 });
 
-console.log('Liquidity added:', liquidityResult.txid);
-
-// Check pool information
-const poolInfo = await neo.callTool('get_flamingo_pool_info', {
-  pool_id: 'NEO_GAS'
-});
-
-console.log('Pool reserves:', poolInfo.reserves);
-console.log('Pool APY:', poolInfo.apy);</pre>
+console.log('Resolved hash:', info.scriptHash);
+console.log('Available methods:', Object.keys(status.operations));</pre>
                         </div>
                     </div>
                 </div>
                 
                 <div class="example-actions">
-                    <button class="action-btn btn-primary" onclick="runExample('flamingo-trading')">
-                        ▶️ Run Example
-                    </button>
+                    <a class="action-btn btn-primary" href="/examples/contracts">View Contract Guide</a>
                     <span class="difficulty-badge difficulty-advanced">Advanced</span>
                 </div>
             </div>
@@ -622,29 +580,29 @@ console.log('Pool APY:', poolInfo.apy);</pre>
                         <div class="code-content">
                             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                             <pre>// Transfer NEO tokens
-const transferResult = await neo.callTool('transfer_assets', {
-  from_address: 'NdUL5oDPD159KeFpD5A9zw5xNF1xLX6nLT',
-  to_address: 'NNLi44dJNXtDNSBkofB48aTVYtb1zZrNEs',
+const fee = await neo.callTool('estimate_transfer_fees', {
+  network: 'testnet',
+  fromAddress: 'NdUL5oDPD159KeFpD5A9zw5xNF1xLX6nLT',
+  toAddress: 'NNLi44dJNXtDNSBkofB48aTVYtb1zZrNEs',
   asset: 'NEO',
-  amount: '1',
-  fee_estimate: true
+  amount: '1'
 });
 
-console.log('Transfer transaction:', transferResult.txid);
-console.log('Network fee:', transferResult.networkfee);
+console.log('Exact fees (datos):', fee.networkFeeDatos, fee.systemFeeDatos);
+console.log('Formatted fees (GAS):', fee.networkFeeGas, fee.systemFeeGas);
 
-// Transfer GAS with custom fee
-const gasTransfer = await neo.callTool('transfer_assets', {
-  from_address: 'NdUL5oDPD159KeFpD5A9zw5xNF1xLX6nLT',
-  to_address: 'NNLi44dJNXtDNSBkofB48aTVYtb1zZrNEs',
-  asset: 'GAS',
-  amount: '10.5',
-  network_fee: '0.0015'
+const transfer = await neo.callTool('transfer_assets', {
+  idempotencyKey: 'transfer-2026-07-11-002',
+  network: 'testnet',
+  toAddress: 'NNLi44dJNXtDNSBkofB48aTVYtb1zZrNEs',
+  asset: 'NEO',
+  amount: '1'
 });
 
-// Monitor transaction status
-const txStatus = await neo.callTool('get_transaction_status', {
-  txid: gasTransfer.txid
+const txStatus = await neo.callTool('wait_for_transaction', {
+  network: 'testnet',
+  txid: transfer.txid,
+  timeoutMs: 30000
 });
 
 console.log('Transaction confirmed:', txStatus.confirmed);</pre>
@@ -653,23 +611,21 @@ console.log('Transaction confirmed:', txStatus.confirmed);</pre>
                 </div>
                 
                 <div class="example-actions">
-                    <button class="action-btn btn-primary" onclick="runExample('asset-transfer')">
-                        ▶️ Run Example
-                    </button>
+                    <a class="action-btn btn-primary" href="/examples/wallet">View Transfer Guide</a>
                     <span class="difficulty-badge difficulty-intermediate">Intermediate</span>
                 </div>
             </div>
 
-            <!-- Advanced Multi-sig Example -->
-            <div class="card example-card" data-category="advanced wallet">
+            <!-- Application Log Example -->
+            <div class="card example-card" data-category="advanced transaction">
                 <div class="example-header">
                     <span class="example-category">Advanced</span>
-                    <h3 class="example-title">Multi-Signature Wallet</h3>
-                    <p class="example-description">Create and manage multi-signature wallets with multiple signers and threshold requirements.</p>
+                    <h3 class="example-title">Application Log Inspection</h3>
+                    <p class="example-description">Inspect VM execution state and notifications for a confirmed transaction.</p>
                     <div class="example-features">
-                        <span class="feature-tag">Multi-Sig</span>
-                        <span class="feature-tag">Threshold</span>
-                        <span class="feature-tag">Security</span>
+                        <span class="feature-tag">VM State</span>
+                        <span class="feature-tag">Notifications</span>
+                        <span class="feature-tag">Transactions</span>
                     </div>
                 </div>
                 
@@ -677,52 +633,29 @@ console.log('Transaction confirmed:', txStatus.confirmed);</pre>
                     <div class="code-window">
                         <div class="code-content">
                             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                            <pre>// Create multi-signature wallet
-const multiSigWallet = await neo.callTool('create_multisig_wallet', {
-  public_keys: [
-    '03aa052fbfb608d3635a4cb4c2a6060e7b16f19501c0e86a0b2b1cc1fa25ac5c55',
-    '02b3622bf4017bdfe317c58aed5f4c753f206b7db896046fa7d774bbc4bf7f8dc2',
-    '03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c'
-  ],
-  threshold: 2,
-  witness_script: true
+                            <pre>const txid = process.env.NEO_TXID;
+
+const transaction = await neo.callTool('get_transaction', {
+  network: 'mainnet',
+  txid
 });
 
-console.log('Multi-sig address:', multiSigWallet.address);
-console.log('Script hash:', multiSigWallet.script_hash);
-
-// Create and sign transaction
-const unsignedTx = await neo.callTool('create_multisig_transaction', {
-  from_address: multiSigWallet.address,
-  to_address: 'NNLi44dJNXtDNSBkofB48aTVYtb1zZrNEs',
-  asset: 'GAS',
-  amount: '5.0'
+const applicationLog = await neo.callTool('get_application_log', {
+  network: 'mainnet',
+  txid
 });
 
-// Sign with first key
-const partiallySignedTx = await neo.callTool('sign_multisig_transaction', {
-  transaction: unsignedTx,
-  private_key: 'private_key_1',
-  public_keys: multiSigWallet.public_keys
-});
-
-// Sign with second key and broadcast
-const fullySignedTx = await neo.callTool('sign_multisig_transaction', {
-  transaction: partiallySignedTx,
-  private_key: 'private_key_2',
-  public_keys: multiSigWallet.public_keys,
-  broadcast: true
-});
-
-console.log('Multi-sig transaction sent:', fullySignedTx.txid);</pre>
+console.log('Transaction:', transaction.hash);
+for (const execution of applicationLog.executions) {
+  console.log('VM state:', execution.vmstate);
+  console.log('Notifications:', execution.notifications);
+}</pre>
                         </div>
                     </div>
                 </div>
                 
                 <div class="example-actions">
-                    <button class="action-btn btn-primary" onclick="runExample('multisig-wallet')">
-                        ▶️ Run Example
-                    </button>
+                    <a class="action-btn btn-primary" href="/examples/explorer">View Explorer Guide</a>
                     <span class="difficulty-badge difficulty-advanced">Advanced</span>
                 </div>
             </div>
@@ -759,7 +692,7 @@ console.log('Multi-sig transaction sent:', fullySignedTx.txid);</pre>
                 <div class="use-case-item">
                     <div class="use-case-icon">🔒</div>
                     <h3 class="use-case-title">Security Tools</h3>
-                    <p class="use-case-description">Develop security-focused applications with multi-signature wallets and advanced key management</p>
+                    <p class="use-case-description">Develop security-focused applications with encrypted local wallets, fee preflight, and explicitly confirmed writes</p>
                 </div>
                 
                 <div class="use-case-item">
@@ -778,8 +711,8 @@ console.log('Multi-sig transaction sent:', fullySignedTx.txid);</pre>
                 <div>
                     <div class="footer-brand">Neo N3 MCP</div>
                     <p class="footer-description">
-                        The most advanced Neo N3 blockchain development platform. 
-                        Build powerful dApps with enterprise-grade tools and security.
+                        A focused MCP and HTTP integration surface for Neo N3 data, assets,
+                        wallets, transactions, and smart contracts.
                     </p>
                 </div>
                 <div>
@@ -861,17 +794,6 @@ console.log('Multi-sig transaction sent:', fullySignedTx.txid);</pre>
             });
         }
 
-        // Example runners (placeholder functions)
-        function runExample(exampleId) {
-            console.log(`Running example: ${exampleId}`);
-            // Implementation would connect to actual Neo N3 MCP server
-        }
-
-        function viewExample(exampleId) {
-            console.log(`Viewing full example: ${exampleId}`);
-            // Implementation would open detailed example page
-        }
-
         // Smooth scrolling for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
@@ -887,4 +809,4 @@ console.log('Multi-sig transaction sent:', fullySignedTx.txid);</pre>
         });
     </script>
 </body>
-</html> 
+</html>

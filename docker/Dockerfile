@@ -1,65 +1,31 @@
-# Multi-stage build for Neo N3 MCP Server
-FROM node:18-alpine AS builder
+FROM node:22-alpine@sha256:4d64b49e6c891c8fc821007cb1cdc6c0db7773110ac2c34bf2e6960adef62ed3 AS builder
 
-# Set working directory
 WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-COPY tsconfig.json ./
-COPY vendor/ ./vendor/
-
-# Install all dependencies (including dev dependencies for building)
+COPY package.json package-lock.json tsconfig.json ./
 RUN npm ci
-
-# Copy source code
-COPY src/ ./src/
-
-# Build the application
+COPY src ./src
 RUN npm run build
 
-# Production stage
-FROM node:18-alpine AS production
+FROM node:22-alpine@sha256:4d64b49e6c891c8fc821007cb1cdc6c0db7773110ac2c34bf2e6960adef62ed3 AS production
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init curl
-
-# Create app user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S neo-mcp -u 1001
-
-# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-COPY vendor/ ./vendor/
+ENV NODE_ENV=production \
+    NEO_NETWORK=mainnet \
+    HTTP_HOST=0.0.0.0 \
+    PORT=3000 \
+    WALLETS_DIR=/app/wallets \
+    LOG_CONSOLE=true
 
-# Install only production dependencies
+COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
-
-# Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
 
-# Copy configuration files
-COPY --chown=neo-mcp:nodejs config/ ./config/
+RUN mkdir -p /app/wallets && chown node:node /app /app/wallets
+USER node
 
-# Create necessary directories
-RUN mkdir -p logs wallets && \
-    chown -R neo-mcp:nodejs logs wallets
-
-# Switch to non-root user
-USER neo-mcp
-
-# Expose port
 EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD node -e "require('http').get('http://127.0.0.1:3000/live',res=>process.exit(res.statusCode===200?0:1)).on('error',()=>process.exit(1))"
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD node -e "require('http').get('http://127.0.0.1:3000/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
-
-# Use dumb-init to handle signals properly
-ENTRYPOINT ["dumb-init", "--"]
-
-# Start the application
 CMD ["node", "dist/http.js"]

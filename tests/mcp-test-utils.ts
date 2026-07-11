@@ -1,5 +1,8 @@
 import { ChildProcess } from 'child_process';
 import { once } from 'events';
+import { mkdtempSync, rmSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
@@ -13,20 +16,36 @@ interface StartMcpTestClientParams {
   capabilities?: Record<string, any>;
 }
 
+const ownedWalletDirectories = new WeakMap<StdioClientTransport, string>();
+
 export async function startMcpTestClient({
   serverPath,
   env,
   clientInfo,
   capabilities = { tools: {}, resources: {}, prompts: {} },
 }: StartMcpTestClientParams): Promise<{ client: Client; transport: StdioClientTransport }> {
+  const ownsWalletDirectory = !env.WALLETS_DIR;
+  const walletsDir = env.WALLETS_DIR || mkdtempSync(join(tmpdir(), 'neo-n3-mcp-test-wallets-'));
   const client = new Client(clientInfo, { capabilities });
   const transport = new StdioClientTransport({
     command: 'node',
     args: [serverPath],
-    env,
+    env: { ...env, WALLETS_DIR: walletsDir },
   });
 
-  await client.connect(transport);
+  if (ownsWalletDirectory) {
+    ownedWalletDirectories.set(transport, walletsDir);
+  }
+
+  try {
+    await client.connect(transport);
+  } catch (error) {
+    if (ownsWalletDirectory) {
+      ownedWalletDirectories.delete(transport);
+      rmSync(walletsDir, { recursive: true, force: true });
+    }
+    throw error;
+  }
 
   return { client, transport };
 }
@@ -104,6 +123,14 @@ export async function stopMcpTestClient(
     await ensureChildExit(child, timeoutMs);
   } catch (error) {
     closeError ??= error;
+  }
+
+  const walletsDir = transport ? ownedWalletDirectories.get(transport) : undefined;
+  if (transport) {
+    ownedWalletDirectories.delete(transport);
+  }
+  if (walletsDir) {
+    rmSync(walletsDir, { recursive: true, force: true });
   }
 
   if (closeError) {

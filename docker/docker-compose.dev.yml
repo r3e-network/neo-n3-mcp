@@ -1,87 +1,68 @@
-version: '3.8'
+name: neo-n3-mcp-dev
 
 services:
   neo-mcp-dev:
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.dev
       target: development
     image: neo-n3-mcp:dev
     container_name: neo-n3-mcp-dev
     restart: unless-stopped
     ports:
-      - "3000:3000"
-      - "9229:9229"  # Debug port
+      - "127.0.0.1:${PORT:-3000}:3000"
+      - "127.0.0.1:9229:9229"
     environment:
-      # Network Configuration
       - NEO_NETWORK=testnet
       - NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443
-      - NEO_TESTNET_RPC=http://seed1t5.neo.org:20332
-      
-      # Rate Limiting (more permissive for dev)
+      - NEO_TESTNET_RPC=https://testnet1.neo.coz.io:443
+      - NEO_ALLOW_INSECURE_RPC=${NEO_ALLOW_INSECURE_RPC:-false}
+      - NEO_MAX_TRANSACTION_FEE_GAS=${NEO_MAX_TRANSACTION_FEE_GAS:-20}
       - RATE_LIMITING_ENABLED=false
-      - MAX_REQUESTS_PER_MINUTE=1000
-      - MAX_REQUESTS_PER_HOUR=10000
-      
-      # Logging
       - LOG_LEVEL=debug
-      - LOG_FILE=/app/logs/neo-n3-mcp-dev.log
       - LOG_CONSOLE=true
-      
-      # Development
       - NODE_ENV=development
       - PORT=3000
+      - HTTP_HOST=0.0.0.0
+      - HTTP_API_KEY=${HTTP_API_KEY:-local-development-key-change-me-0001}
+      - HTTP_TRUSTED_PROXIES=${HTTP_TRUSTED_PROXIES:-}
+      - WALLETS_DIR=/app/wallets
     volumes:
-      # Mount source code for hot reload
-      - ./src:/app/src:ro
-      - ./tests:/app/tests:ro
-      - ./package*.json:/app/
-      - ./tsconfig.json:/app/tsconfig.json:ro
-      
-      # Persistent data
-      - neo-mcp-dev-logs:/app/logs
+      - ../src:/app/src:ro
+      - ../tests:/app/tests:ro
+      - ../package.json:/app/package.json:ro
+      - ../package-lock.json:/app/package-lock.json:ro
+      - ../tsconfig.json:/app/tsconfig.json:ro
+      - ../jest.config.js:/app/jest.config.js:ro
       - neo-mcp-dev-wallets:/app/wallets
-      - ./config:/app/config:ro
-    networks:
-      - neo-mcp-dev-network
     command: ["npm", "run", "dev:http"]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/live',res=>process.exit(res.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
       interval: 30s
-      timeout: 10s
+      timeout: 3s
       retries: 3
-      start_period: 40s
+      start_period: 10s
 
-  # Test runner service
   neo-mcp-test:
     build:
-      context: .
-      dockerfile: Dockerfile.dev
+      context: ..
+      dockerfile: docker/Dockerfile.dev
       target: development
     image: neo-n3-mcp:dev
-    container_name: neo-n3-mcp-test
     environment:
       - NODE_ENV=test
       - NEO_NETWORK=testnet
     volumes:
-      - ./src:/app/src:ro
-      - ./tests:/app/tests:ro
-      - ./package*.json:/app/
-      - ./tsconfig.json:/app/tsconfig.json:ro
-      - ./jest.config.js:/app/jest.config.js:ro
-      - ./babel.config.cjs:/app/babel.config.cjs:ro
-    networks:
-      - neo-mcp-dev-network
-    command: ["npm", "test"]
+      - ../src:/app/src:ro
+      - ../tests:/app/tests:ro
+      - ../package.json:/app/package.json:ro
+      - ../package-lock.json:/app/package-lock.json:ro
+      - ../tsconfig.json:/app/tsconfig.json:ro
+      - ../jest.config.js:/app/jest.config.js:ro
+    command: ["npm", "run", "test:unit", "--", "--runInBand"]
     profiles:
       - test
 
 volumes:
-  neo-mcp-dev-logs:
-    driver: local
   neo-mcp-dev-wallets:
     driver: local
-
-networks:
-  neo-mcp-dev-network:
-    driver: bridge

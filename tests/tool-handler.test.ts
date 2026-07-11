@@ -4,12 +4,12 @@
  */
 
 import { jest } from '@jest/globals';
-import { callTool, setupToolHandlers } from '../src/handlers/tool-handler';
+import { callTool } from '../src/handlers/tool-handler';
 import { NeoService, NeoNetwork } from '../src/services/neo-service';
 import { ContractService } from '../src/contracts/contract-service';
-import { FAMOUS_CONTRACTS } from '../src/contracts/contracts';
 import { ValidationError } from '../src/utils/errors';
 import { config, NetworkMode } from '../src/config';
+import { TEST_WIF } from './test-wallet';
 
 // Mock data
 const mockBlockchainInfo = {
@@ -167,8 +167,18 @@ const createMockNeoService = (): jest.Mocked<NeoService> => ({
   invokeContract: jest.fn().mockResolvedValue(mockTransferResult),
   createWallet: jest.fn().mockReturnValue(mockWallet),
   importWallet: jest.fn().mockReturnValue(mockWallet),
-  calculateTransferFee: jest.fn().mockResolvedValue({ networkFee: '0.1', systemFee: '0.05' }),
-  calculateInvokeFee: jest.fn().mockResolvedValue({ networkFee: '0.1', systemFee: '0.05' }),
+  calculateTransferFee: jest.fn().mockResolvedValue({
+    networkFeeDatos: '10000000',
+    systemFeeDatos: '5000000',
+    networkFeeGas: '0.1',
+    systemFeeGas: '0.05',
+  }),
+  calculateInvokeFee: jest.fn().mockResolvedValue({
+    networkFeeDatos: '10000000',
+    systemFeeDatos: '5000000',
+    networkFeeGas: '0.1',
+    systemFeeGas: '0.05',
+  }),
   claimGas: jest.fn().mockResolvedValue(mockTransferResult),
   getApplicationLog: jest.fn().mockResolvedValue(mockApplicationLog),
   getNep17Transfers: jest.fn().mockResolvedValue(mockNep17Transfers),
@@ -211,6 +221,9 @@ const createMockWalletService = () => ({
     address: mockWallet.address,
     publicKey: mockWallet.publicKey,
     encryptedPrivateKey: mockWallet.encryptedPrivateKey,
+    encryptedWIF: 'legacy-secret-nep2',
+    WIF: 'raw-wif-secret',
+    privateKey: 'raw-private-key-secret',
     keyFormat: 'nep2',
     createdAt: '2026-03-06T00:00:00.000Z'
   })
@@ -226,8 +239,17 @@ const createMockContractService = (): jest.Mocked<ContractService> => {
     ) {
       return {
         contract: {
-          ...FAMOUS_CONTRACTS.neofs,
-          name: 'NeoFS'
+          name: 'NeoFS',
+          description: 'Decentralized storage',
+          scriptHash: {
+            mainnet: '0x1234567890abcdef1234567890abcdef12345678'
+          },
+          operations: {
+            transfer: {
+              name: 'transfer',
+              description: 'Transfer tokens'
+            }
+          }
         },
         scriptHash: '0x1234567890abcdef1234567890abcdef12345678'
       };
@@ -302,8 +324,6 @@ const createMockContractService = (): jest.Mocked<ContractService> => {
       operationCount: 1,
       network: NeoNetwork.MAINNET
     }),
-    createNeoFSContainer: jest.fn().mockResolvedValue('0xneofscreate'),
-    getNeoFSContainers: jest.fn().mockResolvedValue([{ id: 'container-1' }]),
     deployContract: jest.fn().mockResolvedValue({
       txid: mockTransferResult.txid,
       contractHash: '0x1234567890abcdef1234567890abcdef12345678',
@@ -321,6 +341,7 @@ describe('Tool Handlers', () => {
 
   beforeEach(() => {
     config.networkMode = NetworkMode.BOTH;
+    config.writes.enabled = true;
     jest.clearAllMocks();
     
     mockNeoServices = new Map();
@@ -396,6 +417,22 @@ describe('Tool Handlers', () => {
       
       expect(result).toHaveProperty('result');
     });
+
+    test.each([-1, 1.5, Number.MAX_SAFE_INTEGER + 1])(
+      'should reject invalid block height %p',
+      async (hashOrHeight) => {
+        const neoService = mockNeoServices.get(NeoNetwork.MAINNET) as any;
+        const result = await callTool(
+          'get_block',
+          { network: 'mainnet', hashOrHeight },
+          mockNeoServices,
+          mockContractServices,
+        );
+
+        expect(result).toHaveProperty('error');
+        expect(neoService.getBlock).not.toHaveBeenCalled();
+      }
+    );
   });
 
   describe('get_transaction', () => {
@@ -437,95 +474,6 @@ describe('Tool Handlers', () => {
     });
   });
 
-  describe('transfer_assets', () => {
-    test('should transfer assets successfully', async () => {
-      const input = {
-        network: 'mainnet',
-        fromWIF: 'Kx61m6KtSMHA61qrmwXpQQxG1EDurDGrtPGUUTuKnwxiDDnq7GC8',
-        toAddress: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
-        asset: 'NEO',
-        amount: '1',
-        confirm: true
-      };
-      const result = await callTool('transfer_assets', input, mockNeoServices, mockContractServices);
-      
-      expect(result).toHaveProperty('result');
-      expect(result.result).toHaveProperty('txid');
-    });
-
-    test('should require confirmation', async () => {
-      const input = {
-        network: 'mainnet',
-        fromWIF: 'Kx61m6KtSMHA61qrmwXpQQxG1EDurDGrtPGUUTuKnwxiDDnq7GC8',
-        toAddress: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
-        asset: 'NEO',
-        amount: '1',
-        confirm: false
-      };
-      const result = await callTool('transfer_assets', input, mockNeoServices, mockContractServices);
-      
-      expect(result).toHaveProperty('error');
-    });
-
-    test('should handle invalid WIF', async () => {
-      const input = {
-        network: 'mainnet',
-        fromWIF: 'invalid-wif',
-        toAddress: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
-        asset: 'NEO',
-        amount: '1',
-        confirm: true
-      };
-      const result = await callTool('transfer_assets', input, mockNeoServices, mockContractServices);
-      
-      expect(result).toHaveProperty('error');
-    });
-  });
-
-  describe('create_wallet', () => {
-    test('should create wallet successfully', async () => {
-      const input = { password: 'password123' };
-      const result = await callTool('create_wallet', input, mockNeoServices, mockContractServices, mockWalletService as any);
-      
-      expect(result).toHaveProperty('result');
-      expect(result.result).toHaveProperty('address');
-      expect(result.result).toHaveProperty('publicKey');
-      expect(result.result).toHaveProperty('encryptedPrivateKey');
-      expect(result.result).toHaveProperty('encryptedWIF');
-    });
-
-    test('should handle invalid password', async () => {
-      const input = { password: 'short' };
-      const result = await callTool('create_wallet', input, mockNeoServices, mockContractServices, mockWalletService as any);
-      expect(result).toHaveProperty('error');
-    });
-  });
-
-  describe('import_wallet', () => {
-    test('should import wallet with password', async () => {
-      const input = { 
-        key: 'Kx61m6KtSMHA61qrmwXpQQxG1EDurDGrtPGUUTuKnwxiDDnq7GC8',
-        password: 'password123'
-      };
-      const result = await callTool('import_wallet', input, mockNeoServices, mockContractServices, mockWalletService as any);
-      
-      expect(result).toHaveProperty('result');
-      expect(result.result).toHaveProperty('address');
-      expect(result.result).toHaveProperty('publicKey');
-      expect(result.result).toHaveProperty('encryptedPrivateKey');
-      expect(result.result).toHaveProperty('encryptedWIF');
-    });
-
-    test('should support the published privateKeyOrWIF field', async () => {
-      const input = { privateKeyOrWIF: 'Kx61m6KtSMHA61qrmwXpQQxG1EDurDGrtPGUUTuKnwxiDDnq7GC8' };
-      const result = await callTool('import_wallet', input, mockNeoServices, mockContractServices, mockWalletService as any);
-      
-      expect(result).toHaveProperty('result');
-      expect(result.result).toHaveProperty('address');
-      expect(result.result).not.toHaveProperty('WIF');
-    });
-  });
-
   describe('get_wallet', () => {
     test('should get sanitized wallet metadata successfully', async () => {
       const input = { address: mockWallet.address };
@@ -542,30 +490,48 @@ describe('Tool Handlers', () => {
     });
   });
 
-  describe('setupToolHandlers', () => {
-    test('should wire wallet-backed get_wallet through the registered MCP call handler', async () => {
-      const server = {
-        setRequestHandler: jest.fn()
-      };
+  describe('default write safety', () => {
+    beforeEach(() => {
+      config.writes.enabled = false;
+    });
+    test.each([
+      ['create_wallet', { password: 'password123' }],
+      ['import_wallet', { key: TEST_WIF, password: 'password123' }],
+      ['transfer_assets', {
+        network: 'mainnet',
+        fromWIF: TEST_WIF,
+        toAddress: mockWallet.address,
+        asset: 'GAS',
+        amount: '1',
+        confirm: true,
+      }],
+      ['claim_gas', { network: 'mainnet', fromWIF: TEST_WIF, confirm: true }],
+      ['deploy_contract', {
+        network: 'mainnet',
+        fromWIF: TEST_WIF,
+        nef: { encoding: 'hex', data: 'aa55' },
+        manifest: { name: 'TestContract' },
+        confirm: true,
+      }],
+      ['invoke_contract', {
+        network: 'mainnet',
+        fromWIF: TEST_WIF,
+        scriptHash: '0x1234567890abcdef1234567890abcdef12345678',
+        operation: 'transfer',
+        args: [],
+        confirm: true,
+      }],
+    ])('rejects disabled or secret-bearing tool %s before calling a service', async (name, input) => {
+      const result = await callTool(name, input, mockNeoServices, mockContractServices, mockWalletService as any);
 
-      setupToolHandlers(server as any, mockNeoServices, mockContractServices, mockWalletService as any);
-
-      const callHandler = server.setRequestHandler.mock.calls[1][1];
-      const result = await callHandler({
-        params: {
-          name: 'get_wallet',
-          arguments: { address: mockWallet.address }
-        }
+      expect(result).toMatchObject({
+        error: { message: expect.stringMatching(/not available|server-held signer/i) },
       });
-
-      expect(result).toHaveProperty('result');
-      expect(result.result).toEqual({
-        address: mockWallet.address,
-        publicKey: mockWallet.publicKey,
-        keyFormat: 'nep2',
-        createdAt: '2026-03-06T00:00:00.000Z'
-      });
-      expect(mockWalletService.getWallet).toHaveBeenCalledWith(mockWallet.address);
+      expect(mockWalletService.createWallet).not.toHaveBeenCalled();
+      expect(mockWalletService.importWallet).not.toHaveBeenCalled();
+      expect((mockNeoServices.get(NeoNetwork.MAINNET) as any).transferAssets).not.toHaveBeenCalled();
+      expect((mockNeoServices.get(NeoNetwork.MAINNET) as any).claimGas).not.toHaveBeenCalled();
+      expect((mockContractServices.get(NeoNetwork.MAINNET) as any).deployContract).not.toHaveBeenCalled();
     });
   });
 
@@ -640,61 +606,6 @@ describe('Tool Handlers', () => {
       expect(contractService.invokeReadContract).not.toHaveBeenCalled();
     });
 
-    test('should invoke write contract with WIF', async () => {
-      const input = {
-        network: 'mainnet',
-        fromWIF: 'Kx61m6KtSMHA61qrmwXpQQxG1EDurDGrtPGUUTuKnwxiDDnq7GC8',
-        confirm: true,
-        signerAddress: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
-        scriptHash: '0x1234567890abcdef1234567890abcdef12345678',
-        operation: 'transfer',
-        args: [],
-        confirm: true
-      };
-      const result = await callTool('invoke_contract', input, mockNeoServices, mockContractServices);
-      
-      expect(result).toHaveProperty('result');
-      expect((mockNeoServices.get(NeoNetwork.MAINNET) ).invokeContract).toHaveBeenCalled();
-      expect((mockContractServices.get(NeoNetwork.MAINNET) ).invokeContract).not.toHaveBeenCalled();
-    });
-
-    test('should resolve contractName for write contract invocation', async () => {
-      const input = {
-        network: 'mainnet',
-        fromWIF: 'Kx61m6KtSMHA61qrmwXpQQxG1EDurDGrtPGUUTuKnwxiDDnq7GC8',
-        contractName: 'NeoFS',
-        operation: 'transfer',
-        args: [],
-        confirm: true
-      };
-      const result = await callTool('invoke_contract', input, mockNeoServices, mockContractServices);
-
-      expect(result).toHaveProperty('result');
-      expect((mockContractServices.get(NeoNetwork.MAINNET) as any).invokeWriteContract).toHaveBeenCalledWith(
-        expect.anything(),
-        'NeoFS',
-        'transfer',
-        []
-      );
-      expect((mockNeoServices.get(NeoNetwork.MAINNET) ).invokeContract).not.toHaveBeenCalled();
-    });
-
-    test('should require confirmation for write operations', async () => {
-      const input = {
-        network: 'mainnet',
-        fromWIF: 'Kx61m6KtSMHA61qrmwXpQQxG1EDurDGrtPGUUTuKnwxiDDnq7GC8',
-        confirm: true,
-        signerAddress: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
-        scriptHash: '0x1234567890abcdef1234567890abcdef12345678',
-        operation: 'transfer',
-        args: [],
-        confirm: false
-      };
-      const result = await callTool('invoke_contract', input, mockNeoServices, mockContractServices);
-      
-      expect(result).toHaveProperty('error');
-    });
-
     test('should default to the only enabled network when network is omitted', async () => {
       const onlyTestnetNeoServices = new Map([
         [NeoNetwork.TESTNET, createMockNeoService()]
@@ -759,6 +670,22 @@ describe('Tool Handlers', () => {
         pollIntervalMs: 250,
         includeApplicationLog: true
       });
+    });
+
+    test.each([
+      [{ timeoutMs: 120_001, pollIntervalMs: 250 }, /timeoutMs must not exceed/i],
+      [{ timeoutMs: 5_000, pollIntervalMs: 249 }, /pollIntervalMs must be at least/i],
+    ])('rejects unsafe wait options as invalid parameters', async (options, message) => {
+      const service = mockNeoServices.get(NeoNetwork.MAINNET) as any;
+      const result = await callTool('wait_for_transaction', {
+        network: 'mainnet',
+        txid: mockTransferResult.txid,
+        ...options,
+      }, mockNeoServices, mockContractServices);
+
+      expect(result).toMatchObject({ error: { code: -32602 } });
+      expect(result.error.message).toMatch(message);
+      expect(service.waitForTransaction).not.toHaveBeenCalled();
     });
   });
 
@@ -844,45 +771,6 @@ describe('Tool Handlers', () => {
       expect(result).toHaveProperty('result');
       expect(result.result).toEqual({ address: mockBalance.address, unclaimedGas: '123456789' });
       expect((mockNeoServices.get(NeoNetwork.MAINNET) as any).getUnclaimedGas).toHaveBeenCalledWith(mockBalance.address);
-    });
-  });
-
-  describe('deploy_contract', () => {
-    const manifest = {
-      name: 'TestContract',
-      groups: [],
-      supportedstandards: [],
-      abi: { methods: [], events: [] },
-      permissions: [],
-      trusts: [],
-      extra: null
-    };
-
-    test('should deploy contract successfully with confirmation', async () => {
-      const input = {
-        network: 'mainnet',
-        fromWIF: 'Kx61m6KtSMHA61qrmwXpQQxG1EDurDGrtPGUUTuKnwxiDDnq7GC8',
-        script: Buffer.from('aa55', 'hex').toString('base64'),
-        manifest,
-        confirm: true
-      };
-      const result = await callTool('deploy_contract', input, mockNeoServices, mockContractServices);
-
-      expect(result).toHaveProperty('result');
-      expect(result.result).toHaveProperty('txid', mockTransferResult.txid);
-      expect((mockContractServices.get(NeoNetwork.MAINNET) as any).deployContract).toHaveBeenCalledWith(input.fromWIF, input.script, manifest);
-    });
-
-    test('should require confirmation for deployment', async () => {
-      const input = {
-        network: 'mainnet',
-        fromWIF: 'Kx61m6KtSMHA61qrmwXpQQxG1EDurDGrtPGUUTuKnwxiDDnq7GC8',
-        script: Buffer.from('aa55', 'hex').toString('base64'),
-        manifest,
-        confirm: false
-      };
-      const result = await callTool('deploy_contract', input, mockNeoServices, mockContractServices);
-      expect(result).toHaveProperty('error');
     });
   });
 
@@ -980,8 +868,8 @@ describe('Tool Handlers', () => {
       const result = await callTool('estimate_transfer_fees', input, mockNeoServices, mockContractServices);
       
       expect(result).toHaveProperty('result');
-      expect(result.result).toHaveProperty('networkFee');
-      expect(result.result).toHaveProperty('systemFee');
+      expect(result.result).toHaveProperty('networkFeeDatos', '10000000');
+      expect(result.result).toHaveProperty('systemFeeDatos', '5000000');
     });
   });
 
@@ -990,7 +878,6 @@ describe('Tool Handlers', () => {
       const input = {
         network: 'mainnet',
         signerAddress: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
-        signerAddress: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
         scriptHash: '0x1234567890abcdef1234567890abcdef12345678',
         operation: 'transfer',
         args: []
@@ -998,8 +885,12 @@ describe('Tool Handlers', () => {
       const result = await callTool('estimate_invoke_fees', input, mockNeoServices, mockContractServices);
       
       expect(result).toHaveProperty('result');
-      expect(result.result).toHaveProperty('networkFee');
-      expect(result.result).toHaveProperty('systemFee');
+      expect(result.result).toEqual({
+        networkFeeDatos: '10000000',
+        systemFeeDatos: '5000000',
+        networkFeeGas: '0.1',
+        systemFeeGas: '0.05',
+      });
     });
 
     test('should estimate invoke fees with contractName alias', async () => {
@@ -1029,61 +920,6 @@ describe('Tool Handlers', () => {
         operation: 'transfer'
       };
       const result = await callTool('estimate_invoke_fees', input, mockNeoServices, mockContractServices);
-      expect(result).toHaveProperty('error');
-    });
-  });
-
-  describe('neofs_create_container', () => {
-    test('should create a NeoFS container successfully', async () => {
-      const input = {
-        network: 'mainnet',
-        fromWIF: 'Kx61m6KtSMHA61qrmwXpQQxG1EDurDGrtPGUUTuKnwxiDDnq7GC8',
-        ownerId: 'owner-1',
-        rules: [],
-        confirm: true
-      };
-
-      const result = await callTool('neofs_create_container', input, mockNeoServices, mockContractServices);
-
-      expect(result).toHaveProperty('result.txid', '0xneofscreate');
-    });
-  });
-
-  describe('neofs_get_containers', () => {
-    test('should return NeoFS containers for an owner', async () => {
-      const input = {
-        network: 'mainnet',
-        ownerAddress: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr'
-      };
-
-      const result = await callTool('neofs_get_containers', input, mockNeoServices, mockContractServices);
-
-      expect(result).toHaveProperty('result.containers');
-      expect(result.result.containers).toEqual([{ id: 'container-1' }]);
-    });
-  });
-
-  describe('claim_gas', () => {
-    test('should claim GAS successfully', async () => {
-      const input = {
-        network: 'mainnet',
-        fromWIF: 'Kx61m6KtSMHA61qrmwXpQQxG1EDurDGrtPGUUTuKnwxiDDnq7GC8',
-        confirm: true
-      };
-      const result = await callTool('claim_gas', input, mockNeoServices, mockContractServices);
-      
-      expect(result).toHaveProperty('result');
-      expect(result.result).toHaveProperty('txid');
-    });
-
-    test('should require confirmation', async () => {
-      const input = {
-        network: 'mainnet',
-        fromWIF: 'Kx61m6KtSMHA61qrmwXpQQxG1EDurDGrtPGUUTuKnwxiDDnq7GC8',
-        confirm: false
-      };
-      const result = await callTool('claim_gas', input, mockNeoServices, mockContractServices);
-      
       expect(result).toHaveProperty('error');
     });
   });
@@ -1120,7 +956,7 @@ describe('Tool Handlers', () => {
     test('should validate amounts', async () => {
       const input = {
         network: 'mainnet',
-        fromWIF: 'Kx61m6KtSMHA61qrmwXpQQxG1EDurDGrtPGUUTuKnwxiDDnq7GC8',
+        fromWIF: TEST_WIF,
         toAddress: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
         asset: 'NEO',
         amount: '0', // invalid amount

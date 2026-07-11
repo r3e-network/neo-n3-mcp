@@ -1,287 +1,146 @@
 # Version Management Guide
 
-This document outlines the version management strategy and release process for the Neo N3 MCP project.
+Neo N3 MCP follows [Semantic Versioning](https://semver.org/) using `MAJOR.MINOR.PATCH`.
 
-## Version Strategy
+Current version: `3.1.0`.
 
-The project follows [Semantic Versioning (SemVer)](https://semver.org/) with the format `MAJOR.MINOR.PATCH`:
+## Version Source
 
-- **MAJOR** (X.0.0): Breaking changes that are not backwards compatible
-- **MINOR** (0.X.0): New features that are backwards compatible
-- **PATCH** (0.0.X): Bug fixes that are backwards compatible
+`package.json` is the source of truth. `package-lock.json` is updated with it, and `src/version.ts` reads the package version at runtime. Rebuild after a version change so `dist/` reflects the new package metadata.
 
-### Current Version: 1.7.3
+Update release notes in `docs/CHANGELOG.md`. Do not maintain a separate Docker configuration version; container tags are derived by the release workflow or supplied to the build helper.
 
-## Version Management Scripts
-
-### Quick Version Commands
+Check the current version:
 
 ```bash
-# Check current version
 npm run version:check
-
-# Bump patch version (1.7.3 → 1.7.4)
-npm run version:patch
-
-# Bump minor version (1.7.3 → 1.8.0)
-npm run version:minor
-
-# Bump major version (1.7.3 → 2.0.0)
-npm run version:major
-
-# Prepare for release (build, test, type-check)
-npm run release:prepare
 ```
 
-### Automated Release Script
+## Recommended Release Preparation
 
-Use the comprehensive release preparation script:
+The release script requires a clean working tree and Node.js `>=22`:
 
 ```bash
-# Prepare patch release (recommended for bug fixes)
-./scripts/prepare-release.sh --type patch
-
-# Prepare minor release (recommended for new features)
-./scripts/prepare-release.sh --type minor
-
-# Prepare major release (for breaking changes)
-./scripts/prepare-release.sh --type major
-
-# Dry run to see what would happen
-./scripts/prepare-release.sh --type minor --dry-run
-
-# Skip tests and build (not recommended)
-./scripts/prepare-release.sh --type patch --skip-tests --skip-build
-```
-
-## Release Process
-
-### 1. Preparation Phase
-
-1. **Ensure Clean State**:
-   ```bash
-   git status  # Should be clean
-   git pull origin master  # Get latest changes
-   ```
-
-2. **Run Pre-Release Checks**:
-   ```bash
-   npm run release:prepare  # Builds, tests, and type-checks
-   ```
-
-3. **Update Documentation**:
-   - Update `docs/CHANGELOG.md` with new features and changes
-   - Review and update `README.md` if needed
-   - Update any relevant documentation
-
-### 2. Version Update Phase
-
-1. **Use Automated Script** (Recommended):
-   ```bash
-   ./scripts/prepare-release.sh --type minor
-   ```
-
-2. **Manual Process** (Alternative):
-   ```bash
-   # Update package.json and package-lock.json versions
-   npm version minor --no-git-tag-version
-
-   # Server version is derived automatically from package.json in src/version.ts
-   # Update CHANGELOG.md
-   
-   # Commit changes
-   git add .
-   git commit -m "chore: bump version to 1.8.0"
-   ```
-
-### 3. Release Phase
-
-1. **Push Changes**:
-   ```bash
-   git push origin master
-   ```
-
-2. **Create GitHub Release**:
-   ```bash
-   # Using GitHub CLI (recommended)
-   gh release create v1.8.0 --generate-notes
-   
-   # Or manually through GitHub web interface
-   ```
-
-3. **Automated CI/CD**:
-   - GitHub Actions automatically triggers on release
-   - Builds and tests the project
-   - Publishes to NPM registry
-   - Publishes Docker images to Docker Hub
-   - Deploys to production (if configured)
-
-## Version Locations
-
-When updating versions, ensure consistency across these files:
-
-1. **`package.json`**: Main version source
-   ```json
-   {
-     "version": "1.7.3"
-   }
-   ```
-
-2. **`src/version.ts`**: Server version source
-   ```typescript
-   import packageJson from '../package.json';
-
-   export const SERVER_VERSION = packageJson.version;
-   ```
-
-3. **`config/docker.json`**: Docker example config version
-   ```json
-   {
-     "server": {
-       "version": "1.7.3"
-     }
-   }
-   ```
-
-4. **`docs/CHANGELOG.md`**: Version history
-   ```markdown
-   ## [1.7.3] - 2026-03-10
-   ```
-
-## Release Types and Examples
-
-### Patch Release (1.7.3 → 1.7.4)
-**When to use**: Bug fixes, security patches, minor improvements
-
-**Examples**:
-- Fix Docker build issues
-- Correct validation logic
-- Update dependencies for security
-- Fix typos in documentation
-
-**Command**:
-```bash
+./scripts/prepare-release.sh --type patch --dry-run
 ./scripts/prepare-release.sh --type patch
 ```
 
-### Minor Release (1.7.3 → 1.8.0)
-**When to use**: New features, enhancements, non-breaking changes
+Supported version types are `patch`, `minor`, and `major`. Supported options:
 
-**Examples**:
-- Add new MCP tools or resources
-- Enhance existing functionality
-- Add new configuration options
-- Improve performance
-- Add new documentation
-
-**Command**:
-```bash
-./scripts/prepare-release.sh --type minor
+```text
+--type TYPE     patch, minor, or major
+--dry-run       verify without changing the version
+--skip-docker   skip local image builds
 ```
 
-### Major Release (1.7.3 → 2.0.0)
-**When to use**: Breaking changes, major architecture changes
+The script performs these checks before changing the version:
 
-**Examples**:
-- Change API interfaces
-- Remove deprecated features
-- Major dependency updates
-- Significant architecture changes
-- Change configuration format
+1. Installs the lockfile with `npm ci`.
+2. Runs type checking and deterministic unit tests.
+3. Builds `dist/` and runs deterministic MCP smoke and lifecycle tests.
+4. Runs full and production-only dependency audits at `high` severity.
+5. Validates the npm package with `npm pack --dry-run`.
+6. Validates both Compose files.
+7. Builds production and development images unless `--skip-docker` is set.
 
-**Command**:
-```bash
-./scripts/prepare-release.sh --type major
-```
+On a non-dry run it then runs `npm version <type> --no-git-tag-version`. It does not create a commit, tag, GitHub release, or deployment.
 
-## Automated CI/CD Pipeline
+## Release Procedure
 
-The release process triggers automated workflows:
+1. Start from the intended release branch with a clean working tree.
+2. Run a dry run:
 
-### On Version Tag/Release:
-1. **Build & Test**: Multi-version Node.js testing
-2. **Security Audit**: Dependency vulnerability scanning
-3. **Docker Build**: Both development and production images
-4. **NPM Publish**: Automatic package publishing
-5. **Docker Publish**: Multi-tag image publishing
-6. **Production Deploy**: Automated deployment (if configured)
-
-### Required Secrets:
-- `NPM_TOKEN`: For NPM registry publishing
-- `DOCKER_USERNAME`: Docker Hub username
-- `DOCKER_PASSWORD`: Docker Hub access token
-
-## Version History
-
-| Version | Date | Type | Description |
-|---------|------|------|-------------|
-| 1.7.3 | 2026-03-10 | Patch | Docker workflow fix for vendored NeonJS runtime so release builds can publish from the remediated dependency graph |
-| 1.7.2 | 2026-03-10 | Patch | Added the vendored NeonJS runtime bundle files to source control so CI and npm release installs can resolve the local dependency correctly |
-| 1.7.1 | 2026-03-10 | Patch | Dependency vulnerability remediation, vendored NeonJS runtime, MCP compliance/stress alignment |
-| 1.7.0 | 2026-03-10 | Minor | Generic contract resolution, contract status tool/route, api.n3index.dev exact-name lookup, stdio/HTTP surface alignment |
-| 1.6.4 | 2026-03-06 | Patch | Packaging hardening, built-artifact CI smoke validation, resource handler extraction |
-| 1.6.0 | 2025-06-25 | Minor | Enterprise CI/CD, Docker infrastructure, project organization |
-| 1.5.0 | Previous | Minor | Neo N3 MCP integration, multi-network support |
-
-## Best Practices
-
-### Before Releasing:
-- [ ] All tests pass
-- [ ] Documentation is updated
-- [ ] CHANGELOG.md is updated
-- [ ] Breaking changes are documented
-- [ ] Version numbers are consistent
-
-### During Release:
-- [ ] Use semantic versioning correctly
-- [ ] Write clear release notes
-- [ ] Test the release process in staging
-- [ ] Monitor deployment
-
-### After Release:
-- [ ] Verify NPM package is published
-- [ ] Verify Docker images are available
-- [ ] Test installation from published sources
-- [ ] Monitor for issues
-
-## Troubleshooting
-
-### Common Issues:
-
-1. **Version Mismatch**:
    ```bash
-   # Check all version locations
-   rg -n "1\.7\.3" package.json package-lock.json src/version.ts config/docker.json docs/CHANGELOG.md
+   ./scripts/prepare-release.sh --type patch --dry-run
    ```
 
-2. **Failed NPM Publish**:
-   - Check NPM_TOKEN secret
-   - Verify package name availability
-   - Check npm registry status
+3. Prepare the version:
 
-3. **Failed Docker Publish**:
-   - Check DOCKER_USERNAME and DOCKER_PASSWORD secrets
-   - Verify Docker Hub repository exists
-   - Check Docker build logs
+   ```bash
+   ./scripts/prepare-release.sh --type patch
+   ```
 
-4. **CI/CD Pipeline Failures**:
-   - Check GitHub Actions logs
-   - Verify all required secrets are set
-   - Check test failures
+4. Update `docs/CHANGELOG.md` and any version-specific user-facing documentation.
+5. Review `package.json`, `package-lock.json`, generated package contents, and documentation. The preparation checks ran immediately before the version change; run any additional checks needed for the documentation-only follow-up edits.
+6. Commit using the repository's Lore commit format, then create and push the matching tag:
 
-### Recovery:
+   ```bash
+   git tag v2.0.1
+   git push origin HEAD
+   git push origin v2.0.1
+   ```
 
-If a release fails:
-1. Fix the underlying issue
-2. Increment patch version
-3. Re-run release process
-4. Update release notes to mention the fix
+7. Publish a GitHub release for that tag:
 
-## Future Enhancements
+   ```bash
+   gh release create v2.0.1 --generate-notes
+   ```
 
-Planned improvements to version management:
-- Automated changelog generation
-- Release candidate (RC) versions
-- Hotfix branch strategy
-- Automated rollback capabilities
-- Integration with project management tools
+Publishing the GitHub release triggers the npm and Docker publishing jobs. A pushed tag by itself does not run those publish jobs.
+
+## Version Types
+
+| Type | Example | Use for |
+| --- | --- | --- |
+| Patch | `2.0.0` to `2.0.1` | Compatible fixes and security updates |
+| Minor | `2.0.0` to `2.1.0` | Backward-compatible features |
+| Major | `2.0.0` to `3.0.0` | Breaking API, configuration, or behavior changes |
+
+The convenience scripts `npm run version:patch`, `version:minor`, and `version:major` call `npm version` directly. In a Git repository, npm may create a version commit and tag. Prefer `prepare-release.sh` when you want verification first and explicit control of the commit and tag.
+
+## CI and Publishing
+
+`.github/workflows/ci.yml` validates pushes and pull requests with:
+
+- unit tests on Node.js 22 and 24
+- type checking and coverage
+- a clean TypeScript build
+- deterministic built MCP tests
+- npm package-content validation
+- full and production-only dependency audits
+- Compose validation and both container builds
+
+On a published GitHub release, successful validation can publish:
+
+- the npm package using `NPM_TOKEN`
+- Docker images using `DOCKER_USERNAME` and `DOCKER_PASSWORD`
+
+A shared release gate requires the tag, after an optional leading `v`, to match `package.json`. The workflow publishes retry-safe versioned candidates from the validated npm tarball and a health-tested container image. Only after both candidates succeed does a serialized, monotonic promotion move floating channels. Stable versions use npm `latest` and full, minor, major, and `latest` Docker tags. SemVer prereleases require a GitHub prerelease and use npm `next` plus only the full prerelease Docker tag.
+
+The repository does not define an automated production deployment, monitoring target, or rollback workflow. Operators must deploy and observe the published artifact in their own environment.
+
+## Dependency Audit
+
+Both audit commands are expected to pass:
+
+```bash
+npm audit --audit-level=high
+npm audit --omit=dev --audit-level=high
+```
+
+The lockfile uses a scoped override that pins the `lodash` dependency under `@cityofzion/neon-core` to `4.18.1`. Keep the override scoped and re-run both audits whenever Neo dependencies or the lockfile change.
+
+## Manual Version Update
+
+When the release script is unavailable:
+
+```bash
+npm ci
+npm run verify
+npm audit --audit-level=high
+npm audit --omit=dev --audit-level=high
+npm pack --dry-run
+npm version patch --no-git-tag-version
+```
+
+Then update the changelog, review `package.json` and `package-lock.json`, rebuild, and follow the commit, tag, and GitHub release steps above.
+
+## Failure and Recovery
+
+- Verification failure: fix the cause and rerun the preparation script; do not bypass deterministic tests or audits.
+- npm publish failure: verify the tag, package version, registry status, and `NPM_TOKEN`.
+- Docker publish failure: verify Docker Hub credentials, repository access, and the image-build job.
+- Partial release: do not reuse a published version. Correct the issue and prepare a new patch version.
+- Deployment rollback: redeploy the prior known-good npm or image version in the operator-managed environment.
+
+See [CHANGELOG.md](./CHANGELOG.md) for historical release notes.

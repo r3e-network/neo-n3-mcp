@@ -1,0 +1,5 @@
+services:
+  neo-mcp:
+    build: !reset null
+    image: "${NEO_MCP_IMAGE_REPOSITORY:?Set NEO_MCP_IMAGE_REPOSITORY to the image repository}@sha256:${NEO_MCP_IMAGE_DIGEST:?Set NEO_MCP_IMAGE_DIGEST to 64 lowercase hexadecimal characters}"
+    pull_policy: always

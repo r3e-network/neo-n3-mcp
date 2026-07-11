@@ -197,21 +197,6 @@ describe('MCP Protocol Compliance Tests', () => {
       expect(wallet.address).toMatch(/^N[A-Za-z0-9]{33}$/); // Neo N3 address format
     });
 
-    test('should allow setting the combined network mode', async () => {
-      const response = await client.callTool({
-        name: 'set_network_mode',
-        arguments: { mode: 'both' }
-      });
-
-      expect(response.isError).not.toBe(true);
-      expect(response.content[0].text).toContain('both');
-
-      const networkModeResponse = await client.callTool({ name: 'get_network_mode', arguments: {} });
-      const networkMode = JSON.parse(networkModeResponse.content[0].text);
-      expect(networkMode.mode).toBe('both');
-      expect(networkMode.availableNetworks).toEqual(expect.arrayContaining(['mainnet', 'testnet']));
-    });
-
     test('should handle network switching tools', async () => {
       const response = await client.callTool({ name: 'get_network_mode', arguments: {} });
       

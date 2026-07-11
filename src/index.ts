@@ -11,6 +11,10 @@ import { setupResourceHandlers } from './handlers/resource-handler';
 import { config, NetworkMode, validateConfig } from './config';
 import { SERVER_NAME, SERVER_VERSION } from './version';
 import { logger } from './utils/logger';
+import { rateLimiter } from './utils/rate-limiter';
+import { SignerProvider } from './services/signer-provider';
+import { WriteCoordinator, WriteOperationName } from './services/write-coordinator';
+import { WriteOperationService } from './services/write-operation-service';
 import {
   validateAddress,
   validateNetwork
@@ -21,11 +25,12 @@ import {
  * Neo N3 MCP Server - Modern MCP SDK Implementation
  * Using the high-level McpServer API
  */
-class NeoN3McpServer {
+export class NeoN3McpServer {
   private server: McpServer;
   private neoServices: Map<NeoNetwork, NeoService>;
   private contractServices: Map<NeoNetwork, ContractService>;
   private walletService: WalletService;
+  private writeCoordinator?: WriteCoordinator;
   private servicesInitialized = false;
 
   private createTextResponse(payload: unknown) {
@@ -83,7 +88,13 @@ class NeoN3McpServer {
     // Initialize service maps
     this.neoServices = new Map();
     this.contractServices = new Map();
-    this.walletService = new WalletService();
+    this.walletService = new WalletService(config.wallets.directory);
+    if (config.writes.enabled) {
+      this.writeCoordinator = new WriteCoordinator(
+        new SignerProvider(config.writes.signerWifFile as string),
+        new WriteOperationService(config.writes.stateDirectory),
+      );
+    }
 
     // Setup tools and resources using modern API
     this.setupTools();
@@ -211,12 +222,54 @@ class NeoN3McpServer {
    */
   private setupTools() {
     logger.info('Setting up tools with modern API...');
-    const registerTool = this.server.tool.bind(this.server) as (
+    type ToolHandler = (args: Record<string, unknown>) => Promise<unknown>;
+    type ToolRegistrar = (
       name: string,
       description: string,
       inputSchema: Record<string, z.ZodTypeAny>,
-      handler: (args: Record<string, unknown>) => Promise<unknown>,
+      handler: ToolHandler,
     ) => void;
+    type WriteToolRegistrar = (
+      name: string,
+      description: string,
+      inputSchema: Record<string, z.ZodTypeAny>,
+      annotations: {
+        readOnlyHint: false;
+        destructiveHint: true;
+        idempotentHint: true;
+      },
+      handler: ToolHandler,
+    ) => void;
+
+    const sdkRegisterTool = this.server.tool.bind(this.server) as ToolRegistrar;
+    const sdkRegisterWriteTool = this.server.tool.bind(this.server) as unknown as WriteToolRegistrar;
+    const registerTool = (
+      name: string,
+      description: string,
+      inputSchema: Record<string, z.ZodTypeAny>,
+      handler: ToolHandler,
+      rateLimitOwner: 'registration' | 'callTool' = 'registration',
+    ) => {
+      sdkRegisterTool(name, description, inputSchema, async (args) => {
+        if (rateLimitOwner === 'registration') {
+          rateLimiter.checkLimit('mcp-client');
+        }
+        return handler(args);
+      });
+    };
+    const registerDelegatedTool: ToolRegistrar = (name, description, inputSchema, handler) => {
+      registerTool(name, description, inputSchema, handler, 'callTool');
+    };
+    const registerWriteTool: ToolRegistrar = (name, description, inputSchema, handler) => {
+      sdkRegisterWriteTool(name, description, inputSchema, {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+      }, async (args) => {
+        rateLimiter.checkLimit('mcp-client');
+        return handler(args);
+      });
+    };
 
     // Network mode tool
     registerTool(
@@ -277,15 +330,16 @@ class NeoN3McpServer {
     // Block count tool
     registerTool(
       'get_block_count',
-      'Get the current block height for the selected network.',
+      'Get the block count and latest block height for the selected network.',
       {
         network: z.string().optional().describe('Network to use: "mainnet" or "testnet"'),
       },
       async ({ network }) => {
         const neoService = await this.getNeoService(network as string | undefined);
-        const info = await neoService.getBlockchainInfo();
+        const blockCount = await neoService.getBlockCount();
         const result = {
-          height: info.height,
+          blockCount,
+          height: Math.max(0, blockCount - 1),
           network: neoService.getNetwork()
         };
 
@@ -347,7 +401,7 @@ class NeoN3McpServer {
       }
     );
 
-    registerTool(
+    registerDelegatedTool(
       'get_nep17_transfers',
       'Get NEP-17 transfer history for an address.',
       {
@@ -367,7 +421,7 @@ class NeoN3McpServer {
       }
     );
 
-    registerTool(
+    registerDelegatedTool(
       'get_nep11_balances',
       'Get NEP-11 balances for an address.',
       {
@@ -385,7 +439,7 @@ class NeoN3McpServer {
       }
     );
 
-    registerTool(
+    registerDelegatedTool(
       'get_nep11_transfers',
       'Get NEP-11 transfer history for an address.',
       {
@@ -406,7 +460,7 @@ class NeoN3McpServer {
     );
 
     // List famous contracts tool
-    registerTool(
+    registerDelegatedTool(
       'list_famous_contracts',
       'List supported well-known contracts for the selected network.',
       {
@@ -424,7 +478,7 @@ class NeoN3McpServer {
     );
 
     // Contract info tool
-    registerTool(
+    registerDelegatedTool(
       'get_contract_info',
       'Get metadata and operations for a contract by known name, script hash, or Neo address.',
       {
@@ -444,7 +498,7 @@ class NeoN3McpServer {
       }
     );
 
-    registerTool(
+    registerDelegatedTool(
       'get_contract_status',
       'Check whether a contract is deployed and inspect its current on-chain status by known name, script hash, or Neo address.',
       {
@@ -464,24 +518,7 @@ class NeoN3McpServer {
       }
     );
 
-    // Create wallet tool
-    registerTool(
-      'create_wallet',
-      'Create a Neo N3 wallet, persist it locally, and return a NEP-2 encrypted private key.',
-      {
-        password: z.string().describe('Password to encrypt the wallet WIF'),
-      },
-      async (args) => {
-        try {
-          const result = await callTool('create_wallet', args, this.neoServices, this.contractServices, this.walletService);
-          return this.formatDelegatedToolResponse(result);
-        } catch (error: unknown) {
-          return this.createErrorResponse(error);
-        }
-      }
-    );
-
-    registerTool(
+    registerDelegatedTool(
       'get_wallet',
       'Get sanitized metadata for a locally stored wallet by address.',
       {
@@ -496,26 +533,7 @@ class NeoN3McpServer {
         }
       }
     );
-    registerTool(
-      'set_network_mode',
-      'Set the configured network mode. Restart may be required.',
-      { mode: z.enum(['mainnet', 'testnet', 'mainnet_only', 'testnet_only', 'both']).describe('Network mode to set') },
-      async (args) => {
-        try {
-          const result = await callTool('set_network_mode', args, this.neoServices, this.contractServices);
-          if (!(result && typeof result === 'object' && 'error' in result)) {
-            this.neoServices.clear();
-            this.contractServices.clear();
-            this.servicesInitialized = false;
-          }
-          return this.formatDelegatedToolResponse(result);
-        } catch (error: unknown) {
-          return this.createErrorResponse(error);
-        }
-      }
-    );
-
-    registerTool(
+    registerDelegatedTool(
       'get_block',
       'Get block details by height or hash.',
       { hashOrHeight: z.union([z.string(), z.number()]).describe('Block hash (64 hex chars) or block height (number)'), network: z.string().optional().describe('Optional: Network') },
@@ -530,7 +548,7 @@ class NeoN3McpServer {
       }
     );
 
-    registerTool(
+    registerDelegatedTool(
       'get_transaction',
       'Get transaction details by hash.',
       { txid: z.string().describe('Transaction hash (64 hex chars, optional 0x prefix)'), network: z.string().optional().describe('Optional: Network') },
@@ -545,7 +563,7 @@ class NeoN3McpServer {
       }
     );
 
-    registerTool(
+    registerDelegatedTool(
       'get_application_log',
       'Get the application log for a transaction hash.',
       { txid: z.string().describe('Transaction hash (64 hex chars, optional 0x prefix)'), network: z.string().optional().describe('Optional: Network') },
@@ -560,7 +578,7 @@ class NeoN3McpServer {
       }
     );
 
-    registerTool(
+    registerDelegatedTool(
       'wait_for_transaction',
       'Wait for a transaction to be confirmed on-chain.',
       {
@@ -581,42 +599,17 @@ class NeoN3McpServer {
       }
     );
 
-    registerTool(
-      'transfer_assets',
-      'Transfer NEP-17 assets using a sender WIF.',
-      { 
-      network: z.string().optional().describe('Optional: Network'),
-      fromWIF: z.string().describe('Sender WIF'),
-      toAddress: z.string().describe('Recipient address'),
-      asset: z.string().describe('Asset hash (e.g. NEO or GAS hash)'),
-      amount: z.string().describe('Amount to transfer'),
-      confirm: z.boolean().optional().describe('Must be true to execute')
-    },
-      async (args) => {
-        try {
-          await this.ensureServicesInitialized();
-          const result = await callTool('transfer_assets', args, this.neoServices, this.contractServices);
-          return this.formatDelegatedToolResponse(result);
-        } catch (error: unknown) {
-          return this.createErrorResponse(error);
-        }
-      }
-    );
-
-    registerTool(
+    registerDelegatedTool(
       'invoke_contract',
-      'Invoke a smart contract method. Read operations run without a wallet. Write operations require fromWIF and confirm=true.',
+      'Run a read-only smart contract invocation without signing or broadcasting a transaction.',
       {
-      network: z.string().optional().describe('Network to use: mainnet or testnet'),
-      fromWIF: z.string().optional().describe('Sender WIF private key (required for write operations)'),
-      contract: z.string().optional().describe('Contract reference: known name (e.g. "NeoFS"), script hash (0x...), or Neo address'),
+      network: z.enum(['mainnet', 'testnet']).optional().describe('Network to query'),
+      contract: z.string().optional().describe('Contract reference: script hash, Neo address, exact N3Index name, or a previously discovered manifest name'),
       scriptHash: z.string().optional().describe('Contract script hash (40 hex chars, optional 0x prefix)'),
-      contractName: z.string().optional().describe('Known contract name (e.g. "GAS", "NEO", "NeoFS")'),
+      contractName: z.string().optional().describe('Exact contract name resolved through N3Index or a live manifest'),
       nameOrHash: z.string().optional().describe('Contract name or script hash (alias for contract)'),
       operation: z.string().describe('Contract method name to invoke'),
-      args: z.array(z.unknown()).optional().describe('Method arguments as an array of values'),
-      signers: z.array(z.unknown()).optional().describe('Transaction signer scopes for write operations'),
-      confirm: z.boolean().optional().describe('Set to true to execute write operations (safety confirmation)')
+      args: z.array(z.unknown()).optional().describe('Method arguments as an array of values')
     },
       async (args) => {
         try {
@@ -629,26 +622,7 @@ class NeoN3McpServer {
       }
     );
 
-    registerTool(
-      'import_wallet',
-      'Import a wallet from a private key or WIF.',
-      {
-        key: z.string().optional().describe('Private key or WIF'),
-        privateKeyOrWIF: z.string().optional().describe('Legacy alias for private key or WIF'),
-        password: z.string().optional().describe('Optional password to encrypt the imported WIF')
-      },
-      async (args) => {
-        try {
-          await this.ensureServicesInitialized();
-          const result = await callTool('import_wallet', args, this.neoServices, this.contractServices, this.walletService);
-          return this.formatDelegatedToolResponse(result);
-        } catch (error: unknown) {
-          return this.createErrorResponse(error);
-        }
-      }
-    );
-
-    registerTool(
+    registerDelegatedTool(
       'estimate_transfer_fees',
       'Estimate network and system fees for a transfer.',
       { 
@@ -669,7 +643,7 @@ class NeoN3McpServer {
       }
     );
 
-    registerTool(
+    registerDelegatedTool(
       'estimate_invoke_fees',
       'Estimate network and system fees for a contract invocation by script hash or a generic contract reference.',
       { 
@@ -677,11 +651,10 @@ class NeoN3McpServer {
       signerAddress: z.string().describe('Signer address'),
       contract: z.string().optional().describe('Generic contract reference: known name, script hash, or Neo address'),
       scriptHash: z.string().optional().describe('Contract script hash'),
-      contractName: z.string().optional().describe('Supported contract name'),
+      contractName: z.string().optional().describe('Exact contract name resolved through N3Index or a live manifest'),
       nameOrHash: z.string().optional().describe('Backward-compatible alias for contract name or script hash'),
       operation: z.string().describe('Method name'),
-      args: z.array(z.unknown()).optional().describe('Optional: Method arguments'),
-      signers: z.array(z.unknown()).optional().describe('Optional: Signer scopes')
+      args: z.array(z.unknown()).optional().describe('Optional: Method arguments')
     },
       async (args) => {
         try {
@@ -694,79 +667,141 @@ class NeoN3McpServer {
       }
     );
 
-    registerTool(
-      'claim_gas',
-      'Claim available GAS for an account.',
-      { network: z.string().optional().describe('Optional: Network'), fromWIF: z.string().describe('Account WIF'), confirm: z.boolean().optional().describe('Must be true to execute') },
-      async (args) => {
-        try {
-          await this.ensureServicesInitialized();
-          const result = await callTool('claim_gas', args, this.neoServices, this.contractServices);
-          return this.formatDelegatedToolResponse(result);
-        } catch (error: unknown) {
-          return this.createErrorResponse(error);
-        }
-      }
-    );
+    if (config.writes.enabled) {
+      registerWriteTool(
+        'transfer_assets',
+        'Create, approve, sign, and submit an idempotent asset transfer using the configured server signer.',
+        {
+          idempotencyKey: z.string().min(8).max(128).describe('Stable unique key reused only for this exact transfer'),
+          network: z.enum(['mainnet', 'testnet']).describe('Explicit transaction network'),
+          toAddress: z.string().describe('Recipient Neo N3 address'),
+          asset: z.string().describe('NEO, GAS, or an NEP-17 script hash'),
+          amount: z.string().describe('Decimal token amount'),
+        },
+        async (args) => await this.handleMcpWrite('transfer_assets', args, {
+          toAddress: args.toAddress,
+          asset: args.asset,
+          amount: args.amount,
+        }),
+      );
 
-    registerTool(
-      'deploy_contract',
-      'Deploy a compiled Neo N3 contract. Requires explicit confirmation.',
-      {
-        network: z.string().optional().describe('Optional: Network'),
-        fromWIF: z.string().describe('Deployer account WIF'),
-        script: z.string().describe('NEF script as hex or base64'),
-        manifest: z.record(z.unknown()).describe('Contract manifest JSON object'),
-        confirm: z.boolean().optional().describe('Must be true to execute')
-      },
-      async (args) => {
-        try {
-          await this.ensureServicesInitialized();
-          const result = await callTool('deploy_contract', args, this.neoServices, this.contractServices);
-          return this.formatDelegatedToolResponse(result);
-        } catch (error: unknown) {
-          return this.createErrorResponse(error);
-        }
-      }
-    );
+      registerWriteTool(
+        'invoke_contract_write',
+        'Create, approve, sign, and submit an idempotent contract write using an explicit script hash.',
+        {
+          idempotencyKey: z.string().min(8).max(128).describe('Stable unique key reused only for this exact invocation'),
+          network: z.enum(['mainnet', 'testnet']).describe('Explicit transaction network'),
+          scriptHash: z.string().describe('Contract script hash; name-based write resolution is not allowed'),
+          operation: z.string().min(1).describe('Contract method name'),
+          args: z.array(z.unknown()).optional().describe('Contract method arguments'),
+        },
+        async (args) => await this.handleMcpWrite('invoke_contract_write', args, {
+          scriptHash: args.scriptHash,
+          operation: args.operation,
+          args: args.args ?? [],
+        }),
+      );
 
-    registerTool(
-      'neofs_create_container',
-      'Create a NeoFS container.',
-      {
-        network: z.string().optional().describe('Optional: Network'),
-        fromWIF: z.string().optional().describe('Owner account WIF'),
-        wif: z.string().optional().describe('Legacy alias for the owner account WIF'),
-        ownerId: z.string().describe('Owner identifier for the container'),
-        rules: z.array(z.unknown()).optional().describe('Optional: Container placement rules'),
-        confirm: z.boolean().optional().describe('Must be true to execute')
-      },
-      async (args) => {
-        try {
-          await this.ensureServicesInitialized();
-          const result = await callTool('neofs_create_container', args, this.neoServices, this.contractServices);
-          return this.formatDelegatedToolResponse(result);
-        } catch (error: unknown) {
-          return this.createErrorResponse(error);
-        }
-      }
-    );
+      registerWriteTool(
+        'claim_gas',
+        'Create, approve, sign, and submit an idempotent GAS claim for the configured server signer.',
+        {
+          idempotencyKey: z.string().min(8).max(128).describe('Stable unique key reused only for this exact GAS claim'),
+          network: z.enum(['mainnet', 'testnet']).describe('Explicit transaction network'),
+        },
+        async (args) => await this.handleMcpWrite('claim_gas', args, {}),
+      );
 
-    registerTool(
-      'neofs_get_containers',
-      'List NeoFS containers for an owner.',
-      { network: z.string().optional().describe('Optional: Network'), ownerAddress: z.string().describe('Address of the owner') },
-      async (args) => {
-        try {
-          await this.ensureServicesInitialized();
-          const result = await callTool('neofs_get_containers', args, this.neoServices, this.contractServices);
-          return this.formatDelegatedToolResponse(result);
-        } catch (error: unknown) {
-          return this.createErrorResponse(error);
-        }
-      }
-    );
+      registerWriteTool(
+        'deploy_contract',
+        'Create, approve, sign, and submit an idempotent contract deployment using the configured server signer.',
+        {
+          idempotencyKey: z.string().min(8).max(128).describe('Stable unique key reused only for this exact deployment'),
+          network: z.enum(['mainnet', 'testnet']).describe('Explicit transaction network'),
+          nef: z.object({
+            encoding: z.enum(['hex', 'base64']),
+            data: z.string().min(1),
+          }).describe('Complete serialized NEF artifact and encoding'),
+          manifest: z.record(z.unknown()).describe('Neo N3 contract manifest'),
+        },
+        async (args) => await this.handleMcpWrite('deploy_contract', args, {
+          nef: args.nef,
+          manifest: args.manifest,
+        }),
+      );
+    }
 
+  }
+
+  private async handleMcpWrite(
+    operation: WriteOperationName,
+    args: Record<string, unknown>,
+    payload: Record<string, unknown>,
+  ) {
+    try {
+      const coordinator = this.writeCoordinator;
+      if (!coordinator) {
+        throw new Error('State-changing tools are disabled');
+      }
+      const capabilities = this.server.server.getClientCapabilities();
+      if (!capabilities?.elicitation?.form) {
+        throw new Error('This write requires an MCP client with form elicitation support');
+      }
+
+      const network = validateNetwork(args.network as string);
+      const neoService = await this.getNeoService(network);
+      const contractService = await this.getContractService(network);
+      if (operation === 'deploy_contract') {
+        contractService.validateDeploymentArtifacts(
+          payload.nef as { encoding: 'hex' | 'base64'; data: string },
+          payload.manifest as Record<string, unknown>,
+        );
+      }
+      const record = coordinator.reserve(args.idempotencyKey as string, {
+        operation,
+        network,
+        payload,
+      });
+      const canonicalPayload = JSON.stringify(record.payload, null, 2);
+      const elicitation = await this.server.server.elicitInput({
+        mode: 'form',
+        message: `Approve ${operation} on ${network} from ${record.signerAddress}.\n\n`
+          + `Payload:\n${canonicalPayload}\n\nFingerprint: ${record.fingerprint}`,
+        requestedSchema: {
+          type: 'object',
+          properties: {
+            fingerprint: {
+              type: 'string',
+              title: 'Intent fingerprint',
+              description: record.fingerprint,
+              minLength: 64,
+              maxLength: 64,
+            },
+            approve: {
+              type: 'boolean',
+              title: 'Approve transaction',
+              default: false,
+            },
+          },
+          required: ['fingerprint', 'approve'],
+        },
+      });
+
+      const approved = elicitation.action === 'accept'
+        && elicitation.content?.approve === true
+        && elicitation.content.fingerprint === record.fingerprint;
+      if (!approved) {
+        if (record.state === 'awaiting_approval') coordinator.decline(record.intentId);
+        throw new Error('Write intent was not approved with its exact fingerprint');
+      }
+
+      coordinator.approve(record.intentId, record.fingerprint);
+      return this.createTextResponse(
+        await coordinator.execute(record.intentId, neoService, contractService)
+      );
+    } catch (error) {
+      return this.createErrorResponse(error);
+    }
   }
 
   /**
@@ -799,7 +834,30 @@ class NeoN3McpServer {
       throw error;
     }
   }
+
+  async close(): Promise<void> {
+    try {
+      await this.server.close();
+    } finally {
+      logger.close();
+    }
+  }
 }
+
+export {
+  NeoService,
+  NeoNetwork,
+  WalletService,
+  ContractService,
+  config,
+  NetworkMode,
+  validateConfig,
+};
+export { HttpServer } from './http-server';
+export type { HttpServerOptions } from './http-server';
+export type { EncodedNef } from './contracts/contract-service';
+export type { FeeEstimate } from './services/neo-service';
+export { SERVER_NAME, SERVER_VERSION } from './version';
 
 // Start the server if run directly
 if (require.main === module) {

@@ -106,68 +106,51 @@
         <header style="text-align: center; margin-bottom: 3rem;">
             <h1 class="section-title">Wallet Operations</h1>
             <p class="section-subtitle">
-                Complete guide to wallet management with Neo N3 MCP Server
+                Inspect provisioned accounts and submit idempotent, independently approved transactions
             </p>
         </header>
 
         <div class="example-section">
-            <h2>🆕 Creating a New Wallet</h2>
-            <p>Create a secure wallet with encrypted private key storage:</p>
+            <h2>Provisioning a Signer</h2>
+            <p>Provision the signer outside MCP and expose only its owner-only file to the server:</p>
             
             <div class="code-window">
                 <div class="code-header">
-                    <span class="code-lang">Create Wallet</span>
+                    <span class="code-lang">Server Configuration</span>
                 </div>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <div class="code-content">
-                    <pre>// Using MCP Tools
-const result = await tools.create_wallet({
-  password: "secure_password_123",
-  name: "MyWallet"
-});
+                    <pre>NEO_ENABLE_WRITES=true
+NEO_SIGNER_WIF_FILE=/run/secrets/neo-signer-wif
+NEO_WRITE_STATE_DIR=/var/lib/neo-n3-mcp/write-operations
 
-console.log("Wallet created:", result);
-// Output:
-// {
-//   "address": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-//   "publicKey": "03c6aa6e12638b36c....",
-//   "encrypted": true,
-//   "name": "MyWallet"
-// }</pre>
+# The signer file is created out of band, owned by the server user, mode 0600.</pre>
                 </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>📥 Importing an Existing Wallet</h2>
-            <p>Import a wallet using WIF (Wallet Import Format) or private key:</p>
+            <h2>Reading Wallet Metadata</h2>
+            <p>MCP exposes sanitized metadata for wallets provisioned outside the model-facing channel:</p>
             
             <div class="code-window">
                 <div class="code-header">
-                    <span class="code-lang">Import Wallet</span>
+                    <span class="code-lang">Get Wallet</span>
                 </div>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <div class="code-content">
-                    <pre>// Import from WIF
-const walletFromWIF = await tools.import_wallet({
-  wif: "KxDgvEKzgSBPPfuVfw67oPQBSjidEiqTHURKSDL1R7yGaGYAeYnr",
-  password: "new_password_123",
-  name: "ImportedWallet"
+                    <pre>const wallet = await tools.get_wallet({
+  address: accountAddress
 });
 
-// Import from private key
-const walletFromKey = await tools.import_wallet({
-  privateKey: "1dd37fba80fec4e6a6f13fd708d8dcb3b29def768017052f6c930fa1c5d90bbb",
-  password: "secure_password",
-  name: "ImportedFromKey"
-});</pre>
+console.log(wallet.address, wallet.publicKey);</pre>
                 </div>
             </div>
         </div>
 
         <div class="example-section">
             <h2>💰 Checking Wallet Balance</h2>
-            <p>Get comprehensive balance information for NEO, GAS, and NEP-17 tokens:</p>
+            <p>Read sanitized local metadata, on-chain NEP-17 balances, and claimable GAS:</p>
             
             <div class="code-window">
                 <div class="code-header">
@@ -175,29 +158,29 @@ const walletFromKey = await tools.import_wallet({
                 </div>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <div class="code-content">
-                    <pre>// Get balance for specific address
+                    <pre>const address = "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj";
+
+// This returns metadata only; encrypted key material is omitted.
+const localWallet = await tools.get_wallet({ address });
+
 const balance = await tools.get_balance({
-  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj"
+  address,
+  network: "testnet"
 });
 
-console.log("Wallet balance:", balance);
-// Output:
-// {
-//   "NEO": "100",
-//   "GAS": "15.5234",
-//   "tokens": {
-//     "fWMP2dkWM": "1000.00", // Flamingo token
-//     "d2a4cFF31": "50.25"    // Other NEP-17 token
-//   },
-//   "totalValueUSD": "1250.75"
-// }</pre>
+const claimableGas = await tools.get_unclaimed_gas({
+  address,
+  network: "testnet"
+});
+
+console.log({ localWallet, balance, claimableGas });</pre>
                 </div>
             </div>
         </div>
 
         <div class="example-section">
             <h2>💸 Transferring Assets</h2>
-            <p>Send NEO, GAS, or NEP-17 tokens to other addresses:</p>
+            <p>Estimate fees first, then send a NEP-17 asset with explicit confirmation:</p>
             
             <div class="code-window">
                 <div class="code-header">
@@ -205,206 +188,146 @@ console.log("Wallet balance:", balance);
                 </div>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <div class="code-content">
-                    <pre>// Transfer NEO tokens
-const neoTransfer = await tools.transfer_neo({
-  fromAddress: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  toAddress: "NYjzhdekseMYWvYpSoAeypqMiwMuEUDhKB",
-  amount: "10",
-  password: "wallet_password"
+                    <pre>const NEO_HASH = "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5";
+const fromAddress = "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj";
+const toAddress = "NYjzhdekseMYWvYpSoAeypqMiwMuEUDhKB";
+
+const fees = await tools.estimate_transfer_fees({
+  fromAddress,
+  toAddress,
+  asset: NEO_HASH,
+  amount: "1",
+  network: "testnet"
 });
 
-// Transfer GAS tokens
-const gasTransfer = await tools.transfer_gas({
-  fromAddress: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj", 
-  toAddress: "NYjzhdekseMYWvYpSoAeypqMiwMuEUDhKB",
-  amount: "5.5",
-  password: "wallet_password"
+console.log("Exact fees (datos):", fees.networkFeeDatos, fees.systemFeeDatos);
+console.log("Formatted fees (GAS):", fees.networkFeeGas, fees.systemFeeGas);
+
+const transfer = await tools.transfer_assets({
+  idempotencyKey: "transfer-2026-07-11-001",
+  toAddress,
+  asset: NEO_HASH,
+  amount: "1",
+  network: "testnet"
 });
 
-console.log("Transfer completed:", gasTransfer);
-// Output:
-// {
-//   "txid": "0x1234567890abcdef...",
-//   "gasConsumed": "0.0234567",
-//   "confirmations": 1,
-//   "success": true
-// }</pre>
+console.log("Submitted transaction:", transfer.txid);</pre>
                 </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>🪙 NEP-17 Token Operations</h2>
-            <p>Work with custom NEP-17 tokens:</p>
+            <h2>Token and NFT Activity</h2>
+            <p>Query NEP-17 transfers plus NEP-11 balances and transfer history:</p>
             
             <div class="code-window">
                 <div class="code-header">
-                    <span class="code-lang">NEP-17 Token Transfer</span>
+                    <span class="code-lang">NEP-17 and NEP-11 Activity</span>
                 </div>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <div class="code-content">
-                    <pre>// Get token information
-const tokenInfo = await tools.get_nep17_token_info({
-  contractHash: "0xd2a4cff31913016155e38e474a2c06d08be276cf"
+                    <pre>const address = "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj";
+const fromTimestampMs = Date.now() - (30 * 24 * 60 * 60 * 1000);
+
+const nep17Transfers = await tools.get_nep17_transfers({
+  address,
+  fromTimestampMs,
+  network: "testnet"
 });
 
-// Transfer NEP-17 tokens
-const tokenTransfer = await tools.transfer_nep17({
-  fromAddress: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  toAddress: "NYjzhdekseMYWvYpSoAeypqMiwMuEUDhKB", 
-  contractHash: "0xd2a4cff31913016155e38e474a2c06d08be276cf",
-  amount: "100.5",
-  password: "wallet_password"
+const nep11Balances = await tools.get_nep11_balances({
+  address,
+  network: "testnet"
 });
 
-console.log("Token info:", tokenInfo);
-// Output:
-// {
-//   "symbol": "FLM",
-//   "decimals": 8,
-//   "totalSupply": "150000000.00000000",
-//   "name": "Flamingo"
-// }</pre>
+const nep11Transfers = await tools.get_nep11_transfers({
+  address,
+  fromTimestampMs,
+  toTimestampMs: Date.now(),
+  network: "testnet"
+});
+
+console.log({ nep17Transfers, nep11Balances, nep11Transfers });</pre>
                 </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>📜 Transaction History</h2>
-            <p>Get transaction history for wallet addresses:</p>
+            <h2>Claiming GAS</h2>
+            <p>Claiming GAS uses the configured signer, durable idempotency, and exact elicited approval:</p>
             
             <div class="code-window">
                 <div class="code-header">
-                    <span class="code-lang">Get Transaction History</span>
+                    <span class="code-lang">Confirmed GAS Claim</span>
                 </div>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <div class="code-content">
-                    <pre>// Get recent transactions
-const history = await tools.get_address_transactions({
-  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  limit: 10
+                    <pre>const claim = await tools.claim_gas({
+  idempotencyKey: "gas-claim-2026-07-11-001",
+  network: "testnet"
 });
 
-console.log("Transaction history:", history);
-// Output:
-// {
-//   "transactions": [
-//     {
-//       "txid": "0xabcdef1234567890...",
-//       "blockHeight": 5678901,
-//       "timestamp": 1640995200,
-//       "type": "NEP17Transfer",
-//       "amount": "10.00000000",
-//       "asset": "NEO",
-//       "from": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-//       "to": "NYjzhdekseMYWvYpSoAeypqMiwMuEUDhKB"
-//     }
-//   ]
-// }</pre>
+const receipt = await tools.wait_for_transaction({
+  txid: claim.txid,
+  timeoutMs: 120000,
+  pollIntervalMs: 3000,
+  includeApplicationLog: true,
+  network: "testnet"
+});
+
+console.log("Claim receipt:", receipt);</pre>
                 </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>🏗️ Complete Wallet Manager Example</h2>
-            <p>A comprehensive wallet management class:</p>
+            <h2>Complete Safe Transfer Flow</h2>
+            <p>A compact helper that estimates, confirms, submits, and waits for a transfer:</p>
             
             <div class="code-window">
                 <div class="code-header">
-                    <span class="code-lang">Wallet Manager Class</span>
+                    <span class="code-lang">Transfer Helper</span>
                 </div>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <div class="code-content">
-                    <pre>class NeoWalletManager {
-  constructor(mcpTools) {
-    this.tools = mcpTools;
-    this.wallets = new Map();
-  }
+                    <pre>async function transferAndWait(tools, request) {
+  const fees = await tools.estimate_transfer_fees({
+    fromAddress: request.fromAddress,
+    toAddress: request.toAddress,
+    asset: request.asset,
+    amount: request.amount,
+    network: request.network
+  });
 
-  async createWallet(name, password) {
-    try {
-      const wallet = await this.tools.create_wallet({
-        name,
-        password
-      });
-      
-      this.wallets.set(name, wallet);
-      console.log(`✅ Wallet "${name}" created successfully`);
-      return wallet;
-    } catch (error) {
-      console.error("❌ Failed to create wallet:", error);
-      throw error;
-    }
-  }
+  // Present fees and destination to the user before reaching this call.
+  const transfer = await tools.transfer_assets({
+    idempotencyKey: request.idempotencyKey,
+    toAddress: request.toAddress,
+    asset: request.asset,
+    amount: request.amount,
+    network: request.network
+  });
 
-  async getPortfolioValue(address) {
-    const balance = await this.tools.get_balance({ address });
-    const prices = await this.tools.get_asset_prices();
-    
-    let totalValue = 0;
-    totalValue += parseFloat(balance.NEO || 0) * prices.NEO;
-    totalValue += parseFloat(balance.GAS || 0) * prices.GAS;
-    
-    // Calculate token values
-    for (const [token, amount] of Object.entries(balance.tokens || {})) {
-      if (prices[token]) {
-        totalValue += parseFloat(amount) * prices[token];
-      }
-    }
-    
-    return {
-      totalValueUSD: totalValue.toFixed(2),
-      breakdown: {
-        NEO: (parseFloat(balance.NEO || 0) * prices.NEO).toFixed(2),
-        GAS: (parseFloat(balance.GAS || 0) * prices.GAS).toFixed(2),
-        tokens: balance.tokens
-      }
-    };
-  }
+  const receipt = await tools.wait_for_transaction({
+    txid: transfer.txid,
+    timeoutMs: 120000,
+    pollIntervalMs: 3000,
+    network: request.network
+  });
 
-  async transferWithConfirmation(from, to, asset, amount, password) {
-    console.log(`🔄 Initiating transfer: ${amount} ${asset}`);
-    
-    // Estimate fees first
-    const feeEstimate = await this.tools.estimate_transfer_fee({
-      fromAddress: from,
-      toAddress: to,
-      asset,
-      amount
-    });
-    
-    console.log(`💰 Estimated fee: ${feeEstimate.fee} GAS`);
-    
-    // Execute transfer
-    let result;
-    if (asset === 'NEO') {
-      result = await this.tools.transfer_neo({
-        fromAddress: from,
-        toAddress: to,
-        amount,
-        password
-      });
-    } else if (asset === 'GAS') {
-      result = await this.tools.transfer_gas({
-        fromAddress: from,
-        toAddress: to,
-        amount,
-        password
-      });
-    }
-    
-    console.log(`✅ Transfer completed: ${result.txid}`);
-    return result;
-  }
+  return { fees, txid: transfer.txid, receipt };
 }
 
-// Usage example
-const walletManager = new NeoWalletManager(mcpTools);
+const result = await transferAndWait(tools, {
+  idempotencyKey: "transfer-2026-07-11-002",
+  fromAddress: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
+  toAddress: "NYjzhdekseMYWvYpSoAeypqMiwMuEUDhKB",
+  asset: "0xd2a4cff31913016155e38e474a2c06d08be276cf",
+  amount: "0.5",
+  network: "testnet"
+});
 
-// Create and manage wallets
-await walletManager.createWallet("MainWallet", "secure123");
-const portfolio = await walletManager.getPortfolioValue("NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj");
-console.log("Portfolio value:", portfolio);</pre>
+console.log("Confirmed transfer:", result);</pre>
                 </div>
             </div>
         </div>
@@ -435,8 +358,8 @@ console.log("Portfolio value:", portfolio);</pre>
                 <div>
                     <div class="footer-brand">Neo N3 MCP</div>
                     <p class="footer-description">
-                        The most advanced Neo N3 blockchain development platform. 
-                        Build powerful dApps with enterprise-grade tools and security.
+                        A focused MCP and HTTP integration surface for Neo N3 data, assets,
+                        wallets, transactions, and smart contracts.
                     </p>
                 </div>
                 <div>
@@ -495,4 +418,4 @@ console.log("Portfolio value:", portfolio);</pre>
         }
     </script>
 </body>
-</html> 
+</html>

@@ -6,6 +6,7 @@
 import { jest } from '@jest/globals';
 import { NeoService, NeoNetwork } from '../src/services/neo-service';
 import * as neonJs from '@cityofzion/neon-js';
+import { TEST_WIF } from './test-wallet';
 
 // Mock data for blockchain operations
 const mockBlockchainInfo = {
@@ -55,9 +56,9 @@ const mockBalance = {
 };
 
 const mockTransferResult = {
-  txid: '0xabc123def456789abc123def456789abc123def456789abc123def456789abc123'
+  txid: `0x${'c'.repeat(64)}`
 };
-const mockNetworkMagic = 894710606;
+const mockNetworkMagic = 860833102;
 
 // Mock neon-js
 jest.mock('@cityofzion/neon-js', () => ({
@@ -65,13 +66,20 @@ jest.mock('@cityofzion/neon-js', () => ({
     Query: jest.fn().mockImplementation((q) => q),
     RPCClient: jest.fn().mockImplementation(() => ({
       getBlockCount: jest.fn().mockResolvedValue(12345),
-      getVersion: jest.fn().mockResolvedValue({ protocol: { network: 877933390 } }),
+      getVersion: jest.fn().mockResolvedValue({ protocol: { network: mockNetworkMagic } }),
       getValidators: jest.fn().mockResolvedValue(mockBlockchainInfo.validators),
       getBlock: jest.fn().mockResolvedValue(mockBlock),
       getTransaction: jest.fn().mockResolvedValue(mockTransaction),
-      invokeScript: jest.fn().mockResolvedValue({ state: 'HALT', stack: [], script: 'mock', tx: 'mock' }),
-      invokeFunction: jest.fn().mockResolvedValue({ state: 'HALT', stack: [], script: 'mock', tx: 'mock' }),
-      sendRawTransaction: jest.fn().mockResolvedValue('0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'),
+      getRawTransaction: jest.fn().mockResolvedValue(mockTransaction),
+      getUnclaimedGas: jest.fn().mockResolvedValue('50000000'),
+      invokeScript: jest.fn().mockResolvedValue({ state: 'HALT', gasconsumed: '100000', stack: [], script: 'mock', tx: 'mock' }),
+      invokeFunction: jest.fn().mockImplementation(async (_scriptHash, operation) => ({
+        state: 'HALT',
+        stack: [{ value: operation === 'decimals' ? '0' : '100000000000' }],
+        script: 'mock',
+        tx: 'mock',
+      })),
+      sendRawTransaction: jest.fn().mockResolvedValue(mockTransferResult.txid),
       execute: jest.fn().mockImplementation((queryOrMethod) => {
         const method = typeof queryOrMethod === 'string'
           ? queryOrMethod
@@ -81,7 +89,7 @@ jest.mock('@cityofzion/neon-js', () => ({
           case 'getblockcount':
             return Promise.resolve(12345);
           case 'getversion':
-            return Promise.resolve({ protocol: { network: 877933390 } });
+            return Promise.resolve({ protocol: { network: mockNetworkMagic } });
           case 'getvalidators':
             return Promise.resolve(mockBlockchainInfo.validators);
           case 'getblock':
@@ -117,13 +125,26 @@ jest.mock('@cityofzion/neon-js', () => ({
       decrypt: jest.fn()
     })),
     getScriptHashFromAddress: jest.fn().mockReturnValue('f81a9a9ebf8cc9ae7f9ac3491f5a9f3b282b5e9e'),
+    isAddress: jest.fn().mockImplementation((address) => (
+      address === 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr'
+    )),
     getAddressFromScriptHash: jest.fn().mockImplementation((scriptHash) => `addr-${String(scriptHash).replace(/^0x/, '').toLowerCase()}`),
     isWIF: jest.fn().mockReturnValue(true),
     isPrivateKey: jest.fn().mockReturnValue(true),
-    encrypt: jest.fn().mockResolvedValue('encrypted-wif')
+    isNEP2: jest.fn().mockReturnValue(true),
+    encrypt: jest.fn().mockResolvedValue('encrypted-wif'),
+    decrypt: jest.fn().mockResolvedValue('private-key')
   },
   sc: {
     createScript: jest.fn().mockReturnValue('mock-script'),
+    ScriptBuilder: jest.fn().mockImplementation(() => ({
+      emitAppCall: jest.fn(),
+      emit: jest.fn(),
+      build: jest.fn().mockReturnValue('mock-transfer-script')
+    })),
+    OpCode: {
+      ASSERT: 'ASSERT'
+    },
     ContractParam: {
       hash160: jest.fn().mockReturnValue('mock-hash160'),
       integer: jest.fn().mockReturnValue('mock-int'),
@@ -135,7 +156,8 @@ jest.mock('@cityofzion/neon-js', () => ({
   experimental: {
     nep17: {
       Nep17Contract: jest.fn().mockImplementation(() => ({
-        transfer: jest.fn().mockResolvedValue(mockTransferResult.txid)
+        balanceOf: jest.fn().mockResolvedValue(100),
+        decimals: jest.fn().mockResolvedValue(0)
       })),
       NEOContract: jest.fn().mockImplementation(() => ({
         claimGas: jest.fn().mockResolvedValue(mockTransferResult.txid)
@@ -145,31 +167,52 @@ jest.mock('@cityofzion/neon-js', () => ({
       invoke: jest.fn().mockResolvedValue(mockTransferResult.txid)
     })),
     txHelpers: {
-      getSystemFee: jest.fn().mockResolvedValue({ toString: () => '100000' })
+      getSystemFee: jest.fn().mockResolvedValue({ toString: () => '100000' }),
+      setBlockExpiry: jest.fn().mockResolvedValue(undefined),
+      addFees: jest.fn().mockResolvedValue(undefined)
     }
   },
   api: {
     smartCalculateNetworkFee: jest.fn().mockResolvedValue({ toString: () => '50000' })
   },
+  CONST: {
+    DEFAULT_ADDRESS_VERSION: 53,
+  },
   u: {
+    BigInteger: {
+      fromDecimal: jest.fn().mockImplementation((value) => ({ toString: () => String(value) })),
+    },
     HexString: {
       fromHex: jest.fn().mockReturnValue('mock-hex'),
       fromBase64: jest.fn().mockReturnValue({ toString: () => 'mock-base64' })
     }
   },
   tx: {
+    Signer: jest.fn().mockImplementation((value) => value),
     WitnessScope: {
       CalledByEntry: 1,
       Global: 128
     },
     Witness: jest.fn().mockImplementation((config) => config),
-    Transaction: jest.fn().mockImplementation(() => ({
-      script: '',
-      sign: jest.fn(),
-      addSigner: jest.fn(),
-      addWitness: jest.fn(),
-      serialize: jest.fn().mockReturnValue('serialized-transaction')
-    }))
+    Transaction: jest.fn().mockImplementation(() => {
+      const transaction: Record<string, any> = {
+        script: '',
+        signers: [],
+        witnesses: [],
+        sign: jest.fn(),
+        hash: jest.fn().mockReturnValue(mockTransferResult.txid.replace(/^0x/, '')),
+        serialize: jest.fn().mockReturnValue('aa55'),
+      };
+      transaction.addSigner = jest.fn((signer) => {
+        transaction.signers.push(signer);
+        return transaction;
+      });
+      transaction.addWitness = jest.fn((witness) => {
+        transaction.witnesses.push(witness);
+        return transaction;
+      });
+      return transaction;
+    })
   }
 }));
 
@@ -202,9 +245,11 @@ describe('Blockchain Operations', () => {
       const info = await neoService.getBlockchainInfo();
       
       expect(info).toHaveProperty('height');
+      expect(info).toHaveProperty('blockCount');
       expect(info).toHaveProperty('network');
       expect(info).toHaveProperty('validators');
-      expect(info.height).toBe(12345);
+      expect(info.blockCount).toBe(12345);
+      expect(info.height).toBe(12344);
       expect(info.network).toBe(NeoNetwork.MAINNET);
       expect(Array.isArray(info.validators)).toBe(true);
     });
@@ -270,7 +315,7 @@ describe('Blockchain Operations', () => {
 
     test('should handle invalid transaction hash', async () => {
       const mockRpcClient = neoService['rpcClient'];
-      mockRpcClient.execute = jest.fn().mockRejectedValue(new Error('Invalid transaction hash'));
+      mockRpcClient.getRawTransaction = jest.fn().mockRejectedValue(new Error('Invalid transaction hash'));
 
       await expect(neoService.getTransaction('invalid')).rejects.toThrow('Failed to get transaction');
     });
@@ -306,7 +351,8 @@ describe('Blockchain Operations', () => {
   describe('transferAssets', () => {
     const mockAccount = {
       address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
-      WIF: 'mock-wif'
+      WIF: 'mock-wif',
+      contract: { script: 'EQ==' },
     };
 
     test('should transfer assets successfully', async () => {
@@ -330,7 +376,7 @@ describe('Blockchain Operations', () => {
     test('should handle invalid amount', async () => {
       await expect(
         neoService.transferAssets(mockAccount, 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr', 'NEO', '0')
-      ).rejects.toThrow('Failed to transfer assets');
+      ).rejects.toThrow(/amount must be greater than zero/i);
     });
 
     test('should handle missing account', async () => {
@@ -341,8 +387,8 @@ describe('Blockchain Operations', () => {
   });
 
   describe('wallet operations', () => {
-    test('should create wallet successfully', () => {
-      const wallet = neoService.createWallet('password123');
+    test('should create wallet successfully', async () => {
+      const wallet = await neoService.createWallet('password123');
       
       expect(wallet).toHaveProperty('address');
       expect(wallet).toHaveProperty('publicKey');
@@ -350,22 +396,22 @@ describe('Blockchain Operations', () => {
       // expect(wallet).toHaveProperty('WIF');
     });
 
-    test('should import wallet from WIF', () => {
-      const mockWif = 'Kx61m6KtSMHA61qrmwXpQQxG1EDurDGrtPGUUTuKnwxiDDnq7GC8';
-      const wallet = neoService.importWallet(mockWif);
+    test('should import wallet from WIF', async () => {
+      const mockWif = TEST_WIF;
+      const wallet = await neoService.importWallet(mockWif);
       
       expect(wallet).toHaveProperty('address');
       expect(wallet).toHaveProperty('publicKey');
       // expect(wallet).toHaveProperty('WIF');
     });
 
-    test('should handle invalid WIF', () => {
+    test('should handle invalid WIF', async () => {
       const walletAccountMock = neonJs.wallet.Account as unknown as jest.Mock;
       walletAccountMock.mockImplementationOnce(() => {
         throw new Error('invalid key');
       });
 
-      expect(() => neoService.importWallet('invalid-wif')).toThrow('Failed to import wallet');
+      await expect(neoService.importWallet('invalid-wif')).rejects.toThrow('Failed to import wallet');
     });
   });
 
@@ -378,10 +424,10 @@ describe('Blockchain Operations', () => {
         '1'
       );
 
-      expect(fees).toHaveProperty('networkFee');
-      expect(fees).toHaveProperty('systemFee');
-      expect(typeof fees.networkFee).toBe('number');
-      expect(typeof fees.systemFee).toBe('number');
+      expect(fees).toHaveProperty('networkFeeDatos');
+      expect(fees).toHaveProperty('systemFeeDatos');
+      expect(typeof fees.networkFeeDatos).toBe('string');
+      expect(typeof fees.systemFeeDatos).toBe('string');
     });
 
     test('should calculate invocation fees', async () => {
@@ -392,15 +438,16 @@ describe('Blockchain Operations', () => {
         []
       );
       
-      expect(fees).toHaveProperty('networkFee');
-      expect(fees).toHaveProperty('systemFee');
+      expect(fees).toHaveProperty('networkFeeDatos');
+      expect(fees).toHaveProperty('systemFeeDatos');
     });
   });
 
   describe('contract invocation', () => {
     const mockAccount = {
       address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
-      WIF: 'mock-wif'
+      WIF: 'mock-wif',
+      contract: { script: 'EQ==' },
     };
 
     test('should invoke contract successfully', async () => {
@@ -429,7 +476,8 @@ describe('Blockchain Operations', () => {
   describe('GAS claiming', () => {
     const mockAccount = {
       address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
-      WIF: 'mock-wif'
+      WIF: 'mock-wif',
+      contract: { script: 'EQ==' },
     };
 
     test('should claim GAS successfully', async () => {
@@ -451,7 +499,7 @@ describe('Blockchain Operations', () => {
 
     test('should handle invalid transaction hash', async () => {
       const mockRpcClient = neoService['rpcClient'];
-      mockRpcClient.execute = jest.fn().mockRejectedValue(new Error('not found'));
+      mockRpcClient.getRawTransaction = jest.fn().mockRejectedValue(new Error('not found'));
       await expect(neoService.getTransaction('0x1')).rejects.toThrow('Failed to get transaction');
     });
   });
@@ -506,7 +554,8 @@ describe('Blockchain Operations', () => {
       mockRpcClient.execute = originalExecute;
 
       expect(info.validators).toEqual([]);
-      expect(info.height).toBe(12345);
+      expect(info.blockCount).toBe(12345);
+      expect(info.height).toBe(12344);
     });
 
     test('should validate input parameters', async () => {

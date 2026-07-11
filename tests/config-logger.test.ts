@@ -99,7 +99,7 @@ describe('config and logger hardening', () => {
 
 
 
-  test('logger routes console output by severity when console logging is enabled', () => {
+  test('logger keeps all console output on stderr so MCP stdout remains protocol-only', () => {
     process.env.NODE_ENV = 'production';
     process.env.LOG_CONSOLE = 'true';
 
@@ -115,12 +115,150 @@ describe('config and logger hardening', () => {
         logger.error('error-check');
       });
 
-      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('[INFO] info-check'));
-      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('[WARN] warn-check'));
+      expect(logSpy).not.toHaveBeenCalled();
+      expect(warnSpy).not.toHaveBeenCalled();
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('[INFO] info-check'));
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('[WARN] warn-check'));
       expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('[ERROR] error-check'));
     } finally {
       logSpy.mockRestore();
       warnSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
+  });
+
+  test('logger redacts contract arguments and RPC URL path or query secrets', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.LOG_CONSOLE = 'true';
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined as any);
+
+    try {
+      jest.isolateModules(() => {
+        const { logger } = require('../src/utils/logger');
+        logger.info('redaction-check', {
+          rpcUrl: 'https://rpc.example/private-path?token=super-secret-token',
+          args: ['super-secret-argument'],
+        });
+      });
+
+      const output = errorSpy.mock.calls.map(([message]) => String(message)).join('\n');
+      expect(output).toContain('https://rpc.example');
+      expect(output).not.toContain('private-path');
+      expect(output).not.toContain('super-secret-token');
+      expect(output).not.toContain('super-secret-argument');
+      expect(output).toContain('[REDACTED]');
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
+  test('logger redacts WIF values embedded in messages and error details', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.LOG_CONSOLE = 'true';
+    const wif = new (require('@cityofzion/neon-js').wallet.Account)().WIF;
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined as any);
+
+    try {
+      jest.isolateModules(() => {
+        const { logger } = require('../src/utils/logger');
+        logger.error(`Invalid address: ${wif}`, {
+          error: `Rejected value ${wif}`,
+          stack: `Error: Rejected value ${wif}`,
+        });
+      });
+
+      const output = errorSpy.mock.calls.map(([message]) => String(message)).join('\n');
+      expect(output).not.toContain(wif);
+      expect(output).toContain('[REDACTED]');
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
+  test('logger redacts camelCase credential fields without hiding public token IDs', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.LOG_CONSOLE = 'true';
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined as any);
+
+    try {
+      jest.isolateModules(() => {
+        const { logger } = require('../src/utils/logger');
+        logger.info('credential-field-check', {
+          fromWIF: 'from-wif-secret',
+          privateKeyOrWIF: 'private-key-or-wif-secret',
+          wallet: {
+            encryptedPrivateKey: 'encrypted-private-key-secret',
+            accessToken: 'access-token-secret',
+            tokenId: 'public-token-id',
+          },
+        });
+      });
+
+      const output = errorSpy.mock.calls.map(([message]) => String(message)).join('\n');
+      expect(output).not.toContain('from-wif-secret');
+      expect(output).not.toContain('private-key-or-wif-secret');
+      expect(output).not.toContain('encrypted-private-key-secret');
+      expect(output).not.toContain('access-token-secret');
+      expect(output).toContain('public-token-id');
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
+  test('console-only logging never opens a file after the rotation interval', () => {
+    process.env.LOG_FILE_ENABLED = 'false';
+    process.env.LOG_CONSOLE = 'false';
+    const createWriteStream = jest.fn();
+
+    jest.doMock('fs', () => ({
+      existsSync: jest.fn(),
+      statSync: jest.fn(),
+      renameSync: jest.fn(),
+      unlinkSync: jest.fn(),
+      mkdirSync: jest.fn(),
+      createWriteStream,
+    }));
+
+    jest.isolateModules(() => {
+      const { logger } = require('../src/utils/logger');
+      for (let index = 0; index < 101; index += 1) {
+        logger.info(`console-only-${index}`);
+      }
+    });
+
+    expect(createWriteStream).not.toHaveBeenCalled();
+  });
+
+  test('file stream errors disable file logging without crashing the process', () => {
+    process.env.LOG_FILE_ENABLED = 'true';
+    process.env.LOG_CONSOLE = 'false';
+    const { EventEmitter } = require('events');
+    const stream = Object.assign(new EventEmitter(), {
+      write: jest.fn(),
+      end: jest.fn(),
+    });
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined as any);
+
+    jest.doMock('fs', () => ({
+      existsSync: jest.fn().mockReturnValue(true),
+      statSync: jest.fn(),
+      renameSync: jest.fn(),
+      unlinkSync: jest.fn(),
+      mkdirSync: jest.fn(),
+      createWriteStream: jest.fn().mockReturnValue(stream),
+    }));
+
+    try {
+      jest.isolateModules(() => {
+        const { logger } = require('../src/utils/logger');
+        logger.info('before-stream-error');
+        stream.emit('error', new Error('read-only filesystem'));
+        logger.info('after-stream-error');
+      });
+
+      expect(stream.write).toHaveBeenCalledTimes(1);
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringMatching(/log stream failed.*read-only filesystem/i));
+    } finally {
       errorSpy.mockRestore();
     }
   });
@@ -131,7 +269,8 @@ describe('config and logger hardening', () => {
 
     const createWriteStream = jest.fn().mockReturnValue({
       write: jest.fn(),
-      end: jest.fn()
+      end: jest.fn(),
+      on: jest.fn(),
     });
     const existsSync = jest.fn().mockReturnValue(false);
     const mkdirSync = jest.fn();

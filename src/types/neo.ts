@@ -2,7 +2,6 @@
  * Custom type definitions for Neo N3 RPC response shapes
  * not directly provided by @cityofzion/neon-js.
  */
-import type { Account } from '@cityofzion/neon-core/lib/wallet/Account';
 
 // ---- Stack item (VM result stack entry) ----
 
@@ -115,14 +114,6 @@ export interface BalanceResult {
   address?: string;
   balance?: BalanceItem[];
   [key: string]: unknown;
-}
-
-// ---- Chain config (for neon-js experimental API) ----
-
-export interface ChainConfig {
-  rpcAddress: string;
-  networkMagic: number;
-  account?: Account;
 }
 
 // ---- Wallet info ----

@@ -47,6 +47,58 @@ const DEFAULT_LOG_LEVEL = 'info';
 const DEFAULT_LOG_CONSOLE = !(process.env.NODE_ENV || '').toLowerCase().includes('test');
 const DEFAULT_LOG_FILE_PATH = './logs/neo-n3-mcp.log';
 const LOGGER_HOOKS_REGISTERED = '__neoN3McpLoggerHooksRegistered__';
+const REDACTED = '[REDACTED]';
+const SENSITIVE_CONTEXT_KEY = /(?:^|_)(?:args?|arguments?|authorization|api_?key|password|private_?key|secret|token|wif)(?:$|_)/i;
+const SENSITIVE_CONTEXT_KEY_SUFFIX = /(?:authorization|apiKey|password|privateKey|secret|accessToken|bearerToken|wif)$/i;
+const URL_CONTEXT_KEY = /(?:url|uri|endpoint|rpcaddress)$/i;
+const WIF_TEXT_PATTERN = /(?<![1-9A-HJ-NP-Za-km-z])[KL][1-9A-HJ-NP-Za-km-z]{51}(?![1-9A-HJ-NP-Za-km-z])/g;
+
+function sanitizeUrl(value: string): string {
+  try {
+    return new URL(value).origin;
+  } catch {
+    return REDACTED;
+  }
+}
+
+function sanitizeText(value: string): string {
+  return value
+    .replace(/https?:\/\/[^\s"'<>]+/gi, (url) => sanitizeUrl(url))
+    .replace(WIF_TEXT_PATTERN, REDACTED);
+}
+
+function sanitizeLogValue(value: unknown, key: string, seen: WeakSet<object>): unknown {
+  if (SENSITIVE_CONTEXT_KEY.test(key) || SENSITIVE_CONTEXT_KEY_SUFFIX.test(key)) {
+    return REDACTED;
+  }
+  if (typeof value === 'string') {
+    return URL_CONTEXT_KEY.test(key) ? sanitizeUrl(value) : sanitizeText(value);
+  }
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+  if (seen.has(value)) {
+    return '[CIRCULAR]';
+  }
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    return value.map((entry) => sanitizeLogValue(entry, '', seen));
+  }
+  return Object.fromEntries(
+    Object.entries(value).map(([entryKey, entryValue]) => [
+      entryKey,
+      sanitizeLogValue(entryValue, entryKey, seen),
+    ])
+  );
+}
+
+function sanitizeContext(context: Record<string, unknown>): Record<string, unknown> {
+  const seen = new WeakSet<object>();
+  return Object.fromEntries(
+    Object.entries(context).map(([key, value]) => [key, sanitizeLogValue(value, key, seen)])
+  );
+}
 
 export enum LogLevel {
   DEBUG = 0,
@@ -78,7 +130,7 @@ export class Logger {
           fs.mkdirSync(dir, { recursive: true });
         }
 
-        this.logStream = fs.createWriteStream(this.logFilePath, { flags: 'a' });
+        this.openLogStream();
       } catch (error) {
         console.error(`Failed to create log stream: ${error instanceof Error ? error.message : String(error)}`);
         this.logToFile = false;
@@ -105,8 +157,26 @@ export class Logger {
 
   private formatMessage(level: string, message: string, context?: Record<string, unknown>): string {
     const timestamp = new Date().toISOString();
-    const contextStr = context ? ` ${JSON.stringify(context)}` : '';
-    return `[${timestamp}] [${level}] ${message}${contextStr}`;
+    const contextStr = context ? ` ${JSON.stringify(sanitizeContext(context))}` : '';
+    return `[${timestamp}] [${level}] ${sanitizeText(message)}${contextStr}`;
+  }
+
+  private openLogStream(): void {
+    try {
+      const stream = fs.createWriteStream(this.logFilePath, { flags: 'a' });
+      stream.on('error', (error) => {
+        if (this.logStream === stream) {
+          this.logStream = null;
+          this.logToFile = false;
+        }
+        console.error(`Log stream failed: ${error.message}`);
+      });
+      this.logStream = stream;
+    } catch (error) {
+      this.logStream = null;
+      this.logToFile = false;
+      console.error(`Failed to create log stream: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   private log(level: LogLevel, levelStr: string, message: string, context?: Record<string, unknown>): void {
@@ -117,13 +187,8 @@ export class Logger {
     const formattedMessage = this.formatMessage(levelStr, message, context);
 
     if (this.logToConsole) {
-      if (level >= LogLevel.ERROR) {
-        console.error(formattedMessage);
-      } else if (level >= LogLevel.WARN) {
-        console.warn(formattedMessage);
-      } else {
-        console.log(formattedMessage);
-      }
+      // MCP reserves stdout for JSON-RPC frames, so every diagnostic uses stderr.
+      console.error(formattedMessage);
     }
 
     if (this.logToFile && this.logStream) {
@@ -132,14 +197,14 @@ export class Logger {
       } catch (error) {
         console.error(`Failed to write to log file: ${error instanceof Error ? error.message : String(error)}`);
       }
-    }
-
-    this.writeCount++;
-    if (this.writeCount % 100 === 0) {
-      rotateLogFile(this.logFilePath);
-      if (!fs.existsSync(this.logFilePath)) {
-        this.logStream?.end();
-        this.logStream = fs.createWriteStream(this.logFilePath, { flags: 'a' });
+      this.writeCount++;
+      if (this.writeCount % 100 === 0) {
+        rotateLogFile(this.logFilePath);
+        if (!fs.existsSync(this.logFilePath)) {
+          this.logStream.end();
+          this.logStream = null;
+          this.openLogStream();
+        }
       }
     }
   }

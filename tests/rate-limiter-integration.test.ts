@@ -53,4 +53,26 @@ describe('Rate Limiter Integration', () => {
     limiter.resetLimit('test-client');
     expect(limiter.checkLimit('test-client')).toBe(true);
   });
+
+  it('enforces the configured hourly limit independently', () => {
+    const limiter = new RateLimiter(10, 60000, true, 2);
+    limiter.checkLimit('test-client');
+    limiter.checkLimit('test-client');
+
+    try {
+      limiter.checkLimit('test-client');
+      fail('Expected hourly RateLimitError');
+    } catch (error) {
+      expect(error).toBeInstanceOf(RateLimitError);
+      expect((error as RateLimitError).details).toMatchObject({
+        limit: 2,
+        window: 'hour'
+      });
+    }
+  });
+
+  it('rejects invalid limits instead of failing open', () => {
+    expect(() => new RateLimiter(Number.NaN, 60000, true)).toThrow(/positive integer/);
+    expect(() => new RateLimiter(60, 60000, true, 0)).toThrow(/positive integer/);
+  });
 });

@@ -1,370 +1,156 @@
 # Neo N3 MCP API Reference
 
-This document describes the MCP tool surface exposed by `@r3e/neo-n3-mcp`.
+This document describes the MCP tool surface and HTTP routes exposed by `@r3e/neo-n3-mcp` 3.x.
 
-For HTTP deployment and REST endpoints, see `docs/DEPLOYMENT.md`.
+## MCP Surface
 
-## Request Format
+The default server exposes 19 read-only tools:
 
-Use your MCP client to call a tool by name with a JSON `arguments` object:
+- Network: `get_network_mode`
+- Blockchain: `get_blockchain_info`, `get_block_count`, `get_block`, `get_transaction`, `get_application_log`, `wait_for_transaction`
+- Accounts: `get_balance`, `get_unclaimed_gas`, `get_nep17_transfers`, `get_nep11_balances`, `get_nep11_transfers`
+- Wallet metadata: `get_wallet`
+- Contracts: `invoke_contract`, `list_famous_contracts`, `get_contract_info`, `get_contract_status`
+- Fees: `estimate_transfer_fees`, `estimate_invoke_fees`
 
-```json
-{
-  "name": "tool_name",
-  "arguments": {
-    "param1": "value1"
-  }
-}
-```
+`invoke_contract` is strictly read-only. Its schema has no signer, private-key, or confirmation fields.
 
-## Response Format
+When `NEO_ENABLE_WRITES=true`, four annotated tools are added:
 
-Most tools return a text payload containing JSON. MCP clients typically expose that payload in `content[0].text`.
-
-Success payloads contain tool-specific JSON. Error payloads surface an error message and may set the MCP `isError` flag.
-
-## Available Tools
-
-### Network
-- `get_network_mode`
-- `set_network_mode`
-
-### Blockchain
-- `get_blockchain_info`
-- `get_block_count`
-- `get_block`
-- `get_transaction`
-- `get_application_log`
-- `wait_for_transaction`
-- `get_balance`
-- `get_unclaimed_gas`
-- `get_nep17_transfers`
-- `get_nep11_balances`
-- `get_nep11_transfers`
-
-### Wallets
-- `create_wallet`
-- `import_wallet`
-- `get_wallet`
-
-### Assets and Fees
 - `transfer_assets`
-- `estimate_transfer_fees`
-- `estimate_invoke_fees`
+- `invoke_contract_write`
 - `claim_gas`
-
-### Contracts
-- `list_famous_contracts`
-- `get_contract_info`
-- `get_contract_status`
-- `invoke_contract`
 - `deploy_contract`
 
-### NeoFS
-- `neofs_create_container`
-- `neofs_get_containers`
+Each write tool requires:
 
-## HTTP Endpoint Highlights
+- `idempotencyKey`: 8-128 letters, numbers, periods, underscores, colons, or hyphens
+- `network`: explicitly `mainnet` or `testnet`
+- operation-specific public inputs
+- an MCP client that declares form elicitation support
+- user acceptance with the exact returned 64-hex intent fingerprint
 
+Write tools are marked destructive and idempotent. They never accept WIFs, private keys, passwords, or `confirm` fields. The signer is loaded from `NEO_SIGNER_WIF_FILE`.
+
+### Write Examples
+
+```json
+{
+  "name": "transfer_assets",
+  "arguments": {
+    "idempotencyKey": "transfer-2026-07-11-001",
+    "network": "testnet",
+    "toAddress": "Nb...",
+    "asset": "GAS",
+    "amount": "1"
+  }
+}
+```
+
+```json
+{
+  "name": "invoke_contract_write",
+  "arguments": {
+    "idempotencyKey": "contract-write-2026-07-11-001",
+    "network": "testnet",
+    "scriptHash": "0x0123456789abcdef0123456789abcdef01234567",
+    "operation": "transfer",
+    "args": ["Na...", "Nb...", "1", null]
+  }
+}
+```
+
+`deploy_contract` requires a complete serialized NEF artifact:
+
+```json
+{
+  "name": "deploy_contract",
+  "arguments": {
+    "idempotencyKey": "deployment-2026-07-11-001",
+    "network": "testnet",
+    "nef": { "encoding": "base64", "data": "TkVGMw..." },
+    "manifest": { "name": "ExampleContract" }
+  }
+}
+```
+
+## HTTP Transport
+
+The HTTP server requires one configured network. `NEO_NETWORK=both` is rejected by this entrypoint.
+
+`HTTP_API_KEY` authenticates ordinary protected routes. When writes are enabled, `HTTP_WRITE_APPROVAL_API_KEY` is also required and must differ from `HTTP_API_KEY`.
+
+Public probes:
+
+- `GET /live`: process liveness, no RPC call
+- `GET /health`: Neo RPC readiness
+
+Protected read routes include:
+
+- `GET /metrics`
+- `GET /api/blockchain/info`
+- `GET /api/blockchain/height`
 - `GET /api/blocks/:hashOrHeight`
+- `GET /api/transactions/:txid`
 - `GET /api/transactions/:txid/application-log`
-- `GET /api/transactions/:txid/wait?timeoutMs=30000&pollIntervalMs=1000&includeApplicationLog=true`
+- `GET /api/transactions/:txid/wait`
+- `GET /api/accounts/:address/balance`
 - `GET /api/accounts/:address/unclaimed-gas`
-- `GET /api/accounts/:address/nep17-transfers?fromTimestampMs=0&toTimestampMs=1710000000000`
+- `GET /api/accounts/:address/nep17-transfers`
 - `GET /api/accounts/:address/nep11-balances`
-- `GET /api/accounts/:address/nep11-transfers?fromTimestampMs=0&toTimestampMs=1710000000000`
-- `POST /api/transfers` with `fromWIF`, `toAddress`, `asset`, `amount`, and `confirm: true`
-- `POST /api/transfers/estimate-fees`
+- `GET /api/accounts/:address/nep11-transfers`
 - `GET /api/contracts/:reference`
 - `GET /api/contracts/:reference/status`
+- `POST /api/contracts/invoke` for read-only invocation
+- `POST /api/transfers/estimate-fees`
 - `POST /api/contracts/invoke/estimate-fees`
-- `POST /api/accounts/claim-gas` with `fromWIF` and `confirm: true`
-- `POST /api/contracts/deploy` with `fromWIF`, `script`, `manifest`, and `confirm: true`
 
-## Core Tool Reference
+### HTTP Write Protocol
 
-### `create_wallet`
+Initial requests use `HTTP_API_KEY`, require `Idempotency-Key`, and return `202` with `state: "awaiting_approval"`:
 
-Creates a new Neo N3 wallet and returns a NEP-2 encrypted key.
+- `POST /api/transfers`
+- `POST /api/accounts/claim-gas`
+- `POST /api/contracts/invoke/write`
+- `POST /api/contracts/deploy`
 
-#### Parameters
+Example:
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `password` | string | Yes | Password used to encrypt the generated WIF |
+```http
+POST /api/transfers
+Authorization: Bearer <HTTP_API_KEY>
+Idempotency-Key: transfer-2026-07-11-001
+Content-Type: application/json
 
-#### Example Request
-
-```json
 {
-  "name": "create_wallet",
-  "arguments": {
-    "password": "secure-password-123"
-  }
+  "network": "testnet",
+  "toAddress": "Nb...",
+  "asset": "GAS",
+  "amount": "1"
 }
 ```
 
-#### Example Response
+The response includes `intentId`, `fingerprint`, `signerAddress`, network, and sanitized payload. Reusing the same key with different inputs is rejected.
 
-```json
-{
-  "address": "NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ",
-  "publicKey": "03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c",
-  "encryptedPrivateKey": "6PYK...",
-  "encryptedWIF": "6PYK..."
-}
+Approve with the independent principal and exact fingerprint:
+
+```http
+POST /api/write-intents/<intentId>/approve
+Authorization: Bearer <HTTP_WRITE_APPROVAL_API_KEY>
+Content-Type: application/json
+
+{ "fingerprint": "<64 lowercase hex characters>" }
 ```
 
-Notes:
-- `encryptedPrivateKey` is the preferred field name.
-- `encryptedWIF` is kept as a compatibility alias.
-- Raw WIF is never returned.
+Inspect status with the ordinary API principal:
 
-### `get_wallet`
-
-Returns sanitized metadata for a locally stored wallet by `address`. The encrypted key is never returned.
-
-### `import_wallet`
-
-Imports a private key or WIF. This tool can be used in two modes:
-- **Stateless import**: provide only `key` or `privateKeyOrWIF` to derive `address` and `publicKey`.
-- **Encrypted import**: also provide `password` to receive a NEP-2 encrypted key.
-
-#### Parameters
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `key` | string | No | Private key or WIF |
-| `privateKeyOrWIF` | string | No | Backward-compatible alias for `key` |
-| `password` | string | No | Password used to encrypt the imported WIF |
-
-At least one of `key` or `privateKeyOrWIF` must be supplied.
-
-#### Example Request
-
-```json
-{
-  "name": "import_wallet",
-  "arguments": {
-    "privateKeyOrWIF": "Kx...",
-    "password": "secure-password-123"
-  }
-}
+```http
+GET /api/write-intents/<intentId>
+Authorization: Bearer <HTTP_API_KEY>
 ```
 
-#### Example Response With Password
+Prepared raw transaction bytes, txid, validity height, and optional deployment metadata are persisted before relay. On an unknown submission outcome, retry only the same operation with the same idempotency key. The server reconciles by txid and may replay only the stored byte-identical transaction.
 
-```json
-{
-  "address": "NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ",
-  "publicKey": "03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c",
-  "encryptedPrivateKey": "6PYK...",
-  "encryptedWIF": "6PYK..."
-}
-```
+## Wallet Administration
 
-#### Example Response Without Password
-
-```json
-{
-  "address": "NXV7ZhHiyM1aHXwvUNBLNAkCwZ6wgeKyMZ",
-  "publicKey": "03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c"
-}
-```
-
-### `transfer_assets`
-
-Builds and broadcasts a NEP-17 transfer when `confirm` is explicitly set to `true`.
-
-#### Parameters
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `fromWIF` | string | Yes | Sender WIF |
-| `toAddress` | string | Yes | Recipient Neo address |
-| `asset` | string | Yes | Asset symbol (`NEO`, `GAS`) or script hash |
-| `amount` | string | Yes | Transfer amount |
-| `network` | string | No | `mainnet` or `testnet` |
-| `confirm` | boolean | Yes | Must be `true` to execute the transfer |
-
-### `get_contract_info`
-
-Returns metadata for a contract reference, including deployment status, resolved `scriptHash`, and discovered operations when available.
-
-If the reference is a plain name and not found in the local famous-contract registry, the server falls back to `https://api.n3index.dev` for name-to-hash discovery, then confirms the contract on-chain via the configured Neo RPC endpoint.
-
-#### Parameters
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `contract` | string | No | Generic contract reference: known name, script hash, or Neo address |
-| `contractName` | string | No | Backward-compatible alias for a known contract name |
-| `nameOrHash` | string | No | Backward-compatible alias for a contract name or script hash |
-| `network` | string | No | `mainnet` or `testnet` |
-
-### `invoke_contract`
-
-Invokes a contract by **script hash or generic contract reference**.
-
-Use `get_contract_info` or `get_contract_status` first if you need to inspect a contract before invoking it.
-
-#### Parameters
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `contract` | string | No | Generic contract reference: known name, script hash, or Neo address |
-| `scriptHash` | string | No | Target contract script hash |
-| `operation` | string | Yes | Contract method name |
-| `args` | array | No | Invocation arguments |
-| `network` | string | No | `mainnet` or `testnet` |
-| `fromWIF` | string | No | Required for write invocations |
-| `confirm` | boolean | No | Must be `true` for write invocations |
-| `signers` | array | No | Optional signer descriptors |
-
-#### Read Example
-
-```json
-{
-  "name": "invoke_contract",
-  "arguments": {
-    "network": "testnet",
-    "contract": "NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M",
-    "operation": "balanceOf",
-    "args": [
-      "NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr"
-    ]
-  }
-}
-```
-
-#### Write Example
-
-```json
-{
-  "name": "invoke_contract",
-  "arguments": {
-    "network": "testnet",
-    "fromWIF": "Kx...",
-    "contract": "NeoFS",
-    "operation": "transfer",
-    "args": [
-      "NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr",
-      "Nb2o2ey5...",
-      "1",
-      null
-    ],
-    "confirm": true
-  }
-}
-```
-
-### `estimate_transfer_fees`
-
-Estimates system and network fees for a transfer without broadcasting it.
-
-### `estimate_invoke_fees`
-
-Estimates system and network fees for a contract invocation without broadcasting it. Accepts either `scriptHash` or the generic `contract` reference.
-
-### `get_contract_status`
-
-Checks whether a contract is deployed and returns its resolved address/hash, manifest name, and on-chain status.
-
-#### Parameters
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `contract` | string | No | Generic contract reference: known name, script hash, or Neo address |
-| `contractName` | string | No | Backward-compatible alias for a known contract name |
-| `nameOrHash` | string | No | Backward-compatible alias for a contract name or script hash |
-| `network` | string | No | `mainnet` or `testnet` |
-
-### `claim_gas`
-
-Builds and broadcasts a NEO native `claimGas` transaction when `confirm` is `true`.
-
-### `get_application_log`
-
-Returns the application log for a confirmed transaction hash.
-
-For NEP-17 `Transfer` notifications, the response now preserves the raw RPC notification and adds a `parsed` object with normalized fields:
-- `asset` with `scriptHash`, `name`, optional `symbol`, and `logo`
-- `from` / `to` with normalized `address`, `scriptHash`, `displayName`, plus direct `name` / `logo` fields when the party is recognized
-- full `knownAccount` metadata is still included for supported built-in accounts/contracts
-- `logo` and `knownAccount.logo` are embeddable SVG data URIs
-
-### `wait_for_transaction`
-
-Polls the configured RPC node until a transaction confirms or the timeout is reached.
-
-If `includeApplicationLog` is `true`, the embedded `applicationLog` uses the same enriched notification format as `get_application_log`.
-
-Key arguments:
-- `txid` (required)
-- `timeoutMs` (optional, default `30000`)
-- `pollIntervalMs` (optional, default `1000`)
-- `includeApplicationLog` (optional)
-
-### `get_unclaimed_gas`
-
-Returns the currently unclaimed GAS amount for a Neo N3 address.
-
-### `get_nep17_transfers`
-
-Returns NEP-17 transfer history for an `address`.
-
-Parameters:
-- `address` (required): Neo N3 address to inspect
-- `fromTimestampMs` (optional): Start of the history window in Unix epoch milliseconds
-- `toTimestampMs` (optional): End of the history window in Unix epoch milliseconds
-
-Response notes:
-- Preserves the raw RPC `sent` and `received` entries
-- Adds `direction`, `timestampIso`, `asset`, `from`, `to`, and `counterparty` when they can be derived
-- For known contracts/accounts, the additive party fields include `displayName`, `name`, `logo`, and `kind`
-- This tool depends on node support for the Neo RPC `getnep17transfers` method; minimal nodes may not expose it
-
-### `get_nep11_balances`
-
-Returns NEP-11 balances for an `address`.
-
-Parameters:
-- `address` (required): Neo N3 address to inspect
-
-Response notes:
-- Preserves the raw RPC `balance` entries and token lists
-- Adds `asset` metadata for each NEP-11 balance entry when the asset hash can be normalized
-- Adds `tokenCount` when the node returns a `tokens` array
-- This tool depends on node support for the Neo RPC `getnep11balances` method; minimal nodes may not expose it
-
-### `get_nep11_transfers`
-
-Returns NEP-11 transfer history for an `address`.
-
-Parameters:
-- `address` (required): Neo N3 address to inspect
-- `fromTimestampMs` (optional): Start of the history window in Unix epoch milliseconds
-- `toTimestampMs` (optional): End of the history window in Unix epoch milliseconds
-
-Response notes:
-- Preserves the raw RPC `sent` and `received` entries
-- Adds `direction`, `timestampIso`, `asset`, `from`, `to`, and `counterparty` when they can be derived
-- This tool depends on node support for the Neo RPC `getnep11transfers` method; minimal nodes may not expose it
-
-### `deploy_contract`
-
-Deploys a contract from a NEF script plus manifest. Requires:
-- `fromWIF`
-- `script` (base64 or hex)
-- `manifest` (JSON object)
-- `confirm: true`
-
-## Error Handling
-
-Validation failures are returned as MCP errors with a descriptive message, for example:
-
-```json
-{
-  "error": "ValidationError: Invalid Neo N3 address format: invalid"
-}
-```
+MCP never exposes wallet creation or import. HTTP wallet administration is disabled unless `NEO_ENABLE_WALLET_ADMIN=true`. Responses are sanitized and never return encrypted or plaintext key material. Production signing should use the separate owner-only signer file, not HTTP wallet administration.

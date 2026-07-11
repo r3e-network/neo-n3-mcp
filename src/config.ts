@@ -2,6 +2,14 @@
  * Configuration for the Neo N3 MCP server
  */
 
+import { assertValidRpcUrl } from './utils/rpc-url';
+import { createTrustedProxyBlockList } from './utils/trusted-proxy';
+import * as path from 'path';
+import {
+  DEFAULT_MAX_TRANSACTION_FEE_GAS,
+  parseGasAmountToDatos,
+} from './utils/transaction-preparation';
+
 export enum NetworkMode {
   MAINNET_ONLY = 'mainnet_only',
   TESTNET_ONLY = 'testnet_only',
@@ -9,9 +17,13 @@ export enum NetworkMode {
 }
 
 const DEFAULT_MAINNET_RPC = 'https://mainnet1.neo.coz.io:443';
-const DEFAULT_TESTNET_RPC = 'http://seed1t5.neo.org:20332';
+const DEFAULT_TESTNET_RPC = 'https://testnet1.neo.coz.io:443';
+const DEFAULT_NEO_RPC_TIMEOUT_MS = 15_000;
 const DEFAULT_NETWORK_MODE = NetworkMode.BOTH;
 const DEFAULT_N3INDEX_BASE_URL = 'https://api.n3index.dev';
+const DEFAULT_HTTP_HOST = '127.0.0.1';
+const DEFAULT_HTTP_MAX_BODY_BYTES = 1024 * 1024;
+const DEFAULT_WALLETS_DIR = './wallets';
 
 function readEnv(...keys: string[]): string | undefined {
   for (const key of keys) {
@@ -62,21 +74,57 @@ function parseNetworkMode(value: string | undefined): NetworkMode {
   }
 }
 
+function readListEnv(key: string): string[] {
+  const value = readEnv(key);
+  return value
+    ? value.split(',').map((entry) => entry.trim()).filter(Boolean)
+    : [];
+}
+
 const logFilePath = readEnv('LOG_FILE') || './logs/neo-n3-mcp.log';
 const logToConsole = readBooleanEnv('LOG_CONSOLE');
 const isTestLikeEnvironment = (process.env.NODE_ENV || '').toLowerCase().includes('test');
+const walletsDirectory = readEnv('WALLETS_DIR') || DEFAULT_WALLETS_DIR;
 
 export const config = {
   mainnetRpcUrl: readEnv('NEO_MAINNET_RPC', 'NEO_MAINNET_RPC_URL') || DEFAULT_MAINNET_RPC,
   testnetRpcUrl: readEnv('NEO_TESTNET_RPC', 'NEO_TESTNET_RPC_URL') || DEFAULT_TESTNET_RPC,
+  rpcTimeoutMs: Number.parseInt(
+    readEnv('NEO_RPC_TIMEOUT_MS') || String(DEFAULT_NEO_RPC_TIMEOUT_MS),
+    10
+  ),
+  allowInsecureRpc: readBooleanEnv('NEO_ALLOW_INSECURE_RPC') ?? false,
+  maxTransactionFeeGas: readEnv('NEO_MAX_TRANSACTION_FEE_GAS') || DEFAULT_MAX_TRANSACTION_FEE_GAS,
   networkMode: parseNetworkMode(readEnv('NEO_NETWORK', 'NEO_NETWORK_MODE')),
+  writes: {
+    enabled: readBooleanEnv('NEO_ENABLE_WRITES') ?? false,
+    signerWifFile: readEnv('NEO_SIGNER_WIF_FILE'),
+    stateDirectory: readEnv('NEO_WRITE_STATE_DIR') || path.join(walletsDirectory, '.write-operations'),
+    httpApprovalApiKey: readEnv('HTTP_WRITE_APPROVAL_API_KEY'),
+  },
   n3index: {
     baseUrl: readEnv('N3INDEX_API_BASE_URL') || DEFAULT_N3INDEX_BASE_URL,
     enabled: readBooleanEnv('N3INDEX_ENABLED') ?? true,
   },
 
+  http: {
+    host: readEnv('HTTP_HOST') || DEFAULT_HTTP_HOST,
+    apiKey: readEnv('HTTP_API_KEY'),
+    corsOrigins: readListEnv('HTTP_CORS_ORIGINS'),
+    trustedProxies: readListEnv('HTTP_TRUSTED_PROXIES'),
+    maxBodyBytes: Number.parseInt(
+      readEnv('HTTP_MAX_BODY_BYTES') || String(DEFAULT_HTTP_MAX_BODY_BYTES),
+      10
+    ),
+  },
+
+  wallets: {
+    directory: walletsDirectory,
+    administrationEnabled: readBooleanEnv('NEO_ENABLE_WALLET_ADMIN') ?? false,
+  },
+
   rateLimiting: {
-    enabled: process.env.RATE_LIMITING_ENABLED !== 'false' && !isTestLikeEnvironment,
+    enabled: (readBooleanEnv('RATE_LIMITING_ENABLED') ?? true) && !isTestLikeEnvironment,
     maxRequestsPerMinute: parseInt(process.env.MAX_REQUESTS_PER_MINUTE || '60', 10),
     maxRequestsPerHour: parseInt(process.env.MAX_REQUESTS_PER_HOUR || '1000', 10),
   },
@@ -84,7 +132,7 @@ export const config = {
   logging: {
     level: process.env.LOG_LEVEL || 'info',
     console: logToConsole ?? !isTestLikeEnvironment,
-    fileEnabled: process.env.LOG_FILE_ENABLED === 'true' || Boolean(readEnv('LOG_FILE')),
+    fileEnabled: (readBooleanEnv('LOG_FILE_ENABLED') ?? false) || Boolean(readEnv('LOG_FILE')),
     filePath: logFilePath,
   },
 };
@@ -101,30 +149,115 @@ export function validateConfig(): void {
     );
   }
 
-  if (process.env.MAX_REQUESTS_PER_MINUTE && isNaN(Number(process.env.MAX_REQUESTS_PER_MINUTE))) {
+  const networkMode = readEnv('NEO_NETWORK', 'NEO_NETWORK_MODE');
+  const validNetworkModes = ['mainnet', 'mainnet_only', 'testnet', 'testnet_only', 'both'];
+  if (networkMode && !validNetworkModes.includes(networkMode.toLowerCase())) {
     throw new Error(
-      `Invalid MAX_REQUESTS_PER_MINUTE "${process.env.MAX_REQUESTS_PER_MINUTE}". Must be a number.`
+      `Invalid NEO_NETWORK "${networkMode}". Must be one of: ${validNetworkModes.join(', ')}.`
     );
   }
 
-  if (process.env.MAX_REQUESTS_PER_HOUR && isNaN(Number(process.env.MAX_REQUESTS_PER_HOUR))) {
+  for (const key of [
+    'NEO_ALLOW_INSECURE_RPC',
+    'N3INDEX_ENABLED',
+    'LOG_CONSOLE',
+    'LOG_FILE_ENABLED',
+    'RATE_LIMITING_ENABLED',
+    'NEO_ENABLE_WRITES',
+    'NEO_ENABLE_WALLET_ADMIN',
+  ] as const) {
+    if (process.env[key] !== undefined && readBooleanEnv(key) === undefined) {
+      throw new Error(`Invalid ${key} "${process.env[key]}". Must be true or false.`);
+    }
+  }
+
+  const writesEnabled = readBooleanEnv('NEO_ENABLE_WRITES') === true;
+  if (writesEnabled && !readEnv('NEO_SIGNER_WIF_FILE')) {
+    throw new Error('NEO_SIGNER_WIF_FILE is required when NEO_ENABLE_WRITES=true.');
+  }
+
+  const writeApprovalApiKey = readEnv('HTTP_WRITE_APPROVAL_API_KEY');
+  if (writeApprovalApiKey && Buffer.byteLength(writeApprovalApiKey, 'utf8') < 32) {
+    throw new Error('Invalid HTTP_WRITE_APPROVAL_API_KEY. Must contain at least 32 bytes.');
+  }
+
+  try {
+    createTrustedProxyBlockList(readListEnv('HTTP_TRUSTED_PROXIES'));
+  } catch {
     throw new Error(
-      `Invalid MAX_REQUESTS_PER_HOUR "${process.env.MAX_REQUESTS_PER_HOUR}". Must be a number.`
+      'Invalid HTTP_TRUSTED_PROXIES. Use comma-separated IP addresses or CIDR ranges.'
     );
   }
 
-  const urlPattern = /^https?:\/\/.+/;
-  const mainnetRpc = readEnv('NEO_MAINNET_RPC', 'NEO_MAINNET_RPC_URL');
-  if (mainnetRpc && !urlPattern.test(mainnetRpc)) {
+  for (const key of ['MAX_REQUESTS_PER_MINUTE', 'MAX_REQUESTS_PER_HOUR', 'NEO_RPC_TIMEOUT_MS'] as const) {
+    const rawValue = process.env[key];
+    if (rawValue !== undefined) {
+      const value = Number(rawValue);
+      if (!Number.isSafeInteger(value) || value <= 0) {
+        throw new Error(`Invalid ${key} "${rawValue}". Must be a positive integer.`);
+      }
+    }
+  }
+
+  if (process.env.HTTP_MAX_BODY_BYTES) {
+    const maxBodyBytes = Number(process.env.HTTP_MAX_BODY_BYTES);
+    if (!Number.isSafeInteger(maxBodyBytes) || maxBodyBytes <= 0) {
+      throw new Error(
+        `Invalid HTTP_MAX_BODY_BYTES "${process.env.HTTP_MAX_BODY_BYTES}". Must be a positive integer.`
+      );
+    }
+  }
+
+  try {
+    parseGasAmountToDatos(readEnv('NEO_MAX_TRANSACTION_FEE_GAS') || DEFAULT_MAX_TRANSACTION_FEE_GAS);
+  } catch {
     throw new Error(
-      `Invalid NEO_MAINNET_RPC "${mainnetRpc}". Must be a valid HTTP/HTTPS URL.`
+      'Invalid NEO_MAX_TRANSACTION_FEE_GAS. Must be a positive GAS amount with at most 8 decimal places.'
     );
   }
 
-  const testnetRpc = readEnv('NEO_TESTNET_RPC', 'NEO_TESTNET_RPC_URL');
-  if (testnetRpc && !urlPattern.test(testnetRpc)) {
-    throw new Error(
-      `Invalid NEO_TESTNET_RPC "${testnetRpc}". Must be a valid HTTP/HTTPS URL.`
-    );
+  const apiKey = readEnv('HTTP_API_KEY');
+  if (apiKey && writeApprovalApiKey === apiKey) {
+    throw new Error('HTTP_WRITE_APPROVAL_API_KEY must differ from HTTP_API_KEY.');
+  }
+  if (apiKey && Buffer.byteLength(apiKey, 'utf8') < 32) {
+    throw new Error('Invalid HTTP_API_KEY. Must contain at least 32 bytes.');
+  }
+
+  for (const origin of readListEnv('HTTP_CORS_ORIGINS')) {
+    try {
+      const parsed = new URL(origin);
+      if (
+        origin === '*' ||
+        !['http:', 'https:'].includes(parsed.protocol) ||
+        parsed.username ||
+        parsed.password ||
+        parsed.pathname !== '/' ||
+        parsed.search ||
+        parsed.hash
+      ) {
+        throw new Error('invalid origin');
+      }
+    } catch {
+      throw new Error(
+        `Invalid HTTP_CORS_ORIGINS entry "${origin}". Use comma-separated HTTP/HTTPS origins without paths.`
+      );
+    }
+  }
+
+  const rpcUrls = [
+    ['NEO_MAINNET_RPC', readEnv('NEO_MAINNET_RPC', 'NEO_MAINNET_RPC_URL')],
+    ['NEO_TESTNET_RPC', readEnv('NEO_TESTNET_RPC', 'NEO_TESTNET_RPC_URL')],
+  ] as const;
+  for (const [name, value] of rpcUrls) {
+    if (!value) continue;
+    try {
+      assertValidRpcUrl(value, { allowInsecureRemote: config.allowInsecureRpc });
+    } catch {
+      throw new Error(
+        `Invalid ${name}. Use HTTPS with a hostname and no embedded credentials. ` +
+        'Plain HTTP requires a loopback host or NEO_ALLOW_INSECURE_RPC=true.'
+      );
+    }
   }
 }

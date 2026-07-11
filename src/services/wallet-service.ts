@@ -5,11 +5,24 @@
  */
 
 import * as neonJs from '@cityofzion/neon-js';
-import type { Account } from '@cityofzion/neon-core/lib/wallet/Account';
 import * as fs from 'fs';
 import * as path from 'path';
-import { validatePassword } from '../utils/validation';
+import { randomUUID } from 'crypto';
+import { validateAddress, validatePassword } from '../utils/validation';
+import { ValidationError } from '../utils/errors';
 import { WalletInfo } from '../types/neo';
+import type { NeonAccount } from '../types/neon';
+
+const SENSITIVE_WALLET_FIELD = /(?:wif|privatekey|encryptedkey|password|secret)/i;
+
+export function sanitizeWalletMetadata(wallet: WalletInfo): WalletInfo {
+  return Object.fromEntries(
+    Object.entries(wallet).filter(([key]) => {
+      const normalizedKey = key.replace(/[_-]/g, '');
+      return normalizedKey.toLowerCase() !== 'key' && !SENSITIVE_WALLET_FIELD.test(normalizedKey);
+    })
+  ) as WalletInfo;
+}
 
 export class WalletService {
   private walletsDir: string;
@@ -21,8 +34,9 @@ export class WalletService {
 
   private ensureWalletsDirExists() {
     if (!fs.existsSync(this.walletsDir)) {
-      fs.mkdirSync(this.walletsDir, { recursive: true });
+      fs.mkdirSync(this.walletsDir, { recursive: true, mode: 0o700 });
     }
+    fs.chmodSync(this.walletsDir, 0o700);
   }
 
   async createWallet(password: string): Promise<WalletInfo> {
@@ -34,13 +48,16 @@ export class WalletService {
       this.saveWallet(account.address, walletInfo);
       return walletInfo;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Failed to create wallet: ${errorMessage}`);
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      throw new Error('Failed to create wallet');
     }
   }
 
   async getWallet(address: string): Promise<WalletInfo> {
     try {
+      validateAddress(address);
       const walletPath = path.join(this.walletsDir, `${address}.json`);
 
       if (!fs.existsSync(walletPath)) {
@@ -57,6 +74,9 @@ export class WalletService {
 
   async importWallet(key: string, password?: string): Promise<WalletInfo> {
     try {
+      if (typeof key !== 'string' || !(neonJs.wallet.isWIF(key) || neonJs.wallet.isPrivateKey(key))) {
+        throw new ValidationError('Invalid private key or WIF format');
+      }
       const account = new neonJs.wallet.Account(key);
 
       if (!password) {
@@ -71,12 +91,14 @@ export class WalletService {
       this.saveWallet(account.address, walletInfo);
       return walletInfo;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Failed to import wallet: ${errorMessage}`);
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      throw new Error('Failed to import wallet');
     }
   }
 
-  private async buildEncryptedWalletInfo(account: Account, password: string): Promise<WalletInfo> {
+  private async buildEncryptedWalletInfo(account: NeonAccount, password: string): Promise<WalletInfo> {
     const encryptedPrivateKey = await neonJs.wallet.encrypt(account.WIF, password);
     return {
       address: account.address,
@@ -88,11 +110,18 @@ export class WalletService {
   }
 
   private saveWallet(address: string, walletInfo: WalletInfo) {
+    const walletPath = path.join(this.walletsDir, `${address}.json`);
+    const temporaryPath = `${walletPath}.${process.pid}.${randomUUID()}.tmp`;
+
     try {
-      const walletPath = path.join(this.walletsDir, `${address}.json`);
-      fs.writeFileSync(walletPath, JSON.stringify(walletInfo, null, 2));
-      fs.chmodSync(walletPath, 0o600);
+      fs.writeFileSync(temporaryPath, JSON.stringify(walletInfo, null, 2), {
+        encoding: 'utf8',
+        flag: 'wx',
+        mode: 0o600,
+      });
+      fs.renameSync(temporaryPath, walletPath);
     } catch (error) {
+      fs.rmSync(temporaryPath, { force: true });
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to save wallet: ${errorMessage}`);
     }

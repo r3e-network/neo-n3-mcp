@@ -25,7 +25,7 @@ usage() {
     echo "  -t, --timeout TIMEOUT   Request timeout in seconds (default: 10)"
     echo "  -v, --verbose           Verbose output"
     echo "  --help                  Show this help message"
-    exit 1
+    exit "${1:-0}"
 }
 
 # Parse command line arguments
@@ -48,11 +48,11 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help)
-            usage
+            usage 0
             ;;
         *)
             echo "Unknown option $1"
-            usage
+            usage 2
             ;;
     esac
 done
@@ -64,7 +64,7 @@ echo ""
 
 # Check if server is responding
 echo -e "${BLUE}📡 Checking server connectivity...${NC}"
-if curl -f -s --max-time $TIMEOUT "http://$HOST:$PORT/health" > /dev/null 2>&1; then
+if curl -f -s --max-time "$TIMEOUT" "http://$HOST:$PORT/health" > /dev/null 2>&1; then
     echo -e "${GREEN}✅ Server is responding${NC}"
 else
     echo -e "${RED}❌ Server is not responding${NC}"
@@ -73,7 +73,7 @@ fi
 
 # Check health endpoint
 echo -e "${BLUE}🔍 Checking health endpoint...${NC}"
-HEALTH_RESPONSE=$(curl -f -s --max-time $TIMEOUT "http://$HOST:$PORT/health" 2>/dev/null || echo "")
+HEALTH_RESPONSE=$(curl -f -s --max-time "$TIMEOUT" "http://$HOST:$PORT/health" 2>/dev/null || echo "")
 
 if [ -n "$HEALTH_RESPONSE" ]; then
     echo -e "${GREEN}✅ Health endpoint accessible${NC}"
@@ -85,24 +85,34 @@ else
     exit 1
 fi
 
-# Check if it's a valid JSON response
-if echo "$HEALTH_RESPONSE" | jq . > /dev/null 2>&1; then
-    echo -e "${GREEN}✅ Valid JSON response${NC}"
-    
-    # Extract status if available
-    STATUS=$(echo "$HEALTH_RESPONSE" | jq -r '.status // "unknown"' 2>/dev/null)
-    if [ "$STATUS" = "ok" ] || [ "$STATUS" = "healthy" ]; then
-        echo -e "${GREEN}✅ Server reports healthy status${NC}"
-    else
-        echo -e "${YELLOW}⚠️  Server status: $STATUS${NC}"
-    fi
-else
-    echo -e "${YELLOW}⚠️  Response is not valid JSON${NC}"
+if ! STATUS="$({ printf '%s' "$HEALTH_RESPONSE"; } | node -e '
+let body = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", chunk => { body += chunk; });
+process.stdin.on("end", () => {
+  try {
+    const payload = JSON.parse(body);
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) process.exit(1);
+    process.stdout.write(typeof payload.status === "string" ? payload.status : "");
+  } catch {
+    process.exit(1);
+  }
+});
+')"; then
+    echo -e "${RED}❌ Health endpoint returned invalid JSON${NC}"
+    exit 1
 fi
+
+echo -e "${GREEN}✅ Valid JSON response${NC}"
+if [ "$STATUS" != "healthy" ]; then
+    echo -e "${RED}❌ Server status is not healthy: ${STATUS:-missing}${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✅ Server reports healthy status${NC}"
 
 # Check MCP protocol endpoint (if available)
 echo -e "${BLUE}🔌 Checking MCP protocol...${NC}"
-if curl -f -s --max-time $TIMEOUT "http://$HOST:$PORT/mcp" > /dev/null 2>&1; then
+if curl -f -s --max-time "$TIMEOUT" "http://$HOST:$PORT/mcp" > /dev/null 2>&1; then
     echo -e "${GREEN}✅ MCP endpoint accessible${NC}"
 else
     echo -e "${YELLOW}⚠️  MCP endpoint not accessible (may be stdio-only)${NC}"
@@ -117,7 +127,7 @@ if [ "$HOST" = "localhost" ] || [ "$HOST" = "127.0.0.1" ]; then
         echo -e "${GREEN}✅ Neo MCP process found${NC}"
         if [ "$VERBOSE" = true ]; then
             echo -e "${YELLOW}Process info:${NC}"
-            pgrep -f "neo.*mcp" | head -5 | while read pid; do
+            pgrep -f "neo.*mcp" | head -5 | while read -r pid; do
                 echo "  PID: $pid"
             done
         fi

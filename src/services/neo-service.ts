@@ -1,9 +1,16 @@
 import * as neonJs from '@cityofzion/neon-js';
-import type { RPCClient } from '@cityofzion/neon-core/lib/rpc/RPCClient';
-import type { Account } from '@cityofzion/neon-core/lib/wallet/Account';
+import { config } from '../config';
 import { KnownAccountMetadata, normalizeScriptHash, resolveKnownAccount, tryGetAddressFromScriptHash, tryGetScriptHashFromAddress } from '../metadata/known-accounts';
 import { logger } from '../utils/logger';
-import { ChainConfig, Nep17TransferEntry, Nep17TransfersResponse, Nep11BalanceEntry, Nep11BalancesResponse, Nep11TransfersResponse, StackItem } from '../types/neo';
+import { createRpcClient, isDefinitiveRpcRejection, isUnsupportedRpcMethodError } from '../utils/rpc-client';
+import { OperationAbortedError, RpcDeadlineError, SubmissionOutcomeUnknownError, withRpcDeadline } from '../utils/rpc-deadline';
+import { RateLimitError, ValidationError } from '../utils/errors';
+import { formatContractParameters } from '../utils/contract-params';
+import type { NeonAccount, NeonRpcClient } from '../types/neon';
+import { calculateNetworkFee, calculateSystemFee, formatDatosAsGas, parseGasAmountToDatos, prepareTransactionForSigning } from '../utils/transaction-preparation';
+import { Nep17TransferEntry, Nep17TransfersResponse, Nep11BalanceEntry, Nep11BalancesResponse, Nep11TransfersResponse, StackItem, WalletInfo } from '../types/neo';
+import { assertValidRpcUrl } from '../utils/rpc-url';
+import { validatePassword, validateTokenAmount } from '../utils/validation';
 
 /**
  * Supported Neo N3 networks
@@ -13,17 +20,70 @@ export enum NeoNetwork {
   TESTNET = 'testnet'
 }
 
+export const NEO_NETWORK_MAGIC: Readonly<Record<NeoNetwork, number>> = Object.freeze({
+  [NeoNetwork.MAINNET]: 860833102,
+  [NeoNetwork.TESTNET]: 894710606,
+});
+
+export const MAX_TRANSACTION_WAIT_TIMEOUT_MS = 120_000;
+export const MIN_TRANSACTION_POLL_INTERVAL_MS = 250;
+const DEFAULT_MAX_CONCURRENT_TRANSACTION_WAITS = 32;
+const NEO_TOKEN_HASH = '0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5';
+const GAS_TOKEN_HASH = '0xd2a4cff31913016155e38e474a2c06d08be276cf';
+
+export interface TransactionWaitOptions {
+  timeoutMs?: number;
+  pollIntervalMs?: number;
+  includeApplicationLog?: boolean;
+  signal?: AbortSignal;
+}
+
+export interface AccountBalanceResult {
+  address: unknown;
+  balance: Array<{
+    asset?: string;
+    asset_hash: unknown;
+    asset_name: string;
+    amount: unknown;
+    last_updated_block?: unknown;
+  }>;
+}
+
+export interface ContractInvocationResult extends Record<string, unknown> {
+  state: string;
+  gasconsumed?: string;
+  stack?: unknown[];
+  exception?: string | null;
+}
+
+export interface FeeEstimate {
+  networkFeeDatos: string;
+  systemFeeDatos: string;
+  networkFeeGas: string;
+  systemFeeGas: string;
+}
+
+export interface PreparedNeoTransaction {
+  rawTransaction: string;
+  txid: string;
+  validUntilBlock: number;
+}
+
 /**
  * Service for interacting with the Neo N3 blockchain
  */
 export class NeoService {
-  private rpcClient: RPCClient;
-  private rpcUrl: string;
+  private rpcClient: NeonRpcClient;
+  private fetchRpcVersion!: () => Promise<unknown>;
   private networkMagic?: number;
+  private networkMagicRequest?: Promise<number>;
   private network: NeoNetwork;
-  private lastCallTime: number = 0;
-  private minCallInterval: number = 100; // Minimum time between RPC calls in milliseconds
-  private rateLimitEnabled: boolean = true;
+  private readonly rpcTimeoutMs: number;
+  private readonly maxTransactionWaitMs: number;
+  private readonly minTransactionPollIntervalMs: number;
+  private readonly maxConcurrentTransactionWaits: number;
+  private readonly maxTransactionFeeDatos: bigint;
+  private activeTransactionWaits = 0;
 
   /**
    * Create a new Neo service
@@ -35,22 +95,32 @@ export class NeoService {
     rpcUrl: string,
     network: NeoNetwork = NeoNetwork.MAINNET,
     options: {
-      rateLimitEnabled?: boolean,
-      minCallInterval?: number
+      rpcTimeoutMs?: number;
+      maxTransactionWaitMs?: number;
+      minTransactionPollIntervalMs?: number;
+      maxConcurrentTransactionWaits?: number;
+      allowInsecureRpc?: boolean;
+      maxTransactionFeeGas?: string;
     } = {}
   ) {
     if (!rpcUrl) {
       throw new Error('RPC URL is required');
     }
 
-    try {
-      this.rpcClient = new neonJs.rpc.RPCClient(rpcUrl);
+    const rpcTimeoutMs = options.rpcTimeoutMs ?? config.rpcTimeoutMs;
+    if (!Number.isSafeInteger(rpcTimeoutMs) || rpcTimeoutMs <= 0) {
+      throw new Error(`Invalid RPC timeout: ${rpcTimeoutMs}. Must be a positive integer.`);
+    }
 
-      // Validate that the RPC URL is formatted correctly
-      const urlPattern = /^(http|https):\/\/[^ "]+$/;
-      if (!urlPattern.test(rpcUrl)) {
-        throw new Error(`Invalid RPC URL format: ${rpcUrl}`);
-      }
+    try {
+      assertValidRpcUrl(rpcUrl, {
+        allowInsecureRemote: options.allowInsecureRpc ?? config.allowInsecureRpc,
+      });
+      this.rpcClient = createRpcClient(rpcUrl, rpcTimeoutMs);
+      const executeRpc = this.rpcClient.execute.bind(this.rpcClient);
+      this.fetchRpcVersion = () => executeRpc(
+        new neonJs.rpc.Query({ method: 'getversion', params: [] })
+      );
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to initialize Neo RPC client: ${errorMessage}`);
@@ -62,16 +132,22 @@ export class NeoService {
     }
 
     this.network = network;
-    this.rpcUrl = rpcUrl;
-
-    // Apply options
-    if (options.rateLimitEnabled !== undefined) {
-      this.rateLimitEnabled = options.rateLimitEnabled;
-    }
-
-    if (options.minCallInterval !== undefined && options.minCallInterval > 0) {
-      this.minCallInterval = options.minCallInterval;
-    }
+    this.rpcTimeoutMs = rpcTimeoutMs;
+    this.maxTransactionWaitMs = this.requirePositiveInteger(
+      options.maxTransactionWaitMs ?? MAX_TRANSACTION_WAIT_TIMEOUT_MS,
+      'maxTransactionWaitMs'
+    );
+    this.minTransactionPollIntervalMs = this.requirePositiveInteger(
+      options.minTransactionPollIntervalMs ?? MIN_TRANSACTION_POLL_INTERVAL_MS,
+      'minTransactionPollIntervalMs'
+    );
+    this.maxConcurrentTransactionWaits = this.requirePositiveInteger(
+      options.maxConcurrentTransactionWaits ?? DEFAULT_MAX_CONCURRENT_TRANSACTION_WAITS,
+      'maxConcurrentTransactionWaits'
+    );
+    this.maxTransactionFeeDatos = parseGasAmountToDatos(
+      options.maxTransactionFeeGas ?? config.maxTransactionFeeGas
+    );
   }
 
   /**
@@ -81,7 +157,7 @@ export class NeoService {
   async getBlockchainInfo() {
     try {
       // Use dedicated methods
-      const height = await this.rpcClient.getBlockCount();
+      const blockCount = await this.withRpcDeadline(() => this.rpcClient.getBlockCount());
 
       // Try to get validators using multiple approaches
       let validators = [];
@@ -90,11 +166,18 @@ export class NeoService {
         let validatorsResult: unknown = undefined;
         try {
           // Try execute method first
-          validatorsResult = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getvalidators', params: [] }));
+          validatorsResult = await this.withRpcDeadline(
+            () => this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getvalidators', params: [] }))
+          );
         } catch (executeError) {
+          if (!isUnsupportedRpcMethodError(executeError)) {
+            throw executeError;
+          }
           // Fallback to getnextblockvalidators
           try {
-            validatorsResult = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getnextblockvalidators', params: [] }));
+            validatorsResult = await this.withRpcDeadline(
+              () => this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getnextblockvalidators', params: [] }))
+            );
           } catch (nextError) {
             logger.warn('All validator query methods failed; continuing without validators', { network: this.network });
           }
@@ -108,7 +191,8 @@ export class NeoService {
       }
 
       return {
-        height,
+        blockCount,
+        height: Math.max(0, blockCount - 1),
         validators,
         network: this.network
       };
@@ -123,10 +207,12 @@ export class NeoService {
    * @param hashOrHeight Block height or hash
    * @returns Block details
    */
-  async getBlock(hashOrHeight: string | number) {
+  async getBlock(hashOrHeight: string | number): Promise<Record<string, unknown>> {
     try {
       // Use dedicated method
-      return await this.rpcClient.getBlock(hashOrHeight, 1);
+      return await this.withRpcDeadline(
+        () => this.rpcClient.getBlock(hashOrHeight, 1)
+      ) as unknown as Record<string, unknown>;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to get block ${hashOrHeight}: ${errorMessage}`);
@@ -171,15 +257,15 @@ export class NeoService {
     }
 
     if (item.type === 'ByteString' || item.type === 'ByteArray') {
-      const directHex = normalizeScriptHash(value);
-      if (directHex) {
-        return directHex;
+      const unprefixedHex = value.replace(/^0x/i, '');
+      if (/^[0-9a-fA-F]{40}$/.test(unprefixedHex)) {
+        return normalizeScriptHash(Buffer.from(unprefixedHex, 'hex').reverse().toString('hex'));
       }
 
       try {
         const bytes = Buffer.from(value, 'base64');
         if (bytes.length === 20) {
-          return normalizeScriptHash(bytes.toString('hex'));
+          return normalizeScriptHash(Buffer.from(bytes).reverse().toString('hex'));
         }
 
         const decodedText = bytes.toString('utf8');
@@ -235,6 +321,20 @@ export class NeoService {
     }
 
     return null;
+  }
+
+  private parseTokenId(item: StackItem): string | null {
+    if (!item || typeof item !== 'object' || item.value === undefined || item.value === null) {
+      return null;
+    }
+    if ((item.type === 'ByteString' || item.type === 'ByteArray') && typeof item.value === 'string') {
+      try {
+        return Buffer.from(item.value, 'base64').toString('hex');
+      } catch {
+        return item.value;
+      }
+    }
+    return String(item.value);
   }
 
   private buildAssetDescriptor(reference: string | null | undefined) {
@@ -349,13 +449,15 @@ export class NeoService {
 
     const contractOrHash = notification.contract ?? notification.scriptHash;
     const contractReference = typeof contractOrHash === 'string' ? contractOrHash : undefined;
+    const isNep11Transfer = stateValues.length >= 4;
     const parsed = {
-      type: 'nep17_transfer',
+      type: isNep11Transfer ? 'nep11_transfer' : 'nep17_transfer',
       contract: this.enrichKnownParty(contractReference) ?? { ...(normalizeScriptHash(contractReference) ? { scriptHash: normalizeScriptHash(contractReference) } : {}) },
       asset: this.buildAssetDescriptor(contractReference),
       from: this.parseTransferParticipant(stateValues[0]),
       to: this.parseTransferParticipant(stateValues[1]),
       amount: this.parseTransferAmount(stateValues[2]),
+      ...(isNep11Transfer ? { tokenId: this.parseTokenId(stateValues[3]) } : {}),
     };
 
     return {
@@ -405,10 +507,17 @@ export class NeoService {
   async getTransaction(txid: string) {
     try {
       try {
-        return this.enrichTransaction(await this.rpcClient.getRawTransaction(txid, true) as unknown as Record<string, unknown>);
+        return this.enrichTransaction(await this.withRpcDeadline(
+          () => this.rpcClient.getRawTransaction(txid, true)
+        ) as unknown as Record<string, unknown>);
       } catch (directError) {
+        if (!isUnsupportedRpcMethodError(directError)) {
+          throw directError;
+        }
         logger.warn('Direct getRawTransaction failed; trying query fallback', { txid, error: directError instanceof Error ? directError.message : String(directError) });
-        return this.enrichTransaction(await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getrawtransaction', params: [txid, 1] })) as Record<string, unknown>);
+        return this.enrichTransaction(await this.withRpcDeadline(
+          () => this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getrawtransaction', params: [txid, 1] }))
+        ) as Record<string, unknown>);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -423,7 +532,9 @@ export class NeoService {
    */
   async getApplicationLog(txid: string) {
     try {
-      return this.enrichApplicationLog(await this.rpcClient.getApplicationLog(txid) as unknown as Record<string, unknown>);
+      return this.enrichApplicationLog(await this.withRpcDeadline(
+        () => this.rpcClient.getApplicationLog(txid)
+      ) as unknown as Record<string, unknown>);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to get application log for ${txid}: ${errorMessage}`);
@@ -437,7 +548,7 @@ export class NeoService {
    */
   async getUnclaimedGas(address: string) {
     try {
-      const unclaimedGas = await this.rpcClient.getUnclaimedGas(address);
+      const unclaimedGas = await this.withRpcDeadline(() => this.rpcClient.getUnclaimedGas(address));
       return {
         address,
         unclaimedGas: typeof unclaimedGas === 'string' ? unclaimedGas : String(unclaimedGas),
@@ -489,10 +600,12 @@ export class NeoService {
         params.push(options.toTimestampMs);
       }
 
-      const transfers = await this.rpcClient.execute(new neonJs.rpc.Query({
-        method: 'getnep17transfers',
-        params,
-      }));
+      const transfers = await this.withRpcDeadline(
+        () => this.rpcClient.execute(new neonJs.rpc.Query({
+          method: 'getnep17transfers',
+          params,
+        }))
+      );
 
       return this.enrichNep17Transfers(transfers as Nep17TransfersResponse, address);
     } catch (error) {
@@ -512,10 +625,12 @@ export class NeoService {
         throw new Error('Invalid address format');
       }
 
-      const balances = await this.rpcClient.execute(new neonJs.rpc.Query({
-        method: 'getnep11balances',
-        params: [address],
-      }));
+      const balances = await this.withRpcDeadline(
+        () => this.rpcClient.execute(new neonJs.rpc.Query({
+          method: 'getnep11balances',
+          params: [address],
+        }))
+      );
 
       return this.enrichNep11Balances(balances as Nep11BalancesResponse);
     } catch (error) {
@@ -565,10 +680,12 @@ export class NeoService {
         params.push(options.toTimestampMs);
       }
 
-      const transfers = await this.rpcClient.execute(new neonJs.rpc.Query({
-        method: 'getnep11transfers',
-        params,
-      }));
+      const transfers = await this.withRpcDeadline(
+        () => this.rpcClient.execute(new neonJs.rpc.Query({
+          method: 'getnep11transfers',
+          params,
+        }))
+      );
 
       return this.enrichNep11Transfers(transfers as Nep11TransfersResponse, address);
     } catch (error) {
@@ -585,38 +702,103 @@ export class NeoService {
    */
   async waitForTransaction(
     txid: string,
-    options: { timeoutMs?: number; pollIntervalMs?: number; includeApplicationLog?: boolean } = {}
+    options: TransactionWaitOptions = {}
   ) {
     const timeoutMs = options.timeoutMs ?? 30_000;
     const pollIntervalMs = options.pollIntervalMs ?? 1_000;
     const includeApplicationLog = options.includeApplicationLog ?? false;
+    const signal = options.signal;
+    this.validateTransactionWaitOptions(timeoutMs, pollIntervalMs);
+    if (signal?.aborted) {
+      throw new OperationAbortedError();
+    }
+    if (this.activeTransactionWaits >= this.maxConcurrentTransactionWaits) {
+      throw new RateLimitError('Too many concurrent transaction wait requests', { retryAfter: 1 });
+    }
+
+    this.activeTransactionWaits += 1;
+    try {
+      return await this.pollForTransaction(txid, timeoutMs, pollIntervalMs, includeApplicationLog, signal);
+    } finally {
+      this.activeTransactionWaits -= 1;
+    }
+  }
+
+  private async pollForTransaction(
+    txid: string,
+    timeoutMs: number,
+    pollIntervalMs: number,
+    includeApplicationLog: boolean,
+    signal?: AbortSignal
+  ) {
     const deadline = Date.now() + timeoutMs;
 
     while (Date.now() <= deadline) {
+      if (signal?.aborted) {
+        throw new OperationAbortedError();
+      }
       try {
-        const blockHeight = await this.rpcClient.getTransactionHeight(txid);
-        const transaction = await this.getTransaction(txid);
+        const blockHeight = await this.withRpcDeadline(
+          () => this.rpcClient.getTransactionHeight(txid),
+          Math.min(this.rpcTimeoutMs, deadline - Date.now()),
+          signal
+        );
         const result: Record<string, unknown> = {
           txid,
           confirmed: true,
           blockHeight,
-          transaction,
         };
 
+        try {
+          result.transaction = await this.withRpcDeadline(
+            () => this.getTransaction(txid),
+            Math.min(this.rpcTimeoutMs, deadline - Date.now()),
+            signal
+          );
+        } catch (error) {
+          if (!(error instanceof RpcDeadlineError)) {
+            throw error;
+          }
+          result.transactionError = 'Transaction details were not available before the timeout';
+        }
+
         if (includeApplicationLog) {
-          result.applicationLog = await this.getApplicationLog(txid);
+          try {
+            result.applicationLog = await this.withRpcDeadline(
+              () => this.getApplicationLog(txid),
+              Math.min(this.rpcTimeoutMs, deadline - Date.now()),
+              signal
+            );
+          } catch (error) {
+            result.applicationLogError = error instanceof RpcDeadlineError
+              ? 'Application log was not available before the timeout'
+              : error instanceof Error ? error.message : String(error);
+          }
         }
 
         return result;
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        const retryable = /unknown|not found|pending|mempool|missing/i.test(errorMessage);
-        if (!retryable) {
-          throw new Error(`Failed while waiting for transaction ${txid}: ${errorMessage}`);
+        if (error instanceof OperationAbortedError) {
+          throw error;
+        }
+        if (error instanceof RpcDeadlineError) {
+          if (Date.now() >= deadline) {
+            break;
+          }
+        } else {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          const retryable = /unknown|not found|pending|mempool|missing/i.test(errorMessage);
+          if (!retryable) {
+            throw new Error(`Failed while waiting for transaction ${txid}: ${errorMessage}`);
+          }
         }
       }
 
-      await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+      const remainingMs = deadline - Date.now();
+      if (remainingMs <= 0) {
+        break;
+      }
+      await this.waitForPollInterval(Math.min(pollIntervalMs, remainingMs), signal);
     }
 
     return {
@@ -627,12 +809,57 @@ export class NeoService {
     };
   }
 
+  private validateTransactionWaitOptions(timeoutMs: number, pollIntervalMs: number): void {
+    this.requirePositiveInteger(timeoutMs, 'timeoutMs');
+    this.requirePositiveInteger(pollIntervalMs, 'pollIntervalMs');
+    if (timeoutMs > this.maxTransactionWaitMs) {
+      throw new RangeError(`timeoutMs must not exceed ${this.maxTransactionWaitMs}`);
+    }
+    if (pollIntervalMs < this.minTransactionPollIntervalMs) {
+      throw new RangeError(`pollIntervalMs must be at least ${this.minTransactionPollIntervalMs}`);
+    }
+  }
+
+  private requirePositiveInteger(value: number, name: string): number {
+    if (!Number.isSafeInteger(value) || value <= 0) {
+      throw new RangeError(`${name} must be a positive integer`);
+    }
+    return value;
+  }
+
+  private waitForPollInterval(delayMs: number, signal?: AbortSignal): Promise<void> {
+    if (signal?.aborted) {
+      return Promise.reject(new OperationAbortedError());
+    }
+
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        signal?.removeEventListener('abort', onAbort);
+        resolve();
+      }, delayMs);
+      const onAbort = () => {
+        clearTimeout(timeout);
+        reject(new OperationAbortedError());
+      };
+      signal?.addEventListener('abort', onAbort, { once: true });
+    });
+  }
+
+  private async withRpcDeadline<T>(
+    operation: () => Promise<T>,
+    timeoutMs = this.rpcTimeoutMs,
+    signal?: AbortSignal
+  ): Promise<T> {
+    await this.getNetworkMagic();
+    return await withRpcDeadline(operation, timeoutMs, signal);
+  }
+
   /**
    * Get account balance for a specific address
    * @param address Neo N3 address
    * @returns Balance information
    */
-  async getBalance(address: string) {
+  async getBalance(address: string): Promise<AccountBalanceResult> {
     try {
       if (!address || typeof address !== 'string') {
         throw new Error('Invalid address format');
@@ -641,7 +868,7 @@ export class NeoService {
       try {
         // Try to use execute method for getNep17Balances
         const query = new neonJs.rpc.Query({ method: 'getnep17balances', params: [address] });
-        const balanceResultRaw = await this.rpcClient.execute(query);
+        const balanceResultRaw = await this.withRpcDeadline(() => this.rpcClient.execute(query));
         const balanceResult = balanceResultRaw as Record<string, unknown> | undefined;
         if (balanceResult && balanceResult.balance) {
           return {
@@ -655,6 +882,9 @@ export class NeoService {
           };
         }
       } catch (nep17Error) {
+        if (!isUnsupportedRpcMethodError(nep17Error)) {
+          throw nep17Error;
+        }
         logger.warn('getnep17balances failed; trying alternative balance lookup', { address, error: nep17Error instanceof Error ? nep17Error.message : String(nep17Error) });
 
         // Try to get NEO and GAS balances directly
@@ -677,17 +907,25 @@ export class NeoService {
           });
 
           // Execute the scripts
-          const neoResult = await this.rpcClient.invokeScript(neonJs.u.HexString.fromHex(neoScript).toString(), []);
-          const gasResult = await this.rpcClient.invokeScript(neonJs.u.HexString.fromHex(gasScript).toString(), []);
+          const neoResult = await this.withRpcDeadline(
+            () => this.rpcClient.invokeScript(neonJs.u.HexString.fromHex(neoScript), [])
+          );
+          const gasResult = await this.withRpcDeadline(
+            () => this.rpcClient.invokeScript(neonJs.u.HexString.fromHex(gasScript), [])
+          );
 
           // Extract balances from results
-          const neoBalance = neoResult.state === 'HALT' && neoResult.stack && neoResult.stack.length > 0
-            ? neoResult.stack[0].value
-            : '0';
-
-          const gasBalance = gasResult.state === 'HALT' && gasResult.stack && gasResult.stack.length > 0
-            ? gasResult.stack[0].value
-            : '0';
+          const extractBalance = (result: typeof neoResult, asset: string): string => {
+            const value = result.stack?.[0]?.value;
+            if (result.state !== 'HALT'
+              || (typeof value !== 'string' && typeof value !== 'number')
+              || !/^\d+$/.test(String(value))) {
+              throw new Error(`Neo RPC returned an invalid ${asset} balance response`);
+            }
+            return String(value);
+          };
+          const neoBalance = extractBalance(neoResult, 'NEO');
+          const gasBalance = extractBalance(gasResult, 'GAS');
 
           return {
             address,
@@ -734,6 +972,188 @@ export class NeoService {
     return assetNames[assetHash.toLowerCase()] || assetHash;
   }
 
+  private assertNoAdditionalTransactionAttributes(additionalScriptAttributes: unknown[]): void {
+    if (additionalScriptAttributes.length > 0) {
+      throw new Error('Additional transaction attributes are not supported');
+    }
+  }
+
+  private scaleTokenAmount(amount: string, decimals: number): string {
+    if (!Number.isSafeInteger(decimals) || decimals < 0 || decimals > 255) {
+      throw new Error(`Invalid token decimals: ${decimals}`);
+    }
+    const amountText = validateTokenAmount(amount);
+
+    const [whole, fraction = ''] = amountText.split('.');
+    if (fraction.length > decimals) {
+      throw new Error(`Transfer amount has more than ${decimals} decimal places`);
+    }
+
+    const scaledAmount = BigInt(`${whole}${fraction.padEnd(decimals, '0')}`);
+    if (scaledAmount <= 0n) {
+      throw new Error(`Invalid transfer amount: ${amount}`);
+    }
+    if (scaledAmount > (1n << 255n) - 1n) {
+      throw new Error('Scaled transfer amount exceeds the Neo VM integer range');
+    }
+
+    return scaledAmount.toString();
+  }
+
+  private async buildNep17TransferScript(
+    fromAddress: string,
+    toAddress: string,
+    asset: string,
+    amount: string
+  ) {
+    if (!this.isValidNeoAddress(fromAddress)) {
+      throw new Error(`Invalid sender address format: ${fromAddress}`);
+    }
+    if (!this.isValidNeoAddress(toAddress)) {
+      throw new Error(`Invalid recipient address format: ${toAddress}`);
+    }
+    const contractHash = normalizeScriptHash(asset) ?? this.getAssetHash(asset);
+    const contractHashHex = neonJs.u.HexString.fromHex(this.stripHexPrefix(contractHash));
+    const networkMagic = await this.getNetworkMagic();
+    let decimals: number;
+    if (contractHash.toLowerCase() === NEO_TOKEN_HASH) {
+      decimals = 0;
+    } else if (contractHash.toLowerCase() === GAS_TOKEN_HASH) {
+      decimals = 8;
+    } else {
+      const decimalsResult = await this.withRpcDeadline(
+        () => this.rpcClient.invokeFunction(contractHash, 'decimals', [])
+      );
+      const decimalsValue = decimalsResult.stack?.[0]?.value;
+      decimals = typeof decimalsValue === 'number'
+        ? decimalsValue
+        : typeof decimalsValue === 'string' && /^\d+$/.test(decimalsValue)
+          ? Number(decimalsValue)
+          : Number.NaN;
+      if (decimalsResult.state !== 'HALT' || !Number.isSafeInteger(decimals) || decimals < 0 || decimals > 255) {
+        throw new Error(`Failed to determine token decimals for ${contractHash}`);
+      }
+    }
+    const scaledAmount = this.scaleTokenAmount(amount, decimals);
+    const builder = new neonJs.sc.ScriptBuilder();
+    builder.emitAppCall(contractHashHex, 'transfer', [
+      neonJs.u.HexString.fromHex(neonJs.wallet.getScriptHashFromAddress(fromAddress)),
+      neonJs.u.HexString.fromHex(neonJs.wallet.getScriptHashFromAddress(toAddress)),
+      neonJs.sc.ContractParam.integer(scaledAmount),
+      neonJs.sc.ContractParam.any(null),
+    ]);
+    builder.emit(neonJs.sc.OpCode.ASSERT);
+
+    return {
+      networkMagic,
+      script: neonJs.u.HexString.fromHex(builder.build()),
+    };
+  }
+
+  private async prepareSignedTransaction(
+    account: NeonAccount,
+    script: ReturnType<typeof neonJs.u.HexString.fromHex>,
+    providedNetworkMagic?: number
+  ): Promise<PreparedNeoTransaction> {
+    if (!this.isValidNeoAddress(account.address)) {
+      throw new ValidationError(`Invalid sender address: ${account.address}`);
+    }
+    const networkMagic = providedNetworkMagic ?? await this.getNetworkMagic();
+    const transaction = new neonJs.tx.Transaction();
+    transaction.script = script;
+    transaction.addSigner({
+      account: account.scriptHash || neonJs.wallet.getScriptHashFromAddress(account.address),
+      scopes: neonJs.tx.WitnessScope.CalledByEntry,
+    });
+    await prepareTransactionForSigning(transaction, account, this.rpcClient, {
+      maxTransactionFeeDatos: this.maxTransactionFeeDatos,
+    });
+    transaction.sign(account, networkMagic);
+
+    const transactionHash = transaction.hash();
+    const txid = transactionHash.startsWith('0x')
+      ? transactionHash
+      : `0x${transactionHash}`;
+    return {
+      rawTransaction: transaction.serialize(true),
+      txid,
+      validUntilBlock: transaction.validUntilBlock,
+    };
+  }
+
+  async submitPreparedTransaction(prepared: PreparedNeoTransaction): Promise<string> {
+    if (!/^[0-9a-fA-F]+$/.test(prepared.rawTransaction) || prepared.rawTransaction.length % 2 !== 0) {
+      throw new ValidationError('Prepared transaction must contain even-length hexadecimal bytes');
+    }
+    if (!/^0x[0-9a-fA-F]{64}$/.test(prepared.txid)) {
+      throw new ValidationError('Prepared transaction ID must be a 32-byte hash');
+    }
+    try {
+      const submittedTxid = await this.withRpcDeadline(
+        () => this.rpcClient.sendRawTransaction(neonJs.u.HexString.fromHex(prepared.rawTransaction))
+      );
+      const normalizedSubmittedTxid = typeof submittedTxid === 'string'
+        ? (submittedTxid.startsWith('0x') ? submittedTxid : `0x${submittedTxid}`).toLowerCase()
+        : '';
+      if (normalizedSubmittedTxid !== prepared.txid.toLowerCase()) {
+        throw new SubmissionOutcomeUnknownError(prepared.txid, 'inconsistent_response');
+      }
+      return prepared.txid;
+    } catch (error) {
+      if (error instanceof SubmissionOutcomeUnknownError || error instanceof ValidationError) {
+        throw error;
+      }
+      if (error instanceof RpcDeadlineError) {
+        throw new SubmissionOutcomeUnknownError(prepared.txid, this.rpcTimeoutMs);
+      }
+      if (isDefinitiveRpcRejection(error)) {
+        throw error;
+      }
+      throw new SubmissionOutcomeUnknownError(prepared.txid, 'transport_error');
+    }
+  }
+
+  private async signAndSubmitTransaction(
+    account: NeonAccount,
+    script: ReturnType<typeof neonJs.u.HexString.fromHex>,
+    providedNetworkMagic?: number
+  ): Promise<string> {
+    return await this.submitPreparedTransaction(
+      await this.prepareSignedTransaction(account, script, providedNetworkMagic)
+    );
+  }
+
+  async prepareTransferTransaction(
+    fromAccount: NeonAccount,
+    toAddress: string,
+    asset: string,
+    amount: string
+  ): Promise<PreparedNeoTransaction> {
+    const { networkMagic, script } = await this.buildNep17TransferScript(
+      fromAccount.address,
+      toAddress,
+      asset,
+      amount
+    );
+    return await this.prepareSignedTransaction(fromAccount, script, networkMagic);
+  }
+
+  async prepareInvokeTransaction(
+    fromAccount: NeonAccount,
+    scriptHash: string,
+    operation: string,
+    args: unknown[] = []
+  ): Promise<PreparedNeoTransaction> {
+    if (!scriptHash) throw new ValidationError('Script hash is required');
+    if (!operation) throw new ValidationError('Operation is required');
+    const script = neonJs.sc.createScript({
+      scriptHash,
+      operation,
+      args: formatContractParameters(args),
+    });
+    return await this.prepareSignedTransaction(fromAccount, neonJs.u.HexString.fromHex(script));
+  }
+
   /**
    * Transfer assets between addresses
    * @param fromAccount Sender account
@@ -744,13 +1164,15 @@ export class NeoService {
    * @returns Transaction details
    */
   async transferAssets(
-    fromAccount: Account,
+    fromAccount: NeonAccount,
     toAddress: string,
     asset: string,
-    amount: string | number,
+    amount: string,
     additionalScriptAttributes: unknown[] = []
   ) {
     try {
+      this.assertNoAdditionalTransactionAttributes(additionalScriptAttributes);
+
       if (!fromAccount || !fromAccount.address) {
         throw new Error('Invalid sender account: missing address');
       }
@@ -759,35 +1181,26 @@ export class NeoService {
         throw new Error('Recipient address is required');
       }
 
-      const normalizedAmount = typeof amount === 'string' ? Number(amount) : amount;
-      if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
-        throw new Error(`Invalid transfer amount: ${amount}`);
-      }
-
       // Ensure addresses are strings, not objects
       const fromAddress = typeof fromAccount.address === 'string'
         ? fromAccount.address
         : String(fromAccount.address);
 
-      // Validate addresses using Neo address pattern
-      const addressPattern = /^[A-Za-z0-9]{33,35}$/;
-      if (!addressPattern.test(fromAddress)) {
+      if (!this.isValidNeoAddress(fromAddress)) {
         throw new Error(`Invalid sender address format: ${fromAddress}`);
       }
 
-      if (!addressPattern.test(toAddress)) {
+      if (!this.isValidNeoAddress(toAddress)) {
         throw new Error(`Invalid recipient address format: ${toAddress}`);
       }
 
-      const contractHash = asset.startsWith('0x') ? asset : this.getAssetHash(asset);
-      const transferContract = new neonJs.experimental.nep17.Nep17Contract(
-        neonJs.u.HexString.fromHex(this.stripHexPrefix(contractHash)),
-        await this.getChainConfig(fromAccount)
-      );
-
-      const txid = await transferContract.transfer(fromAddress, toAddress, normalizedAmount);
+      const prepared = await this.prepareTransferTransaction(fromAccount, toAddress, asset, amount);
+      const txid = await this.submitPreparedTransaction(prepared);
       return { txid };
     } catch (error) {
+      if (error instanceof SubmissionOutcomeUnknownError || error instanceof ValidationError) {
+        throw error;
+      }
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to transfer assets: ${errorMessage}`);
     }
@@ -805,7 +1218,7 @@ export class NeoService {
     scriptHash: string,
     operation: string,
     args: unknown[] = []
-  ) {
+  ): Promise<ContractInvocationResult> {
     try {
       if (!scriptHash) throw new Error('Script hash is required');
       if (!operation) throw new Error('Operation is required');
@@ -813,18 +1226,26 @@ export class NeoService {
       const script = neonJs.sc.createScript({
         scriptHash,
         operation,
-        args: args as import('@cityofzion/neon-core/lib/sc/ContractParam').ContractParamJson[],
+        args: formatContractParameters(args),
       });
       const scriptHexString = neonJs.u.HexString.fromHex(script);
 
       // Use invokeScript for read-only calls, explicitly pass empty signers
-      const result = await this.rpcClient.invokeScript(scriptHexString.toString(), []);
+      const result = await this.withRpcDeadline(
+        () => this.rpcClient.invokeScript(scriptHexString, [])
+      ) as unknown as ContractInvocationResult;
       if (result.state !== 'HALT') {
-        // Log warning but return result anyway, as some reads might not HALT cleanly but still return data
-        logger.warn('Read invoke state is not HALT', { scriptHash, operation, state: result.state, exception: result.exception ?? null });
+        throw new Error(`VM execution ${result.state}: ${JSON.stringify({
+          exception: result.exception ?? null,
+          gasconsumed: result.gasconsumed,
+          stack: result.stack,
+        })}`);
       }
       return result;
     } catch (error) {
+      if (error instanceof ValidationError) {
+        throw error;
+      }
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.error('Failed to invoke read contract', { scriptHash, operation, error: errorMessage });
       throw new Error(`Failed to invoke read contract ${scriptHash}.${operation}: ${errorMessage}`);
@@ -842,26 +1263,31 @@ export class NeoService {
    * @returns { txid, tx } Transaction details
    */
   async invokeContract(
-    fromAccount: Account,
+    fromAccount: NeonAccount,
     scriptHash: string,
     operation: string,
     args: unknown[] = [],
     additionalScriptAttributes: unknown[] = []
   ) {
     try {
+      this.assertNoAdditionalTransactionAttributes(additionalScriptAttributes);
+
       if (!scriptHash) throw new Error('Script hash is required');
       if (!operation) throw new Error('Operation is required');
 
       if (!fromAccount || !fromAccount.address) throw new Error('Invalid sender account: missing address');
-      const contract = new neonJs.experimental.SmartContract(
-        neonJs.u.HexString.fromHex(this.stripHexPrefix(scriptHash)),
-        await this.getChainConfig(fromAccount)
+      const txid = await this.submitPreparedTransaction(
+        await this.prepareInvokeTransaction(fromAccount, scriptHash, operation, args)
       );
-
-      const txid = await contract.invoke(operation, args as import('@cityofzion/neon-core/lib/sc/ContractParam').ContractParam[]);
       return { txid };
 
     } catch (error) {
+      if (error instanceof SubmissionOutcomeUnknownError) {
+        throw error;
+      }
+      if (error instanceof ValidationError) {
+        throw error;
+      }
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.error('Failed to invoke write contract', { scriptHash, operation, error: errorMessage });
       throw new Error(`Failed to invoke write contract ${scriptHash}.${operation}: ${errorMessage}`);
@@ -869,12 +1295,12 @@ export class NeoService {
   }
 
   /**
-   * Get the current block count (height) of the blockchain.
-   * @returns The current block height.
+   * Get the blockchain's block count (latest block height plus one).
+   * @returns The current block count.
    */
   async getBlockCount(): Promise<number> {
     try {
-      return await this.rpcClient.getBlockCount();
+      return await this.withRpcDeadline(() => this.rpcClient.getBlockCount());
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to get block count: ${errorMessage}`);
@@ -893,46 +1319,28 @@ export class NeoService {
     fromAddress: string,
     toAddress: string,
     asset: string,
-    amount: string | number
-  ): Promise<{ networkFee: number; systemFee: number }> {
+    amount: string
+  ): Promise<FeeEstimate> {
     try {
-      const script = neonJs.sc.createScript({
-        scriptHash: asset.startsWith('0x') ? asset : this.getAssetHash(asset),
-        operation: 'transfer',
-        args: [
-          neonJs.sc.ContractParam.hash160(fromAddress),
-          neonJs.sc.ContractParam.hash160(toAddress),
-          neonJs.sc.ContractParam.integer(amount),
-          neonJs.sc.ContractParam.any(null), // data argument for transfer
-        ],
-      });
+      const { script } = await this.buildNep17TransferScript(
+        fromAddress,
+        toAddress,
+        asset,
+        amount
+      );
 
-      const signer = {
+      const signer = new neonJs.tx.Signer({
         account: neonJs.wallet.getScriptHashFromAddress(fromAddress),
         scopes: neonJs.tx.WitnessScope.CalledByEntry,
-      } as unknown as import('@cityofzion/neon-core/lib/tx/components/Signer').Signer;
+      });
+      const networkFeeTransaction = this.createNetworkFeeEstimationTransaction(script);
 
-      const tx = new neonJs.tx.Transaction();
-      tx.script = neonJs.u.HexString.fromHex(script);
-      tx.addSigner(signer);
-
-      const dummyAccount = new neonJs.wallet.Account();
-      tx.addWitness(new neonJs.tx.Witness({
-        invocationScript: '',
-        verificationScript: neonJs.u.HexString.fromBase64(dummyAccount.contract.script).toString(),
-      }));
-
-      const systemFee = await neonJs.experimental.txHelpers.getSystemFee(
-        tx.script,
-        await this.getChainConfig(),
-        [signer]
+      const systemFee = await calculateSystemFee(script, [signer], this.rpcClient);
+      const networkFee = await this.withRpcDeadline(
+        () => calculateNetworkFee(networkFeeTransaction, this.rpcClient)
       );
-      const networkFee = await neonJs.api.smartCalculateNetworkFee(tx, this.rpcClient);
 
-      return {
-        networkFee: Number(networkFee.toString()),
-        systemFee: Number(systemFee.toString())
-      };
+      return this.createFeeEstimate(networkFee.toString(), systemFee.toString());
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -953,40 +1361,63 @@ export class NeoService {
     scriptHash: string,
     operation: string,
     args: unknown[] = []
-  ): Promise<{ networkFee: number; systemFee: number }> {
+  ): Promise<FeeEstimate> {
     try {
-      const script = neonJs.sc.createScript({ scriptHash, operation, args: args as import('@cityofzion/neon-core/lib/sc/ContractParam').ContractParamJson[] });
-      const signer = {
+      if (!this.isValidNeoAddress(fromAddress)) {
+        throw new ValidationError(`Invalid signer address: ${fromAddress}`);
+      }
+      const script = neonJs.sc.createScript({ scriptHash, operation, args: formatContractParameters(args) });
+      const signer = new neonJs.tx.Signer({
         account: neonJs.wallet.getScriptHashFromAddress(fromAddress),
         scopes: neonJs.tx.WitnessScope.CalledByEntry,
-      } as unknown as import('@cityofzion/neon-core/lib/tx/components/Signer').Signer;
+      });
+      const scriptHex = neonJs.u.HexString.fromHex(script);
+      const networkFeeTransaction = this.createNetworkFeeEstimationTransaction(scriptHex);
 
-      const tx = new neonJs.tx.Transaction();
-      tx.script = neonJs.u.HexString.fromHex(script);
-      tx.addSigner(signer);
-
-      const dummyAccount = new neonJs.wallet.Account();
-      tx.addWitness(new neonJs.tx.Witness({
-        invocationScript: '',
-        verificationScript: neonJs.u.HexString.fromBase64(dummyAccount.contract.script).toString(),
-      }));
-
-      const systemFee = await neonJs.experimental.txHelpers.getSystemFee(
-        tx.script,
-        await this.getChainConfig(),
-        [signer]
+      await this.getNetworkMagic();
+      const systemFee = await calculateSystemFee(scriptHex, [signer], this.rpcClient);
+      const networkFee = await this.withRpcDeadline(
+        () => calculateNetworkFee(networkFeeTransaction, this.rpcClient)
       );
-      const networkFee = await neonJs.api.smartCalculateNetworkFee(tx, this.rpcClient);
 
-      return {
-        networkFee: Number(networkFee.toString()),
-        systemFee: Number(systemFee.toString())
-      };
+      return this.createFeeEstimate(networkFee.toString(), systemFee.toString());
 
     } catch (error) {
+      if (error instanceof ValidationError) {
+        throw error;
+      }
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to calculate invoke fee: ${errorMessage}`);
     }
+  }
+
+  private createNetworkFeeEstimationTransaction(
+    script: ReturnType<typeof neonJs.u.HexString.fromHex>
+  ): InstanceType<typeof neonJs.tx.Transaction> {
+    const dummyAccount = new neonJs.wallet.Account();
+    const transaction = new neonJs.tx.Transaction();
+    transaction.script = script;
+    transaction.addSigner({
+      account: dummyAccount.scriptHash,
+      scopes: neonJs.tx.WitnessScope.CalledByEntry,
+    });
+    transaction.addWitness(new neonJs.tx.Witness({
+      invocationScript: '',
+      verificationScript: neonJs.u.HexString.fromBase64(dummyAccount.contract.script).toString(),
+    }));
+    return transaction;
+  }
+
+  private createFeeEstimate(networkFeeDatos: string, systemFeeDatos: string): FeeEstimate {
+    if (!/^\d+$/.test(networkFeeDatos) || !/^\d+$/.test(systemFeeDatos)) {
+      throw new Error('Neo RPC returned an invalid fee estimate');
+    }
+    return {
+      networkFeeDatos,
+      systemFeeDatos,
+      networkFeeGas: formatDatosAsGas(BigInt(networkFeeDatos)),
+      systemFeeGas: formatDatosAsGas(BigInt(systemFeeDatos)),
+    };
   }
 
   /**
@@ -994,26 +1425,87 @@ export class NeoService {
    * @param fromAccount Account to claim GAS for and sign the transaction.
    * @returns Transaction details { txid, tx }
    */
-  async claimGas(fromAccount: Account): Promise<{ txid: string }> {
+  async claimGas(fromAccount: NeonAccount): Promise<{ txid: string }> {
     try {
       if (!fromAccount || !fromAccount.address) {
         throw new Error('Invalid account for claiming GAS: missing address');
       }
       const fromAddress = typeof fromAccount.address === 'string' ? fromAccount.address : String(fromAccount.address);
-      const addressPattern = /^[A-Za-z0-9]{33,35}$/;
-      if (!addressPattern.test(fromAddress)) {
+      if (!this.isValidNeoAddress(fromAddress)) {
         throw new Error(`Invalid address format for claiming GAS: ${fromAddress}`);
       }
 
-      const neoToken = new neonJs.experimental.nep17.NEOContract(await this.getChainConfig(fromAccount));
-      const txid = await neoToken.claimGas(fromAddress);
+      const unclaimedGas = await this.withRpcDeadline(
+        () => this.rpcClient.getUnclaimedGas(fromAddress)
+      );
+      if (!/^\d+$/.test(unclaimedGas) || BigInt(unclaimedGas) < 50_000_000n) {
+        throw new Error('Minimum claim value is 0.5 GAS');
+      }
+
+      const neoScriptHash = this.getAssetHash('NEO');
+      const balanceResult = await this.withRpcDeadline(
+        () => this.rpcClient.invokeFunction(
+          neoScriptHash,
+          'balanceOf',
+          [neonJs.sc.ContractParam.hash160(fromAddress)]
+        )
+      );
+      const balanceValue = balanceResult.stack?.[0]?.value;
+      const rawNeoBalance = typeof balanceValue === 'string' || typeof balanceValue === 'number'
+        ? String(balanceValue)
+        : '';
+      if (balanceResult.state !== 'HALT' || !/^\d+$/.test(rawNeoBalance) || BigInt(rawNeoBalance) <= 0n) {
+        throw new Error('Failed to determine the NEO balance required to claim GAS');
+      }
+
+      const prepared = await this.prepareClaimGasTransaction(fromAccount, rawNeoBalance);
+      const txid = await this.submitPreparedTransaction(prepared);
       return { txid };
 
     } catch (error) {
+      if (error instanceof SubmissionOutcomeUnknownError || error instanceof ValidationError) {
+        throw error;
+      }
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.error('Failed to claim GAS', { address: fromAccount?.address ?? null, error: errorMessage });
       throw new Error(`Failed to claim GAS: ${errorMessage}`);
     }
+  }
+
+  async prepareClaimGasTransaction(
+    fromAccount: NeonAccount,
+    knownNeoBalance?: string
+  ): Promise<PreparedNeoTransaction> {
+    if (!fromAccount || !fromAccount.address) {
+      throw new ValidationError('Invalid account for claiming GAS: missing address');
+    }
+    const fromAddress = String(fromAccount.address);
+    let rawNeoBalance = knownNeoBalance;
+    if (rawNeoBalance === undefined) {
+      const unclaimedGas = await this.withRpcDeadline(() => this.rpcClient.getUnclaimedGas(fromAddress));
+      if (!/^\d+$/.test(unclaimedGas) || BigInt(unclaimedGas) < 50_000_000n) {
+        throw new ValidationError('Minimum claim value is 0.5 GAS');
+      }
+      const balanceResult = await this.withRpcDeadline(() => this.rpcClient.invokeFunction(
+        this.getAssetHash('NEO'),
+        'balanceOf',
+        [neonJs.sc.ContractParam.hash160(fromAddress)]
+      ));
+      const balanceValue = balanceResult.stack?.[0]?.value;
+      rawNeoBalance = typeof balanceValue === 'string' || typeof balanceValue === 'number'
+        ? String(balanceValue)
+        : '';
+      if (balanceResult.state !== 'HALT' || !/^\d+$/.test(rawNeoBalance) || BigInt(rawNeoBalance) <= 0n) {
+        throw new ValidationError('Failed to determine the NEO balance required to claim GAS');
+      }
+    }
+    const { networkMagic, script } = await this.buildNep17TransferScript(
+        fromAddress,
+        fromAddress,
+        'NEO',
+        rawNeoBalance
+      );
+    return await this.prepareSignedTransaction(fromAccount, script, networkMagic);
   }
 
   /**
@@ -1021,17 +1513,20 @@ export class NeoService {
    * @param password Password for encrypting the wallet
    * @returns New wallet account
    */
-  createWallet(password: string) {
+  async createWallet(password: string): Promise<WalletInfo> {
     try {
+      validatePassword(password);
       const account = new neonJs.wallet.Account();
       return {
         address: account.address,
         publicKey: account.publicKey,
-        encryptedPrivateKey: account.encrypt(password),
+        encryptedPrivateKey: await neonJs.wallet.encrypt(account.WIF, password),
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Failed to create wallet: ${errorMessage}`);
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      throw new Error('Failed to create wallet');
     }
   }
 
@@ -1041,29 +1536,22 @@ export class NeoService {
    * @param password Password for decrypting the key (if encrypted)
    * @returns Wallet account
    */
-  importWallet(key: string, password?: string) {
+  async importWallet(key: string, password?: string): Promise<WalletInfo> {
     try {
-      let account: Account;
+      let account: NeonAccount;
 
       if (password) {
-        // Import from NEP2-encrypted key: Account constructor takes the encrypted WIF,
-        // then decrypt() takes the passphrase.
-        account = new neonJs.wallet.Account(key);
-
-        try {
-          account.decrypt(password);
-        } catch (decryptError: unknown) {
-          const msg = decryptError instanceof Error ? decryptError.message : String(decryptError);
-          throw new Error(`Failed to decrypt wallet: ${msg}`);
+        validatePassword(password);
+        if (!neonJs.wallet.isNEP2(key)) {
+          throw new Error('Invalid encrypted wallet key');
         }
+        const privateKey = await neonJs.wallet.decrypt(key, password);
+        account = new neonJs.wallet.Account(privateKey);
       } else {
-        // Import from WIF
-        try {
-          account = new neonJs.wallet.Account(key);
-        } catch (wifError: unknown) {
-          const msg = wifError instanceof Error ? wifError.message : String(wifError);
-          throw new Error(`Invalid WIF key: ${msg}`);
+        if (!(neonJs.wallet.isWIF(key) || neonJs.wallet.isPrivateKey(key))) {
+          throw new Error('Invalid WIF or private key');
         }
+        account = new neonJs.wallet.Account(key);
       }
 
       return {
@@ -1071,8 +1559,12 @@ export class NeoService {
         publicKey: account.publicKey,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Failed to import wallet: ${errorMessage}`);
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      throw new Error(password
+        ? 'Failed to import wallet: invalid encrypted key or password'
+        : 'Failed to import wallet: invalid WIF or private key');
     }
   }
 
@@ -1085,30 +1577,44 @@ export class NeoService {
     if (this.networkMagic !== undefined) {
       return this.networkMagic;
     }
-
-    const versionRaw = await this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getversion', params: [] }));
-    const version = versionRaw as Record<string, unknown>;
-    const versionProtocol = version?.protocol as Record<string, unknown> | undefined;
-    const networkMagicRaw = versionProtocol?.network;
-    if (!Number.isInteger(networkMagicRaw)) {
-      throw new Error('Failed to determine network magic from RPC getversion');
+    if (this.networkMagicRequest) {
+      return await this.networkMagicRequest;
     }
-    const networkMagic = networkMagicRaw as number;
 
-    this.networkMagic = networkMagic;
-    return networkMagic;
-  }
+    this.networkMagicRequest = withRpcDeadline(
+      this.fetchRpcVersion,
+      this.rpcTimeoutMs,
+    ).then((versionRaw) => {
+      const version = versionRaw as Record<string, unknown>;
+      const versionProtocol = version?.protocol as Record<string, unknown> | undefined;
+      const networkMagicRaw = versionProtocol?.network;
+      if (!Number.isInteger(networkMagicRaw)) {
+        throw new Error('Failed to determine network magic from RPC getversion');
+      }
+      const networkMagic = networkMagicRaw as number;
+      const expectedNetworkMagic = NEO_NETWORK_MAGIC[this.network];
+      if (networkMagic !== expectedNetworkMagic) {
+        throw new Error(
+          `RPC network mismatch for ${this.network}: expected magic ${expectedNetworkMagic}, ` +
+          `but endpoint reported ${networkMagic}`
+        );
+      }
 
-  private async getChainConfig(account?: Account): Promise<ChainConfig> {
-    return {
-      rpcAddress: this.rpcUrl,
-      networkMagic: await this.getNetworkMagic(),
-      account,
-    };
+      this.networkMagic = networkMagic;
+      return networkMagic;
+    }).finally(() => {
+      this.networkMagicRequest = undefined;
+    });
+    return await this.networkMagicRequest;
   }
 
   private stripHexPrefix(value: string): string {
     return value.startsWith('0x') ? value.slice(2) : value;
+  }
+
+  private isValidNeoAddress(value: string): boolean {
+    return typeof value === 'string'
+      && neonJs.wallet.isAddress(value, neonJs.CONST.DEFAULT_ADDRESS_VERSION);
   }
 
   private getAssetHash(symbol: string): string {

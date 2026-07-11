@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Contract Interaction - Neo N3 MCP Examples</title>
-    <meta name="description" content="Learn to interact with famous Neo N3 smart contracts: NeoFS, NeoBurger, Flamingo, NeoCompound, and more.">
+    <meta name="description" content="Learn to inspect, invoke, estimate, and deploy Neo N3 smart contracts safely with the Neo N3 MCP Server.">
     <meta name="keywords" content="neo, blockchain, mcp, smart contracts, examples">
     
     <!-- Favicon -->
@@ -106,251 +106,158 @@
         <header style="text-align: center; margin-bottom: 3rem;">
             <h1 class="section-title">Smart Contract Interaction</h1>
             <p class="section-subtitle">
-                Interact with famous Neo N3 smart contracts and build DeFi applications
+                Inspect live contracts, run read calls, estimate fees, and execute confirmed writes
             </p>
         </header>
 
         <div class="example-section">
-            <h2>🔥 Flamingo DeFi Protocol</h2>
-            <p>Interact with Flamingo DEX for token swaps and liquidity provision:</p>
-            
+            <h2>Contract Discovery</h2>
+            <p>Resolve a contract from its script hash and inspect the manifest reported by the live network:</p>
+
             <div class="code-window">
                 <div class="code-header">
-                    <span class="code-lang">Flamingo Token Swap</span>
+                    <span class="code-lang">Live Contract Metadata</span>
                 </div>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <div class="code-content">
-                    <pre>// Get Flamingo exchange rates
-const rates = await tools.flamingo_get_exchange_rate({
-  fromToken: "NEO",
-  toToken: "GAS",
-  amount: "10"
+                    <pre>const GAS_HASH = "0xd2a4cff31913016155e38e474a2c06d08be276cf";
+
+const contractInfo = await tools.get_contract_info({
+  contract: GAS_HASH,
+  network: "mainnet"
 });
 
-// Execute token swap on Flamingo
-const swapResult = await tools.flamingo_swap_tokens({
-  fromAddress: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  fromToken: "NEO", 
-  toToken: "GAS",
-  amount: "10",
-  minReceived: "45.5", // Minimum amount to receive
-  password: "wallet_password"
+const contractStatus = await tools.get_contract_status({
+  contract: GAS_HASH,
+  network: "mainnet"
 });
 
-console.log("Swap executed:", swapResult);
-// Output:
-// {
-//   "txid": "0x1234567890abcdef...",
-//   "fromAmount": "10.00000000",
-//   "toAmount": "46.25340000",
-//   "fee": "0.00234567",
-//   "success": true
-// }</pre>
+console.log("Manifest:", contractInfo.status.contractState.manifest);
+console.log("Deployment status:", contractStatus);</pre>
                 </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>📁 NeoFS Decentralized Storage</h2>
-            <p>Store and retrieve files using NeoFS distributed storage network:</p>
-            
+            <h2>Read-Only Invocation</h2>
+            <p>Call methods without a wallet when the operation does not change chain state:</p>
+
             <div class="code-window">
                 <div class="code-header">
-                    <span class="code-lang">NeoFS File Operations</span>
+                    <span class="code-lang">Native GAS Contract</span>
                 </div>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <div class="code-content">
-                    <pre>// Upload file to NeoFS
-const uploadResult = await tools.neofs_upload_file({
-  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  filename: "document.pdf",
-  content: "base64_encoded_file_content",
-  password: "wallet_password"
+                    <pre>const GAS_HASH = "0xd2a4cff31913016155e38e474a2c06d08be276cf";
+
+const symbol = await tools.invoke_contract({
+  scriptHash: GAS_HASH,
+  operation: "symbol",
+  args: [],
+  network: "mainnet"
 });
 
-// Get file information
-const fileInfo = await tools.neofs_get_file_info({
-  fileId: uploadResult.fileId
+const decimals = await tools.invoke_contract({
+  scriptHash: GAS_HASH,
+  operation: "decimals",
+  args: [],
+  network: "mainnet"
 });
 
-// Download file from NeoFS
-const downloadResult = await tools.neofs_download_file({
-  fileId: uploadResult.fileId,
-  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj"
-});
-
-console.log("File operations:", {
-  upload: uploadResult,
-  info: fileInfo,
-  download: downloadResult
-});
-// Output:
-// {
-//   "upload": {
-//     "fileId": "0xabc123def456...",
-//     "size": 1024,
-//     "storageCost": "0.5"
-//   },
-//   "info": {
-//     "filename": "document.pdf",
-//     "size": 1024,
-//     "owner": "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-//     "created": "2024-01-15T10:30:00Z"
-//   }
-// }</pre>
+console.log({ symbol, decimals });</pre>
                 </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>🍔 NeoBurger Gaming Integration</h2>
-            <p>Interact with NeoBurger gaming ecosystem and NFT marketplace:</p>
-            
+            <h2>Fee Estimation</h2>
+            <p>Estimate an invocation with the exact signer, contract, operation, and arguments you intend to use:</p>
+
             <div class="code-window">
                 <div class="code-header">
-                    <span class="code-lang">NeoBurger NFT Operations</span>
+                    <span class="code-lang">Invocation Preflight</span>
                 </div>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <div class="code-content">
-                    <pre>// Get user's NeoBurger NFTs
-const userNFTs = await tools.neoburger_get_user_nfts({
-  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj"
+                    <pre>const contractHash = process.env.NEO_CONTRACT_HASH;
+
+const fees = await tools.estimate_invoke_fees({
+  signerAddress: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
+  scriptHash: contractHash,
+  operation: "setMessage",
+  args: ["Hello, Neo N3"],
+  network: "testnet"
 });
 
-// Get NeoBurger marketplace listings
-const marketplaceItems = await tools.neoburger_get_marketplace({
-  category: "burgers",
-  minPrice: "1",
-  maxPrice: "100"
-});
-
-// Purchase NFT from marketplace
-const purchaseResult = await tools.neoburger_purchase_nft({
-  buyerAddress: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  nftId: "burger_001",
-  price: "25.5",
-  password: "wallet_password"
-});
-
-// Stake NeoBurger for rewards
-const stakeResult = await tools.neoburger_stake({
-  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  nftId: "burger_001",
-  duration: 30, // days
-  password: "wallet_password"
-});
-
-console.log("NeoBurger operations:", {
-  nfts: userNFTs,
-  marketplace: marketplaceItems,
-  purchase: purchaseResult,
-  stake: stakeResult
-});</pre>
+console.log("Exact system fee (datos):", fees.systemFeeDatos);
+console.log("Exact network fee (datos):", fees.networkFeeDatos);
+console.log("Formatted system fee (GAS):", fees.systemFeeGas);
+console.log("Formatted network fee (GAS):", fees.networkFeeGas);</pre>
                 </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>💰 NeoCompound Lending Protocol</h2>
-            <p>Lend and borrow assets using NeoCompound DeFi protocol:</p>
-            
+            <h2>Confirmed Contract Write</h2>
+            <p>Write calls require an explicit network, a valid sender WIF, and a <code>confirm: true</code> safety acknowledgement:</p>
+
             <div class="code-window">
                 <div class="code-header">
-                    <span class="code-lang">Lending and Borrowing</span>
+                    <span class="code-lang">Write and Confirm</span>
                 </div>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <div class="code-content">
-                    <pre>// Get current lending rates
-const rates = await tools.neocompound_get_rates();
+                    <pre>const contractHash = process.env.NEO_CONTRACT_HASH;
 
-// Supply assets to earn interest
-const supplyResult = await tools.neocompound_supply({
-  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  asset: "GAS",
-  amount: "100",
-  password: "wallet_password"
+const writeResult = await tools.invoke_contract_write({
+  idempotencyKey: "contract-message-2026-07-11-001",
+  scriptHash: contractHash,
+  operation: "setMessage",
+  args: ["Hello, Neo N3"],
+  network: "testnet"
 });
 
-// Get user's supply balance and earned interest
-const supplyBalance = await tools.neocompound_get_supply_balance({
-  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  asset: "GAS"
+const receipt = await tools.wait_for_transaction({
+  txid: writeResult.txid,
+  timeoutMs: 120000,
+  pollIntervalMs: 3000,
+  includeApplicationLog: true,
+  network: "testnet"
 });
 
-// Borrow against collateral
-const borrowResult = await tools.neocompound_borrow({
-  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  asset: "NEO",
-  amount: "5",
-  collateralAsset: "GAS",
-  password: "wallet_password"
-});
-
-// Repay borrowed amount
-const repayResult = await tools.neocompound_repay({
-  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  asset: "NEO",
-  amount: "5.25", // Principal + interest
-  password: "wallet_password"
-});
-
-console.log("Lending protocol:", {
-  rates: rates,
-  supply: supplyBalance,
-  borrow: borrowResult,
-  repay: repayResult
-});</pre>
+console.log("Confirmed transaction:", receipt);</pre>
                 </div>
             </div>
         </div>
 
         <div class="example-section">
-            <h2>📊 GrandShare Investment Platform</h2>
-            <p>Participate in investment pools and receive dividends:</p>
-            
+            <h2>Contract Deployment</h2>
+            <p>Deploy a complete compiler-produced serialized NEF artifact and manifest only after reviewing both files. Raw VM bytecode is not accepted.</p>
+
             <div class="code-window">
                 <div class="code-header">
-                    <span class="code-lang">Investment Pool Operations</span>
+                    <span class="code-lang">Confirmed Deployment</span>
                 </div>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <div class="code-content">
-                    <pre>// Get available investment pools
-const pools = await tools.grandshare_get_pools();
-
-// Join an investment pool
-const joinResult = await tools.grandshare_join_pool({
-  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  poolId: "tech_fund_001",
-  amount: "50",
-  password: "wallet_password"
+                    <pre>const deployment = await tools.deploy_contract({
+  idempotencyKey: "deployment-2026-07-11-001",
+  nef: {
+    encoding: "base64",
+    data: compiledNefBase64
+  },
+  manifest: compiledManifest,
+  network: "testnet"
 });
 
-// Get user's investment positions
-const positions = await tools.grandshare_get_positions({
-  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj"
+const receipt = await tools.wait_for_transaction({
+  txid: deployment.txid,
+  includeApplicationLog: true,
+  network: "testnet"
 });
 
-// Claim dividends
-const claimResult = await tools.grandshare_claim_dividends({
-  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  poolId: "tech_fund_001",
-  password: "wallet_password"
-});
-
-// Exit investment pool
-const exitResult = await tools.grandshare_exit_pool({
-  address: "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj",
-  poolId: "tech_fund_001",
-  shares: "25", // Partial exit
-  password: "wallet_password"
-});
-
-console.log("Investment operations:", {
-  pools: pools,
-  positions: positions,
-  claim: claimResult,
-  exit: exitResult
-});</pre>
+console.log("Contract hash:", deployment.contractHash);
+console.log("Deployment receipt:", receipt);</pre>
                 </div>
             </div>
         </div>
@@ -381,8 +288,8 @@ console.log("Investment operations:", {
                 <div>
                     <div class="footer-brand">Neo N3 MCP</div>
                     <p class="footer-description">
-                        The most advanced Neo N3 blockchain development platform. 
-                        Build powerful dApps with enterprise-grade tools and security.
+                        A focused MCP and HTTP integration surface for Neo N3 data, assets,
+                        wallets, transactions, and smart contracts.
                     </p>
                 </div>
                 <div>
@@ -441,4 +348,4 @@ console.log("Investment operations:", {
         }
     </script>
 </body>
-</html> 
+</html>

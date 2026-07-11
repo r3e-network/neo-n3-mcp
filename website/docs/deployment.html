@@ -3,594 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deployment Guide - Neo N3 MCP Server</title>
-    <meta name="description" content="Production deployment guide for Neo N3 MCP Server. Learn Docker deployment, monitoring, scaling, and best practices.">
-    <meta name="keywords" content="neo, blockchain, mcp, deployment, docker, production, scaling">
-    
-    <!-- Favicon -->
+    <title>Deployment - Neo N3 MCP Server</title>
+    <meta name="description" content="Deploy Neo N3 MCP with the checked-in production Compose file, bearer authentication, wallet persistence, and health checks.">
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
-    
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    
-    <!-- Modern Theme -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/assets/css/modern-theme.css">
-    
     <style>
-        .breadcrumb {
-            color: var(--text-secondary);
-            margin-bottom: var(--spacing-lg);
-        }
-        
-        .breadcrumb a {
-            color: var(--primary);
-            text-decoration: none;
-        }
-        
-        .deployment-section {
-            margin-bottom: var(--spacing-3xl);
-        }
-        
-        .deployment-section h2 {
-            font-family: var(--font-heading);
-            font-size: 1.75rem;
-            font-weight: 600;
-            margin-bottom: var(--spacing-lg);
-            color: var(--text-primary);
-        }
-        
-        .deployment-section h3 {
-            font-family: var(--font-heading);
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin: var(--spacing-xl) 0 var(--spacing-lg) 0;
-            color: var(--text-primary);
-        }
-        
-        .info-box {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.1));
-            border-left: 4px solid var(--primary);
-            border-radius: var(--radius-md);
-            padding: var(--spacing-lg);
-            margin: var(--spacing-lg) 0;
-        }
-        
-        .warning-box {
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(255, 152, 0, 0.1));
-            border-left: 4px solid var(--warning);
-            border-radius: var(--radius-md);
-            padding: var(--spacing-lg);
-            margin: var(--spacing-lg) 0;
-        }
-        
-        .success-box {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(34, 197, 94, 0.1));
-            border-left: 4px solid var(--accent);
-            border-radius: var(--radius-md);
-            padding: var(--spacing-lg);
-            margin: var(--spacing-lg) 0;
-        }
-        
-        .info-title, .warning-title, .success-title {
-            font-weight: 600;
-            margin-bottom: var(--spacing-sm);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-        }
-        
-        .info-title { color: var(--primary); }
-        .warning-title { color: var(--warning); }
-        .success-title { color: var(--accent); }
-        
-        .deployment-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: var(--spacing-lg);
-            margin: var(--spacing-xl) 0;
-        }
-        
-        .deployment-card {
-            background: var(--bg-card);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-xl);
-            border: 1px solid var(--border-primary);
-            transition: var(--transition);
-        }
-        
-        .deployment-card:hover {
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-2px);
-        }
-        
-        .deployment-icon {
-            font-size: 2rem;
-            margin-bottom: var(--spacing-md);
-        }
-        
-        .deployment-title {
-            font-family: var(--font-heading);
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: var(--spacing-sm);
-            color: var(--text-primary);
-        }
+        .docs-header { margin: 1.5rem 0 3rem; max-width: 820px; }
+        .docs-title { font-size: 2.75rem; line-height: 1.1; margin-bottom: 1rem; }
+        .docs-lead, .docs-section p, .docs-section li { color: var(--text-secondary); }
+        .docs-section { margin: 3rem 0; }
+        .docs-section h2 { font-size: 1.65rem; margin-bottom: 1rem; }
+        .docs-section h3 { font-size: 1.15rem; margin: 1.5rem 0 .7rem; }
+        .deploy-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+        .deploy-card { border: 1px solid var(--border-primary); border-radius: 8px; padding: 1.25rem; background: var(--bg-card); }
+        pre { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 8px; padding: 1rem; overflow-x: auto; }
+        code { font-family: var(--font-mono); color: var(--text-primary); }
+        .callout { border-left: 4px solid var(--primary); background: var(--bg-secondary); padding: 1.2rem 1.4rem; border-radius: 0 8px 8px 0; }
+        .warning { border-left-color: var(--warning); }
+        .table-wrap { overflow-x: auto; border: 1px solid var(--border-primary); border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; min-width: 650px; }
+        th, td { padding: .8rem 1rem; text-align: left; border-bottom: 1px solid var(--border-secondary); }
+        th { background: var(--bg-tertiary); } td { color: var(--text-secondary); }
+        @media (max-width: 760px) { .docs-title { font-size: 2rem; } .deploy-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="nav" id="nav">
+    <nav class="nav">
         <div class="nav-container">
             <a href="/" class="nav-logo">Neo N3 MCP</a>
             <div class="nav-menu">
                 <a href="/" class="nav-link">Home</a>
-                <a href="/#features" class="nav-link">Features</a>
-                <a href="/docs" class="nav-link active">Docs</a>
-                <a href="/examples" class="nav-link">Examples</a>
-                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+                <a href="/docs" class="nav-link">Docs</a>
+                <a href="/docs/deployment" class="nav-link active">Deployment</a>
+                <a href="/docs/testing" class="nav-link">Testing</a>
+                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank" rel="noreferrer">GitHub</a>
             </div>
         </div>
     </nav>
 
-    <div class="page-container">
-        <div class="breadcrumb">
-            <a href="/docs">Documentation</a> > Deployment Guide
-        </div>
-        
-        <header style="text-align: center; margin-bottom: 3rem;">
-            <h1 class="section-title">Deployment Guide</h1>
-            <p class="section-subtitle">
-                Deploy Neo N3 MCP Server to production with Docker, monitoring, and best practices
-            </p>
+    <main class="page-container">
+        <header class="docs-header">
+            <h1 class="docs-title">Deployment</h1>
+            <p class="docs-lead">Use the checked-in Node.js process or container assets. The repository publishes artifacts but does not define a cloud platform, Kubernetes stack, or automated production rollout.</p>
         </header>
 
-        <div class="deployment-section">
-            <h2>🚀 Deployment Options</h2>
-            <p>Choose the deployment method that best fits your infrastructure and requirements.</p>
-            
-            <div class="deployment-grid">
-                <div class="deployment-card">
-                    <div class="deployment-icon">🐳</div>
-                    <h3 class="deployment-title">Docker Deployment</h3>
-                    <p>Containerized deployment with all dependencies included. Perfect for cloud environments and scalable architectures.</p>
-                    <ul>
-                        <li>Isolated environment</li>
-                        <li>Easy scaling</li>
-                        <li>Consistent deployments</li>
-                        <li>Built-in health checks</li>
-                    </ul>
-                </div>
-                
-                <div class="deployment-card">
-                    <div class="deployment-icon">☁️</div>
-                    <h3 class="deployment-title">Cloud Deployment</h3>
-                    <p>Deploy to major cloud providers with managed services, auto-scaling, and high availability.</p>
-                    <ul>
-                        <li>AWS, GCP, Azure support</li>
-                        <li>Auto-scaling</li>
-                        <li>Load balancing</li>
-                        <li>Managed infrastructure</li>
-                    </ul>
-                </div>
-                
-                <div class="deployment-card">
-                    <div class="deployment-icon">⚙️</div>
-                    <h3 class="deployment-title">Kubernetes</h3>
-                    <p>Enterprise-grade orchestration with advanced scaling, rolling updates, and service mesh integration.</p>
-                    <ul>
-                        <li>Horizontal scaling</li>
-                        <li>Rolling updates</li>
-                        <li>Service discovery</li>
-                        <li>Resource management</li>
-                    </ul>
-                </div>
+        <section class="docs-section">
+            <h2>Supported repository paths</h2>
+            <div class="deploy-grid">
+                <article class="deploy-card"><h3>Node.js process</h3><p>Build with <code>npm run build</code> and start HTTP with <code>npm run start:http</code> under an operator-managed process supervisor.</p></article>
+                <article class="deploy-card"><h3>Production Compose</h3><p><code>docker/docker-compose.yml</code> builds the production image, requires an API key, persists wallets, and configures health and log limits.</p></article>
+                <article class="deploy-card"><h3>Direct Docker</h3><p><code>docker/Dockerfile</code> creates a non-root Node.js 22 Alpine image that runs <code>dist/http.js</code>.</p></article>
+                <article class="deploy-card"><h3>Development Compose</h3><p><code>docker/docker-compose.dev.yml</code> bind-mounts source, listens on loopback, and provides a local-only default key.</p></article>
             </div>
-        </div>
+        </section>
 
-        <div class="deployment-section">
-            <h2>🐳 Docker Deployment</h2>
-            
-            <h3>Basic Docker Setup</h3>
-            <div class="code-window">
-                <div class="code-header">
-                    <span>Dockerfile</span>
-                </div>
-                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                <div class="code-content">
-                    <pre># Production Dockerfile
-FROM node:18-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
+        <section class="docs-section">
+            <h2>Production Compose</h2>
+            <pre><code>export HTTP_API_KEY="$(openssl rand -hex 32)"
+docker compose -f docker/docker-compose.yml up -d</code></pre>
+            <ul>
+                <li>The API key is required during Compose interpolation.</li>
+                <li>The container listens on <code>0.0.0.0:3000</code>.</li>
+                <li>The host publishes <code>127.0.0.1:3000</code> by default.</li>
+                <li><code>/app/wallets</code> is persisted in the <code>neo-mcp-wallets</code> volume.</li>
+                <li>Docker JSON logs are limited to three 10 MiB files.</li>
+            </ul>
+            <pre><code>PORT=8080 HTTP_API_KEY="$HTTP_API_KEY" \
+  docker compose -f docker/docker-compose.yml up -d</code></pre>
+            <h3>Registry image</h3>
+            <pre><code>NEO_MCP_IMAGE_REPOSITORY=r3enetwork/neo-n3-mcp \
+NEO_MCP_IMAGE_DIGEST=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef \
+HTTP_API_KEY="$HTTP_API_KEY" \
+  docker compose -f docker/docker-compose.yml \
+    -f docker/docker-compose.registry.yml up -d</code></pre>
+            <p>Replace the example digest with the release artifact's 64-character lowercase hexadecimal digest. The overlay is digest-only; it does not accept combined image references or mutable tags.</p>
+            <div class="callout warning"><strong>Remote exposure:</strong> the container listener is plaintext HTTP and does not terminate TLS. Remote clients must use HTTPS through a TLS-terminating reverse proxy or load balancer. Set <code>HTTP_BIND_ADDRESS=0.0.0.0</code> only when that proxy must reach the container, and restrict the published port to the proxy.</div>
+        </section>
 
-FROM node:18-alpine AS runtime
-WORKDIR /app
-COPY --from=builder /app/node_modules ./node_modules
-COPY . .
+        <section class="docs-section">
+            <h2>Direct process</h2>
+            <pre><code>npm ci
+npm run build
+export HTTP_API_KEY="$(openssl rand -hex 32)"
+NEO_NETWORK=mainnet npm run start:http</code></pre>
+            <p>HTTP requires <code>mainnet</code> or <code>testnet</code>. The default host is loopback. Any configured key must contain at least 32 bytes, and a non-loopback host cannot start without one.</p>
+            <div class="callout warning">Direct remote plaintext HTTP is unsupported because bearer tokens and WIFs traverse requests. An API key authenticates clients but does not encrypt the connection; keep the backend HTTP hop on loopback or a trusted host-local proxy network.</div>
+        </section>
 
-# Security updates
-RUN apk update && apk upgrade && \
-    apk add --no-cache dumb-init && \
-    rm -rf /var/cache/apk/*
-
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
-
-# Set permissions
-RUN chown -R nodejs:nodejs /app
-USER nodejs
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/health || exit 1
-
-EXPOSE 3000
-ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/index.js"]</pre>
-                </div>
+        <section class="docs-section">
+            <h2>Security configuration</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Variable</th><th>Default</th><th>Deployment note</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>HTTP_HOST</code></td><td><code>127.0.0.1</code></td><td>Keep loopback unless remote binding is required.</td></tr>
+                        <tr><td><code>HTTP_API_KEY</code></td><td>Unset</td><td>Required off loopback; minimum 32 bytes.</td></tr>
+                        <tr><td><code>HTTP_CORS_ORIGINS</code></td><td>Empty</td><td>Exact comma-separated origins; no wildcard.</td></tr>
+                        <tr><td><code>HTTP_MAX_BODY_BYTES</code></td><td>1048576</td><td>Positive integer request-body limit.</td></tr>
+                        <tr><td><code>NEO_TESTNET_RPC</code></td><td><code>https://testnet1.neo.coz.io:443</code></td><td>Remote RPC endpoints should use HTTPS.</td></tr>
+                        <tr><td><code>NEO_RPC_TIMEOUT_MS</code></td><td>15000</td><td>Positive per-attempt RPC deadline in milliseconds.</td></tr>
+                        <tr><td><code>NEO_ALLOW_INSECURE_RPC</code></td><td>false</td><td>Explicitly permits remote plaintext HTTP RPC; keep disabled in production.</td></tr>
+                        <tr><td><code>NEO_MAX_TRANSACTION_FEE_GAS</code></td><td>20</td><td>Caps combined system and network fees before signing.</td></tr>
+                        <tr><td><code>WALLETS_DIR</code></td><td><code>./wallets</code></td><td>Persist and protect this directory.</td></tr>
+                        <tr><td><code>RATE_LIMITING_ENABLED</code></td><td>Enabled</td><td>Process-local; complement it with upstream controls.</td></tr>
+                    </tbody>
+                </table>
             </div>
-            
-            <h3>Docker Compose Production Setup</h3>
-            <div class="code-window">
-                <div class="code-header">
-                    <span>docker-compose.prod.yml</span>
-                </div>
-                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                <div class="code-content">
-                    <pre>version: '3.8'
+            <p>Plain HTTP is accepted for loopback RPC endpoints. A remote plaintext HTTP RPC is rejected unless <code>NEO_ALLOW_INSECURE_RPC=true</code>; the override does not encrypt traffic. Signed transactions are rejected before broadcast when combined fees exceed the configured GAS cap.</p>
+        </section>
 
-services:
-  neo-mcp:
-    image: r3e/neo-n3-mcp:latest
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - NEO_NETWORK=mainnet
-      - LOG_LEVEL=info
-      - ENABLE_METRICS=true
-      - RATE_LIMIT_ENABLED=true
-    volumes:
-      - ./logs:/app/logs
-      - ./config:/app/config:ro
-    networks:
-      - neo-network
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+        <section class="docs-section">
+            <h2>Health and metrics</h2>
+            <pre><code>curl http://127.0.0.1:3000/live
+curl http://127.0.0.1:3000/health
 
-  nginx:
-    image: nginx:alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/ssl:ro
-    depends_on:
-      - neo-mcp
-    networks:
-      - neo-network
+curl -H "Authorization: Bearer $HTTP_API_KEY" \
+  http://127.0.0.1:3000/metrics</code></pre>
+            <p><code>/live</code> is the unauthenticated process liveness check used by the image. <code>/health</code> is unauthenticated RPC readiness and returns <code>503</code> when the selected RPC check fails. <code>/metrics</code> requires the bearer token when a key is configured.</p>
+            <div class="callout">The metrics route emits process uptime, selected-network information, and the latest observed block height in Prometheus text format. No collector, dashboard, alert rules, or metrics storage are included.</div>
+        </section>
 
-  prometheus:
-    image: prom/prometheus:latest
-    restart: unless-stopped
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    networks:
-      - neo-network
+        <section class="docs-section">
+            <h2>CI and publishing boundary</h2>
+            <p>GitHub Actions validates both images and can publish npm and Docker artifacts for a published GitHub release. It does not deploy the image to a host, create cloud resources, configure TLS, route traffic, or automate rollback.</p>
+        </section>
 
-networks:
-  neo-network:
-    driver: bridge</pre>
-                </div>
-            </div>
-            
-            <div class="info-box">
-                <div class="info-title">💡 Production Tips</div>
-                <ul>
-                    <li>Always use specific image tags, never <code>latest</code> in production</li>
-                    <li>Set resource limits to prevent container from consuming all system resources</li>
-                    <li>Use health checks for automatic recovery</li>
-                    <li>Mount logs and config as volumes for persistence</li>
-                </ul>
-            </div>
-        </div>
+        <section class="docs-section">
+            <h2>Rollout and rollback</h2>
+            <ol>
+                <li>Record the exact npm or image version being deployed and the previous known-good version.</li>
+                <li>Validate <code>/live</code> and <code>/health</code> before routing traffic.</li>
+                <li>Validate authenticated <code>/metrics</code> and one read-only API request.</li>
+                <li>Confirm wallet storage is mounted and writable.</li>
+                <li>On failure, redeploy the previous artifact and repeat the smoke checks.</li>
+            </ol>
+        </section>
+    </main>
 
-        <div class="deployment-section">
-            <h2>☁️ Cloud Deployment</h2>
-            
-            <h3>AWS Deployment with ECS</h3>
-            <div class="code-window">
-                <div class="code-header">
-                    <span>aws-ecs-task.json</span>
-                </div>
-                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                <div class="code-content">
-                    <pre>{
-  "family": "neo-n3-mcp",
-  "networkMode": "awsvpc",
-  "requiresCompatibilities": ["FARGATE"],
-  "cpu": "512",
-  "memory": "1024",
-  "executionRoleArn": "arn:aws:iam::ACCOUNT:role/ecsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::ACCOUNT:role/neo-mcp-task-role",
-  "containerDefinitions": [
-    {
-      "name": "neo-mcp",
-      "image": "r3e/neo-n3-mcp:v1.0.0",
-      "portMappings": [
-        {
-          "containerPort": 3000,
-          "protocol": "tcp"
-        }
-      ],
-      "environment": [
-        {"name": "NODE_ENV", "value": "production"},
-        {"name": "NEO_NETWORK", "value": "mainnet"},
-        {"name": "LOG_LEVEL", "value": "info"}
-      ],
-      "secrets": [
-        {
-          "name": "API_SECRET",
-          "valueFrom": "arn:aws:ssm:region:account:parameter/neo-mcp/api-secret"
-        }
-      ],
-      "logConfiguration": {
-        "logDriver": "awslogs",
-        "options": {
-          "awslogs-group": "/ecs/neo-n3-mcp",
-          "awslogs-region": "us-east-1",
-          "awslogs-stream-prefix": "ecs"
-        }
-      },
-      "healthCheck": {
-        "command": ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"],
-        "interval": 30,
-        "timeout": 5,
-        "retries": 3,
-        "startPeriod": 60
-      }
-    }
-  ]
-}</pre>
-                </div>
-            </div>
-        </div>
-
-        <div class="deployment-section">
-            <h2>📊 Monitoring & Observability</h2>
-            
-            <h3>Health Checks</h3>
-            <div class="code-window">
-                <div class="code-header">
-                    <span>Health Check Endpoint</span>
-                </div>
-                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                <div class="code-content">
-                    <pre># Health check endpoint
-curl http://localhost:3000/health
-
-# Expected response
-{
-  "status": "healthy",
-  "timestamp": "2024-01-15T10:30:00Z",
-  "version": "1.0.0",
-  "uptime": 3600,
-  "checks": {
-    "neo_rpc": {
-      "status": "healthy",
-      "latency": 45,
-      "last_check": "2024-01-15T10:29:55Z"
-    },
-    "memory": {
-      "status": "healthy",
-      "usage_mb": 256,
-      "limit_mb": 512
-    },
-    "database": {
-      "status": "healthy",
-      "connection": "active"
-    }
-  }
-}</pre>
-                </div>
-            </div>
-            
-            <h3>Prometheus Metrics</h3>
-            <div class="code-window">
-                <div class="code-header">
-                    <span>prometheus.yml</span>
-                </div>
-                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                <div class="code-content">
-                    <pre>global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
-
-scrape_configs:
-  - job_name: 'neo-n3-mcp'
-    static_configs:
-      - targets: ['neo-mcp:3000']
-    metrics_path: '/metrics'
-    scrape_interval: 30s
-    scrape_timeout: 10s
-
-  - job_name: 'node-exporter'
-    static_configs:
-      - targets: ['node-exporter:9100']
-
-rule_files:
-  - "alert_rules.yml"
-
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets:
-          - alertmanager:9093</pre>
-                </div>
-            </div>
-            
-            <div class="success-box">
-                <div class="success-title">✅ Key Metrics to Monitor</div>
-                <ul>
-                    <li><strong>Request Rate:</strong> RPS and response times</li>
-                    <li><strong>Error Rate:</strong> 4xx/5xx responses</li>
-                    <li><strong>Resource Usage:</strong> CPU, memory, disk</li>
-                    <li><strong>Neo RPC Health:</strong> Connection status and latency</li>
-                    <li><strong>Tool Execution:</strong> Success rates and performance</li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="deployment-section">
-            <h2>🔒 Security Best Practices</h2>
-            
-            <div class="warning-box">
-                <div class="warning-title">⚠️ Security Checklist</div>
-                <ul>
-                    <li>Never expose private keys in environment variables or logs</li>
-                    <li>Use HTTPS/TLS for all external communications</li>
-                    <li>Enable rate limiting to prevent abuse</li>
-                    <li>Regularly update Docker images and dependencies</li>
-                    <li>Use secrets management for sensitive configuration</li>
-                    <li>Implement proper access controls and authentication</li>
-                    <li>Monitor for security vulnerabilities</li>
-                </ul>
-            </div>
-            
-            <h3>Nginx SSL Configuration</h3>
-            <div class="code-window">
-                <div class="code-header">
-                    <span>nginx.conf</span>
-                </div>
-                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                <div class="code-content">
-                    <pre>server {
-    listen 443 ssl http2;
-    server_name your-domain.com;
-    
-    ssl_certificate /etc/ssl/cert.pem;
-    ssl_certificate_key /etc/ssl/private.key;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512;
-    ssl_prefer_server_ciphers off;
-    
-    # Security headers
-    add_header Strict-Transport-Security "max-age=63072000" always;
-    add_header X-Frame-Options DENY;
-    add_header X-Content-Type-Options nosniff;
-    add_header X-XSS-Protection "1; mode=block";
-    
-    # Rate limiting
-    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
-    limit_req zone=api burst=20 nodelay;
-    
-    location / {
-        proxy_pass http://neo-mcp:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        
-        # Timeouts
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
-        proxy_read_timeout 60s;
-    }
-}</pre>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-container">
-            <div class="footer-grid">
-                <div>
-                    <div class="footer-brand">Neo N3 MCP</div>
-                    <p class="footer-description">
-                        The most advanced Neo N3 blockchain development platform. 
-                        Build powerful dApps with enterprise-grade tools and security.
-                    </p>
-                </div>
-                <div>
-                    <h4 class="footer-title">Product</h4>
-                    <div class="footer-links">
-                        <a href="/docs" class="footer-link">Documentation</a>
-                        <a href="/examples" class="footer-link">Examples</a>
-                        <a href="/changelog" class="footer-link">Changelog</a>
-                    </div>
-                </div>
-                <div>
-                    <h4 class="footer-title">Resources</h4>
-                    <div class="footer-links">
-                        <a href="https://docs.neo.org/" class="footer-link" target="_blank">Neo N3 Docs</a>
-                        <a href="https://modelcontextprotocol.io/" class="footer-link" target="_blank">MCP Protocol</a>
-                        <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="footer-link" target="_blank">NPM Package</a>
-                    </div>
-                </div>
-                <div>
-                    <h4 class="footer-title">Community</h4>
-                    <div class="footer-links">
-                        <a href="https://github.com/r3e-network/neo-n3-mcp" class="footer-link" target="_blank">GitHub</a>
-                        <a href="https://github.com/r3e-network/neo-n3-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
-                        <a href="https://discord.gg/neo" class="footer-link" target="_blank">Discord</a>
-                    </div>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>© 2025 Neo N3 MCP. Open source under MIT License.</p>
-                <p>Built with ❤️ for the Neo ecosystem</p>
-            </div>
-        </div>
-    </footer>
-
-    <script>
-        // Navigation scroll effect
-        window.addEventListener('scroll', () => {
-            const nav = document.getElementById('nav');
-            if (window.scrollY > 50) {
-                nav.classList.add('scrolled');
-            } else {
-                nav.classList.remove('scrolled');
-            }
-        });
-
-        function copyCode(button) {
-            const codeBlock = button.nextElementSibling.querySelector('pre');
-            const text = codeBlock.textContent;
-            
-            navigator.clipboard.writeText(text).then(() => {
-                button.textContent = 'Copied!';
-                setTimeout(() => {
-                    button.textContent = 'Copy';
-                }, 2000);
-            });
-        }
-    </script>
+    <footer class="footer"><div class="footer-container"><div class="footer-bottom"><span>Neo N3 MCP Server</span><span>MIT licensed</span></div></div></footer>
 </body>
-</html> 
+</html>

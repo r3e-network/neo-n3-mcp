@@ -34,3 +34,15 @@ logs/
 
 # Test coverage
 coverage/
+.omx/
+
+# Local diagnostic output
+/*.log
+/b_out.txt
+/blockchain_test.txt
+/full_test_output.txt
+/mcp_*.txt
+/out.txt
+/test*.txt
+/tools-dump.json
+/unit_test_results.txt

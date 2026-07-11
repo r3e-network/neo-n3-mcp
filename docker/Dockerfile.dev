@@ -1,50 +1,24 @@
-# Development Dockerfile for Neo N3 MCP Server
-FROM node:18-alpine AS development
+FROM node:22-alpine@sha256:4d64b49e6c891c8fc821007cb1cdc6c0db7773110ac2c34bf2e6960adef62ed3 AS development
 
-# Install development tools
-RUN apk add --no-cache \
-    git \
-    curl \
-    bash \
-    dumb-init
-
-# Create app user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S neo-mcp -u 1001
-
-# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-COPY tsconfig.json ./
-COPY vendor/ ./vendor/
+ENV NODE_ENV=development \
+    NEO_NETWORK=testnet \
+    HTTP_HOST=0.0.0.0 \
+    PORT=3000 \
+    WALLETS_DIR=/app/wallets \
+    LOG_CONSOLE=true
 
-# Install all dependencies (including dev dependencies)
+COPY package.json package-lock.json tsconfig.json jest.config.js ./
 RUN npm ci
+COPY src ./src
+COPY tests ./tests
 
-# Copy source code
-COPY src/ ./src/
-COPY tests/ ./tests/
-COPY jest.config.js ./
-COPY babel.config.cjs ./
+RUN mkdir -p /app/wallets && chown node:node /app /app/wallets
+USER node
 
-# Create necessary directories
-RUN mkdir -p logs wallets config && \
-    chown -R neo-mcp:nodejs logs wallets config
-
-# Switch to non-root user
-USER neo-mcp
-
-# Expose ports
 EXPOSE 3000 9229
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD node -e "require('http').get('http://127.0.0.1:3000/live',res=>process.exit(res.statusCode===200?0:1)).on('error',()=>process.exit(1))"
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3000/health || exit 1
-
-# Use dumb-init to handle signals properly
-ENTRYPOINT ["dumb-init", "--"]
-
-# Default command (can be overridden)
-CMD ["npm", "run", "dev:http"]
+CMD ["node", "--require", "ts-node/register", "src/http.ts"]

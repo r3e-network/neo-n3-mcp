@@ -25,7 +25,7 @@ describe('Validation Utils', () => {
     const validAddresses = [
       'NUVPACMnKFhpuHjsRjhUvXz1XhqfGZYVtY',
       'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr',
-      'NVbGwMfRQVudQCcChhCFwQRwSxr5tYEqQs'
+      'NVbGwMfRQVudQCcChhCFwQRwSxr5vH8UhJ'
     ];
 
     const invalidAddresses = [
@@ -36,6 +36,7 @@ describe('Validation Utils', () => {
       '123456789012345678901234567890123', // 33 chars
       '12345678901234567890123456789012345', // 35 chars
       'NUVPACMnKFhpuHjsRjhUvXz1XhqfGZYVt!', // invalid character
+      'NbMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr', // valid shape, invalid checksum
       null,
       undefined,
       123
@@ -179,6 +180,7 @@ describe('Validation Utils', () => {
 
     const invalidPasswords = [
       '',
+      '        ',
       '1234567', // too short
       'a'.repeat(101), // too long
       null,
@@ -302,7 +304,9 @@ describe('Validation Utils', () => {
       null,
       undefined,
       NaN,
-      Infinity
+      Infinity,
+      Number.MAX_SAFE_INTEGER + 1,
+      String(Number.MAX_SAFE_INTEGER + 1),
     ];
 
     test.each(validIntegers)('should validate valid integer: %s', (value) => {
@@ -391,4 +395,4 @@ describe('Validation Utils', () => {
       }
     });
   });
-}); 
+});

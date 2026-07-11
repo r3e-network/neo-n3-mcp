@@ -1,5 +1,4 @@
 import * as neonJs from '@cityofzion/neon-js';
-import { ContractNetwork, FAMOUS_CONTRACTS } from '../contracts/contracts';
 
 export interface KnownAccountMetadata {
   id: string;
@@ -56,67 +55,6 @@ const BUILTIN_KNOWN_ACCOUNTS: KnownAccountDefinition[] = [
       testnet: GAS_TOKEN_SCRIPT_HASH,
     },
   },
-  {
-    id: 'neofs',
-    name: 'NeoFS',
-    kind: 'contract',
-    logoText: 'NFS',
-    background: '#2563EB',
-    scriptHashes: {
-      mainnet: FAMOUS_CONTRACTS.neofs.scriptHash[ContractNetwork.MAINNET],
-      testnet: FAMOUS_CONTRACTS.neofs.scriptHash[ContractNetwork.TESTNET],
-    },
-  },
-  {
-    id: 'neoburger',
-    name: 'NeoBurger',
-    kind: 'contract',
-    logoText: 'NBG',
-    background: '#F97316',
-    scriptHashes: {
-      mainnet: FAMOUS_CONTRACTS.neoburger.scriptHash[ContractNetwork.MAINNET],
-    },
-  },
-  {
-    id: 'flamingo',
-    name: 'Flamingo',
-    kind: 'contract',
-    logoText: 'FLM',
-    background: '#E11D48',
-    scriptHashes: {
-      mainnet: FAMOUS_CONTRACTS.flamingo.scriptHash[ContractNetwork.MAINNET],
-    },
-  },
-  {
-    id: 'neocompound',
-    name: 'NeoCompound',
-    kind: 'contract',
-    logoText: 'NCP',
-    background: '#7C3AED',
-    scriptHashes: {
-      mainnet: FAMOUS_CONTRACTS.neocompound.scriptHash[ContractNetwork.MAINNET],
-    },
-  },
-  {
-    id: 'grandshare',
-    name: 'GrandShare',
-    kind: 'contract',
-    logoText: 'GSH',
-    background: '#0891B2',
-    scriptHashes: {
-      mainnet: FAMOUS_CONTRACTS.grandshare.scriptHash[ContractNetwork.MAINNET],
-    },
-  },
-  {
-    id: 'ghostmarket',
-    name: 'GhostMarket',
-    kind: 'contract',
-    logoText: 'GST',
-    background: '#111827',
-    scriptHashes: {
-      mainnet: FAMOUS_CONTRACTS.ghostmarket.scriptHash[ContractNetwork.MAINNET],
-    },
-  },
 ];
 
 export function normalizeScriptHash(value: string | undefined | null): string | null {
@@ -141,6 +79,9 @@ export function tryGetScriptHashFromAddress(address: string | undefined | null):
   }
 
   try {
+    if (!neonJs.wallet.isAddress(address, neonJs.CONST.DEFAULT_ADDRESS_VERSION)) {
+      return null;
+    }
     return normalizeScriptHash(neonJs.wallet.getScriptHashFromAddress(address));
   } catch {
     return null;
@@ -154,7 +95,7 @@ export function tryGetAddressFromScriptHash(scriptHash: string | undefined | nul
   }
 
   try {
-    return neonJs.wallet.getAddressFromScriptHash(normalized);
+    return neonJs.wallet.getAddressFromScriptHash(normalized.slice(2));
   } catch {
     return null;
   }

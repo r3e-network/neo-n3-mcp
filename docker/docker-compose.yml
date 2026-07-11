@@ -1,112 +1,62 @@
-version: '3.8'
+name: neo-n3-mcp
 
 services:
   neo-mcp:
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile
       target: production
-    image: r3enetwork/neo-n3-mcp:latest
+    image: neo-n3-mcp:local
+    pull_policy: build
     container_name: neo-n3-mcp-server
     restart: unless-stopped
+    stop_grace_period: "${STOP_GRACE_PERIOD:-30s}"
+    pids_limit: ${PIDS_LIMIT:-256}
+    mem_limit: "${MEMORY_LIMIT:-512m}"
+    cpus: ${CPU_LIMIT:-1.0}
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,size=64m,mode=1777"
     ports:
-      - "3000:3000"
+      - "${HTTP_BIND_ADDRESS:-127.0.0.1}:${PORT:-3000}:3000"
     environment:
-      # Network Configuration
-      - NEO_NETWORK=mainnet
-      - NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443
-      - NEO_TESTNET_RPC=http://seed1t5.neo.org:20332
-      
-      # Rate Limiting
-      - RATE_LIMITING_ENABLED=true
-      - MAX_REQUESTS_PER_MINUTE=60
-      - MAX_REQUESTS_PER_HOUR=1000
-      
-      # Logging
-      - LOG_LEVEL=info
-      - LOG_FILE=/app/logs/neo-n3-mcp.log
-      - LOG_CONSOLE=false
-      
-      # Application
+      - NEO_NETWORK=${NEO_NETWORK:-mainnet}
+      - NEO_MAINNET_RPC=${NEO_MAINNET_RPC:-https://mainnet1.neo.coz.io:443}
+      - NEO_TESTNET_RPC=${NEO_TESTNET_RPC:-https://testnet1.neo.coz.io:443}
+      - NEO_RPC_TIMEOUT_MS=${NEO_RPC_TIMEOUT_MS:-15000}
+      - NEO_ALLOW_INSECURE_RPC=${NEO_ALLOW_INSECURE_RPC:-false}
+      - NEO_MAX_TRANSACTION_FEE_GAS=${NEO_MAX_TRANSACTION_FEE_GAS:-20}
+      - RATE_LIMITING_ENABLED=${RATE_LIMITING_ENABLED:-true}
+      - MAX_REQUESTS_PER_MINUTE=${MAX_REQUESTS_PER_MINUTE:-60}
+      - MAX_REQUESTS_PER_HOUR=${MAX_REQUESTS_PER_HOUR:-1000}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_CONSOLE=${LOG_CONSOLE:-true}
       - NODE_ENV=production
       - PORT=3000
+      - HTTP_HOST=0.0.0.0
+      - HTTP_API_KEY=${HTTP_API_KEY:?Set HTTP_API_KEY to at least 32 bytes}
+      - HTTP_CORS_ORIGINS=${HTTP_CORS_ORIGINS:-}
+      - HTTP_TRUSTED_PROXIES=${HTTP_TRUSTED_PROXIES:-}
+      - HTTP_MAX_BODY_BYTES=${HTTP_MAX_BODY_BYTES:-1048576}
+      - WALLETS_DIR=/app/wallets
     volumes:
-      # Persistent data
-      - neo-mcp-logs:/app/logs
       - neo-mcp-wallets:/app/wallets
-      - neo-mcp-config:/app/config
-      
-      # Optional: Mount custom config
-      # - ./config:/app/config:ro
-    networks:
-      - neo-mcp-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/live',res=>process.exit(res.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
       interval: 30s
-      timeout: 10s
+      timeout: 3s
       retries: 3
-      start_period: 40s
+      start_period: 10s
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
 
-  # Optional: Add monitoring with Prometheus
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: neo-mcp-prometheus
-    restart: unless-stopped
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus-data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
-    networks:
-      - neo-mcp-network
-    profiles:
-      - monitoring
-
-  # Optional: Add Grafana for visualization
-  grafana:
-    image: grafana/grafana:latest
-    container_name: neo-mcp-grafana
-    restart: unless-stopped
-    ports:
-      - "3001:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
-      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
-    networks:
-      - neo-mcp-network
-    profiles:
-      - monitoring
-
 volumes:
-  neo-mcp-logs:
-    driver: local
   neo-mcp-wallets:
     driver: local
-  neo-mcp-config:
-    driver: local
-  prometheus-data:
-    driver: local
-  grafana-data:
-    driver: local
-
-networks:
-  neo-mcp-network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16

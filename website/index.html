@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neo N3 MCP • Modern Blockchain Development Platform</title>
-    <meta name="description" content="The most advanced Neo N3 blockchain development platform. Build powerful dApps with our comprehensive MCP server featuring 27 tools, 4 resources, and enterprise-grade security.">
+    <title>Neo N3 MCP Server</title>
+    <meta name="description" content="A Neo N3 MCP server with 25 tools, 4 resources, hardened HTTP access, wallet persistence, and generic smart-contract discovery.">
     <meta name="keywords" content="neo n3, blockchain, mcp, development, smart contracts, defi, enterprise">
     
     <!-- Open Graph -->
-    <meta property="og:title" content="Neo N3 MCP • Modern Blockchain Development Platform">
-    <meta property="og:description" content="Build the future of blockchain with our advanced Neo N3 MCP server. Enterprise-grade tools for modern developers.">
+    <meta property="og:title" content="Neo N3 MCP Server">
+    <meta property="og:description" content="Connect MCP clients and HTTP integrations to Neo N3 blockchain, asset, wallet, and contract operations.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://neo-n3-mcp.netlify.app">
     
@@ -441,11 +441,11 @@
     <section class="hero">
         <div class="hero-container">
             <div class="hero-content">
-                <div class="hero-badge">Enterprise-Grade Neo N3 Development</div>
-                <h1 class="hero-title">Build the Future of Blockchain Development</h1>
+                <div class="hero-badge">Neo N3 for MCP and HTTP clients</div>
+                <h1 class="hero-title">Neo N3 MCP Server</h1>
                 <p class="hero-subtitle">
-                    The most advanced Neo N3 MCP server with 27 tools, enterprise security, 
-                    and seamless DeFi integrations. Zero configuration, maximum power.
+                    Use 25 focused tools for blockchain data, assets, wallets, transaction workflows,
+                    and contracts resolved by verified script hash, address, or live metadata.
                 </p>
                 
                 <div class="hero-actions">
@@ -459,7 +459,7 @@
                 
                 <div class="hero-stats">
                     <div class="stat">
-                        <span class="stat-number">27</span>
+                        <span class="stat-number">25</span>
                         <span class="stat-label">Tools</span>
                     </div>
                     <div class="stat">
@@ -467,7 +467,7 @@
                         <span class="stat-label">Resources</span>
                     </div>
                     <div class="stat">
-                        <span class="stat-number">300+</span>
+                        <span class="stat-number">400+</span>
                         <span class="stat-label">Tests</span>
                     </div>
                     <div class="stat">
@@ -487,17 +487,17 @@
                     <div class="code-body">
                         <div class="code-line">
                             <span class="code-prompt">$</span>
-                            <span class="code-command"> npm install @r3e/neo-n3-mcp</span>
+                            <span class="code-command"> npx -y @r3e/neo-n3-mcp</span>
                         </div>
                         <div class="code-line">
-                            <span class="code-output">✓ Neo N3 MCP Server installed</span>
+                            <span class="code-output">✓ Neo N3 MCP Server started</span>
                         </div>
                         <div class="code-line">
                             <span class="code-prompt">$</span>
-                            <span class="code-command"> neo-mcp start</span>
+                            <span class="code-command"> configure your MCP client transport</span>
                         </div>
                         <div class="code-line">
-                            <span class="code-success">🚀 Server running with 27 tools ready</span>
+                            <span class="code-success">✓ 25 tools and 4 resources available</span>
                         </div>
                     </div>
                 </div>
@@ -511,36 +511,36 @@
             <div class="section-header">
                 <h2 class="section-title">Powerful Features</h2>
                 <p class="section-subtitle">
-                    Everything you need to build production-ready blockchain applications
+                    A tested integration surface for Neo N3 applications and automation
                 </p>
             </div>
             
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">🔗</div>
-                    <h3 class="feature-title">Complete Blockchain Operations</h3>
+                    <h3 class="feature-title">Blockchain and Asset Tools</h3>
                     <p class="feature-description">
-                        Access all Neo N3 blockchain functionality with 27 tools covering transactions, 
-                        smart contracts, asset management, and network operations.
+                        Query blocks, transactions, application logs, balances, NEP-17 transfers,
+                        NEP-11 holdings, fees, and confirmation state through 25 focused tools.
                     </p>
                     <div class="feature-tags">
-                        <span class="feature-tag">27 Tools</span>
-                        <span class="feature-tag">Full Coverage</span>
-                        <span class="feature-tag">Production Ready</span>
+                        <span class="feature-tag">25 Tools</span>
+                        <span class="feature-tag">4 Resources</span>
+                        <span class="feature-tag">Bounded RPC</span>
                     </div>
                 </div>
                 
                 <div class="feature-card">
                     <div class="feature-icon">🔐</div>
-                    <h3 class="feature-title">Enterprise Security</h3>
+                    <h3 class="feature-title">Hardened HTTP and Wallets</h3>
                     <p class="feature-description">
-                        AES-256 encryption, secure key management, and comprehensive input validation. 
-                        Zero known vulnerabilities with 300+ automated tests across unit, MCP, HTTP, and integration layers.
+                        Loopback-first HTTP, bearer authentication, exact CORS allowlists, body limits,
+                        strict write confirmation, encrypted wallet records, and restrictive file permissions.
                     </p>
                     <div class="feature-tags">
-                        <span class="feature-tag">AES-256</span>
+                        <span class="feature-tag">Bearer Auth</span>
                         <span class="feature-tag">Zero CVEs</span>
-                        <span class="feature-tag">300+ Tests</span>
+                        <span class="feature-tag">400+ Tests</span>
                     </div>
                 </div>
                 
@@ -548,8 +548,8 @@
                     <div class="feature-icon">💎</div>
                     <h3 class="feature-title">Smart Contract Integration</h3>
                     <p class="feature-description">
-                        Deploy, invoke, and manage smart contracts with advanced parameter handling 
-                        and comprehensive result parsing.
+                        Inspect live manifests, verify deployment status, estimate fees, invoke methods,
+                        and deploy compiled contracts by script hash, address, or exact indexed name.
                     </p>
                     <div class="feature-tags">
                         <span class="feature-tag">Deploy</span>
@@ -560,15 +560,15 @@
                 
                 <div class="feature-card">
                     <div class="feature-icon">💰</div>
-                    <h3 class="feature-title">Advanced Asset Management</h3>
+                    <h3 class="feature-title">Token and NFT Data</h3>
                     <p class="feature-description">
-                        Complete NEP-17 token support with batch operations, multi-signature wallets, 
-                        and automated fee estimation.
+                        Read NEP-17 balances and transfers, inspect NEP-11 balances and transfers,
+                        estimate transfer fees, broadcast confirmed writes, and claim GAS.
                     </p>
                     <div class="feature-tags">
                         <span class="feature-tag">NEP-17</span>
-                        <span class="feature-tag">Multi-Sig</span>
-                        <span class="feature-tag">Batch Ops</span>
+                        <span class="feature-tag">NEP-11</span>
+                        <span class="feature-tag">Fee Estimates</span>
                     </div>
                 </div>
                 
@@ -576,11 +576,11 @@
                     <div class="feature-icon">⚡</div>
                     <h3 class="feature-title">Developer Experience</h3>
                     <p class="feature-description">
-                        Zero-configuration setup, TypeScript support, comprehensive documentation, 
-                        and interactive examples for rapid development.
+                        Node.js 22 support, TypeScript declarations, deterministic MCP tests,
+                        current deployment documentation, and explicit live and stress suites.
                     </p>
                     <div class="feature-tags">
-                        <span class="feature-tag">Zero Config</span>
+                        <span class="feature-tag">Node 22+</span>
                         <span class="feature-tag">TypeScript</span>
                         <span class="feature-tag">Examples</span>
                     </div>
@@ -588,15 +588,15 @@
                 
                 <div class="feature-card">
                     <div class="feature-icon">🚀</div>
-                    <h3 class="feature-title">Production Ready</h3>
+                    <h3 class="feature-title">Deployment Baseline</h3>
                     <p class="feature-description">
-                        Docker support, monitoring tools, comprehensive logging, and proven scalability 
-                        for enterprise deployments.
+                        Production and development images, Compose definitions, liveness and readiness routes,
+                        bounded logs, dependency audits, and release validation are included.
                     </p>
                     <div class="feature-tags">
                         <span class="feature-tag">Docker</span>
-                        <span class="feature-tag">Monitoring</span>
-                        <span class="feature-tag">Scalable</span>
+                        <span class="feature-tag">Health Checks</span>
+                        <span class="feature-tag">Release Gates</span>
                     </div>
                 </div>
             </div>
@@ -619,20 +619,19 @@
                         <div class="example-badge">Wallet Operations</div>
                         <h3 class="example-title">Wallet Management</h3>
                         <p class="example-description">
-                            Create wallets, check balances, and manage assets with enterprise-grade security.
+                            Create encrypted wallet records and query their on-chain balances.
                         </p>
                     </div>
                     <div class="example-content">
                         <div class="code-window">
                             <div class="code-content">
-                                <pre><span class="code-comment">// Create and manage wallets</span>
-<span class="code-keyword">const</span> wallet = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'create_wallet'</span>);
+                                <pre><span class="code-comment">// Query a provisioned account</span>
 <span class="code-keyword">const</span> balance = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'get_balance'</span>, {
-  address: wallet.address
+  network: <span class="code-string">'testnet'</span>,
+  address: accountAddress
 });
 
-console.<span class="code-method">log</span>(<span class="code-string">'NEO:'</span>, balance.NEO);
-console.<span class="code-method">log</span>(<span class="code-string">'GAS:'</span>, balance.GAS);</pre>
+console.<span class="code-method">log</span>(balance.balance);</pre>
                             </div>
                         </div>
                     </div>
@@ -643,7 +642,7 @@ console.<span class="code-method">log</span>(<span class="code-string">'GAS:'</s
                         <div class="example-badge">Smart Contracts</div>
                         <h3 class="example-title">Contract Interaction</h3>
                         <p class="example-description">
-                            Invoke smart contract methods with advanced parameter handling and result parsing.
+                            Verify a deployed contract and invoke a read-only method by script hash.
                         </p>
                     </div>
                     <div class="example-content">
@@ -651,12 +650,13 @@ console.<span class="code-method">log</span>(<span class="code-string">'GAS:'</s
                             <div class="code-content">
                                 <pre><span class="code-comment">// Invoke smart contracts</span>
 <span class="code-keyword">const</span> result = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'invoke_contract'</span>, {
-  contract_hash: <span class="code-string">'0xd2a4cff31913016155e38e474a2c06d08be276cf'</span>,
-  method: <span class="code-string">'transfer'</span>,
-  parameters: [fromAddr, toAddr, amount]
+  network: <span class="code-string">'mainnet'</span>,
+  contract: <span class="code-string">'0xd2a4cff31913016155e38e474a2c06d08be276cf'</span>,
+  operation: <span class="code-string">'symbol'</span>,
+  args: []
 });
 
-console.<span class="code-method">log</span>(<span class="code-string">'Success:'</span>, result.state === <span class="code-string">'HALT'</span>);</pre>
+console.<span class="code-method">log</span>(result.stack);</pre>
                             </div>
                         </div>
                     </div>
@@ -675,11 +675,11 @@ console.<span class="code-method">log</span>(<span class="code-string">'Success:
                             <div class="code-content">
                                 <pre><span class="code-comment">// Transfer assets</span>
 <span class="code-keyword">const</span> transfer = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'transfer_assets'</span>, {
-  from_address: fromAddr,
-  to_address: toAddr,
+  idempotencyKey: <span class="code-string">'transfer-2026-07-11-001'</span>,
+  network: <span class="code-string">'testnet'</span>,
+  toAddress: toAddr,
   asset: <span class="code-string">'NEO'</span>,
-  amount: <span class="code-string">'1'</span>,
-  fee_estimate: <span class="code-keyword">true</span>
+  amount: <span class="code-string">'1'</span>
 });
 
 console.<span class="code-method">log</span>(<span class="code-string">'TX ID:'</span>, transfer.txid);</pre>
@@ -700,12 +700,15 @@ console.<span class="code-method">log</span>(<span class="code-string">'TX ID:'<
                         <div class="code-window">
                             <div class="code-content">
                                 <pre><span class="code-comment">// Get blockchain info</span>
-<span class="code-keyword">const</span> info = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'get_blockchain_info'</span>);
+<span class="code-keyword">const</span> info = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'get_blockchain_info'</span>, {
+  network: <span class="code-string">'testnet'</span>
+});
 <span class="code-keyword">const</span> block = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'get_block'</span>, {
-  block_identifier: <span class="code-string">'latest'</span>
+  network: <span class="code-string">'testnet'</span>,
+  hashOrHeight: info.height
 });
 
-console.<span class="code-method">log</span>(<span class="code-string">'Height:'</span>, info.blockcount);
+console.<span class="code-method">log</span>(<span class="code-string">'Height:'</span>, info.height);
 console.<span class="code-method">log</span>(<span class="code-string">'Hash:'</span>, block.hash);</pre>
                             </div>
                         </div>
@@ -720,7 +723,7 @@ console.<span class="code-method">log</span>(<span class="code-string">'Hash:'</
         <div class="cta-container">
             <h2 class="cta-title">Ready to Build?</h2>
             <p class="cta-description">
-                Get started with Neo N3 MCP in minutes. Zero configuration required.
+                Install the package, select a Neo network, and connect it to your MCP client.
             </p>
             
             <div class="install-command">
@@ -749,8 +752,8 @@ console.<span class="code-method">log</span>(<span class="code-string">'Hash:'</
                 <div>
                     <div class="footer-brand">Neo N3 MCP</div>
                     <p class="footer-description">
-                        The most advanced Neo N3 blockchain development platform. 
-                        Build powerful dApps with enterprise-grade tools and security.
+                        A focused MCP and HTTP integration surface for Neo N3 data, assets,
+                        wallets, transactions, and smart contracts.
                     </p>
                 </div>
                 <div>

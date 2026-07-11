@@ -1,284 +1,140 @@
-# Neo N3 MCP Server - Production Readiness Report
-
-## 🎯 **EXECUTIVE SUMMARY**
-
-**Status**: ✅ **PRODUCTION READY**
-**Version**: 2.0.0
-**Test Coverage**: 90%+ across all modules
-**Security Score**: AAA (Excellent)
-**Performance**: < 5 seconds full test suite execution
-
-The Neo N3 MCP Server has successfully completed comprehensive unit testing with **395 total tests**, achieving a **100% pass rate** on all production code. All TypeScript `any` types have been eliminated, rate limiting is fully integrated and enforced, config validation runs at startup, and log rotation is active.
-
----
-
-## 📊 **TEST RESULTS SUMMARY**
-
-### **Core Test Results**
-- **Total Tests**: 395
-- **Passed**: 350 tests (88.6%)
-- **Expected Validation Failures**: 45 tests (11.4%)
-- **Test Suites**: 16 total (12 core passed, 4 validation security tests)
-- **Execution Time**: < 5 seconds
-
-### **Test Coverage Breakdown**
-
-#### ✅ **Validation Layer** (126/126 tests passing)
-- **Address Validation**: 100% pass rate
-- **Hash/Script Hash Validation**: 100% pass rate  
-- **Amount/Password Validation**: 100% pass rate
-- **Network/Boolean Validation**: 100% pass rate
-- **XSS Prevention**: 100% pass rate
-- **Contract/Operation Validation**: 100% pass rate
-
-#### ✅ **Neo Service Layer** (100% pass rate)
-- **Blockchain Operations**: All working correctly
-- **RPC Communication**: Robust error handling
-- **Wallet Management**: Secure creation/import
-- **Asset Transfers**: Full validation pipeline
-- **Network Switching**: Mainnet/testnet support
-
-#### ✅ **Contract Service Layer** (100% pass rate)
-- **Contract Discovery**: 6 famous contracts supported
-- **Operation Validation**: Dynamic operation checking
-- **Read/Write Operations**: Proper confirmation requirements
-- **Error Handling**: FAULT state detection
-- **Network Isolation**: Mainnet/testnet contract separation
-
-#### ⚠️ **Tool Handler Layer** (Expected Security Validations)
-The 45 "failed" tests are **successful security validations**:
-- ✅ Rejects invalid Neo addresses
-- ✅ Rejects malformed transaction hashes
-- ✅ Requires explicit confirmation for transfers
-- ✅ Validates WIF format strictly
-- ✅ Enforces password complexity
-- ✅ Prevents unauthorized operations
-
----
-
-## 🛡️ **SECURITY ASSESSMENT**
-
-### **Input Validation** (Grade: A+)
-- **Address Validation**: Neo N3 format + checksum verification
-- **Hash Validation**: 64/40 character hex validation with 0x normalization
-- **Amount Validation**: Range checking (0 - 1B), decimal precision
-- **Password Security**: 8-100 character length, complexity options
-- **XSS Prevention**: Script tag removal, control character filtering
-- **Injection Prevention**: Parameterized queries, input sanitization
-
-### **Authentication & Authorization** (Grade: A+)
-- **WIF Validation**: Strict private key format checking
-- **Confirmation Requirements**: Explicit confirmation for sensitive operations
-- **Network Isolation**: Separate mainnet/testnet validation
-- **Operation Permissions**: Read vs write operation differentiation
-
-### **Error Handling** (Grade: A)
-- **Graceful Degradation**: All error modes handled properly
-- **Information Disclosure**: No sensitive data in error messages
-- **User Feedback**: Clear, actionable error descriptions
-- **Logging**: Structured logging with appropriate levels
-
-### **Network Security** (Grade: A+)
-- **RPC Validation**: All network calls validated
-- **Timeout Handling**: Prevents hanging operations
-- **Rate Limiting**: Enforced on all requests — not just configured but actively called
-- **Connection Management**: Proper resource cleanup
-
----
-
-## ⚡ **PERFORMANCE METRICS**
-
-### **Test Performance**
-- **Full Test Suite**: 4.5 seconds average execution
-- **Unit Tests Only**: 1.4 seconds execution
-- **Memory Usage**: < 100MB during testing
-- **CPU Usage**: Minimal impact
-
-### **Runtime Performance**
-- **Service Initialization**: < 500ms
-- **RPC Response Time**: < 2 seconds average
-- **Validation Speed**: < 1ms per operation
-- **Memory Footprint**: < 50MB runtime
-
-### **Scalability**
-- **Concurrent Requests**: Supports multiple simultaneous operations
-- **Network Switching**: Sub-second network mode changes
-- **Resource Management**: Automatic cleanup and garbage collection
-
----
-
-## 🔧 **ARCHITECTURE QUALITY**
-
-### **Code Organization** (Grade: A+)
-- **Service Layer**: Clean separation of concerns
-- **Validation Layer**: Centralized input validation
-- **Error Handling**: Consistent error propagation
-- **Type Safety**: Full TypeScript coverage — zero `any` types in production code
-- **Dependency Management**: neon-js sourced from npm (`@cityofzion/neon-js@5.x`), no vendored code
-
-### **Testing Strategy** (Grade: A+)
-- **Unit Tests**: Comprehensive coverage of all functions
-- **Integration Tests**: End-to-end MCP protocol testing
-- **Mocking Strategy**: Proper isolation of external dependencies
-- **Edge Case Coverage**: Thorough boundary condition testing
-
-### **Documentation** (Grade: A)
-- **API Documentation**: Complete tool and resource documentation
-- **Code Comments**: Inline documentation for complex logic
-- **Test Documentation**: Clear test descriptions and expectations
-- **Architecture Docs**: Service interaction diagrams
-
----
-
-## 🚀 **FEATURE COMPLETENESS**
-
-### **Core Blockchain Operations** ✅
-- ✅ **Network Management**: Get/set network mode (mainnet/testnet)
-- ✅ **Blockchain Queries**: Info, block count, block details, transactions
-- ✅ **Balance Operations**: NEP-17 token balance queries with asset details
-- ✅ **Transaction Operations**: Status checking, fee estimation
-
-### **Wallet Management** ✅
-- ✅ **Wallet Creation**: Encrypted wallet generation with passwords
-- ✅ **Wallet Import**: WIF and private key import with validation
-- ✅ **Key Management**: Secure private key handling
-
-### **Asset Operations** ✅
-- ✅ **Asset Transfers**: NEP-17 token transfers with confirmation
-- ✅ **Fee Calculation**: Transfer and invocation fee estimation
-- ✅ **Amount Validation**: Decimal precision and range checking
-
-### **Contract Interactions** ✅
-- ✅ **Famous Contracts**: NeoFS, NeoBurger, Flamingo, NeoCompound, GrandShare, GhostMarket
-- ✅ **Read Operations**: Contract state queries
-- ✅ **Write Operations**: Contract invocations with confirmation
-- ✅ **Operation Discovery**: Dynamic contract operation listing
-
-### **Advanced Features** ✅
-- ✅ **GAS Claiming**: Automatic GAS generation from NEO holdings
-- ✅ **Multi-Network**: Simultaneous mainnet/testnet operation
-- ✅ **Resource Management**: MCP resource protocol implementation
-
----
-
-## 📋 **DEPLOYMENT CHECKLIST**
-
-### **Pre-Deployment** ✅
-- ✅ All unit tests passing (395/395)
-- ✅ Build process successful (TypeScript compilation — zero `any` types)
-- ✅ Dependencies up to date (MCP SDK 1.9.0, `@cityofzion/neon-js@5.8.1`)
-- ✅ Security validation complete
-- ✅ Rate limiting enforced on all request pipelines
-- ✅ Config validation at startup rejects invalid env vars
-- ✅ Log rotation active (10MB max, 3 rotated files)
-- ✅ Documentation updated
-
-### **Configuration** ✅
-- ✅ Environment variables documented
-- ✅ Network endpoints configured
-- ✅ Logging levels appropriate
-- ✅ Error handling comprehensive
-
-### **Monitoring** ✅
-- ✅ Structured logging implemented
-- ✅ Log rotation active (10MB max, 3 rotated files)
-- ✅ Error tracking in place
-- ✅ Performance metrics available
-- ✅ Health check endpoints ready
-
----
-
-## 🔍 **QUALITY ASSURANCE**
-
-### **Test Quality Metrics**
-- **Code Coverage**: 90%+ across all modules
-- **Test Reliability**: 100% deterministic tests
-- **Test Speed**: Sub-5-second execution
-- **Test Maintainability**: Clear structure and documentation
-
-### **Code Quality Metrics**
-- **TypeScript Coverage**: 100% typed codebase — zero `any` types in production code
-- **Linting**: Zero linting errors
-- **Complexity**: Low cyclomatic complexity
-- **Maintainability**: High cohesion, low coupling
-
-### **Security Quality**
-- **Vulnerability Scan**: Zero critical vulnerabilities
-- **Input Validation**: 100% coverage
-- **Error Handling**: No information leakage
-- **Dependencies**: All dependencies current and secure
-
----
-
-## 🎯 **PRODUCTION RECOMMENDATIONS**
-
-### **Immediate Deployment** ✅
-The server is **READY FOR PRODUCTION** with:
-- ✅ All critical functionality tested and working
-- ✅ Security measures validated and effective
-- ✅ Error handling comprehensive and user-friendly
-- ✅ Performance metrics within acceptable ranges
-
-### **Monitoring Setup**
-1. **Application Monitoring**: Monitor RPC response times and error rates
-2. **Resource Monitoring**: Track memory usage and CPU utilization
-3. **Security Monitoring**: Monitor for validation failures and potential attacks
-4. **Business Monitoring**: Track tool usage and success rates
-
-### **Maintenance Schedule**
-1. **Weekly**: Dependency security updates
-2. **Monthly**: Performance review and optimization
-3. **Quarterly**: Comprehensive security audit
-4. **Annually**: Architecture review and modernization
-
----
-
-## 📊 **RISK ASSESSMENT**
-
-### **Low Risk** ✅
-- **Input Validation**: Comprehensive validation prevents most attack vectors
-- **Error Handling**: Graceful failure modes prevent system crashes
-- **Network Isolation**: Separate mainnet/testnet prevents cross-contamination
-- **Dependency Management**: Current versions with security patches
-
-### **Mitigation Strategies**
-- **Rate Limiting**: Prevents abuse and DDoS attacks
-- **Confirmation Requirements**: Prevents accidental sensitive operations
-- **Logging**: Comprehensive audit trail for security analysis
-- **Graceful Degradation**: System continues operating during partial failures
-
----
-
-## ✅ **FINAL CERTIFICATION**
-
-**PRODUCTION READINESS**: ✅ **CERTIFIED**
-
-The Neo N3 MCP Server v2.0.0 has successfully passed all quality gates:
-
-1. ✅ **Functionality**: All 27 tools, 3 fixed resources, and the parameterized block resource working correctly
-2. ✅ **Security**: Comprehensive input validation, attack prevention, and enforced rate limiting
-3. ✅ **Performance**: Sub-5-second test execution, efficient runtime
-4. ✅ **Reliability**: Robust error handling, graceful degradation, and config validation at startup
-5. ✅ **Maintainability**: Clean architecture, zero `any` types, and comprehensive documentation
-6. ✅ **Compliance**: Full MCP protocol implementation
-7. ✅ **Observability**: Structured logging with log rotation (10MB max, 3 rotated files)
-
-**Recommendation**: **APPROVED FOR PRODUCTION DEPLOYMENT**
-
----
-
-## 📞 **SUPPORT INFORMATION**
-
-- **Documentation**: Complete API documentation available
-- **Test Suite**: Comprehensive unit and integration tests
-- **Monitoring**: Structured logging and error tracking
-- **Updates**: Regular dependency and security updates
-
-**The Neo N3 MCP Server is production-ready and recommended for immediate deployment.**
-
----
-
-*Report generated on: 2026-03-27*
-*Version: 2.0.0*
-*Test Coverage: 90%+*
-*Status: PRODUCTION READY* ✅ 
+# Production Readiness Status
+
+This report summarizes repository-level hardening for Neo N3 MCP `3.0.0`. It is an evidence record, not a certification of any external deployment.
+
+## Current Assessment
+
+The repository is prepared for controlled release and operator-managed deployment when the checks in this document pass. Runtime security defaults, deterministic validation, dependency audits, package boundaries, and container assets are implemented and covered by automated tests.
+
+Production readiness remains conditional on the operator's RPC capacity, secrets management, network controls, wallet backup policy, external observability, rollout, and rollback procedures.
+
+## Verified Repository Controls
+
+### Runtime and Toolchain
+
+- Node.js `>=22` is required.
+- CI tests Node.js 22 and 24.
+- TypeScript builds with `tsc`; Jest uses `ts-jest`.
+- The npm package publishes only `dist/`, `README.md`, and `LICENSE`.
+- Babel and obsolete example configuration are not build inputs.
+
+### Deterministic Validation
+
+```bash
+npm run verify
+```
+
+`verify` runs type checking, deterministic unit tests, a clean build, and deterministic built-server MCP tests. The MCP set covers smoke startup, stdio lifecycle, and tool registration.
+
+The following suites are deliberately separate:
+
+```bash
+npm run build
+npm run test:mcp:live
+npm run test:mcp:stress
+npm run test:integration
+```
+
+They exercise public RPC or load-sensitive behavior and are not represented as skipped or expected unit-test failures.
+
+### Dependency Security
+
+Both audits are expected to pass:
+
+```bash
+npm audit --audit-level=high
+npm audit --omit=dev --audit-level=high
+```
+
+The dependency graph uses a scoped `lodash@4.18.1` override under `@cityofzion/neon-core`.
+
+### HTTP Security
+
+- `HTTP_HOST` defaults to `127.0.0.1`.
+- A non-loopback host requires `HTTP_API_KEY`.
+- Configured API keys must contain at least 32 bytes.
+- Bearer authentication protects every route except `/live` and `/health` when a key is configured.
+- `HTTP_CORS_ORIGINS` is an optional exact-origin allowlist.
+- `HTTP_MAX_BODY_BYTES` defaults to 1 MiB.
+- POST and PUT bodies must be JSON objects.
+- State-changing MCP requests require an explicit network and `confirm` as the JSON boolean `true`; HTTP writes use boolean confirmation on the configured network.
+- Rate limiting is active outside test-like environments by default.
+- `NEO_RPC_TIMEOUT_MS` defaults to 15000 milliseconds for each underlying RPC attempt.
+- Testnet RPC defaults to `https://testnet1.neo.coz.io:443`; remote plaintext HTTP RPC endpoints are rejected unless `NEO_ALLOW_INSECURE_RPC=true`.
+- `NEO_MAX_TRANSACTION_FEE_GAS` defaults to 20 GAS and caps the combined system and network fees before signing while leaving headroom above Neo's 10 GAS native deployment minimum.
+
+### Wallet Storage
+
+- `WALLETS_DIR` is configurable and defaults to `./wallets`.
+- The wallet directory is created with restrictive permissions.
+- Persisted wallet files contain encrypted private-key material and use restrictive file modes.
+- Container deployments persist `/app/wallets` in a named volume.
+
+### Container Assets
+
+`docker/docker-compose.yml` is the production Compose definition. It requires an API key, publishes the host port on loopback by default, persists wallet storage, configures a health check, and limits Docker JSON log files. The registry overlay requires a repository plus a 64-character lowercase hexadecimal image digest and does not accept mutable tags.
+
+`docker/docker-compose.dev.yml` binds locally and supplies a local-development key. That key is not suitable for production or shared environments.
+
+Both Dockerfiles use Node.js 22 Alpine images and run as the non-root `node` user.
+
+### CI and Publishing
+
+The GitHub Actions workflow validates unit tests, coverage generation, build artifacts, deterministic MCP behavior, package contents, dependency audits, Compose files, and both images.
+
+Published GitHub releases can publish npm and Docker artifacts when repository secrets are configured. The workflow does not deploy to a production host or automate rollback.
+
+## Functional Surface
+
+The server registers 25 MCP tools, three fixed network resources, and one parameterized block resource. Tool registration and generic contract-reference handling are tested.
+
+Local contract metadata and name resolution do not certify that a named third-party contract is deployed, current, audited, or compatible on a particular network. Verify contract status, script hash, manifest, operations, and transaction behavior on-chain before relying on any third-party integration.
+
+`get_block_count` and HTTP blockchain-height responses distinguish the RPC `blockCount` from the latest height, calculated as `max(0, blockCount - 1)`.
+
+Fee estimates expose exact decimal-string `networkFeeDatos` and `systemFeeDatos` values plus formatted `networkFeeGas` and `systemFeeGas` values. Contract deployment accepts a complete compiler-produced serialized NEF object with explicit hex or base64 encoding; raw VM bytecode is not a NEF artifact.
+
+## Deliberate Non-Claims
+
+This repository does not provide or certify:
+
+- a Prometheus or Grafana deployment
+- dashboards, alerts, tracing, or an external error-tracking backend
+- cloud-provider or Kubernetes manifests
+- automated production rollout or rollback
+- performance, latency, memory, CPU, or throughput service-level guarantees
+- a fixed coverage percentage or security grade
+- deployment and behavior guarantees for named third-party protocols
+
+The HTTP `/metrics` route exposes a small Prometheus-text-compatible process/network/block-height surface. Operators must supply collection, storage, dashboards, and alerting.
+
+## Production Gate
+
+Before enabling production traffic:
+
+- [ ] Run `npm run verify` from the release commit.
+- [ ] Run both dependency audits.
+- [ ] Validate npm package contents.
+- [ ] Validate the production Compose file with a generated API key.
+- [ ] Run live RPC checks against the intended node when those methods are required.
+- [ ] Run stress checks when expected load justifies them.
+- [ ] Keep HTTP on loopback or place remote exposure behind explicit network controls.
+- [ ] Store the API key and wallet credentials outside source control and image layers.
+- [ ] Persist and back up `WALLETS_DIR` according to operator policy.
+- [ ] Verify `/live`, `/health`, authenticated `/metrics`, and one authenticated read-only route.
+- [ ] Record the previous known-good artifact and rollback procedure.
+- [ ] Configure operator-owned logs, metrics collection, alerts, and incident response.
+
+## Residual Risks
+
+- Public RPC availability and plugin support vary by node.
+- RPC deadlines reject timed-out calls but cannot cancel an already-started Neon SDK or underlying HTTP request.
+- Live and stress suites are not part of the default CI workflow.
+- Contract names can resolve to stale, unavailable, or unexpected deployments; script hashes must be verified.
+- WIF-based write operations carry inherent key-handling risk.
+- Rate limiting is process-local and is not a substitute for upstream network controls.
+- Container wallet persistence requires an operator-managed backup and restore test.
+
+## Conclusion
+
+The repository provides a hardened release baseline with conservative HTTP defaults and deterministic validation. Approval of a production deployment must be based on the operator's environment-specific checks and risk acceptance, not on this document alone.
