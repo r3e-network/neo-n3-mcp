@@ -1253,6 +1253,37 @@ export class NeoService {
   }
 
   /**
+   * Simulate a contract call via the node's `invokefunction` RPC in TEST mode.
+   *
+   * This is a READ-ONLY preview: it never signs and never calls
+   * `sendrawtransaction`. It supports witness-scoped `signers` so callers can
+   * preview transfers and other CheckWitness-gated methods. Used to attach a
+   * dry-run preview to UNSIGNED transaction proposals.
+   *
+   * @param scriptHash Contract script hash (0x-prefixed).
+   * @param operation  Method name.
+   * @param params     Contract parameters, already in ContractParam JSON form ({type, value}).
+   * @param signers    RPC signer objects ([{account: '0x..', scopes: 'CalledByEntry'}]).
+   * @returns The raw invokefunction result (state, gasconsumed, exception, stack).
+   */
+  async testInvoke(
+    scriptHash: string,
+    operation: string,
+    params: unknown[] = [],
+    signers: unknown[] = []
+  ): Promise<ContractInvocationResult> {
+    if (!scriptHash) throw new ValidationError('Script hash is required');
+    if (!operation) throw new ValidationError('Operation is required');
+    const result = await this.withRpcDeadline(
+      () => this.rpcClient.execute(new neonJs.rpc.Query({
+        method: 'invokefunction',
+        params: [scriptHash, operation, params, signers],
+      }))
+    ) as unknown as ContractInvocationResult;
+    return result;
+  }
+
+  /**
    * Invoke a smart contract method for WRITE operations.
    * Requires a signing account.
    * @param fromAccount Account to sign the transaction

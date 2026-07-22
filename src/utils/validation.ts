@@ -232,6 +232,49 @@ export function validateTokenAmount(amount: unknown): string {
 }
 
 /**
+ * Validate a Neo X (EVM) amount expressed in wei as a non-negative integer.
+ * Accepts a decimal string (preferred, to avoid float precision loss), a safe
+ * integer number, or a bigint. Rejects negatives, fractions, NaN, and exponent
+ * notation.
+ * @param amount Wei amount
+ * @param options.allowZero Permit a zero amount (default false)
+ * @returns The amount as a canonical non-negative decimal wei string
+ * @throws ValidationError if invalid
+ */
+export function validateEvmAmount(
+  amount: unknown,
+  options: { allowZero?: boolean } = {}
+): string {
+  let normalized: string;
+  if (typeof amount === 'bigint') {
+    normalized = amount.toString();
+  } else if (typeof amount === 'number') {
+    if (!Number.isSafeInteger(amount)) {
+      throw new ValidationError('Wei amount number must be a safe integer; pass a decimal string for large values');
+    }
+    normalized = amount.toString();
+  } else if (typeof amount === 'string') {
+    const trimmed = amount.trim();
+    if (!POSITIVE_INTEGER_PATTERN.test(trimmed)) {
+      throw new ValidationError(`Invalid wei amount: ${amount}. Must be a non-negative integer string (no decimals or exponent).`);
+    }
+    normalized = trimmed;
+  } else {
+    throw new ValidationError('Wei amount must be a decimal string, safe integer, or bigint');
+  }
+
+  const value = BigInt(normalized);
+  if (value < 0n) {
+    throw new ValidationError('Wei amount must not be negative');
+  }
+  if (value === 0n && !options.allowZero) {
+    throw new ValidationError('Wei amount must be greater than zero');
+  }
+  // Reject leading zeros ("007") by re-canonicalizing through BigInt.
+  return value.toString();
+}
+
+/**
  * Validate password
  * @param password Password to validate
  * @returns Validated password

@@ -838,6 +838,123 @@ export class NeoN3McpServer {
       },
     );
 
+    // --- Non-custodial WRITE layer: SIMULATE + CONSTRUCT (unsigned) tools ---
+    // These tools NEVER sign or broadcast. Construct tools return an UNSIGNED
+    // proposal the user must sign in their own wallet (NeoLine/WalletConnect for
+    // Neo N3, MetaMask for Neo X). Simulate tools run read-only previews.
+
+    // Neo N3 proposal/simulate tools need the read-only NeoService RPC path, so
+    // they initialize services (like the other N3 delegated tools) before dispatch.
+    const registerN3ProposalTool = (
+      name: string,
+      description: string,
+      inputSchema: Record<string, z.ZodTypeAny>,
+    ) => {
+      registerDelegatedTool(name, description, inputSchema, async (args) => {
+        try {
+          await this.ensureServicesInitialized();
+          const result = await callTool(name, args, this.neoServices, this.contractServices);
+          return this.formatDelegatedToolResponse(result);
+        } catch (error: unknown) {
+          return this.createErrorResponse(error);
+        }
+      });
+    };
+
+    registerN3ProposalTool(
+      'n3_test_invoke',
+      'Neo N3 SIMULATE: run a contract call through invokefunction in TEST mode. '
+      + 'Read-only preview only (state, gasConsumed, exception, stack). The server '
+      + 'NEVER signs or broadcasts.',
+      {
+        network: z.enum(['mainnet', 'testnet']).optional().describe('Neo N3 network (default mainnet)'),
+        scriptHash: z.string().describe('Contract script hash (40 hex chars, optional 0x prefix)'),
+        operation: z.string().describe('Contract method name to simulate'),
+        args: z.array(z.unknown()).optional().describe('Method arguments (raw values or {type,value} params)'),
+        signers: z.array(z.object({
+          account: z.string().describe('Neo N3 address or 0x script hash'),
+          scopes: z.string().optional().describe('Witness scope (default CalledByEntry)'),
+        })).optional().describe('Optional witness signers for CheckWitness-gated methods'),
+      },
+    );
+
+    registerN3ProposalTool(
+      'n3_build_transfer',
+      'Neo N3 CONSTRUCT: build an UNSIGNED NEP-17 transfer proposal (NeoLine dapi '
+      + 'invoke params) plus a test-invoke simulation. The server NEVER signs or '
+      + 'broadcasts — the user signs and sends this in their own wallet.',
+      {
+        network: z.enum(['mainnet', 'testnet']).optional().describe('Neo N3 network (default mainnet)'),
+        from: z.string().describe('Sender Neo N3 address'),
+        to: z.string().describe('Recipient Neo N3 address'),
+        asset: z.string().describe('"NEO", "GAS", or a NEP-17 contract script hash'),
+        amount: z.string().describe('Human-readable decimal amount (e.g. "1.5")'),
+        decimals: z.number().int().min(0).max(255).optional().describe('Token decimals (auto-detected for NEO/GAS and known tokens)'),
+      },
+    );
+
+    registerN3ProposalTool(
+      'n3_build_invoke',
+      'Neo N3 CONSTRUCT: build an UNSIGNED contract-invoke proposal (NeoLine dapi '
+      + 'invoke params) plus a test-invoke simulation. The server NEVER signs or '
+      + 'broadcasts — the user signs and sends this in their own wallet.',
+      {
+        network: z.enum(['mainnet', 'testnet']).optional().describe('Neo N3 network (default mainnet)'),
+        scriptHash: z.string().describe('Contract script hash (40 hex chars, optional 0x prefix)'),
+        operation: z.string().describe('Contract method name'),
+        args: z.array(z.unknown()).optional().describe('Method arguments (raw values or {type,value} params)'),
+        from: z.string().describe('Signer Neo N3 address (default CalledByEntry signer)'),
+        signers: z.array(z.object({
+          account: z.string().describe('Neo N3 address or 0x script hash'),
+          scopes: z.string().optional().describe('Witness scope (default CalledByEntry)'),
+        })).optional().describe('Optional explicit witness signers'),
+      },
+    );
+
+    registerAnalyticalTool(
+      'x_simulate_call',
+      'Neo X (EVM) SIMULATE: run eth_call plus eth_estimateGas and eth_gasPrice for '
+      + 'a call. Read-only preview (gasEstimate, gasPrice, callResult or revertReason). '
+      + 'The server NEVER signs or broadcasts.',
+      {
+        network: z.enum(['neox-mainnet', 'neox-testnet']).optional().describe('Neo X network (default neox-mainnet)'),
+        to: z.string().describe('Target contract/account 0x address'),
+        data: z.string().optional().describe('0x-hex calldata (optional)'),
+        from: z.string().optional().describe('Caller 0x address (optional)'),
+        value: z.string().optional().describe('Wei value as a decimal string (optional)'),
+      },
+    );
+
+    registerAnalyticalTool(
+      'x_build_transfer',
+      'Neo X (EVM) CONSTRUCT: build an UNSIGNED native-value transfer transaction '
+      + '(with gas from eth_estimateGas and eth_gasPrice, no nonce). The server NEVER '
+      + 'signs or broadcasts — the user signs and sends this in MetaMask.',
+      {
+        network: z.enum(['neox-mainnet', 'neox-testnet']).optional().describe('Neo X network (default neox-mainnet)'),
+        from: z.string().describe('Sender 0x address'),
+        to: z.string().describe('Recipient 0x address'),
+        amountWei: z.string().describe('Amount in wei as a decimal string'),
+      },
+    );
+
+    registerAnalyticalTool(
+      'x_build_contract_call',
+      'Neo X (EVM) CONSTRUCT: build an UNSIGNED contract-call transaction from '
+      + 'pre-encoded calldata OR a functionSignature + args (ABI-encoded here), with '
+      + 'gas from eth_estimateGas and eth_gasPrice, no nonce. The server NEVER signs '
+      + 'or broadcasts — the user signs and sends this in MetaMask.',
+      {
+        network: z.enum(['neox-mainnet', 'neox-testnet']).optional().describe('Neo X network (default neox-mainnet)'),
+        from: z.string().describe('Sender 0x address'),
+        to: z.string().describe('Target contract 0x address'),
+        data: z.string().optional().describe('Pre-encoded 0x-hex calldata (use this OR functionSignature)'),
+        functionSignature: z.string().optional().describe('Canonical signature to ABI-encode, e.g. "transfer(address,uint256)"'),
+        args: z.array(z.unknown()).optional().describe('Arguments for functionSignature'),
+        valueWei: z.string().optional().describe('Wei value to attach as a decimal string (optional)'),
+      },
+    );
+
     if (config.writes.enabled) {
       registerWriteTool(
         'transfer_assets',

@@ -26,6 +26,12 @@ import { rateLimiter } from '../utils/rate-limiter';
 import { callIndexerRpc } from '../contracts/indexer-rpc-client';
 import { fetchBlockscout, resolveNeoxNetwork, NeoxNetwork } from '../contracts/blockscout-client';
 import { ValidationError } from '../utils/errors';
+import {
+  N3_PROPOSAL_TOOLS,
+  NEOX_PROPOSAL_TOOLS,
+  dispatchN3ProposalTool,
+  dispatchNeoxProposalTool,
+} from './proposal-tools';
 
 // --- Individual Tool Handlers ---
 
@@ -683,6 +689,17 @@ export async function callTool(name: string, input: Record<string, unknown>, neo
     return await dispatchAnalyticalTool(name, input);
   }
 
+  // Neo X (EVM) simulate/construct tools use the read-only, allowlisted EVM RPC
+  // client and never touch the N3 RPC layer. They return UNSIGNED proposals and
+  // never sign or broadcast.
+  if (NEOX_PROPOSAL_TOOLS.has(name)) {
+    try {
+      return await dispatchNeoxProposalTool(name, input);
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
   let neoService: NeoService | undefined;
   let contractService: ContractService | undefined;
   try {
@@ -706,6 +723,17 @@ export async function callTool(name: string, input: Record<string, unknown>, neo
     }
   } catch (error) {
     return handleError(error);
+  }
+
+  // Neo N3 simulate/construct tools reuse the read-only NeoService RPC path
+  // (invokefunction test mode) and return UNSIGNED proposals — no signing, no
+  // sendrawtransaction.
+  if (N3_PROPOSAL_TOOLS.has(name)) {
+    try {
+      return await dispatchN3ProposalTool(name, input, neoService);
+    } catch (error) {
+      return handleError(error);
+    }
   }
 
   try {

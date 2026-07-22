@@ -28,6 +28,20 @@ const DEFAULT_N3INDEX_BASE_URL = 'https://api.n3index.dev';
 // /api/v2 surface; override it (or disable testnet) via the env var below.
 const DEFAULT_NEOX_MAINNET_EXPLORER_API_BASE_URL = 'https://xexplorer.neo.org';
 const DEFAULT_NEOX_TESTNET_EXPLORER_API_BASE_URL = 'https://xt4scan.ngd.network';
+// Neo X (EVM sidechain) JSON-RPC nodes and chain ids, sourced from
+// Neo-Explorer-UI/src/utils/neoxEnv.js. Chain ids are the EIP-155 magic used in
+// transaction proposals; the RPC hosts back read-only simulate/estimate calls
+// (eth_call, eth_estimateGas, eth_gasPrice, ...). Never used to broadcast.
+const DEFAULT_NEOX_MAINNET_CHAIN_ID = 47763;
+const DEFAULT_NEOX_TESTNET_CHAIN_ID = 12227332;
+const DEFAULT_NEOX_MAINNET_RPC_URLS = [
+  'https://mainnet-1.rpc.banelabs.org',
+  'https://mainnet-2.rpc.banelabs.org',
+];
+const DEFAULT_NEOX_TESTNET_RPC_URLS = [
+  'https://testnet-1.rpc.banelabs.org',
+  'https://neoxt4seed1.ngd.network',
+];
 const DEFAULT_HTTP_HOST = '127.0.0.1';
 const DEFAULT_HTTP_MAX_BODY_BYTES = 1024 * 1024;
 const DEFAULT_WALLETS_DIR = './wallets';
@@ -120,6 +134,22 @@ export const config = {
     testnetExplorerApiBaseUrl:
       readEnv('NEOX_TESTNET_EXPLORER_API_BASE_URL') || DEFAULT_NEOX_TESTNET_EXPLORER_API_BASE_URL,
     testnetEnabled: readBooleanEnv('NEOX_TESTNET_ENABLED') ?? true,
+    mainnetChainId: Number.parseInt(
+      readEnv('NEOX_MAINNET_CHAIN_ID') || String(DEFAULT_NEOX_MAINNET_CHAIN_ID),
+      10
+    ),
+    testnetChainId: Number.parseInt(
+      readEnv('NEOX_TESTNET_CHAIN_ID') || String(DEFAULT_NEOX_TESTNET_CHAIN_ID),
+      10
+    ),
+    mainnetRpcUrls: (() => {
+      const configured = readListEnv('NEOX_MAINNET_RPC_URLS');
+      return configured.length > 0 ? configured : DEFAULT_NEOX_MAINNET_RPC_URLS;
+    })(),
+    testnetRpcUrls: (() => {
+      const configured = readListEnv('NEOX_TESTNET_RPC_URLS');
+      return configured.length > 0 ? configured : DEFAULT_NEOX_TESTNET_RPC_URLS;
+    })(),
   },
 
   http: {
@@ -229,6 +259,31 @@ export function validateConfig(): void {
     throw new Error(
       'Invalid NEO_MAX_TRANSACTION_FEE_GAS. Must be a positive GAS amount with at most 8 decimal places.'
     );
+  }
+
+  for (const key of ['NEOX_MAINNET_CHAIN_ID', 'NEOX_TESTNET_CHAIN_ID'] as const) {
+    const rawValue = process.env[key];
+    if (rawValue !== undefined) {
+      const value = Number(rawValue);
+      if (!Number.isSafeInteger(value) || value <= 0) {
+        throw new Error(`Invalid ${key} "${rawValue}". Must be a positive integer.`);
+      }
+    }
+  }
+
+  for (const key of ['NEOX_MAINNET_RPC_URLS', 'NEOX_TESTNET_RPC_URLS'] as const) {
+    for (const url of readListEnv(key)) {
+      try {
+        const parsed = new URL(url);
+        if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password) {
+          throw new Error('invalid url');
+        }
+      } catch {
+        throw new Error(
+          `Invalid ${key} entry "${url}". Use comma-separated HTTP/HTTPS URLs without embedded credentials.`
+        );
+      }
+    }
   }
 
   const apiKey = readEnv('HTTP_API_KEY');
