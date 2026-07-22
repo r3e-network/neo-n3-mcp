@@ -9,9 +9,23 @@ import {
 import { ContractService } from '../contracts/contract-service';
 import { sanitizeWalletMetadata, WalletService } from '../services/wallet-service';
 import { config, NetworkMode } from '../config';
-import { validateAddress, validateHash, validateScriptHash, validateNetwork, validateInteger, validateTokenAmount } from '../utils/validation';
+import {
+  validateAddress,
+  validateHash,
+  validateScriptHash,
+  validateNetwork,
+  validateInteger,
+  validateTokenAmount,
+  validateEvmAddress,
+  validateEvmHash,
+  validateEvmBlockRef,
+  sanitizeString,
+} from '../utils/validation';
 import { handleError, createSuccessResponse } from '../utils/error-handler';
 import { rateLimiter } from '../utils/rate-limiter';
+import { callIndexerRpc } from '../contracts/indexer-rpc-client';
+import { fetchBlockscout, resolveNeoxNetwork, NeoxNetwork } from '../contracts/blockscout-client';
+import { ValidationError } from '../utils/errors';
 
 // --- Individual Tool Handlers ---
 
@@ -332,6 +346,299 @@ async function handleGetContractStatus(input: Record<string, unknown>, contractS
   }
 }
 
+// --- Analytical indexer (neo3fura) read tools ---
+
+const DEFAULT_PAGE_LIMIT = 20;
+const MAX_PAGE_LIMIT = 100;
+
+/** Clamp an optional Limit param to [1, MAX_PAGE_LIMIT], defaulting to DEFAULT_PAGE_LIMIT. */
+function resolveLimit(value: unknown): number {
+  if (value === undefined || value === null) {
+    return DEFAULT_PAGE_LIMIT;
+  }
+  const parsed = validateInteger(value as string | number);
+  if (parsed < 1) {
+    return 1;
+  }
+  return Math.min(parsed, MAX_PAGE_LIMIT);
+}
+
+/** Resolve an optional Skip param to a non-negative integer, defaulting to 0. */
+function resolveSkip(value: unknown): number {
+  if (value === undefined || value === null) {
+    return 0;
+  }
+  return validateInteger(value as string | number);
+}
+
+/** Resolve and validate the N3 network for an indexer read (defaults to mainnet). */
+function resolveIndexerNetwork(input: Record<string, unknown>): NeoNetwork {
+  if (typeof input.network === 'string' && input.network.trim().length > 0) {
+    return validateNetwork(input.network);
+  }
+  return NeoNetwork.MAINNET;
+}
+
+async function handleN3GetAddress(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    const network = resolveIndexerNetwork(input);
+    const address = validateAddress(input.address as string);
+    const result = await callIndexerRpc(network, 'GetAddressByAddress', { Address: address });
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleN3ListTransactionsByAddress(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    const network = resolveIndexerNetwork(input);
+    const address = validateAddress(input.address as string);
+    const result = await callIndexerRpc(network, 'GetRawTransactionByAddress', {
+      Address: address,
+      Limit: resolveLimit(input.limit),
+      Skip: resolveSkip(input.skip),
+    });
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleN3ListTransfersByAddress(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    const network = resolveIndexerNetwork(input);
+    const address = validateAddress(input.address as string);
+    const result = await callIndexerRpc(network, 'GetNep17TransferByAddress', {
+      Address: address,
+      Limit: resolveLimit(input.limit),
+      Skip: resolveSkip(input.skip),
+    });
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleN3AssetHolders(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    const network = resolveIndexerNetwork(input);
+    const contractHash = validateScriptHash(input.contractHash as string);
+    const result = await callIndexerRpc(network, 'GetAssetHoldersListByContractHash', {
+      ContractHash: contractHash,
+      Limit: resolveLimit(input.limit),
+      Skip: resolveSkip(input.skip),
+    });
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleN3AssetsHeldByAddress(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    const network = resolveIndexerNetwork(input);
+    const address = validateAddress(input.address as string);
+    const result = await callIndexerRpc(network, 'GetAssetsHeldByAddress', {
+      Address: address,
+      Limit: resolveLimit(input.limit),
+      Skip: resolveSkip(input.skip),
+    });
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleN3ApplicationLog(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    const network = resolveIndexerNetwork(input);
+    const txid = validateHash(input.txid as string).toLowerCase();
+    const result = await callIndexerRpc(network, 'GetApplicationLogByTransactionHash', {
+      TransactionHash: txid,
+    });
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleN3ContractByName(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    const network = resolveIndexerNetwork(input);
+    const rawName = typeof input.name === 'string' ? sanitizeString(input.name) : '';
+    if (!rawName) {
+      throw new ValidationError('Contract name must be a non-empty string');
+    }
+    const result = await callIndexerRpc(network, 'GetContractListByName', {
+      Name: rawName,
+      Limit: resolveLimit(input.limit),
+      Skip: resolveSkip(input.skip),
+    });
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+// --- Neo X (Blockscout v2) read tools ---
+
+function resolveNeoxNetworkParam(input: Record<string, unknown>): NeoxNetwork {
+  const raw = typeof input.network === 'string' && input.network.trim().length > 0
+    ? input.network
+    : 'neox-mainnet';
+  return resolveNeoxNetwork(raw);
+}
+
+async function handleXSearch(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    const network = resolveNeoxNetworkParam(input);
+    const query = typeof input.q === 'string' ? sanitizeString(input.q) : '';
+    if (!query) {
+      throw new ValidationError('Search query "q" must be a non-empty string');
+    }
+    const result = await fetchBlockscout(network, 'search', { q: query });
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleXGetAddress(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    const network = resolveNeoxNetworkParam(input);
+    const address = validateEvmAddress(input.address as string);
+    const result = await fetchBlockscout(network, `addresses/${address}`);
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleXListTransactionsByAddress(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    const network = resolveNeoxNetworkParam(input);
+    const address = validateEvmAddress(input.address as string);
+    const result = await fetchBlockscout(network, `addresses/${address}/transactions`);
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleXListTokenTransfers(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    const network = resolveNeoxNetworkParam(input);
+    const address = validateEvmAddress(input.address as string);
+    const result = await fetchBlockscout(network, `addresses/${address}/token-transfers`);
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleXTokenInfo(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    const network = resolveNeoxNetworkParam(input);
+    const token = validateEvmAddress(input.address as string);
+    const result = await fetchBlockscout(network, `tokens/${token}`);
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleXTokenHolders(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    const network = resolveNeoxNetworkParam(input);
+    const token = validateEvmAddress(input.address as string);
+    const result = await fetchBlockscout(network, `tokens/${token}/holders`);
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleXBlock(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    const network = resolveNeoxNetworkParam(input);
+    const blockRef = validateEvmBlockRef(input.blockNumberOrHash as string | number);
+    const result = await fetchBlockscout(network, `blocks/${blockRef}`);
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+async function handleXTransaction(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    const network = resolveNeoxNetworkParam(input);
+    const hash = validateEvmHash(input.hash as string);
+    const result = await fetchBlockscout(network, `transactions/${hash}`);
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+const N3_INDEXER_TOOLS = new Set([
+  'n3_get_address',
+  'n3_list_transactions_by_address',
+  'n3_list_transfers_by_address',
+  'n3_asset_holders',
+  'n3_assets_held_by_address',
+  'n3_application_log',
+  'n3_contract_by_name',
+]);
+
+const NEOX_TOOLS = new Set([
+  'x_search',
+  'x_get_address',
+  'x_list_transactions_by_address',
+  'x_list_token_transfers',
+  'x_token_info',
+  'x_token_holders',
+  'x_block',
+  'x_transaction',
+]);
+
+async function dispatchAnalyticalTool(name: string, input: Record<string, unknown>): Promise<Record<string, unknown>> {
+  switch (name) {
+    case 'n3_get_address':
+      return await handleN3GetAddress(input) as Record<string, unknown>;
+    case 'n3_list_transactions_by_address':
+      return await handleN3ListTransactionsByAddress(input) as Record<string, unknown>;
+    case 'n3_list_transfers_by_address':
+      return await handleN3ListTransfersByAddress(input) as Record<string, unknown>;
+    case 'n3_asset_holders':
+      return await handleN3AssetHolders(input) as Record<string, unknown>;
+    case 'n3_assets_held_by_address':
+      return await handleN3AssetsHeldByAddress(input) as Record<string, unknown>;
+    case 'n3_application_log':
+      return await handleN3ApplicationLog(input) as Record<string, unknown>;
+    case 'n3_contract_by_name':
+      return await handleN3ContractByName(input) as Record<string, unknown>;
+    case 'x_search':
+      return await handleXSearch(input) as Record<string, unknown>;
+    case 'x_get_address':
+      return await handleXGetAddress(input) as Record<string, unknown>;
+    case 'x_list_transactions_by_address':
+      return await handleXListTransactionsByAddress(input) as Record<string, unknown>;
+    case 'x_list_token_transfers':
+      return await handleXListTokenTransfers(input) as Record<string, unknown>;
+    case 'x_token_info':
+      return await handleXTokenInfo(input) as Record<string, unknown>;
+    case 'x_token_holders':
+      return await handleXTokenHolders(input) as Record<string, unknown>;
+    case 'x_block':
+      return await handleXBlock(input) as Record<string, unknown>;
+    case 'x_transaction':
+      return await handleXTransaction(input) as Record<string, unknown>;
+    default:
+      throw new McpError(ErrorCode.InvalidParams, `Tool ${name} not found.`);
+  }
+}
+
 export async function callTool(name: string, input: Record<string, unknown>, neoServices: Map<NeoNetwork, NeoService>, contractServices: Map<NeoNetwork, ContractService>, walletService?: WalletService): Promise<Record<string, unknown>> {
   rateLimiter.checkLimit('mcp-client');
   if (name === 'create_wallet' || name === 'import_wallet') {
@@ -368,6 +675,12 @@ export async function callTool(name: string, input: Record<string, unknown>, neo
 
   if (!input || typeof input !== 'object') {
     throw new McpError(ErrorCode.InvalidParams, 'Invalid input parameters. Expected an object.');
+  }
+
+  // Analytical indexer (neo3fura) and Neo X (Blockscout) reads go straight to
+  // their HTTP clients and never touch the NeoService/ContractService RPC layer.
+  if (N3_INDEXER_TOOLS.has(name) || NEOX_TOOLS.has(name)) {
+    return await dispatchAnalyticalTool(name, input);
   }
 
   let neoService: NeoService | undefined;

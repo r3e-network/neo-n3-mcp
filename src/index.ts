@@ -667,6 +667,177 @@ export class NeoN3McpServer {
       }
     );
 
+    // --- Analytical indexer (neo3fura) read tools ---
+    // These delegate to callTool, which routes them straight to the indexer /
+    // Blockscout HTTP clients without initializing NeoService/ContractService.
+    const registerAnalyticalTool = (
+      name: string,
+      description: string,
+      inputSchema: Record<string, z.ZodTypeAny>,
+    ) => {
+      registerDelegatedTool(name, description, inputSchema, async (args) => {
+        try {
+          const result = await callTool(name, args, this.neoServices, this.contractServices);
+          return this.formatDelegatedToolResponse(result);
+        } catch (error: unknown) {
+          return this.createErrorResponse(error);
+        }
+      });
+    };
+
+    const n3NetworkField = {
+      network: z.enum(['mainnet', 'testnet']).optional().describe('Neo N3 network (default mainnet)'),
+    };
+    const n3PaginationFields = {
+      limit: z.number().int().min(1).max(100).optional().describe('Max rows to return (1-100, default 20)'),
+      skip: z.number().int().nonnegative().optional().describe('Rows to skip for pagination (default 0)'),
+    };
+
+    registerAnalyticalTool(
+      'n3_get_address',
+      'Neo N3 analytics: get indexer account summary (first-seen, etc.) for an address.',
+      {
+        address: z.string().describe('Neo N3 address (base58) or 0x script hash'),
+        ...n3NetworkField,
+      },
+    );
+
+    registerAnalyticalTool(
+      'n3_list_transactions_by_address',
+      'Neo N3 analytics: list transactions involving an address (paginated).',
+      {
+        address: z.string().describe('Neo N3 address (base58) or 0x script hash'),
+        ...n3PaginationFields,
+        ...n3NetworkField,
+      },
+    );
+
+    registerAnalyticalTool(
+      'n3_list_transfers_by_address',
+      'Neo N3 analytics: list NEP-17 token transfers for an address (paginated).',
+      {
+        address: z.string().describe('Neo N3 address (base58) or 0x script hash'),
+        ...n3PaginationFields,
+        ...n3NetworkField,
+      },
+    );
+
+    registerAnalyticalTool(
+      'n3_asset_holders',
+      'Neo N3 analytics: list holders of a NEP-17 asset by contract hash, with balance share (paginated).',
+      {
+        contractHash: z.string().describe('Asset contract script hash (40 hex chars, optional 0x prefix)'),
+        ...n3PaginationFields,
+        ...n3NetworkField,
+      },
+    );
+
+    registerAnalyticalTool(
+      'n3_assets_held_by_address',
+      'Neo N3 analytics: list assets (with balances) held by an address (paginated).',
+      {
+        address: z.string().describe('Neo N3 address (base58) or 0x script hash'),
+        ...n3PaginationFields,
+        ...n3NetworkField,
+      },
+    );
+
+    registerAnalyticalTool(
+      'n3_application_log',
+      'Neo N3 analytics: get the indexed application log (executions + notifications) for a transaction hash.',
+      {
+        txid: z.string().describe('Transaction hash (64 hex chars, optional 0x prefix)'),
+        ...n3NetworkField,
+      },
+    );
+
+    registerAnalyticalTool(
+      'n3_contract_by_name',
+      'Neo N3 analytics: search deployed contracts by (case-insensitive) name (paginated).',
+      {
+        name: z.string().describe('Contract name or substring to search for'),
+        ...n3PaginationFields,
+        ...n3NetworkField,
+      },
+    );
+
+    // --- Neo X (EVM sidechain, Blockscout v2) read tools ---
+    const neoxNetworkField = {
+      network: z.enum(['neox-mainnet', 'neox-testnet']).optional().describe('Neo X network (default neox-mainnet)'),
+    };
+
+    registerAnalyticalTool(
+      'x_search',
+      'Neo X (EVM) explorer: full-text search for addresses, tokens, blocks, and transactions.',
+      {
+        q: z.string().describe('Search query (address, token name/symbol, block, or tx hash)'),
+        ...neoxNetworkField,
+      },
+    );
+
+    registerAnalyticalTool(
+      'x_get_address',
+      'Neo X (EVM) explorer: get address details (balance, type, tags).',
+      {
+        address: z.string().describe('Neo X 0x address (40 hex chars)'),
+        ...neoxNetworkField,
+      },
+    );
+
+    registerAnalyticalTool(
+      'x_list_transactions_by_address',
+      'Neo X (EVM) explorer: list transactions for an address.',
+      {
+        address: z.string().describe('Neo X 0x address (40 hex chars)'),
+        ...neoxNetworkField,
+      },
+    );
+
+    registerAnalyticalTool(
+      'x_list_token_transfers',
+      'Neo X (EVM) explorer: list ERC-20/721/1155 token transfers for an address.',
+      {
+        address: z.string().describe('Neo X 0x address (40 hex chars)'),
+        ...neoxNetworkField,
+      },
+    );
+
+    registerAnalyticalTool(
+      'x_token_info',
+      'Neo X (EVM) explorer: get token metadata (name, symbol, decimals, supply) by token contract address.',
+      {
+        address: z.string().describe('Neo X 0x token contract address (40 hex chars)'),
+        ...neoxNetworkField,
+      },
+    );
+
+    registerAnalyticalTool(
+      'x_token_holders',
+      'Neo X (EVM) explorer: list holders of a token by token contract address.',
+      {
+        address: z.string().describe('Neo X 0x token contract address (40 hex chars)'),
+        ...neoxNetworkField,
+      },
+    );
+
+    registerAnalyticalTool(
+      'x_block',
+      'Neo X (EVM) explorer: get block details by block number or hash.',
+      {
+        blockNumberOrHash: z.union([z.string(), z.number()]).describe('Block number or 0x block hash'),
+        ...neoxNetworkField,
+      },
+    );
+
+    registerAnalyticalTool(
+      'x_transaction',
+      'Neo X (EVM) explorer: get transaction details by hash.',
+      {
+        hash: z.string().describe('Neo X 0x transaction hash (64 hex chars)'),
+        ...neoxNetworkField,
+      },
+    );
+
     if (config.writes.enabled) {
       registerWriteTool(
         'transfer_assets',

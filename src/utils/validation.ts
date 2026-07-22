@@ -112,6 +112,71 @@ export function validateScriptHash(scriptHash: string): string {
   return `0x${cleanHash}`;
 }
 
+const EVM_ADDRESS_PATTERN = /^0x[0-9a-fA-F]{40}$/;
+const EVM_HASH_PATTERN = /^0x[0-9a-fA-F]{64}$/;
+
+/**
+ * Validate a Neo X (EVM) 20-byte account/contract address.
+ * Accepts an optional "0x" prefix and normalizes to a lowercase 0x-prefixed
+ * form. Checksum casing (EIP-55) is not enforced.
+ * @param address EVM address to validate
+ * @returns Normalized lowercase 0x-prefixed address
+ * @throws ValidationError if invalid
+ */
+export function validateEvmAddress(address: string): string {
+  if (!address || typeof address !== 'string') {
+    throw new ValidationError('EVM address must be a non-empty string');
+  }
+  const prefixed = address.startsWith('0x') || address.startsWith('0X') ? address : `0x${address}`;
+  if (!EVM_ADDRESS_PATTERN.test(prefixed)) {
+    throw new ValidationError(`Invalid Neo X address format: ${address}. Expected 40 hex characters (optional 0x prefix).`);
+  }
+  return prefixed.toLowerCase();
+}
+
+/**
+ * Validate a Neo X (EVM) 32-byte transaction or block hash.
+ * Accepts an optional "0x" prefix and normalizes to a lowercase 0x-prefixed
+ * form.
+ * @param hash EVM hash to validate
+ * @returns Normalized lowercase 0x-prefixed hash
+ * @throws ValidationError if invalid
+ */
+export function validateEvmHash(hash: string): string {
+  if (!hash || typeof hash !== 'string') {
+    throw new ValidationError('EVM hash must be a non-empty string');
+  }
+  const prefixed = hash.startsWith('0x') || hash.startsWith('0X') ? hash : `0x${hash}`;
+  if (!EVM_HASH_PATTERN.test(prefixed)) {
+    throw new ValidationError(`Invalid Neo X hash format: ${hash}. Expected 64 hex characters (optional 0x prefix).`);
+  }
+  return prefixed.toLowerCase();
+}
+
+/**
+ * Validate a Neo X block reference: either a non-negative block number or a
+ * 32-byte block hash.
+ * @param reference Block number (string or number) or 0x block hash
+ * @returns Normalized reference (decimal string for numbers, lowercase 0x hash otherwise)
+ * @throws ValidationError if invalid
+ */
+export function validateEvmBlockRef(reference: string | number): string {
+  if (typeof reference === 'number') {
+    if (!Number.isSafeInteger(reference) || reference < 0) {
+      throw new ValidationError('Block number must be a non-negative safe integer');
+    }
+    return String(reference);
+  }
+  if (!reference || typeof reference !== 'string') {
+    throw new ValidationError('Block reference must be a non-empty string or number');
+  }
+  const trimmed = reference.trim();
+  if (POSITIVE_INTEGER_PATTERN.test(trimmed)) {
+    return trimmed;
+  }
+  return validateEvmHash(trimmed);
+}
+
 /**
  * Validate amount with decimal support
  * @param amount Amount to validate

@@ -21,6 +21,13 @@ const DEFAULT_TESTNET_RPC = 'https://testnet1.neo.coz.io:443';
 const DEFAULT_NEO_RPC_TIMEOUT_MS = 15_000;
 const DEFAULT_NETWORK_MODE = NetworkMode.BOTH;
 const DEFAULT_N3INDEX_BASE_URL = 'https://api.n3index.dev';
+// Neo X (EVM sidechain) Blockscout v2 explorer API hosts. The mainnet host is
+// the production explorer used by Neo-Explorer-UI (xexplorer.neo.org). The
+// testnet host is derived from the same UI's chain metadata
+// (xt4scan.ngd.network) and is NOT independently verified to expose a Blockscout
+// /api/v2 surface; override it (or disable testnet) via the env var below.
+const DEFAULT_NEOX_MAINNET_EXPLORER_API_BASE_URL = 'https://xexplorer.neo.org';
+const DEFAULT_NEOX_TESTNET_EXPLORER_API_BASE_URL = 'https://xt4scan.ngd.network';
 const DEFAULT_HTTP_HOST = '127.0.0.1';
 const DEFAULT_HTTP_MAX_BODY_BYTES = 1024 * 1024;
 const DEFAULT_WALLETS_DIR = './wallets';
@@ -105,6 +112,14 @@ export const config = {
   n3index: {
     baseUrl: readEnv('N3INDEX_API_BASE_URL') || DEFAULT_N3INDEX_BASE_URL,
     enabled: readBooleanEnv('N3INDEX_ENABLED') ?? true,
+  },
+
+  neox: {
+    mainnetExplorerApiBaseUrl:
+      readEnv('NEOX_MAINNET_EXPLORER_API_BASE_URL') || DEFAULT_NEOX_MAINNET_EXPLORER_API_BASE_URL,
+    testnetExplorerApiBaseUrl:
+      readEnv('NEOX_TESTNET_EXPLORER_API_BASE_URL') || DEFAULT_NEOX_TESTNET_EXPLORER_API_BASE_URL,
+    testnetEnabled: readBooleanEnv('NEOX_TESTNET_ENABLED') ?? true,
   },
 
   http: {
