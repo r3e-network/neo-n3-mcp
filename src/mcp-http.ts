@@ -11,15 +11,25 @@
  *   MCP_HTTP_PATH             MCP endpoint path (default /mcp)
  *   MCP_HTTP_BEARER           bearer token; required unless the host is loopback
  *   MCP_HTTP_ALLOWED_ORIGINS  comma-separated browser origins (optional)
+ *   MCP_HTTP_ALLOWED_HOSTS    comma-separated Host allowlist (optional; DNS-rebinding defense)
  *   MCP_HTTP_MAX_SESSIONS     concurrent session cap (default 128)
  *   MCP_HTTP_SESSION_TTL_MS   idle session eviction window (default 1800000)
+ *
+ * The remote HTTP surface is READ-ONLY by design (non-custodial): it never
+ * exposes signing/broadcast tools, regardless of NEO_ENABLE_WRITES.
  */
 
-import { validateConfig } from './config';
+import { config, validateConfig } from './config';
 import { McpHttpServer, resolveMcpHttpOptionsFromEnv } from './mcp-http-server';
 import { logger } from './utils/logger';
 
 async function main(): Promise<void> {
+  if (config.writes.enabled) {
+    logger.warn(
+      'NEO_ENABLE_WRITES is set, but the MCP HTTP transport is read-only by design; ' +
+      'signing and broadcast tools will NOT be exposed over the network.'
+    );
+  }
   const options = resolveMcpHttpOptionsFromEnv();
   const server = new McpHttpServer(options);
   const port = await server.start();

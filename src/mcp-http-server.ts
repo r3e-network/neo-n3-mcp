@@ -5,9 +5,12 @@
  * the MCP Streamable HTTP transport, so remote MCP clients can reach it over the
  * network. It is unrelated to `src/http-server.ts`, which is a custom REST API.
  *
- * Non-custodial boundary: this module is transport plumbing only. It never
- * imports a signer, a wallet store, or the write pipeline, and it exposes
- * exactly the tools that `NeoN3McpServer` already registers - nothing more.
+ * Non-custodial boundary: the remote HTTP surface is READ-ONLY by design. It
+ * builds a `NeoN3McpServer` per session (which does construct a wallet store),
+ * but it hard-disables writes for every session (see `createReadOnlyNeoServer`),
+ * so the signing/broadcast tools (`transfer_assets`, `invoke_contract_write`,
+ * `claim_gas`, `deploy_contract`) are never registered on the network surface,
+ * regardless of NEO_ENABLE_WRITES. The AI never holds keys and never signs.
  *
  * One MCP server instance is created per session so per-session protocol state
  * (negotiated capabilities, subscriptions) never bleeds between clients. Both
@@ -24,6 +27,7 @@ import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { NeoN3McpServer } from './index';
+import { config } from './config';
 import { SERVER_VERSION } from './version';
 import { logger } from './utils/logger';
 
@@ -36,6 +40,14 @@ export const DEFAULT_MCP_HTTP_MAX_BODY_BYTES = 4 * 1024 * 1024;
 
 const DEFAULT_BODY_TIMEOUT_MS = 30_000;
 const DEFAULT_HEADERS_TIMEOUT_MS = 30_000;
+// Finite backstop for receiving a COMPLETE request (headers + body). A GET SSE
+// carries no body, so it completes immediately and this deadline never fires on
+// an established stream; it only bounds slow/partial requests that would
+// otherwise pin a socket forever (server.requestTimeout = 0 disabled this).
+const DEFAULT_REQUEST_TIMEOUT_MS = 300_000;
+// Floor for the concurrent-connection ceiling so a bounded value is always set
+// even when maxSessions is tiny.
+const MIN_MAX_CONNECTIONS = 256;
 const MIN_REMOTE_BEARER_BYTES = 32;
 const MIN_SWEEP_INTERVAL_MS = 50;
 const MAX_SWEEP_INTERVAL_MS = 30_000;
@@ -71,6 +83,8 @@ export interface McpHttpServerOptions {
   allowedHosts?: string[];
   /** Maximum number of concurrent sessions. */
   maxSessions?: number;
+  /** Maximum number of concurrent TCP connections the listener will accept. */
+  maxConnections?: number;
   /** Idle time after which a session is evicted. */
   sessionTtlMs?: number;
   /** Hard cap on a POST body in bytes. */
@@ -79,6 +93,8 @@ export interface McpHttpServerOptions {
   bodyTimeoutMs?: number;
   /** Deadline for receiving complete request headers. */
   headersTimeoutMs?: number;
+  /** Finite deadline for receiving a complete request; bounds slow-request socket pinning. */
+  requestTimeoutMs?: number;
   /** Factory for the per-session MCP server. Defaults to a real `NeoN3McpServer`. */
   createMcpServer?: () => NeoN3McpServer;
 }
@@ -89,6 +105,8 @@ interface McpHttpSession {
   readonly neoServer: NeoN3McpServer;
   readonly mcpServer: McpServer;
   lastSeenMs: number;
+  /** Number of open long-lived SSE streams; a session with any is never idle. */
+  activeStreams: number;
   closing: boolean;
 }
 
@@ -191,10 +209,12 @@ export class McpHttpServer {
   private readonly allowedOrigins: string[];
   private readonly allowedHosts: string[];
   private readonly maxSessions: number;
+  private readonly maxConnections: number;
   private readonly sessionTtlMs: number;
   private readonly maxBodyBytes: number;
   private readonly bodyTimeoutMs: number;
   private readonly headersTimeoutMs: number;
+  private readonly requestTimeoutMs: number;
   private readonly createMcpServer: () => NeoN3McpServer;
 
   private readonly sessions = new Map<string, McpHttpSession>();
@@ -235,6 +255,10 @@ export class McpHttpServer {
       options.maxSessions ?? DEFAULT_MCP_HTTP_MAX_SESSIONS,
       'maxSessions'
     );
+    this.maxConnections = requirePositiveInteger(
+      options.maxConnections ?? Math.max(MIN_MAX_CONNECTIONS, this.maxSessions * 4),
+      'maxConnections'
+    );
     this.sessionTtlMs = requirePositiveInteger(
       options.sessionTtlMs ?? DEFAULT_MCP_HTTP_SESSION_TTL_MS,
       'sessionTtlMs'
@@ -251,7 +275,11 @@ export class McpHttpServer {
       options.headersTimeoutMs ?? DEFAULT_HEADERS_TIMEOUT_MS,
       'headersTimeoutMs'
     );
-    this.createMcpServer = options.createMcpServer ?? (() => new NeoN3McpServer());
+    this.requestTimeoutMs = requirePositiveInteger(
+      options.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS,
+      'requestTimeoutMs'
+    );
+    this.createMcpServer = options.createMcpServer ?? createReadOnlyNeoServer;
   }
 
   /** Number of live MCP sessions. */
@@ -281,11 +309,16 @@ export class McpHttpServer {
     const server = http.createServer((req, res) => {
       void this.handle(req, res);
     });
-    // Streamable HTTP keeps GET (SSE) responses open for the life of a session,
-    // so Node's per-request deadline must be disabled. POST bodies stay bounded
-    // by maxBodyBytes and bodyTimeoutMs, and headers by headersTimeout.
-    server.requestTimeout = 0;
+    // A finite request deadline bounds slow/partial requests so an unauthenticated
+    // client cannot pin a socket forever (requestTimeout = 0 used to allow exactly
+    // that). It measures time to receive the COMPLETE request; a GET SSE has no
+    // body and completes immediately, so it never aborts an established stream -
+    // and handleSessionRequest additionally clears the per-socket deadline for the
+    // GET branch. A bounded maxConnections caps total sockets so a flood of cheap
+    // half-open connections cannot exhaust file descriptors.
+    server.requestTimeout = this.requestTimeoutMs;
     server.headersTimeout = this.headersTimeoutMs;
+    server.maxConnections = this.maxConnections;
 
     try {
       await new Promise<void>((resolve, reject) => {
@@ -339,6 +372,10 @@ export class McpHttpServer {
       this.sweepTimer = null;
     }
 
+    // Reset the in-flight-handshake counter so a stopped/restarted instance can
+    // never inherit a stale pending count that would falsely report capacity.
+    this.pendingSessions = 0;
+
     await Promise.all(
       [...this.sessions.keys()].map((sessionId) => this.destroySession(sessionId, 'server_stopping'))
     );
@@ -366,11 +403,11 @@ export class McpHttpServer {
       const origin = readHeader(req, 'origin');
 
       if (!this.isHostAllowed(readHeader(req, 'host'))) {
-        this.sendJsonRpcError(res, 403, JSON_RPC_SERVER_ERROR, 'Forbidden: host not allowed');
+        this.sendJsonRpcError(res, 403, JSON_RPC_SERVER_ERROR, 'Forbidden: host not allowed', true);
         return;
       }
       if (!this.isOriginAllowed(origin)) {
-        this.sendJsonRpcError(res, 403, JSON_RPC_SERVER_ERROR, 'Forbidden: origin not allowed');
+        this.sendJsonRpcError(res, 403, JSON_RPC_SERVER_ERROR, 'Forbidden: origin not allowed', true);
         return;
       }
       this.applyCorsHeaders(res, origin);
@@ -400,13 +437,13 @@ export class McpHttpServer {
       }
 
       if (requestPath !== this.path) {
-        this.sendJsonRpcError(res, 404, JSON_RPC_SERVER_ERROR, 'Not Found');
+        this.sendJsonRpcError(res, 404, JSON_RPC_SERVER_ERROR, 'Not Found', true);
         return;
       }
 
       if (!this.isAuthorized(readHeader(req, 'authorization'))) {
         res.setHeader('WWW-Authenticate', 'Bearer realm="neo-n3-mcp"');
-        this.sendJsonRpcError(res, 401, JSON_RPC_SERVER_ERROR, 'Unauthorized');
+        this.sendJsonRpcError(res, 401, JSON_RPC_SERVER_ERROR, 'Unauthorized', true);
         return;
       }
 
@@ -484,6 +521,23 @@ export class McpHttpServer {
     }
 
     session.lastSeenMs = Date.now();
+
+    if ((req.method ?? 'GET').toUpperCase() === 'GET') {
+      // A standalone GET opens a long-lived SSE RESPONSE that the SDK client
+      // keeps open for the whole session while sending no further traffic. Clear
+      // the per-socket deadline so the stream is not aborted, and count it as an
+      // active stream so the idle sweeper never evicts a connected-but-quiet
+      // client. When the stream ends, restart the idle clock from that moment.
+      req.setTimeout(0);
+      res.setTimeout(0);
+      session.activeStreams += 1;
+      const onStreamClosed = () => {
+        session.activeStreams = Math.max(0, session.activeStreams - 1);
+        session.lastSeenMs = Date.now();
+      };
+      res.once('close', onStreamClosed);
+    }
+
     await session.transport.handleRequest(req, res);
   }
 
@@ -503,45 +557,56 @@ export class McpHttpServer {
       return;
     }
 
+    // The increment and ALL construction (createMcpServer, getMcpServer, the
+    // transport) live inside the try so the finally's decrement always runs. If
+    // any of them throws (e.g. a wallets-directory fs fault in the NeoN3McpServer
+    // constructor), pendingSessions is still released - otherwise N such throws
+    // would latch the capacity guard and 503 every future initialize forever.
     this.pendingSessions += 1;
-    const neoServer = this.createMcpServer();
-    const mcpServer = getMcpServer(neoServer);
-    const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: () => randomUUID(),
-      onsessioninitialized: (sessionId) => {
-        this.sessions.set(sessionId, {
-          id: sessionId,
-          transport,
-          neoServer,
-          mcpServer,
-          lastSeenMs: Date.now(),
-          closing: false,
-        });
-        logger.info('MCP HTTP session initialized', {
-          sessionId,
-          sessions: this.sessions.size,
-        });
-      },
-      onsessionclosed: (sessionId) => this.destroySession(sessionId, 'client_terminated'),
-    });
-    transport.onclose = () => {
-      const sessionId = transport.sessionId;
-      if (sessionId) {
-        void this.destroySession(sessionId, 'transport_closed');
-      }
-    };
-    transport.onerror = (error) => {
-      logger.debug('MCP HTTP transport reported an error', { error: errorMessage(error) });
-    };
-
+    let transport: StreamableHTTPServerTransport | undefined;
+    let mcpServer: McpServer | undefined;
     try {
-      await mcpServer.connect(transport);
-      await transport.handleRequest(req, res, body);
+      const neoServer = this.createMcpServer();
+      const boundMcpServer = getMcpServer(neoServer);
+      mcpServer = boundMcpServer;
+      const sessionTransport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: () => randomUUID(),
+        onsessioninitialized: (sessionId) => {
+          this.sessions.set(sessionId, {
+            id: sessionId,
+            transport: sessionTransport,
+            neoServer,
+            mcpServer: boundMcpServer,
+            lastSeenMs: Date.now(),
+            activeStreams: 0,
+            closing: false,
+          });
+          logger.info('MCP HTTP session initialized', {
+            sessionId,
+            sessions: this.sessions.size,
+          });
+        },
+        onsessionclosed: (sessionId) => this.destroySession(sessionId, 'client_terminated'),
+      });
+      transport = sessionTransport;
+      sessionTransport.onclose = () => {
+        const sessionId = sessionTransport.sessionId;
+        if (sessionId) {
+          void this.destroySession(sessionId, 'transport_closed');
+        }
+      };
+      sessionTransport.onerror = (error) => {
+        logger.debug('MCP HTTP transport reported an error', { error: errorMessage(error) });
+      };
+
+      await boundMcpServer.connect(sessionTransport);
+      await sessionTransport.handleRequest(req, res, body);
     } finally {
       this.pendingSessions -= 1;
-      const sessionId = transport.sessionId;
-      // A rejected initialize never registers a session; close both halves so a
-      // failed handshake cannot leak a transport or an MCP server instance.
+      const sessionId = transport?.sessionId;
+      // A throw during construction/connect, or a rejected initialize, never
+      // registers a session; close whatever was built so a failed handshake
+      // cannot leak a transport or an MCP server instance.
       if (!sessionId || !this.sessions.has(sessionId)) {
         await closeSessionResources(transport, mcpServer);
       }
@@ -576,6 +641,11 @@ export class McpHttpServer {
     const now = Date.now();
     const expired: string[] = [];
     for (const session of this.sessions.values()) {
+      // A session with an open SSE stream is actively connected even when it
+      // sends no requests, so it must never be classified as idle.
+      if (session.activeStreams > 0) {
+        continue;
+      }
       if (now - session.lastSeenMs >= this.sessionTtlMs) {
         expired.push(session.id);
       }
@@ -716,55 +786,108 @@ export class McpHttpServer {
 
   private sendMethodNotAllowed(res: http.ServerResponse, allow: string): void {
     res.setHeader('Allow', allow);
-    this.sendJsonRpcError(res, 405, JSON_RPC_SERVER_ERROR, 'Method Not Allowed');
+    // A rejected non-GET method may carry an unread body; close the connection.
+    this.sendJsonRpcError(res, 405, JSON_RPC_SERVER_ERROR, 'Method Not Allowed', true);
   }
 
   private sendJsonRpcError(
     res: http.ServerResponse,
     statusCode: number,
     code: number,
-    message: string
+    message: string,
+    closeConnection = false
   ): void {
     this.sendJson(res, statusCode, {
       jsonrpc: '2.0',
       error: { code, message },
       id: null,
-    });
+    }, closeConnection);
   }
 
-  private sendJson(res: http.ServerResponse, statusCode: number, payload: unknown): void {
+  private sendJson(
+    res: http.ServerResponse,
+    statusCode: number,
+    payload: unknown,
+    closeConnection = false
+  ): void {
     if (res.writableEnded || res.headersSent) {
       return;
     }
     const body = JSON.stringify(payload);
-    res.writeHead(statusCode, {
+    const headers: Record<string, string | number> = {
       'Content-Type': 'application/json',
       'Content-Length': Buffer.byteLength(body),
       'Cache-Control': 'no-store',
-    });
+    };
+    if (closeConnection) {
+      // The request was rejected before its body was read. Tearing the
+      // connection down (rather than draining an unbounded body for keep-alive
+      // reuse) is what stops a slow/partial body from pinning the socket.
+      headers.Connection = 'close';
+    }
+    res.writeHead(statusCode, headers);
     res.end(body);
+    if (closeConnection) {
+      // Connection: close makes Node destroy the socket once the response
+      // flushes; this belt-and-braces end() guarantees the pending request body
+      // cannot hold the socket open even if the client never sends it.
+      res.socket?.end();
+    }
   }
 }
 
 /**
  * Closes a session's transport and its MCP server. Both halves are closed
  * because each session owns a dedicated MCP server instance; dropping either
- * one alone leaks memory.
+ * one alone leaks memory. Either half may be undefined when construction threw
+ * partway through, in which case only what exists is closed.
  */
 async function closeSessionResources(
-  transport: StreamableHTTPServerTransport,
-  mcpServer: McpServer
+  transport: StreamableHTTPServerTransport | undefined,
+  mcpServer: McpServer | undefined
 ): Promise<void> {
-  try {
-    await transport.close();
-  } catch (error) {
-    logger.warn('Failed to close MCP HTTP transport', { error: errorMessage(error) });
+  if (transport) {
+    try {
+      await transport.close();
+    } catch (error) {
+      logger.warn('Failed to close MCP HTTP transport', { error: errorMessage(error) });
+    }
   }
-  try {
-    await mcpServer.close();
-  } catch (error) {
-    logger.warn('Failed to close MCP server instance', { error: errorMessage(error) });
+  if (mcpServer) {
+    try {
+      await mcpServer.close();
+    } catch (error) {
+      logger.warn('Failed to close MCP server instance', { error: errorMessage(error) });
+    }
   }
+}
+
+/**
+ * Runs a synchronous construction with `config.writes.enabled` pinned to false,
+ * restoring the previous value afterwards. The remote HTTP surface is read-only
+ * by design (non-custodial): the AI never holds keys and never signs, so the
+ * signing/broadcast tools must never be registered here. `NeoN3McpServer` reads
+ * `config.writes.enabled` synchronously in its constructor, so this pin is only
+ * held for the (synchronous) duration of `construct`.
+ */
+export function withWritesDisabled<T>(construct: () => T): T {
+  const previousWritesEnabled = config.writes.enabled;
+  config.writes.enabled = false;
+  try {
+    return construct();
+  } finally {
+    config.writes.enabled = previousWritesEnabled;
+  }
+}
+
+/**
+ * The per-session factory for the remote HTTP surface. Forces writes off so the
+ * signing/broadcast tools (`transfer_assets`, `invoke_contract_write`,
+ * `claim_gas`, `deploy_contract`) are never registered over the network,
+ * regardless of NEO_ENABLE_WRITES.
+ */
+function createReadOnlyNeoServer(): NeoN3McpServer {
+  return withWritesDisabled(() => new NeoN3McpServer());
 }
 
 function readIntEnv(env: NodeJS.ProcessEnv, key: string, fallback: number): number {
@@ -782,7 +905,8 @@ function readIntEnv(env: NodeJS.ProcessEnv, key: string, fallback: number): numb
 /**
  * Builds server options from the documented environment variables:
  * MCP_HTTP_PORT, MCP_HTTP_HOST, MCP_HTTP_PATH, MCP_HTTP_BEARER,
- * MCP_HTTP_ALLOWED_ORIGINS, MCP_HTTP_MAX_SESSIONS, MCP_HTTP_SESSION_TTL_MS.
+ * MCP_HTTP_ALLOWED_ORIGINS, MCP_HTTP_ALLOWED_HOSTS, MCP_HTTP_MAX_SESSIONS,
+ * MCP_HTTP_SESSION_TTL_MS.
  */
 export function resolveMcpHttpOptionsFromEnv(
   env: NodeJS.ProcessEnv = process.env
@@ -803,6 +927,10 @@ export function resolveMcpHttpOptionsFromEnv(
     path: env.MCP_HTTP_PATH?.trim() || DEFAULT_MCP_HTTP_PATH,
     bearerToken: env.MCP_HTTP_BEARER?.trim() || undefined,
     allowedOrigins: (env.MCP_HTTP_ALLOWED_ORIGINS ?? '')
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean),
+    allowedHosts: (env.MCP_HTTP_ALLOWED_HOSTS ?? '')
       .split(',')
       .map((entry) => entry.trim())
       .filter(Boolean),

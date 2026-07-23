@@ -56,6 +56,7 @@ All variables are read at startup.
 | `MCP_HTTP_PATH` | `/mcp` | No | Path serving `POST`, `GET`, and `DELETE`. Must begin with `/`. |
 | `MCP_HTTP_BEARER` | unset | Yes, unless `MCP_HTTP_HOST` is a loopback address | Bearer token clients must send as `Authorization: Bearer <token>`. Mirrors the `HTTP_API_KEY` rule enforced by `resolveHttpSecurity` in `src/http.ts`: binding to a non-loopback address without a token is a startup error, not a warning. A token guarding a non-loopback listener must also contain at least 32 bytes, which is enforced at startup. |
 | `MCP_HTTP_ALLOWED_ORIGINS` | empty | No | Comma-separated exact-origin allowlist for browser clients, for example `https://explorer.example.com`. Guards against DNS rebinding and cross-origin use. A request carrying **any** `Origin` header is rejected unless that origin is listed, so the empty default rejects every browser. Non-browser clients — including the explorer's serverless function — send no `Origin` header and are always allowed. |
+| `MCP_HTTP_ALLOWED_HOSTS` | empty | No | Comma-separated `Host`-header allowlist (a second DNS-rebinding defense). Empty (the default) accepts any `Host`, which is correct behind a reverse proxy that forwards the public hostname. Set it only for a directly-exposed listener that should answer for specific hostnames. |
 | `MCP_HTTP_MAX_SESSIONS` | `128` | No | Upper bound on concurrent sessions. At capacity a new `initialize` is answered with `503 Server session capacity reached`; existing sessions are never evicted to make room, so an established client is not disrupted by a burst of new ones. |
 | `MCP_HTTP_SESSION_TTL_MS` | `1800000` (30 minutes) | No | Idle session expiry. An expired session id yields `404`, and the client must re-initialize. |
 
@@ -218,9 +219,10 @@ export MCP_HTTP_BEARER="$(openssl rand -hex 32)"    # MCP HTTP service
 docker compose -f docker/docker-compose.yml up -d
 ```
 
-Start only the MCP HTTP service:
+Start only the MCP HTTP service — the documented remote-agent deployment. Compose interpolates the whole file before it selects services, so the REST service's mandatory `HTTP_API_KEY` must still be set even though its container is never started here. Any non-empty placeholder satisfies the interpolation guard; the "at least 32 bytes" length check only runs when the REST container itself starts, which this command never does:
 
 ```bash
+HTTP_API_KEY=unused-when-starting-only-the-mcp-service \
 MCP_HTTP_BEARER="$(openssl rand -hex 32)" \
   docker compose -f docker/docker-compose.yml up -d neo-mcp-http
 ```
@@ -234,9 +236,10 @@ Service defaults:
 - The healthcheck polls `http://127.0.0.1:3001/healthz` inside the container.
 - `/app/wallets` uses a dedicated `neo-mcp-http-wallets` volume rather than sharing the REST service's wallet volume, so the remotely reachable service has no view of records written by the local REST service.
 
-Publishing on all interfaces is for a TLS-terminating proxy only:
+Publishing on all interfaces is for a TLS-terminating proxy only. This also starts only `neo-mcp-http`, so it needs the same `HTTP_API_KEY` placeholder for the same whole-file interpolation reason:
 
 ```bash
+HTTP_API_KEY=unused-when-starting-only-the-mcp-service \
 MCP_HTTP_BIND_ADDRESS=0.0.0.0 MCP_HTTP_BEARER="$MCP_HTTP_BEARER" \
   docker compose -f docker/docker-compose.yml up -d neo-mcp-http
 ```

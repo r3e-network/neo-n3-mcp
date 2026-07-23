@@ -9,6 +9,7 @@ import { NeoService, NeoNetwork } from '../src/services/neo-service';
 import { ContractService } from '../src/contracts/contract-service';
 import { ValidationError } from '../src/utils/errors';
 import { config, NetworkMode } from '../src/config';
+import { rateLimiter } from '../src/utils/rate-limiter';
 import { TEST_WIF } from './test-wallet';
 
 // Mock data
@@ -977,4 +978,86 @@ describe('Tool Handlers', () => {
       expect(result).toHaveProperty('error');
     });
   });
-}); 
+});
+
+describe('per-session rate limiting', () => {
+  const makeSession = () => {
+    const neoServices = new Map<NeoNetwork, NeoService>();
+    neoServices.set(NeoNetwork.MAINNET, createMockNeoService());
+    const contractServices = new Map<NeoNetwork, ContractService>();
+    contractServices.set(NeoNetwork.MAINNET, createMockContractService());
+    return { neoServices, contractServices };
+  };
+
+  const blockInput = { network: 'mainnet', hashOrHeight: 12344 };
+
+  beforeEach(() => {
+    config.networkMode = NetworkMode.BOTH;
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    // Leave the shared singleton disabled (its test-env default) for other suites.
+    rateLimiter.setEnabled(false);
+  });
+
+  test('charges a distinct limiter bucket per session instead of one shared constant', async () => {
+    const keys: string[] = [];
+    const spy = jest
+      .spyOn(rateLimiter, 'checkLimit')
+      .mockImplementation((clientId: string) => {
+        keys.push(clientId);
+        return true;
+      });
+
+    const sessionA = makeSession();
+    const sessionB = makeSession();
+
+    await callTool('get_block', blockInput, sessionA.neoServices, sessionA.contractServices);
+    await callTool('get_block', blockInput, sessionA.neoServices, sessionA.contractServices);
+    await callTool('get_block', blockInput, sessionB.neoServices, sessionB.contractServices);
+
+    expect(keys).toHaveLength(3);
+    // Same session (same neoServices instance) => one stable bucket.
+    expect(keys[0]).toBe(keys[1]);
+    // Distinct sessions => distinct buckets: no shared process-wide bucket.
+    expect(keys[2]).not.toBe(keys[0]);
+    // The bucket is no longer the constant that made every session collide.
+    expect(keys[0]).not.toBe('mcp-client');
+
+    spy.mockRestore();
+  });
+
+  test('one session hitting the limit does not rate-limit another session', async () => {
+    // The singleton is disabled under NODE_ENV=test; enable a tiny window here.
+    rateLimiter.setEnabled(true);
+    rateLimiter.updateSettings(1, 60000);
+    try {
+      const sessionA = makeSession();
+      const sessionB = makeSession();
+
+      // Session A spends its single token.
+      await expect(
+        callTool('get_block', blockInput, sessionA.neoServices, sessionA.contractServices)
+      ).resolves.toHaveProperty('result');
+
+      // Session A's next call exceeds its own bucket.
+      await expect(
+        callTool('get_block', blockInput, sessionA.neoServices, sessionA.contractServices)
+      ).rejects.toThrow('Rate limit exceeded');
+
+      // Session B is a different connection; its bucket is untouched.
+      await expect(
+        callTool('get_block', blockInput, sessionB.neoServices, sessionB.contractServices)
+      ).resolves.toHaveProperty('result');
+    } finally {
+      rateLimiter.updateSettings(
+        config.rateLimiting.maxRequestsPerMinute,
+        60000,
+        config.rateLimiting.maxRequestsPerHour
+      );
+      rateLimiter.setEnabled(false);
+    }
+  });
+});

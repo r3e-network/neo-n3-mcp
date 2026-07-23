@@ -233,9 +233,13 @@ export MCP_HTTP_BEARER="$(openssl rand -hex 32)"
 docker compose -f docker/docker-compose.yml up -d
 ```
 
-Start only the remote MCP service:
+Start only the remote MCP service. Compose interpolates the whole file before
+selecting a service, so the REST service's mandatory `HTTP_API_KEY` must be set
+to any non-empty placeholder even though its container is never started here
+(the ">= 32 bytes" check only runs when that container actually starts):
 
 ```bash
+HTTP_API_KEY=unused-when-starting-only-the-mcp-service \
 MCP_HTTP_BEARER="$(openssl rand -hex 32)" \
   docker compose -f docker/docker-compose.yml up -d neo-mcp-http
 ```

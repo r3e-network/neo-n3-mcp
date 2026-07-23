@@ -7,11 +7,25 @@
  * mocked; raw fetch is used only where an exact HTTP status must be asserted.
  */
 
+import * as fs from 'fs';
+import * as net from 'net';
+import * as os from 'os';
+import * as path from 'path';
+
+import * as neonJs from '@cityofzion/neon-js';
+
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { LATEST_PROTOCOL_VERSION } from '@modelcontextprotocol/sdk/types.js';
 
-import { McpHttpServer, McpHttpServerOptions, resolveMcpHttpOptionsFromEnv } from '../src/mcp-http-server';
+import {
+  McpHttpServer,
+  McpHttpServerOptions,
+  resolveMcpHttpOptionsFromEnv,
+  withWritesDisabled,
+} from '../src/mcp-http-server';
+import { NeoN3McpServer } from '../src/index';
+import { config } from '../src/config';
 
 jest.setTimeout(30_000);
 
@@ -471,6 +485,114 @@ describe('MCP Streamable HTTP transport', () => {
       expect(afterEviction.status).toBe(404);
     });
 
+    test('a POST carrying a session id refreshes the idle timer and keeps it alive', async () => {
+      const started = await startServer({ sessionTtlMs: 150 });
+
+      const init = await rawInitialize(started);
+      expect(init.status).toBe(200);
+      const sessionId = init.headers.get('mcp-session-id') as string;
+      expect(started.server.sessionCount).toBe(1);
+
+      // Send traffic every ~60 ms across well over 2x the TTL. Each POST must
+      // stamp lastSeenMs (mcp-http-server.ts) so the sweeper never evicts it.
+      // Delete that refresh and an active session is dropped mid-use.
+      for (let i = 0; i < 6; i++) {
+        await sleep(60);
+        const res = await fetch(started.url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: ACCEPT_BOTH,
+            Authorization: `Bearer ${BEARER}`,
+            'Mcp-Session-Id': sessionId,
+          },
+          body: JSON.stringify({ jsonrpc: '2.0', id: 100 + i, method: 'tools/list', params: {} }),
+        });
+        await res.body?.cancel();
+        expect(res.status).toBe(200);
+      }
+
+      expect(started.server.sessionCount).toBe(1);
+    });
+
+    test('a session with an open SSE stream is never evicted while streaming, then evicts after it closes', async () => {
+      const started = await startServer({ sessionTtlMs: 150 });
+
+      const init = await rawInitialize(started);
+      expect(init.status).toBe(200);
+      const sessionId = init.headers.get('mcp-session-id') as string;
+      expect(started.server.sessionCount).toBe(1);
+
+      // Open the standalone GET SSE stream the SDK client keeps open for the life
+      // of the session, sending no further traffic. Without the active-stream
+      // guard the sweeper treats this connected client as idle and evicts it.
+      const controller = new AbortController();
+      const sse = await fetch(started.url, {
+        method: 'GET',
+        headers: {
+          Accept: 'text/event-stream',
+          Authorization: `Bearer ${BEARER}`,
+          'Mcp-Session-Id': sessionId,
+        },
+        signal: controller.signal,
+      });
+      expect(sse.status).toBe(200);
+      const reader = sse.body!.getReader();
+      const pump = (async () => {
+        try {
+          for (;;) {
+            const { done } = await reader.read();
+            if (done) break;
+          }
+        } catch {
+          // Aborting the stream rejects the pending read; that is expected.
+        }
+      })();
+
+      // Idle well past 2x the TTL with no requests at all; the open stream keeps
+      // the session alive.
+      await sleep(600);
+      expect(started.server.sessionCount).toBe(1);
+
+      // Closing the stream restarts the idle clock; the session is then evicted.
+      controller.abort();
+      await pump.catch(() => undefined);
+      await sleep(600);
+      expect(started.server.sessionCount).toBe(0);
+    });
+
+    test('a failed session construction never latches the capacity guard at 503', async () => {
+      let constructionShouldFail = true;
+      const started = await startServer({
+        maxSessions: 2,
+        createMcpServer: () => {
+          if (constructionShouldFail) {
+            // Mirrors a NeoN3McpServer constructor throw (e.g. a wallets-directory
+            // fs fault) on the increment/construction path.
+            throw new Error('simulated wallets directory unavailable');
+          }
+          return new NeoN3McpServer();
+        },
+      });
+
+      // Fire maxSessions failing initializes. Each must release the in-flight
+      // counter; if the increment sat outside the guarded region these would
+      // permanently pin pendingSessions at maxSessions.
+      for (let i = 0; i < 2; i++) {
+        const failed = await rawInitialize(started);
+        await failed.body?.cancel();
+        expect(failed.status).toBe(500);
+      }
+      expect(started.server.sessionCount).toBe(0);
+
+      // A subsequent valid initialize must still be accepted (not 503-forever).
+      constructionShouldFail = false;
+      const ok = await rawInitialize(started);
+      await ok.body?.cancel();
+      expect(ok.status).toBe(200);
+      expect(started.server.sessionCount).toBe(1);
+    });
+
     test('stop() closes every live session', async () => {
       const started = await startServer();
       await connectClient(started);
@@ -482,6 +604,114 @@ describe('MCP Streamable HTTP transport', () => {
     });
   });
 
+  describe('connection safety', () => {
+    test('a finite request deadline closes a slow-body request instead of pinning the socket', async () => {
+      // A short request deadline. An unauthenticated POST that completes its
+      // headers but dribbles its body must be closed by the server. With
+      // requestTimeout disabled (=0) the socket would live forever (slowloris).
+      const started = await startServer({ requestTimeoutMs: 500, headersTimeoutMs: 500 });
+
+      const socket = net.connect(started.port, '127.0.0.1');
+      await new Promise<void>((resolve, reject) => {
+        socket.once('connect', () => resolve());
+        socket.once('error', reject);
+      });
+
+      // Complete headers announcing a large body, then send a single body byte
+      // and stall. The 401 path never reads the body, so only the request
+      // deadline can reclaim the socket.
+      socket.write(
+        'POST /mcp HTTP/1.1\r\n' +
+        'Host: 127.0.0.1\r\n' +
+        'Content-Type: application/json\r\n' +
+        'Content-Length: 100000\r\n' +
+        '\r\n' +
+        '{'
+      );
+
+      // Drain the inbound 401 so the socket can reach 'end'/'close'; a paused
+      // socket never emits 'close' even after the peer sends FIN.
+      socket.resume();
+      const closedInTime = await new Promise<boolean>((resolve) => {
+        const timer = setTimeout(() => resolve(false), 4000);
+        socket.once('close', () => {
+          clearTimeout(timer);
+          resolve(true);
+        });
+        socket.once('error', () => {
+          clearTimeout(timer);
+          resolve(true);
+        });
+      });
+      socket.destroy();
+
+      expect(closedInTime).toBe(true);
+    });
+  });
+
+  describe('non-custodial read-only surface', () => {
+    test('withWritesDisabled hard-disables writes for the construction and restores the prior value', () => {
+      const previous = config.writes.enabled;
+      config.writes.enabled = true;
+      try {
+        let seenDuringConstruction: boolean | undefined;
+        const result = withWritesDisabled(() => {
+          seenDuringConstruction = config.writes.enabled;
+          return 'built';
+        });
+
+        expect(seenDuringConstruction).toBe(false);
+        expect(result).toBe('built');
+        expect(config.writes.enabled).toBe(true);
+      } finally {
+        config.writes.enabled = previous;
+      }
+    });
+
+    test('never exposes signing/broadcast tools over HTTP even with NEO_ENABLE_WRITES on', async () => {
+      const signerDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-http-signer-'));
+      const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-http-write-state-'));
+      const wifFile = path.join(signerDir, 'signer.wif');
+      fs.writeFileSync(wifFile, new neonJs.wallet.Account().WIF, { mode: 0o600 });
+      fs.chmodSync(wifFile, 0o600);
+
+      const prevEnabled = config.writes.enabled;
+      const prevSigner = config.writes.signerWifFile;
+      const prevStateDir = config.writes.stateDirectory;
+      // Turn writes fully on at the config level: with a valid signer and state
+      // dir, the raw NeoN3McpServer constructor WOULD register the write tools.
+      // The read-only factory must keep them off the remote surface anyway.
+      config.writes.enabled = true;
+      config.writes.signerWifFile = wifFile;
+      config.writes.stateDirectory = stateDir;
+
+      try {
+        const started = await startServer(); // default (production) read-only factory
+        const { client } = await connectClient(started);
+
+        const listed = await client.listTools(undefined, { timeout: 15_000 });
+        const toolNames = listed.tools.map((tool) => tool.name);
+
+        for (const writeTool of [
+          'transfer_assets',
+          'invoke_contract_write',
+          'claim_gas',
+          'deploy_contract',
+        ]) {
+          expect(toolNames).not.toContain(writeTool);
+        }
+        // Read tools are still present, so this is not vacuously empty.
+        expect(toolNames).toContain('get_network_mode');
+      } finally {
+        config.writes.enabled = prevEnabled;
+        config.writes.signerWifFile = prevSigner;
+        config.writes.stateDirectory = prevStateDir;
+        fs.rmSync(signerDir, { recursive: true, force: true });
+        fs.rmSync(stateDir, { recursive: true, force: true });
+      }
+    });
+  });
+
   describe('environment configuration', () => {
     test('reads the documented environment variables', () => {
       const options = resolveMcpHttpOptionsFromEnv({
@@ -490,6 +720,7 @@ describe('MCP Streamable HTTP transport', () => {
         MCP_HTTP_PATH: '/mcp-remote',
         MCP_HTTP_BEARER: BEARER,
         MCP_HTTP_ALLOWED_ORIGINS: 'https://a.example, https://b.example',
+        MCP_HTTP_ALLOWED_HOSTS: 'mcp.example, mcp.internal',
         MCP_HTTP_MAX_SESSIONS: '7',
         MCP_HTTP_SESSION_TTL_MS: '60000',
       });
@@ -500,9 +731,29 @@ describe('MCP Streamable HTTP transport', () => {
         path: '/mcp-remote',
         bearerToken: BEARER,
         allowedOrigins: ['https://a.example', 'https://b.example'],
+        allowedHosts: ['mcp.example', 'mcp.internal'],
         maxSessions: 7,
         sessionTtlMs: 60_000,
       });
+    });
+
+    test('the Host allowlist wired from the environment actually enforces at the entry path', async () => {
+      // Guards against the allowlist being reachable only via the constructor:
+      // build options the way the shipped entrypoint does, then confirm the
+      // resulting server rejects an off-allowlist Host.
+      const options = resolveMcpHttpOptionsFromEnv({
+        MCP_HTTP_ALLOWED_HOSTS: 'mcp.example',
+        MCP_HTTP_BEARER: BEARER,
+      });
+      // Bind an ephemeral port for the test; every other option comes from the
+      // env resolver exactly as the shipped entrypoint builds it.
+      const started = await startServer({ ...options, port: 0 });
+
+      const response = await rawInitialize(started);
+      await response.body?.cancel();
+
+      expect(response.status).toBe(403);
+      expect(started.server.sessionCount).toBe(0);
     });
 
     test('falls back to the documented defaults', () => {
@@ -514,6 +765,7 @@ describe('MCP Streamable HTTP transport', () => {
         path: '/mcp',
         bearerToken: undefined,
         allowedOrigins: [],
+        allowedHosts: [],
         maxSessions: 128,
         sessionTtlMs: 1_800_000,
       });
