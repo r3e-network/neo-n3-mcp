@@ -2,7 +2,15 @@
 
 # Neo N3 MCP Server
 
-`@r3e/neo-n3-mcp` is an MCP stdio server and optional HTTP API for Neo N3 blockchain queries and controlled, auditable transaction submission.
+`@r3e/neo-n3-mcp` is an MCP server for Neo N3 blockchain queries and controlled, auditable transaction submission. It ships three entrypoints:
+
+| Entrypoint | Command | Protocol |
+| --- | --- | --- |
+| MCP stdio | `npm start` | MCP over stdin/stdout, for local clients such as Claude Desktop and Cursor |
+| MCP Streamable HTTP | `npm run start:mcp-http` | MCP over HTTP, for remote MCP clients |
+| REST API | `npm run start:http` | Bespoke REST/JSON; not an MCP transport |
+
+The two HTTP servers are unrelated and configured separately. See [Remote MCP over Streamable HTTP](#remote-mcp-over-streamable-http) and [docs/remote-mcp-transport.md](./docs/remote-mcp-transport.md).
 
 Current version: `3.1.0`. Node.js `>=22` is required.
 
@@ -74,10 +82,17 @@ console.log({ blockCount, height: Math.max(0, blockCount - 1) });
 | `NEO_ENABLE_WALLET_ADMIN` | Enable HTTP wallet create/import administration | `false` |
 | `N3INDEX_API_BASE_URL` | Remote contract name lookup base URL | `https://api.n3index.dev` |
 | `N3INDEX_ENABLED` | Enable N3Index-backed name resolution | `true` |
-| `HTTP_HOST` | HTTP listen address | `127.0.0.1` |
-| `HTTP_API_KEY` | Bearer token for HTTP routes | unset |
+| `HTTP_HOST` | REST API listen address | `127.0.0.1` |
+| `HTTP_API_KEY` | Bearer token for REST API routes | unset |
 | `HTTP_CORS_ORIGINS` | Comma-separated exact HTTP/HTTPS origins | empty |
 | `HTTP_MAX_BODY_BYTES` | Maximum HTTP request body size | `1048576` (1 MiB) |
+| `MCP_HTTP_PORT` | Remote MCP transport listen port | `3001` |
+| `MCP_HTTP_HOST` | Remote MCP transport listen address | `127.0.0.1` |
+| `MCP_HTTP_PATH` | Remote MCP endpoint path | `/mcp` |
+| `MCP_HTTP_BEARER` | Bearer token for the remote MCP endpoint; required unless `MCP_HTTP_HOST` is loopback | unset |
+| `MCP_HTTP_ALLOWED_ORIGINS` | Comma-separated exact origins allowed to connect from a browser | empty |
+| `MCP_HTTP_MAX_SESSIONS` | Concurrent remote MCP session cap | `128` |
+| `MCP_HTTP_SESSION_TTL_MS` | Idle remote MCP session expiry | `1800000` (30 minutes) |
 | `WALLETS_DIR` | Directory for persisted encrypted wallet records | `./wallets` |
 | `RATE_LIMITING_ENABLED` | Enable request rate limiting | enabled outside test environments |
 | `MAX_REQUESTS_PER_MINUTE` | Per-client minute limit | `60` |
@@ -107,6 +122,8 @@ export HTTP_WRITE_APPROVAL_API_KEY="$(openssl rand -hex 32)"
 The MCP and HTTP request schemas never accept WIFs, private keys, or passwords. MCP writes require form elicitation and exact fingerprint approval. HTTP writes return a pending intent and require a separate approval request authenticated by `HTTP_WRITE_APPROVAL_API_KEY`.
 
 ## HTTP API
+
+This is a bespoke REST/JSON API, not an MCP transport. MCP clients cannot connect to it; they use the stdio entrypoint or the [remote MCP transport](#remote-mcp-over-streamable-http).
 
 Build and start the HTTP entrypoint:
 
@@ -166,13 +183,61 @@ curl -X POST http://127.0.0.1:3000/api/write-intents/INTENT_ID/approve \
 
 See [API.md](./docs/API.md) for the tool and route reference.
 
+## Remote MCP over Streamable HTTP
+
+The Streamable HTTP transport serves the same MCP tools as the stdio entrypoint to remote MCP clients. It is a separate process from the REST API above, listens on its own port, and has its own configuration and bearer token.
+
+```bash
+npm ci
+npm run build
+export MCP_HTTP_BEARER="$(openssl rand -hex 32)"
+NEO_NETWORK=mainnet npm run start:mcp-http
+```
+
+The server listens on `127.0.0.1:3001` by default and exposes:
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `MCP_HTTP_PATH` (default `/mcp`) | JSON-RPC messages: `initialize`, `tools/list`, `tools/call` |
+| `GET` | `MCP_HTTP_PATH` | Server-Sent Events stream for server-initiated messages |
+| `DELETE` | `MCP_HTTP_PATH` | Terminates the session named by `Mcp-Session-Id` |
+| `GET` | `/healthz` | Unauthenticated liveness probe |
+
+A non-loopback `MCP_HTTP_HOST` requires `MCP_HTTP_BEARER` and rejects a token shorter than 32 bytes, mirroring the `HTTP_API_KEY` rule for the REST entrypoint. When a token is configured, clients send `Authorization: Bearer <token>` on every request to `MCP_HTTP_PATH`; `/healthz` stays unauthenticated so probes can reach it.
+
+Connect with the MCP TypeScript SDK:
+
+```js
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+
+const transport = new StreamableHTTPClientTransport(new URL('http://127.0.0.1:3001/mcp'), {
+  requestInit: { headers: { Authorization: `Bearer ${process.env.MCP_HTTP_BEARER}` } },
+});
+const client = new Client({ name: 'my-client', version: '1.0.0' }, { capabilities: {} });
+await client.connect(transport);
+const { tools } = await client.listTools();
+```
+
+Like the REST listener, this listener serves plaintext HTTP and does not terminate TLS. Remote clients must reach it through a TLS-terminating reverse proxy. Sessions are held in memory, so a multi-replica deployment needs sticky routing on the `Mcp-Session-Id` header.
+
+See [remote-mcp-transport.md](./docs/remote-mcp-transport.md) for the full configuration reference, an end-to-end local run against the Neo Explorer agent, production deployment guidance, and troubleshooting.
+
 ## Docker
 
-The production Compose file is `docker/docker-compose.yml`. It requires an API key, binds the host port to `127.0.0.1` by default, and persists wallet records in the `neo-mcp-wallets` volume:
+The production Compose file is `docker/docker-compose.yml`. It defines two services from the same image: `neo-mcp` runs the REST API on port 3000, and `neo-mcp-http` runs the remote MCP transport on port 3001. Each requires its own token, binds the host port to `127.0.0.1` by default, and persists wallet records in its own volume:
 
 ```bash
 export HTTP_API_KEY="$(openssl rand -hex 32)"
+export MCP_HTTP_BEARER="$(openssl rand -hex 32)"
 docker compose -f docker/docker-compose.yml up -d
+```
+
+Start only the remote MCP service:
+
+```bash
+MCP_HTTP_BEARER="$(openssl rand -hex 32)" \
+  docker compose -f docker/docker-compose.yml up -d neo-mcp-http
 ```
 
 To run a published image instead of building the checkout, use the digest-only registry overlay with the image repository and the release artifact's 64-character lowercase hexadecimal digest:
@@ -181,19 +246,20 @@ To run a published image instead of building the checkout, use the digest-only r
 NEO_MCP_IMAGE_REPOSITORY=r3enetwork/neo-n3-mcp \
 NEO_MCP_IMAGE_DIGEST=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef \
 HTTP_API_KEY="$HTTP_API_KEY" \
+MCP_HTTP_BEARER="$MCP_HTTP_BEARER" \
   docker compose -f docker/docker-compose.yml \
     -f docker/docker-compose.registry.yml up -d
 ```
 
-Set `HTTP_BIND_ADDRESS=0.0.0.0` only when the service must be reachable by a TLS-terminating reverse proxy or load balancer. Do not expose that plaintext listener directly to remote clients.
+Set `HTTP_BIND_ADDRESS=0.0.0.0` (REST) or `MCP_HTTP_BIND_ADDRESS=0.0.0.0` (remote MCP) only when the service must be reachable by a TLS-terminating reverse proxy or load balancer. Do not expose either plaintext listener directly to remote clients.
 
-The development Compose file binds locally and supplies a local-development API key by default:
+The development Compose file binds locally and supplies local-development tokens by default. It defines `neo-mcp-dev` for the REST API and `neo-mcp-http-dev` for the remote MCP transport:
 
 ```bash
 docker compose -f docker/docker-compose.dev.yml up -d
 ```
 
-That default key is for local development only. Override `HTTP_API_KEY` for any shared environment.
+Those default tokens are for local development only. Override `HTTP_API_KEY` and `MCP_HTTP_BEARER` for any shared environment.
 
 Build and run without Compose:
 
@@ -233,9 +299,10 @@ Resources:
 
 ## Security Notes
 
-- Keep HTTP bound to loopback unless remote access is required.
-- Terminate TLS before every remote HTTP connection; an API key authenticates requests but does not encrypt bearer tokens in transit.
-- Use a randomly generated API key of at least 32 bytes for HTTP deployments.
+- Keep both HTTP listeners bound to loopback unless remote access is required.
+- Terminate TLS before every remote HTTP connection; a bearer token authenticates requests but does not encrypt itself in transit.
+- Use a randomly generated token of at least 32 bytes for `HTTP_API_KEY` and `MCP_HTTP_BEARER`.
+- Keep `NEO_ENABLE_WRITES=false` on any remotely reachable MCP listener; the remote transport exists to serve read-only queries.
 - Keep the signer WIF only in the owner-only `NEO_SIGNER_WIF_FILE`; never send it through MCP or HTTP.
 - Persist `WALLETS_DIR` on controlled storage with restrictive permissions.
 - State-changing MCP tools require an explicit `network`, a stable idempotency key, and exact form-elicited approval.
@@ -277,6 +344,7 @@ GitHub Actions tests Node.js 22 and 24. Published GitHub releases can publish th
 ## Documentation
 
 - [API reference](./docs/API.md)
+- [Remote MCP transport](./docs/remote-mcp-transport.md)
 - [Deployment guide](./docs/DEPLOYMENT.md)
 - [Docker guide](./docs/DOCKER.md)
 - [Testing guide](./docs/TESTING.md)
@@ -292,6 +360,8 @@ GitHub Actions tests Node.js 22 and 24. Published GitHub releases can publish th
 - `HTTP_API_KEY is required`: the HTTP process is listening on a non-loopback host. Set a key containing at least 32 bytes or bind `HTTP_HOST` to a loopback address.
 - HTTP `401`: send `Authorization: Bearer <HTTP_API_KEY>` on all routes except `/live` and `/health`.
 - HTTP `413`: reduce the request size or increase `HTTP_MAX_BODY_BYTES` to a positive integer.
+- Remote MCP `401`: send `Authorization: Bearer <MCP_HTTP_BEARER>`; `/healthz` is the only unauthenticated route.
+- Remote MCP `404` after a successful `initialize`: the session expired, was evicted, or a proxy stripped the `Mcp-Session-Id` header. See [remote-mcp-transport.md](./docs/remote-mcp-transport.md#troubleshooting).
 - RPC errors: verify the selected RPC URL is reachable and supports the requested Neo RPC method.
 
 ## License

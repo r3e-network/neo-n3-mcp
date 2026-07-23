@@ -57,6 +57,76 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Remote MCP transport (Streamable HTTP). Same production image as neo-mcp,
+  # different entrypoint: this speaks MCP JSON-RPC, not the REST API.
+  # See docs/remote-mcp-transport.md.
+  neo-mcp-http:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: production
+    image: neo-n3-mcp:local
+    pull_policy: build
+    container_name: neo-n3-mcp-http
+    command: ["node", "dist/mcp-http.js"]
+    restart: unless-stopped
+    init: true
+    stop_grace_period: "${STOP_GRACE_PERIOD:-30s}"
+    pids_limit: ${PIDS_LIMIT:-256}
+    mem_limit: "${MEMORY_LIMIT:-512m}"
+    cpus: ${CPU_LIMIT:-1.0}
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - "/tmp:rw,noexec,nosuid,size=64m,mode=1777"
+    ports:
+      - "${MCP_HTTP_BIND_ADDRESS:-127.0.0.1}:${MCP_HTTP_PORT:-3001}:3001"
+    environment:
+      - NEO_NETWORK=${NEO_NETWORK:-mainnet}
+      - NEO_MAINNET_RPC=${NEO_MAINNET_RPC:-https://mainnet1.neo.coz.io:443}
+      - NEO_TESTNET_RPC=${NEO_TESTNET_RPC:-https://testnet1.neo.coz.io:443}
+      - NEO_RPC_TIMEOUT_MS=${NEO_RPC_TIMEOUT_MS:-15000}
+      - NEO_ALLOW_INSECURE_RPC=${NEO_ALLOW_INSECURE_RPC:-false}
+      - RATE_LIMITING_ENABLED=${RATE_LIMITING_ENABLED:-true}
+      - MAX_REQUESTS_PER_MINUTE=${MAX_REQUESTS_PER_MINUTE:-60}
+      - MAX_REQUESTS_PER_HOUR=${MAX_REQUESTS_PER_HOUR:-1000}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_CONSOLE=${LOG_CONSOLE:-true}
+      - NODE_ENV=production
+      # The container always binds 0.0.0.0:3001; MCP_HTTP_PORT above only
+      # selects the published host port.
+      - MCP_HTTP_HOST=0.0.0.0
+      - MCP_HTTP_PORT=3001
+      - MCP_HTTP_PATH=${MCP_HTTP_PATH:-/mcp}
+      # Required: the listener is not on loopback inside the container.
+      - MCP_HTTP_BEARER=${MCP_HTTP_BEARER:?Set MCP_HTTP_BEARER to at least 32 bytes}
+      - MCP_HTTP_ALLOWED_ORIGINS=${MCP_HTTP_ALLOWED_ORIGINS:-}
+      - MCP_HTTP_MAX_SESSIONS=${MCP_HTTP_MAX_SESSIONS:-128}
+      - MCP_HTTP_SESSION_TTL_MS=${MCP_HTTP_SESSION_TTL_MS:-1800000}
+      # Pinned: a remotely reachable MCP listener must not carry a signer.
+      - NEO_ENABLE_WRITES=false
+      - WALLETS_DIR=/app/wallets
+    volumes:
+      # Dedicated volume: the remotely reachable service gets no view of the
+      # REST service's wallet records.
+      - neo-mcp-http-wallets:/app/wallets
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3001/healthz',res=>process.exit(res.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   neo-mcp-wallets:
+    driver: local
+  neo-mcp-http-wallets:
     driver: local

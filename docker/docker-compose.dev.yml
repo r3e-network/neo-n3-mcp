@@ -43,6 +43,53 @@ services:
       retries: 3
       start_period: 10s
 
+  # Remote MCP transport (Streamable HTTP) for local development.
+  # Speaks MCP JSON-RPC, not the REST API. See docs/remote-mcp-transport.md.
+  neo-mcp-http-dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+      target: development
+    image: neo-n3-mcp:dev
+    container_name: neo-n3-mcp-http-dev
+    restart: unless-stopped
+    init: true
+    ports:
+      - "127.0.0.1:${MCP_HTTP_PORT:-3001}:3001"
+    environment:
+      - NEO_NETWORK=testnet
+      - NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443
+      - NEO_TESTNET_RPC=https://testnet1.neo.coz.io:443
+      - NEO_ALLOW_INSECURE_RPC=${NEO_ALLOW_INSECURE_RPC:-false}
+      - RATE_LIMITING_ENABLED=false
+      - LOG_LEVEL=debug
+      - LOG_CONSOLE=true
+      - NODE_ENV=development
+      - MCP_HTTP_HOST=0.0.0.0
+      - MCP_HTTP_PORT=3001
+      - MCP_HTTP_PATH=${MCP_HTTP_PATH:-/mcp}
+      - MCP_HTTP_BEARER=${MCP_HTTP_BEARER:-local-development-mcp-bearer-0001}
+      - MCP_HTTP_ALLOWED_ORIGINS=${MCP_HTTP_ALLOWED_ORIGINS:-}
+      - MCP_HTTP_MAX_SESSIONS=${MCP_HTTP_MAX_SESSIONS:-128}
+      - MCP_HTTP_SESSION_TTL_MS=${MCP_HTTP_SESSION_TTL_MS:-1800000}
+      - NEO_ENABLE_WRITES=false
+      - WALLETS_DIR=/app/wallets
+    volumes:
+      - ../src:/app/src:ro
+      - ../tests:/app/tests:ro
+      - ../package.json:/app/package.json:ro
+      - ../package-lock.json:/app/package-lock.json:ro
+      - ../tsconfig.json:/app/tsconfig.json:ro
+      - ../jest.config.js:/app/jest.config.js:ro
+      - neo-mcp-http-dev-wallets:/app/wallets
+    command: ["npm", "run", "dev:mcp-http"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3001/healthz',res=>process.exit(res.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
   neo-mcp-test:
     build:
       context: ..
@@ -65,4 +112,6 @@ services:
 
 volumes:
   neo-mcp-dev-wallets:
+    driver: local
+  neo-mcp-http-dev-wallets:
     driver: local

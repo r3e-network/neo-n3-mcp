@@ -17,7 +17,7 @@
     "start": "node dist/index.js",
     "test": "npm run test:unit",
     "test:unit": "jest --testMatch='**/tests/**/*.test.ts' --testPathIgnorePatterns='tests/mcp-'",
-    "test:mcp": "jest --runInBand tests/mcp-build-smoke.test.ts tests/mcp-lifecycle.test.ts tests/mcp-tool-registration.test.ts",
+    "test:mcp": "jest --runInBand tests/mcp-build-smoke.test.ts tests/mcp-lifecycle.test.ts tests/mcp-tool-registration.test.ts tests/mcp-http-transport.test.ts",
     "test:mcp:live": "jest --runInBand tests/mcp-comprehensive.test.ts tests/mcp-latest-features.test.ts tests/mcp-protocol-compliance.test.ts",
     "test:mcp:stress": "jest --runInBand tests/mcp-stress.test.ts",
     "test:integration": "node tests/mcp-integration-test.js",
@@ -45,6 +45,8 @@
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "start:http": "node dist/http.js",
     "dev:http": "ts-node src/http.ts",
+    "start:mcp-http": "node dist/mcp-http.js",
+    "dev:mcp-http": "ts-node src/mcp-http.ts",
     "test:mcp:smoke": "jest --runInBand tests/mcp-build-smoke.test.ts"
   },
   "bin": {

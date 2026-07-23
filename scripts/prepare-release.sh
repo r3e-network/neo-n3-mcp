@@ -74,13 +74,16 @@ npm audit --omit=dev --audit-level=high
 npm pack --dry-run
 
 compose_api_key="release-check-api-key-000000000000"
+compose_mcp_bearer="release-check-mcp-bearer-00000000"
 compose_image_digest=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 if [[ ! "$compose_image_digest" =~ ^[0-9a-f]{64}$ ]]; then
   echo "Registry Compose validation requires a 64-character lowercase hexadecimal digest" >&2
   exit 1
 fi
-HTTP_API_KEY="$compose_api_key" docker compose -f docker/docker-compose.yml config >/dev/null
+HTTP_API_KEY="$compose_api_key" MCP_HTTP_BEARER="$compose_mcp_bearer" \
+  docker compose -f docker/docker-compose.yml config >/dev/null
 HTTP_API_KEY="$compose_api_key" \
+  MCP_HTTP_BEARER="$compose_mcp_bearer" \
   NEO_MCP_IMAGE_REPOSITORY=neo-n3-mcp \
   NEO_MCP_IMAGE_DIGEST="$compose_image_digest" \
   docker compose -f docker/docker-compose.yml -f docker/docker-compose.registry.yml config >/dev/null

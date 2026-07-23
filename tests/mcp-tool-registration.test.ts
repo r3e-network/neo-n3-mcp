@@ -8,6 +8,83 @@ import { startMcpTestClient, stopMcpTestClient } from './mcp-test-utils';
 import { TEST_WIF } from './test-wallet';
 import { ElicitRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 
+/**
+ * The exact tool surface the server advertises when writes are disabled (the default).
+ *
+ * This is deliberately an explicit, sorted inventory rather than a count: adding or
+ * renaming a tool then fails with a diff that names the tool, instead of an opaque
+ * "expected 40, received 41". Update this list in the same commit that registers a tool.
+ */
+const READ_ONLY_TOOL_NAMES = [
+  'estimate_invoke_fees',
+  'estimate_transfer_fees',
+  'get_application_log',
+  'get_balance',
+  'get_block',
+  'get_block_count',
+  'get_blockchain_info',
+  'get_contract_info',
+  'get_contract_status',
+  'get_nep11_balances',
+  'get_nep11_transfers',
+  'get_nep17_transfers',
+  'get_network_mode',
+  'get_transaction',
+  'get_unclaimed_gas',
+  'get_wallet',
+  'invoke_contract',
+  'list_famous_contracts',
+  'n3_application_log',
+  'n3_asset_holders',
+  'n3_assets_held_by_address',
+  'n3_build_invoke',
+  'n3_build_transfer',
+  'n3_contract_by_name',
+  'n3_get_address',
+  'n3_list_transactions_by_address',
+  'n3_list_transfers_by_address',
+  'n3_test_invoke',
+  'wait_for_transaction',
+  'x_block',
+  'x_build_contract_call',
+  'x_build_transfer',
+  'x_get_address',
+  'x_list_token_transfers',
+  'x_list_transactions_by_address',
+  'x_search',
+  'x_simulate_call',
+  'x_token_holders',
+  'x_token_info',
+  'x_transaction',
+];
+
+/** The only secret-free write tools, added exclusively when NEO_ENABLE_WRITES is set. */
+const WRITE_TOOL_NAMES = [
+  'claim_gas',
+  'deploy_contract',
+  'invoke_contract_write',
+  'transfer_assets',
+];
+
+/** Full surface with writes enabled; the count is derived, never hand-maintained. */
+const WRITE_ENABLED_TOOL_NAMES = [...READ_ONLY_TOOL_NAMES, ...WRITE_TOOL_NAMES].sort();
+
+/**
+ * Non-custodial tools that build or simulate transactions without ever holding a key.
+ * They must stay on the default read-only surface: the caller signs in their own wallet.
+ */
+const NON_CUSTODIAL_CONSTRUCTION_TOOL_NAMES = [
+  'n3_build_invoke',
+  'n3_build_transfer',
+  'n3_test_invoke',
+  'x_build_contract_call',
+  'x_build_transfer',
+  'x_simulate_call',
+];
+
+const sortedToolNames = (tools: Array<{ name: string }>): string[] =>
+  tools.map(tool => tool.name).sort();
+
 describe('Modern MCP tool registration', () => {
   const TEST_TIMEOUT = 30000;
   const serverPath = path.join(__dirname, '../dist/index.js');
@@ -110,6 +187,10 @@ describe('Modern MCP tool registration', () => {
     const response = await client!.listTools();
     const toolNames = response.tools.map(tool => tool.name);
 
+    expect(sortedToolNames(response.tools)).toEqual(READ_ONLY_TOOL_NAMES);
+    expect(response.tools).toHaveLength(READ_ONLY_TOOL_NAMES.length);
+    expect(toolNames).toEqual(expect.arrayContaining(NON_CUSTODIAL_CONSTRUCTION_TOOL_NAMES));
+
     expect(toolNames).not.toContain('neofs_create_container');
     expect(toolNames).not.toContain('neofs_get_containers');
     expect(toolNames).not.toContain('set_network_mode');
@@ -128,6 +209,10 @@ describe('Modern MCP tool registration', () => {
     const directory = mkdtempSync(path.join(tmpdir(), 'neo-mcp-write-tools-'));
     const signerFile = path.join(directory, 'signer.wif');
     const stateDirectory = path.join(directory, 'state');
+    // A write state directory keeps a durable .writer.lock that is intentionally never
+    // released, so the second server process below needs its own directory. It only
+    // exercises the elicitation-capability refusal and never reads the first journal.
+    const noElicitationStateDirectory = path.join(directory, 'state-no-elicitation');
     writeFileSync(signerFile, `${TEST_WIF}\n`, { mode: 0o600 });
     chmodSync(signerFile, 0o600);
 
@@ -153,13 +238,12 @@ describe('Modern MCP tool registration', () => {
       transport = session.transport;
 
       const response = await client.listTools();
-      const writeToolNames = [
-        'transfer_assets',
-        'invoke_contract_write',
-        'claim_gas',
-        'deploy_contract',
-      ];
-      expect(response.tools).toHaveLength(23);
+      const writeToolNames = WRITE_TOOL_NAMES;
+      expect(sortedToolNames(response.tools)).toEqual(WRITE_ENABLED_TOOL_NAMES);
+      expect(response.tools).toHaveLength(WRITE_ENABLED_TOOL_NAMES.length);
+      expect(response.tools.map(tool => tool.name)).toEqual(
+        expect.arrayContaining(NON_CUSTODIAL_CONSTRUCTION_TOOL_NAMES),
+      );
       for (const name of writeToolNames) {
         const tool = response.tools.find((candidate) => candidate.name === name);
         expect(tool).toBeDefined();
@@ -216,7 +300,7 @@ describe('Modern MCP tool registration', () => {
           RATE_LIMITING_ENABLED: 'false',
           NEO_ENABLE_WRITES: 'true',
           NEO_SIGNER_WIF_FILE: signerFile,
-          NEO_WRITE_STATE_DIR: stateDirectory,
+          NEO_WRITE_STATE_DIR: noElicitationStateDirectory,
           HTTP_WRITE_APPROVAL_API_KEY: 'independent-approval-key-1234567890',
         },
         clientInfo: { name: 'MCP No-Elicitation Client', version: '1.0.0' },
