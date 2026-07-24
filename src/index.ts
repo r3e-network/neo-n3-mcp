@@ -11,7 +11,10 @@ import { setupResourceHandlers } from './handlers/resource-handler';
 import { config, NetworkMode, validateConfig } from './config';
 import { SERVER_NAME, SERVER_VERSION } from './version';
 import { logger } from './utils/logger';
-import { rateLimiter } from './utils/rate-limiter';
+import {
+  chargeSessionRateLimit,
+  bindRateLimitSessionId as bindScopeRateLimitSessionId,
+} from './utils/session-rate-limit';
 import { SignerProvider } from './services/signer-provider';
 import { WriteCoordinator, WriteOperationName } from './services/write-coordinator';
 import { WriteOperationService } from './services/write-operation-service';
@@ -252,7 +255,11 @@ export class NeoN3McpServer {
     ) => {
       sdkRegisterTool(name, description, inputSchema, async (args) => {
         if (rateLimitOwner === 'registration') {
-          rateLimiter.checkLimit('mcp-client');
+          // Charge this server instance's per-session bucket (its `neoServices`
+          // Map identity), the same bucket callTool and the resource reads use,
+          // so all of a session's charges share one bucket and distinct HTTP
+          // sessions get independent ones.
+          chargeSessionRateLimit(this.neoServices);
         }
         return handler(args);
       });
@@ -266,7 +273,7 @@ export class NeoN3McpServer {
         destructiveHint: true,
         idempotentHint: true,
       }, async (args) => {
-        rateLimiter.checkLimit('mcp-client');
+        chargeSessionRateLimit(this.neoServices);
         return handler(args);
       });
     };
@@ -1101,7 +1108,20 @@ export class NeoN3McpServer {
     setupResourceHandlers(this.server, {
       networkMode: config.networkMode,
       getNeoService: (networkParam?: string) => this.getNeoService(networkParam),
+      rateLimitScope: this.neoServices,
     });
+  }
+
+  /**
+   * Bind the transport's MCP session id to this server's rate-limit bucket so
+   * every per-session charge (registration-inlined tools, delegated tools, and
+   * resource reads) is billed under a bucket named by the session id. The
+   * Streamable HTTP transport (src/mcp-http-server.ts) calls this once the
+   * session id is known; the stdio entrypoint never calls it and keeps its
+   * single implicit bucket.
+   */
+  bindRateLimitSessionId(sessionId: string): void {
+    bindScopeRateLimitSessionId(this.neoServices, sessionId);
   }
 
   /**

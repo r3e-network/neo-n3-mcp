@@ -1,7 +1,26 @@
 import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { NetworkMode } from '../src/config';
+import { NetworkMode, config } from '../src/config';
 import { setupResourceHandlers } from '../src/handlers/resource-handler';
 import { rateLimiter } from '../src/utils/rate-limiter';
+
+/** Register the resource handlers for a session `scope` and return its status handler. */
+function statusHandlerFor(scope: object) {
+  const registrations: any[][] = [];
+  const server = {
+    resource: jest.fn((...args: any[]) => registrations.push(args)),
+  } as any;
+  const getNeoService = jest.fn(async () => ({
+    getBlockchainInfo: jest.fn(async () => ({ height: 1, network: 'mainnet' })),
+    getBlock: jest.fn(),
+  }));
+  setupResourceHandlers(server, {
+    networkMode: NetworkMode.MAINNET_ONLY,
+    getNeoService,
+    rateLimitScope: scope,
+  });
+  const registration = registrations.find(([name]) => name === 'neo-network-status');
+  return registration![3] as (uri: URL) => Promise<unknown>;
+}
 
 describe('setupResourceHandlers', () => {
   test('registers fixed status resources and the block template in both mode', async () => {
@@ -105,4 +124,59 @@ describe('setupResourceHandlers', () => {
       expect(getBlock).not.toHaveBeenCalled();
     }
   );
+
+  test('charges a distinct rate-limit bucket per session scope for resource reads', async () => {
+    const keys: string[] = [];
+    const checkLimit = jest
+      .spyOn(rateLimiter, 'checkLimit')
+      .mockImplementation((clientId: string) => {
+        keys.push(clientId);
+        return true;
+      });
+
+    const sessionA = {};
+    const sessionB = {};
+    const statusA = statusHandlerFor(sessionA);
+    const statusB = statusHandlerFor(sessionB);
+
+    await statusA(new URL('neo://network/status'));
+    await statusA(new URL('neo://network/status'));
+    await statusB(new URL('neo://network/status'));
+
+    expect(keys).toHaveLength(3);
+    // Same session (same scope instance) => one stable bucket.
+    expect(keys[0]).toBe(keys[1]);
+    // Distinct sessions => distinct buckets: no shared process-wide bucket.
+    expect(keys[2]).not.toBe(keys[0]);
+    // The bucket is no longer the constant that made every session collide.
+    expect(keys[0]).not.toBe('mcp-client');
+
+    checkLimit.mockRestore();
+  });
+
+  test('one session hitting the limit does not rate-limit another session on resource reads', async () => {
+    // The singleton is disabled under NODE_ENV=test; enable a tiny window here.
+    rateLimiter.setEnabled(true);
+    rateLimiter.updateSettings(1, 60000);
+    try {
+      const statusA = statusHandlerFor({});
+      const statusB = statusHandlerFor({});
+
+      // Session A spends its single token on a resource read.
+      await expect(statusA(new URL('neo://network/status'))).resolves.toBeDefined();
+
+      // Session A's next read exceeds its own bucket, before it touches RPC.
+      await expect(statusA(new URL('neo://network/status'))).rejects.toThrow('Rate limit exceeded');
+
+      // Session B is a different connection; its bucket is untouched.
+      await expect(statusB(new URL('neo://network/status'))).resolves.toBeDefined();
+    } finally {
+      rateLimiter.updateSettings(
+        config.rateLimiting.maxRequestsPerMinute,
+        60000,
+        config.rateLimiting.maxRequestsPerHour,
+      );
+      rateLimiter.setEnabled(false);
+    }
+  });
 });

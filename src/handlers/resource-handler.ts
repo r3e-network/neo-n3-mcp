@@ -2,7 +2,7 @@ import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mc
 import { NeoService } from '../services/neo-service';
 import { NetworkMode } from '../config';
 import { logger } from '../utils/logger';
-import { rateLimiter } from '../utils/rate-limiter';
+import { chargeSessionRateLimit } from '../utils/session-rate-limit';
 import { validateInteger } from '../utils/validation';
 
 type ResourceServer = Pick<McpServer, 'resource'>;
@@ -11,6 +11,13 @@ type ResourceNeoService = Pick<NeoService, 'getBlockchainInfo' | 'getBlock'>;
 export interface ResourceHandlerDependencies {
   networkMode: NetworkMode;
   getNeoService(networkParam?: string): Promise<ResourceNeoService>;
+  /**
+   * Per-session scope object (the connection's `neoServices` Map) that keys the
+   * rate-limit bucket, so a resource read shares the same per-session bucket as
+   * that session's tool calls instead of a process-wide one. Omitted only by
+   * isolation tests, which then share the fallback bucket.
+   */
+  rateLimitScope?: object;
 }
 
 function createJsonResponse(uri: URL, payload: unknown) {
@@ -25,15 +32,15 @@ function createJsonResponse(uri: URL, payload: unknown) {
   };
 }
 
-function limitResourceRequest(): void {
-  rateLimiter.checkLimit('mcp-client');
-}
-
 export function setupResourceHandlers(
   server: ResourceServer,
-  { networkMode, getNeoService }: ResourceHandlerDependencies,
+  { networkMode, getNeoService, rateLimitScope }: ResourceHandlerDependencies,
 ) {
   logger.debug('Setting up resource handlers...');
+
+  // Charge this session's bucket (keyed by `rateLimitScope`), not a shared
+  // process-wide one, so one session's resource reads cannot starve another's.
+  const limitResourceRequest = () => chargeSessionRateLimit(rateLimitScope);
 
   server.resource(
     'neo-network-status',

@@ -22,7 +22,7 @@ import {
   sanitizeString,
 } from '../utils/validation';
 import { handleError, createSuccessResponse } from '../utils/error-handler';
-import { rateLimiter } from '../utils/rate-limiter';
+import { chargeSessionRateLimit } from '../utils/session-rate-limit';
 import { callIndexerRpc } from '../contracts/indexer-rpc-client';
 import { fetchBlockscout, resolveNeoxNetwork, NeoxNetwork } from '../contracts/blockscout-client';
 import { ValidationError } from '../utils/errors';
@@ -32,47 +32,6 @@ import {
   dispatchN3ProposalTool,
   dispatchNeoxProposalTool,
 } from './proposal-tools';
-
-// --- Per-connection rate-limit keying ---
-//
-// `rateLimiter` (src/utils/rate-limiter.ts) is a process-wide singleton, so the
-// key handed to `checkLimit` decides who shares a bucket. Charging the constant
-// string 'mcp-client' meant that over the Streamable HTTP transport EVERY MCP
-// session in the process drained ONE ~60 req/min bucket and starved the others,
-// while under stdio it harmlessly named "the single client that spawned me".
-//
-// Each HTTP session gets its own `NeoN3McpServer` (src/mcp-http-server.ts), and
-// every `NeoN3McpServer` builds its own `neoServices` Map (src/index.ts). The
-// stdio server builds exactly one. Keying the bucket by that Map's object
-// identity therefore gives each HTTP session an independent bucket and keeps the
-// single stdio client on one stable bucket — its previous behavior, unchanged.
-//
-// The synthetic key is derived here, in-process, because the real MCP session id
-// is not threaded down to this layer (that would require changes in
-// src/mcp-http-server.ts and src/index.ts, outside this module's ownership).
-const RATE_LIMIT_FALLBACK_KEY = 'mcp-client';
-const sessionRateLimitKeys = new WeakMap<object, string>();
-let sessionRateLimitKeySeq = 0;
-
-/**
- * Resolve a stable, per-connection rate-limit bucket key.
- *
- * @param scope A per-session object (the connection's `neoServices` Map). The
- *   same object always maps to the same key; distinct objects get distinct keys.
- *   Falls back to a shared constant only when no scope object is available.
- */
-function resolveRateLimitKey(scope: object | undefined): string {
-  if (!scope) {
-    return RATE_LIMIT_FALLBACK_KEY;
-  }
-  let key = sessionRateLimitKeys.get(scope);
-  if (key === undefined) {
-    sessionRateLimitKeySeq += 1;
-    key = `mcp-session-${sessionRateLimitKeySeq}`;
-    sessionRateLimitKeys.set(scope, key);
-  }
-  return key;
-}
 
 // --- Individual Tool Handlers ---
 
@@ -687,7 +646,7 @@ async function dispatchAnalyticalTool(name: string, input: Record<string, unknow
 }
 
 export async function callTool(name: string, input: Record<string, unknown>, neoServices: Map<NeoNetwork, NeoService>, contractServices: Map<NeoNetwork, ContractService>, walletService?: WalletService): Promise<Record<string, unknown>> {
-  rateLimiter.checkLimit(resolveRateLimitKey(neoServices));
+  chargeSessionRateLimit(neoServices);
   if (name === 'create_wallet' || name === 'import_wallet') {
     return handleError(new McpError(
       ErrorCode.InvalidParams,

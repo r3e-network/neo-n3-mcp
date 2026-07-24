@@ -26,6 +26,7 @@ import {
 } from '../src/mcp-http-server';
 import { NeoN3McpServer } from '../src/index';
 import { config } from '../src/config';
+import { rateLimiter } from '../src/utils/rate-limiter';
 
 jest.setTimeout(30_000);
 
@@ -300,6 +301,66 @@ describe('MCP Streamable HTTP transport', () => {
       expect(response.status).toBe(400);
       expect(body).toMatchObject({ error: { message: /Mcp-Session-Id/ } as never });
       expect(started.server.sessionCount).toBe(0);
+    });
+  });
+
+  describe('per-session rate limiting', () => {
+    // The process-wide limiter is disabled under NODE_ENV=test; enable a tiny
+    // window so the per-session buckets are observable, then restore it.
+    beforeEach(() => {
+      rateLimiter.setEnabled(true);
+      rateLimiter.updateSettings(1, 60_000);
+    });
+
+    afterEach(() => {
+      rateLimiter.updateSettings(
+        config.rateLimiting.maxRequestsPerMinute,
+        60_000,
+        config.rateLimiting.maxRequestsPerHour,
+      );
+      rateLimiter.setEnabled(false);
+    });
+
+    test('one session exhausting its bucket never throttles another (inlined tool)', async () => {
+      const started = await startServer();
+      const a = await connectClient(started);
+      const b = await connectClient(started);
+      expect(started.server.sessionCount).toBe(2);
+
+      // get_network_mode is a registration-inlined tool that charges the limiter
+      // before returning config (no RPC). Session A spends its single token.
+      const a1 = await a.client.callTool(
+        { name: 'get_network_mode', arguments: {} },
+        undefined,
+        { timeout: 15_000 },
+      );
+      expect(a1.isError).not.toBe(true);
+
+      // Session A's next inlined-tool call exceeds ITS OWN bucket.
+      const a2 = await a.client.callTool(
+        { name: 'get_network_mode', arguments: {} },
+        undefined,
+        { timeout: 15_000 },
+      );
+      expect(a2.isError).toBe(true);
+      expect(a2.content).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: 'text',
+            text: expect.stringMatching(/rate limit exceeded/i),
+          }),
+        ]),
+      );
+
+      // Session B is a different connection; its bucket is untouched. Before the
+      // fix every session shared one 'mcp-client' bucket and this call would be
+      // throttled by session A's traffic.
+      const b1 = await b.client.callTool(
+        { name: 'get_network_mode', arguments: {} },
+        undefined,
+        { timeout: 15_000 },
+      );
+      expect(b1.isError).not.toBe(true);
     });
   });
 

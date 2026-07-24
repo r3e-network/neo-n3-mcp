@@ -572,6 +572,14 @@ export class McpHttpServer {
       const sessionTransport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
         onsessioninitialized: (sessionId) => {
+          // Bind the real MCP session id to this session's server so its
+          // rate-limit bucket is keyed per session. This runs during the
+          // initialize request, before any tool/resource call charges the
+          // limiter, so every subsequent charge for this session shares one
+          // bucket named by the session id. Without it these charges would fall
+          // back to a synthetic per-instance key (still per-session, just less
+          // legible in logs).
+          neoServer.bindRateLimitSessionId(sessionId);
           this.sessions.set(sessionId, {
             id: sessionId,
             transport: sessionTransport,

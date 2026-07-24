@@ -1,6 +1,7 @@
 import { callTool } from '../src/handlers/tool-handler';
 import { NeoService, NeoNetwork } from '../src/services/neo-service';
 import { ContractService } from '../src/contracts/contract-service';
+import { config } from '../src/config';
 
 // The analytical indexer + Neo X tools route straight to their HTTP clients and
 // never touch NeoService/ContractService, so empty service maps are sufficient.
