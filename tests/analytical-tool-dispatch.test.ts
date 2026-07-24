@@ -219,4 +219,154 @@ describe('callTool analytical dispatch', () => {
     expect(fetchMock).not.toHaveBeenCalled();
     expect(response.error).toBeDefined();
   });
+
+  // --- Phase 2 gated tools: query_indexer_find + x_graphql ---
+  // Both must (a) refuse with a clear "disabled" error and NO network call while their
+  // feature flag is off (the default), (b) POST a guard-sanitized request when the flag is
+  // stubbed on, and (c) reject an injection attempt (a $where operator / a mutation) with
+  // NO network call even when enabled. The flags are reset after each case so a stubbed
+  // enable can never leak into another test.
+  describe('gated Phase 2 tools', () => {
+    afterEach(() => {
+      config.n3index.findEnabled = false;
+      config.neox.graphqlEnabled = false;
+    });
+
+    test('query_indexer_find refuses with NO fetch while N3INDEX_FIND_ENABLED is off', async () => {
+      const fetchMock = jest.fn();
+      global.fetch = fetchMock as any;
+
+      const response = await callTool(
+        'query_indexer_find',
+        { collection: 'transactions', filter: { sender: VALID_N3_ADDRESS } },
+        emptyNeoServices,
+        emptyContractServices,
+      );
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(response.error).toBeDefined();
+      expect((response.error as { message: string }).message).toMatch(/disabled/i);
+    });
+
+    test('x_graphql refuses with NO fetch while NEOX_GRAPHQL_ENABLED is off', async () => {
+      const fetchMock = jest.fn();
+      global.fetch = fetchMock as any;
+
+      const response = await callTool(
+        'x_graphql',
+        { query: '{ block(number: 1) { hash } }' },
+        emptyNeoServices,
+        emptyContractServices,
+      );
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(response.error).toBeDefined();
+      expect((response.error as { message: string }).message).toMatch(/disabled/i);
+    });
+
+    test('query_indexer_find (enabled) POSTs the sanitized PascalCase Filter to mainnet', async () => {
+      config.n3index.findEnabled = true;
+      const fetchMock = jest.fn().mockResolvedValue(
+        jsonResponse({ jsonrpc: '2.0', id: 1, result: [] }),
+      );
+      global.fetch = fetchMock as any;
+
+      await callTool(
+        'query_indexer_find',
+        {
+          collection: 'transactions',
+          filter: { sender: VALID_N3_ADDRESS },
+          sort: { blockIndex: -1 },
+          limit: 5000,
+        },
+        emptyNeoServices,
+        emptyContractServices,
+      );
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const [url, init] = fetchMock.mock.calls[0];
+      // Mainnet only: query_indexer_find exposes no network field.
+      expect(url).toBe('https://api.n3index.dev/mainnet');
+      const sent = JSON.parse(init.body as string);
+      expect(sent.method).toBe('GetTransactionList');
+      // The whole { Filter, Sort, Limit, Skip } request is rebuilt by the guard: only the
+      // allowlisted PascalCase Filter/Sort survive, and limit is clamped to the cap.
+      expect(sent.params.Filter).toEqual({ sender: VALID_N3_ADDRESS });
+      expect(sent.params.Sort).toEqual({ blockIndex: -1 });
+      expect(sent.params.Limit).toBe(100);
+      expect(sent.params.Skip).toBe(0);
+    });
+
+    test('query_indexer_find (enabled) rejects a $where injection with NO fetch', async () => {
+      config.n3index.findEnabled = true;
+      const fetchMock = jest.fn();
+      global.fetch = fetchMock as any;
+
+      const response = await callTool(
+        'query_indexer_find',
+        { collection: 'transactions', filter: { $where: 'sleep(1000)' } },
+        emptyNeoServices,
+        emptyContractServices,
+      );
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(response.error).toBeDefined();
+    });
+
+    test('query_indexer_find (enabled) rejects an unknown collection with NO fetch', async () => {
+      config.n3index.findEnabled = true;
+      const fetchMock = jest.fn();
+      global.fetch = fetchMock as any;
+
+      const response = await callTool(
+        'query_indexer_find',
+        { collection: 'Transaction', filter: {} },
+        emptyNeoServices,
+        emptyContractServices,
+      );
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(response.error).toBeDefined();
+    });
+
+    test('x_graphql (enabled) POSTs a vetted read query to the Blockscout GraphQL endpoint', async () => {
+      config.neox.graphqlEnabled = true;
+      const fetchMock = jest.fn().mockResolvedValue(
+        jsonResponse({ data: { block: { hash: VALID_EVM_ADDRESS } } }),
+      );
+      global.fetch = fetchMock as any;
+
+      const response = await callTool(
+        'x_graphql',
+        { query: '{ block(number: 1) { hash } }' },
+        emptyNeoServices,
+        emptyContractServices,
+      );
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const [url, init] = fetchMock.mock.calls[0];
+      // Mainnet only: x_graphql exposes no network field; the GraphQL path is /api/v1/graphql.
+      expect(url).toBe('https://xexplorer.neo.org/api/v1/graphql');
+      expect(init.method).toBe('POST');
+      const sent = JSON.parse(init.body as string);
+      expect(sent.query).toBe('{ block(number: 1) { hash } }');
+      expect(response.result).toEqual({ data: { block: { hash: VALID_EVM_ADDRESS } } });
+    });
+
+    test('x_graphql (enabled) rejects a mutation with NO fetch', async () => {
+      config.neox.graphqlEnabled = true;
+      const fetchMock = jest.fn();
+      global.fetch = fetchMock as any;
+
+      const response = await callTool(
+        'x_graphql',
+        { query: 'mutation { setThing(id: 1) { ok } }' },
+        emptyNeoServices,
+        emptyContractServices,
+      );
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(response.error).toBeDefined();
+    });
+  });
 });

@@ -10,11 +10,19 @@ import { callTool } from './handlers/tool-handler';
 import { setupResourceHandlers } from './handlers/resource-handler';
 import { METHOD_CATALOG } from './indexer/indexer-catalog';
 import { X_ENDPOINT_CATALOG } from './indexer/blockscout-catalog';
+import { COLLECTION_CATALOG } from './indexer/indexer-collections';
+import {
+  MAX_GRAPHQL_QUERY_LENGTH,
+  MAX_GRAPHQL_DEPTH,
+  MAX_GRAPHQL_FIELDS,
+} from './indexer/blockscout-graphql-guard';
 
 /** Vetted indexer method keys advertised in the query_indexer tool description. */
 const INDEXER_METHOD_NAMES: readonly string[] = [...METHOD_CATALOG.keys()];
 /** Vetted Neo X Blockscout endpoint keys advertised in the x_query tool description. */
 const X_ENDPOINT_NAMES: readonly string[] = [...X_ENDPOINT_CATALOG.keys()];
+/** Vetted indexer collection keys advertised in the query_indexer_find tool description. */
+const INDEXER_COLLECTION_NAMES: readonly string[] = [...COLLECTION_CATALOG.keys()];
 import { config, NetworkMode, validateConfig } from './config';
 import { SERVER_NAME, SERVER_VERSION } from './version';
 import { logger } from './utils/logger';
@@ -836,6 +844,40 @@ export class NeoN3McpServer {
       },
     );
 
+    // --- Constrained-filter indexer query (Phase 2, GATED OFF by default) ---
+    // query_indexer_find answers arbitrary-filter questions by authoring a SMALL, vetted
+    // Mongo-shaped filter over one allowlisted collection. It is always ADVERTISED, but
+    // EXECUTION is gated behind N3INDEX_FIND_ENABLED (default off): until the flag is set
+    // the tool returns a clear "disabled" error before any network call. When enabled, the
+    // guard rebuilds the whole { Filter, Sort, Limit, Skip } request field-by-field from the
+    // collection's indexed-field allowlist (injection/DoS-proof). No network field: mainnet only.
+    registerAnalyticalTool(
+      'query_indexer_find',
+      'Neo N3 (mainnet) constrained-filter indexer query. GATED OFF by default — enable with '
+        + 'N3INDEX_FIND_ENABLED; while disabled it returns a "disabled" error. Author a small, '
+        + 'vetted filter over ONE allowlisted collection: ' + INDEXER_COLLECTION_NAMES.join(', ')
+        + '. Only that collection\'s indexed fields may be filtered/sorted; a value is a scalar '
+        + '(equality), { $in: [...] }, a range ($gt/$gte/$lt/$lte), or { $exists }. Unknown '
+        + 'collections, fields, and operators (e.g. $where/$or) are rejected; limit/skip are '
+        + 'capped. Example: {"collection":"transactions","filter":{"sender":"N..."},'
+        + '"sort":{"blockIndex":-1},"limit":20}.',
+      {
+        collection: z.string().describe(
+          'One of the vetted indexer collections: ' + INDEXER_COLLECTION_NAMES.join(', '),
+        ),
+        filter: z.record(z.unknown()).optional().describe(
+          'Small Mongo-shaped filter over the collection\'s indexed fields only. Each value is '
+            + 'a scalar (equality), { "$in": [...] }, a range ({ "$gte": .., "$lte": .. }), or '
+            + '{ "$exists": bool }. Disallowed fields/operators are rejected before any query.',
+        ),
+        sort: z.record(z.unknown()).optional().describe(
+          'Optional sort spec over sortable fields: { field: 1 | -1 | "asc" | "desc" }.',
+        ),
+        limit: z.number().int().min(1).max(100).optional().describe('Max rows (capped per collection, default 20)'),
+        skip: z.number().int().nonnegative().optional().describe('Rows to skip for pagination (default 0, capped)'),
+      },
+    );
+
     // --- Neo X (EVM sidechain, Blockscout v2) read tools ---
     const neoxNetworkField = {
       network: z.enum(['neox-mainnet', 'neox-testnet']).optional().describe('Neo X network (default neox-mainnet)'),
@@ -936,6 +978,34 @@ export class NeoN3McpServer {
           'Typed params for the chosen endpoint (e.g. { address }, { hash }, { blockRef }, '
             + 'plus any allowlisted query keys such as { q } or { filter }). Only the '
             + 'endpoint\'s declared params are accepted.',
+        ),
+      },
+    );
+
+    // --- Arbitrary Neo X GraphQL query (Blockscout, Phase 2, GATED OFF by default) ---
+    // x_graphql posts a caller-authored — but guard-vetted — GraphQL read query to the Neo X
+    // Blockscout GraphQL endpoint. It is always ADVERTISED, but EXECUTION is gated behind
+    // NEOX_GRAPHQL_ENABLED (default off): until the flag is set the tool returns a clear
+    // "disabled" error before any network call. When enabled, the guard enforces a read-only
+    // envelope — no mutation/subscription, no introspection (__schema/__type), no directives
+    // (@…), bounded depth/complexity/length, JSON-only bounded variables. The URL is a fixed
+    // constant (no caller-supplied path → no SSRF). No network field: Neo X mainnet only.
+    registerAnalyticalTool(
+      'x_graphql',
+      'Neo X (mainnet) arbitrary Blockscout GraphQL query. GATED OFF by default — enable with '
+        + 'NEOX_GRAPHQL_ENABLED; while disabled it returns a "disabled" error. Author a read-only '
+        + 'GraphQL "query" (or anonymous) document; mutation/subscription operations, introspection '
+        + '(__schema/__type), directives (@…), and oversized/deeply-nested documents are rejected. '
+        + 'Limits: ' + MAX_GRAPHQL_QUERY_LENGTH + ' chars, nesting depth ' + MAX_GRAPHQL_DEPTH
+        + ', ' + MAX_GRAPHQL_FIELDS + ' selection tokens. Example: '
+        + '{"query":"{ block(number: 1) { hash } }"}.',
+      {
+        query: z.string().describe(
+          'A read-only GraphQL query document (max ' + MAX_GRAPHQL_QUERY_LENGTH + ' chars; '
+            + 'no mutation/subscription, introspection, or directives).',
+        ),
+        variables: z.record(z.unknown()).optional().describe(
+          'Optional GraphQL variables as a plain, bounded JSON object.',
         ),
       },
     );

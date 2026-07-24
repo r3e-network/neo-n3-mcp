@@ -26,7 +26,10 @@ import { chargeSessionRateLimit } from '../utils/session-rate-limit';
 import { callIndexerRpc } from '../contracts/indexer-rpc-client';
 import { assertAllowedMethod, buildMethodParams } from '../indexer/indexer-query-guard';
 import { assertAllowedEndpoint, buildEndpointRequest } from '../indexer/blockscout-query-guard';
+import { assertAllowedCollection, validateFind } from '../indexer/indexer-find-guard';
+import { validateGraphqlQuery } from '../indexer/blockscout-graphql-guard';
 import { fetchBlockscout, resolveNeoxNetwork, NeoxNetwork } from '../contracts/blockscout-client';
+import { postBlockscoutGraphql } from '../contracts/blockscout-graphql-client';
 import { ValidationError } from '../utils/errors';
 import {
   N3_PROPOSAL_TOOLS,
@@ -518,6 +521,42 @@ async function handleQueryIndexer(input: Record<string, unknown>): Promise<unkno
   }
 }
 
+// --- Generic constrained-filter indexer query (Phase 2, GATED OFF by default) ---
+
+/**
+ * Constrained arbitrary-filter indexer query. Unlike `handleQueryIndexer` (fixed method +
+ * typed scalar params), this lets a caller author a SMALL Mongo-shaped filter over an
+ * allowlisted collection. It is GATED: execution only happens when config.n3index.findEnabled
+ * is true (env N3INDEX_FIND_ENABLED); otherwise it refuses with a clear message BEFORE any
+ * network call. When enabled, validateFind (indexer-find-guard) rebuilds the entire
+ * { Filter, Sort, Limit, Skip } request field-by-field from the collection's indexed-field
+ * allowlist — no caller object is spread, unknown fields/operators ($where/$or/…) are rejected,
+ * and limit/skip are clamped — so the path is injection/DoS-proof by construction.
+ *
+ * MAINNET ONLY: the tool schema exposes no network field, so resolveIndexerNetwork -> mainnet.
+ */
+async function handleQueryIndexerFind(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    if (!config.n3index.findEnabled) {
+      return handleError(
+        new ValidationError('query_indexer_find is disabled; enable N3INDEX_FIND_ENABLED'),
+      );
+    }
+    const network = resolveIndexerNetwork(input);
+    const collection = typeof input.collection === 'string' ? input.collection : '';
+    const desc = assertAllowedCollection(collection);
+    const sanitized = validateFind(collection, input.filter, input.sort, input.limit, input.skip);
+    const result = await callIndexerRpc(
+      network,
+      desc.rpcMethod,
+      sanitized as unknown as Record<string, unknown>,
+    );
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
 // --- Curated thin wrappers (ergonomic NL over the generic catalog path) ---
 // Each forwards a fixed catalog method via handleQueryIndexer, inheriting the exact
 // same allowlist / param-whitelist / mainnet guarantees.
@@ -690,6 +729,41 @@ async function handleXQuery(input: Record<string, unknown>): Promise<unknown> {
   }
 }
 
+// --- Generic Neo X GraphQL query (Blockscout, Phase 2, GATED OFF by default) ---
+
+/**
+ * Arbitrary GraphQL query against the Neo X Blockscout GraphQL endpoint. This is the
+ * truly-arbitrary Neo X layer (unlike x_query, whose every request is assembled from the
+ * vetted endpoint catalog). It is GATED: execution only happens when config.neox.graphqlEnabled
+ * is true (env NEOX_GRAPHQL_ENABLED); otherwise it refuses with a clear message BEFORE any
+ * network call. When enabled, validateGraphqlQuery (blockscout-graphql-guard) enforces a
+ * read-only envelope — no mutation/subscription, no introspection, no directives, bounded
+ * depth/complexity/length, and JSON-only bounded variables — and only the vetted { query,
+ * variables } is posted (the client is transport-only). SSRF is impossible: the URL is a
+ * fixed constant, the caller never supplies a path.
+ *
+ * MAINNET ONLY: the tool schema exposes no network field, so resolveNeoxNetworkParam ->
+ * neox-mainnet.
+ */
+async function handleXGraphql(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    if (!config.neox.graphqlEnabled) {
+      return handleError(
+        new ValidationError('x_graphql is disabled; enable NEOX_GRAPHQL_ENABLED'),
+      );
+    }
+    const network = resolveNeoxNetworkParam(input);
+    const { query, variables } = validateGraphqlQuery(
+      input.query as string,
+      input.variables as object | undefined,
+    );
+    const result = await postBlockscoutGraphql(network, query, variables);
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
 const N3_INDEXER_TOOLS = new Set([
   'n3_get_address',
   'n3_list_transactions_by_address',
@@ -706,6 +780,8 @@ const N3_INDEXER_TOOLS = new Set([
   'n3_get_block',
   'n3_list_nep17_transfers_by_contract',
   'n3_list_assets',
+  // Phase 2 constrained-filter query (gated behind N3INDEX_FIND_ENABLED, mainnet-only).
+  'query_indexer_find',
 ]);
 
 const NEOX_TOOLS = new Set([
@@ -719,6 +795,8 @@ const NEOX_TOOLS = new Set([
   'x_transaction',
   // Generic catalog-driven Blockscout query (mainnet-only).
   'x_query',
+  // Phase 2 arbitrary GraphQL query (gated behind NEOX_GRAPHQL_ENABLED, mainnet-only).
+  'x_graphql',
 ]);
 
 async function dispatchAnalyticalTool(name: string, input: Record<string, unknown>): Promise<Record<string, unknown>> {
@@ -751,6 +829,8 @@ async function dispatchAnalyticalTool(name: string, input: Record<string, unknow
       return await handleN3ListNep17TransfersByContract(input) as Record<string, unknown>;
     case 'n3_list_assets':
       return await handleN3ListAssets(input) as Record<string, unknown>;
+    case 'query_indexer_find':
+      return await handleQueryIndexerFind(input) as Record<string, unknown>;
     case 'x_search':
       return await handleXSearch(input) as Record<string, unknown>;
     case 'x_get_address':
@@ -769,6 +849,8 @@ async function dispatchAnalyticalTool(name: string, input: Record<string, unknow
       return await handleXTransaction(input) as Record<string, unknown>;
     case 'x_query':
       return await handleXQuery(input) as Record<string, unknown>;
+    case 'x_graphql':
+      return await handleXGraphql(input) as Record<string, unknown>;
     default:
       throw new McpError(ErrorCode.InvalidParams, `Tool ${name} not found.`);
   }

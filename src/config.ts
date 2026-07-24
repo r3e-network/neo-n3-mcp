@@ -126,6 +126,10 @@ export const config = {
   n3index: {
     baseUrl: readEnv('N3INDEX_API_BASE_URL') || DEFAULT_N3INDEX_BASE_URL,
     enabled: readBooleanEnv('N3INDEX_ENABLED') ?? true,
+    // Phase 2, gated OFF by default: the constrained-filter `query_indexer_find`
+    // tool only EXECUTES when this flag is true. The tool is always advertised;
+    // when disabled it returns a clear "disabled" error before any network call.
+    findEnabled: readBooleanEnv('N3INDEX_FIND_ENABLED') ?? false,
   },
 
   neox: {
@@ -150,6 +154,10 @@ export const config = {
       const configured = readListEnv('NEOX_TESTNET_RPC_URLS');
       return configured.length > 0 ? configured : DEFAULT_NEOX_TESTNET_RPC_URLS;
     })(),
+    // Phase 2, gated OFF by default: the arbitrary GraphQL `x_graphql` tool only
+    // EXECUTES when this flag is true. The tool is always advertised; when disabled
+    // it returns a clear "disabled" error before any network call.
+    graphqlEnabled: readBooleanEnv('NEOX_GRAPHQL_ENABLED') ?? false,
   },
 
   http: {
@@ -205,6 +213,8 @@ export function validateConfig(): void {
   for (const key of [
     'NEO_ALLOW_INSECURE_RPC',
     'N3INDEX_ENABLED',
+    'N3INDEX_FIND_ENABLED',
+    'NEOX_GRAPHQL_ENABLED',
     'LOG_CONSOLE',
     'LOG_FILE_ENABLED',
     'RATE_LIMITING_ENABLED',
