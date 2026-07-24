@@ -8,6 +8,13 @@ import { WalletService } from './services/wallet-service';
 import { ContractService } from './contracts/contract-service';
 import { callTool } from './handlers/tool-handler';
 import { setupResourceHandlers } from './handlers/resource-handler';
+import { METHOD_CATALOG } from './indexer/indexer-catalog';
+import { X_ENDPOINT_CATALOG } from './indexer/blockscout-catalog';
+
+/** Vetted indexer method keys advertised in the query_indexer tool description. */
+const INDEXER_METHOD_NAMES: readonly string[] = [...METHOD_CATALOG.keys()];
+/** Vetted Neo X Blockscout endpoint keys advertised in the x_query tool description. */
+const X_ENDPOINT_NAMES: readonly string[] = [...X_ENDPOINT_CATALOG.keys()];
 import { config, NetworkMode, validateConfig } from './config';
 import { SERVER_NAME, SERVER_VERSION } from './version';
 import { logger } from './utils/logger';
@@ -768,6 +775,67 @@ export class NeoN3McpServer {
       },
     );
 
+    // --- Generic catalog-driven indexer query (task #39, Neo N3 MAINNET only) ---
+    // query_indexer answers arbitrary on-chain questions by dispatching a VETTED,
+    // read-only indexer method with typed params. It never forwards a client-authored
+    // Mongo object (injection-proof by construction). No network field: mainnet only.
+    registerAnalyticalTool(
+      'query_indexer',
+      'Neo N3 (mainnet) generic indexer query. Answer an on-chain question by choosing a '
+        + 'vetted read-only method and passing its typed params. Categories: address/account, '
+        + 'blocks, transactions, transfers (NEP-17/NEP-11), assets/tokens, contracts, governance '
+        + '(candidates/committee/votes), and chain state. Example: '
+        + '{"method":"list_asset_holders","params":{"contractHash":"0x...","limit":20}}. '
+        + 'Unknown methods and unknown params are rejected; limit/skip are capped.',
+      {
+        method: z.string().describe(
+          'One of the vetted indexer methods: ' + INDEXER_METHOD_NAMES.join(', '),
+        ),
+        params: z.record(z.unknown()).optional().describe(
+          'Typed params for the chosen method (e.g. { address }, { contractHash, limit }). '
+            + 'Only the method\'s declared params are accepted.',
+        ),
+      },
+    );
+
+    // Curated ergonomic wrappers over query_indexer (fixed method, friendly params).
+    registerAnalyticalTool(
+      'n3_list_blocks',
+      'Neo N3 (mainnet) analytics: list recent blocks, newest first (paginated).',
+      { ...n3PaginationFields },
+    );
+    registerAnalyticalTool(
+      'n3_list_transactions',
+      'Neo N3 (mainnet) analytics: list recent transactions, newest first (paginated).',
+      { ...n3PaginationFields },
+    );
+    registerAnalyticalTool(
+      'n3_get_transaction',
+      'Neo N3 (mainnet) analytics: get a single transaction by its hash.',
+      { transactionHash: z.string().describe('Transaction hash (0x + 64 hex)') },
+    );
+    registerAnalyticalTool(
+      'n3_get_block',
+      'Neo N3 (mainnet) analytics: get a full block by its hash or height.',
+      { block: z.string().describe('Block hash (0x + 64 hex) or block height (integer)') },
+    );
+    registerAnalyticalTool(
+      'n3_list_nep17_transfers_by_contract',
+      'Neo N3 (mainnet) analytics: list NEP-17 transfers for a token contract (paginated).',
+      {
+        contractHash: z.string().describe('Token contract script hash (0x + 40 hex)'),
+        ...n3PaginationFields,
+      },
+    );
+    registerAnalyticalTool(
+      'n3_list_assets',
+      'Neo N3 (mainnet) analytics: list the token/asset registry, optionally by standard.',
+      {
+        standard: z.enum(['NEP17', 'NEP11']).optional().describe('Filter by token standard'),
+        ...n3PaginationFields,
+      },
+    );
+
     // --- Neo X (EVM sidechain, Blockscout v2) read tools ---
     const neoxNetworkField = {
       network: z.enum(['neox-mainnet', 'neox-testnet']).optional().describe('Neo X network (default neox-mainnet)'),
@@ -842,6 +910,33 @@ export class NeoN3McpServer {
       {
         hash: z.string().describe('Neo X 0x transaction hash (64 hex chars)'),
         ...neoxNetworkField,
+      },
+    );
+
+    // --- Generic catalog-driven Neo X query (Blockscout v2, Neo X MAINNET only) ---
+    // x_query answers arbitrary Neo X on-chain questions by dispatching a VETTED,
+    // read-only Blockscout v2 REST endpoint with typed params. The concrete path is
+    // built by substituting only a validated typed segment (evmAddress/evmHash/blockRef)
+    // into a fixed template, and only allowlisted query keys are forwarded — no
+    // model-authored path or query string ever reaches the network (SSRF/traversal-proof
+    // by construction). No network field: Neo X mainnet only.
+    registerAnalyticalTool(
+      'x_query',
+      'Neo X (mainnet) generic explorer query over Blockscout. Answer an on-chain question '
+        + 'by choosing a vetted read-only endpoint and passing its typed params. Categories: '
+        + 'chain-wide lists (blocks/transactions/token-transfers/tokens/contracts/search/stats), '
+        + 'address, token, transaction, block, and smart contract. Example: '
+        + '{"endpoint":"get_address","params":{"address":"0x..."}}. Unknown endpoints, unknown '
+        + 'params, and unsafe path values are rejected before any network call.',
+      {
+        endpoint: z.string().describe(
+          'One of the vetted Neo X Blockscout endpoints: ' + X_ENDPOINT_NAMES.join(', '),
+        ),
+        params: z.record(z.unknown()).optional().describe(
+          'Typed params for the chosen endpoint (e.g. { address }, { hash }, { blockRef }, '
+            + 'plus any allowlisted query keys such as { q } or { filter }). Only the '
+            + 'endpoint\'s declared params are accepted.',
+        ),
       },
     );
 

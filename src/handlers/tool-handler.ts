@@ -24,6 +24,8 @@ import {
 import { handleError, createSuccessResponse } from '../utils/error-handler';
 import { chargeSessionRateLimit } from '../utils/session-rate-limit';
 import { callIndexerRpc } from '../contracts/indexer-rpc-client';
+import { assertAllowedMethod, buildMethodParams } from '../indexer/indexer-query-guard';
+import { assertAllowedEndpoint, buildEndpointRequest } from '../indexer/blockscout-query-guard';
 import { fetchBlockscout, resolveNeoxNetwork, NeoxNetwork } from '../contracts/blockscout-client';
 import { ValidationError } from '../utils/errors';
 import {
@@ -487,6 +489,77 @@ async function handleN3ContractByName(input: Record<string, unknown>): Promise<u
   }
 }
 
+// --- Generic catalog-driven indexer query (Phase 1: no client-authored Mongo) ---
+
+/**
+ * Generic vetted-method indexer query. `input.method` MUST be a member of the
+ * immutable METHOD_CATALOG (assertAllowedMethod); the upstream params object is
+ * rebuilt field-by-field from the catalog spec by buildMethodParams, so no caller
+ * key is spread through to the upstream and NO client-authored Mongo filter is
+ * constructed on this path — injection-proof by construction (T1/T2/T18).
+ *
+ * MAINNET ONLY: the tool schema exposes no network field, so resolveIndexerNetwork
+ * resolves to mainnet.
+ */
+async function handleQueryIndexer(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    const network = resolveIndexerNetwork(input);
+    const desc = assertAllowedMethod(typeof input.method === 'string' ? input.method : '');
+    // Prefer an explicit `params` object; fall back to the flat input (the guard
+    // rejects any key outside the method's schema, so the fallback is safe).
+    const source = (input.params && typeof input.params === 'object' && !Array.isArray(input.params))
+      ? (input.params as Record<string, unknown>)
+      : input;
+    const params = buildMethodParams(desc, source);
+    const result = await callIndexerRpc(network, desc.rpcMethod, params);
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+// --- Curated thin wrappers (ergonomic NL over the generic catalog path) ---
+// Each forwards a fixed catalog method via handleQueryIndexer, inheriting the exact
+// same allowlist / param-whitelist / mainnet guarantees.
+
+async function handleN3ListBlocks(input: Record<string, unknown>): Promise<unknown> {
+  return handleQueryIndexer({ method: 'list_blocks', params: { limit: input.limit, skip: input.skip } });
+}
+
+async function handleN3ListTransactions(input: Record<string, unknown>): Promise<unknown> {
+  return handleQueryIndexer({ method: 'list_transactions', params: { limit: input.limit, skip: input.skip } });
+}
+
+async function handleN3GetTransactionIndexer(input: Record<string, unknown>): Promise<unknown> {
+  return handleQueryIndexer({
+    method: 'get_transaction',
+    params: { transactionHash: input.transactionHash ?? input.txid ?? input.hash },
+  });
+}
+
+async function handleN3GetBlockIndexer(input: Record<string, unknown>): Promise<unknown> {
+  const ref = input.blockHash ?? input.blockHeight ?? input.hashOrHeight ?? input.block;
+  const isHeight = typeof ref === 'number'
+    || (typeof ref === 'string' && /^[0-9]+$/.test(ref.trim()));
+  return isHeight
+    ? handleQueryIndexer({ method: 'get_block_by_height', params: { blockHeight: ref } })
+    : handleQueryIndexer({ method: 'get_block_by_hash', params: { blockHash: ref } });
+}
+
+async function handleN3ListNep17TransfersByContract(input: Record<string, unknown>): Promise<unknown> {
+  return handleQueryIndexer({
+    method: 'list_nep17_transfers_by_contract',
+    params: { contractHash: input.contractHash, limit: input.limit, skip: input.skip },
+  });
+}
+
+async function handleN3ListAssets(input: Record<string, unknown>): Promise<unknown> {
+  return handleQueryIndexer({
+    method: 'list_assets',
+    params: { standard: input.standard, limit: input.limit, skip: input.skip },
+  });
+}
+
 // --- Neo X (Blockscout v2) read tools ---
 
 function resolveNeoxNetworkParam(input: Record<string, unknown>): NeoxNetwork {
@@ -587,6 +660,36 @@ async function handleXTransaction(input: Record<string, unknown>): Promise<unkno
   }
 }
 
+// --- Generic catalog-driven Neo X query (Blockscout v2, mainnet-only) ---
+
+/**
+ * Generic vetted-endpoint Neo X query. `input.endpoint` MUST be a member of the
+ * immutable X_ENDPOINT_CATALOG (assertAllowedEndpoint); the concrete request path and
+ * query params are rebuilt field-by-field from the endpoint descriptor by
+ * buildEndpointRequest, so no caller string is ever spread into the path and no unknown
+ * query key is forwarded — SSRF/path-traversal-proof by construction (fetchBlockscout
+ * also blocks redirects and caps the body at 4 MiB).
+ *
+ * MAINNET ONLY: the tool schema exposes no network field, so resolveNeoxNetworkParam
+ * resolves to neox-mainnet.
+ */
+async function handleXQuery(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    const network = resolveNeoxNetworkParam(input);
+    const desc = assertAllowedEndpoint(typeof input.endpoint === 'string' ? input.endpoint : '');
+    // Prefer an explicit `params` object; fall back to the flat input (the guard rejects
+    // any key outside the endpoint's allowlist, and tolerates endpoint/params/network).
+    const source = (input.params && typeof input.params === 'object' && !Array.isArray(input.params))
+      ? (input.params as Record<string, unknown>)
+      : input;
+    const { path, params } = buildEndpointRequest(desc, source);
+    const result = await fetchBlockscout(network, path, params);
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
 const N3_INDEXER_TOOLS = new Set([
   'n3_get_address',
   'n3_list_transactions_by_address',
@@ -595,6 +698,14 @@ const N3_INDEXER_TOOLS = new Set([
   'n3_assets_held_by_address',
   'n3_application_log',
   'n3_contract_by_name',
+  // Generic catalog-driven query + curated wrappers (task #39, mainnet-only).
+  'query_indexer',
+  'n3_list_blocks',
+  'n3_list_transactions',
+  'n3_get_transaction',
+  'n3_get_block',
+  'n3_list_nep17_transfers_by_contract',
+  'n3_list_assets',
 ]);
 
 const NEOX_TOOLS = new Set([
@@ -606,6 +717,8 @@ const NEOX_TOOLS = new Set([
   'x_token_holders',
   'x_block',
   'x_transaction',
+  // Generic catalog-driven Blockscout query (mainnet-only).
+  'x_query',
 ]);
 
 async function dispatchAnalyticalTool(name: string, input: Record<string, unknown>): Promise<Record<string, unknown>> {
@@ -624,6 +737,20 @@ async function dispatchAnalyticalTool(name: string, input: Record<string, unknow
       return await handleN3ApplicationLog(input) as Record<string, unknown>;
     case 'n3_contract_by_name':
       return await handleN3ContractByName(input) as Record<string, unknown>;
+    case 'query_indexer':
+      return await handleQueryIndexer(input) as Record<string, unknown>;
+    case 'n3_list_blocks':
+      return await handleN3ListBlocks(input) as Record<string, unknown>;
+    case 'n3_list_transactions':
+      return await handleN3ListTransactions(input) as Record<string, unknown>;
+    case 'n3_get_transaction':
+      return await handleN3GetTransactionIndexer(input) as Record<string, unknown>;
+    case 'n3_get_block':
+      return await handleN3GetBlockIndexer(input) as Record<string, unknown>;
+    case 'n3_list_nep17_transfers_by_contract':
+      return await handleN3ListNep17TransfersByContract(input) as Record<string, unknown>;
+    case 'n3_list_assets':
+      return await handleN3ListAssets(input) as Record<string, unknown>;
     case 'x_search':
       return await handleXSearch(input) as Record<string, unknown>;
     case 'x_get_address':
@@ -640,6 +767,8 @@ async function dispatchAnalyticalTool(name: string, input: Record<string, unknow
       return await handleXBlock(input) as Record<string, unknown>;
     case 'x_transaction':
       return await handleXTransaction(input) as Record<string, unknown>;
+    case 'x_query':
+      return await handleXQuery(input) as Record<string, unknown>;
     default:
       throw new McpError(ErrorCode.InvalidParams, `Tool ${name} not found.`);
   }
