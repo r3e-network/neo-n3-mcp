@@ -1,0 +1,269 @@
+/**
+ * N3_REST_CATALOG — the vetted, read-only n3index REST endpoint registry for the
+ * curated Neo N3 analytical tools.
+ *
+ * The DEPLOYED n3index indexer (api.n3index.dev) is a REST API at
+ * `${base}/${network}/<path>` returning `{ data, meta }` envelopes — NOT a
+ * neo3fura JSON-RPC gateway. So this file is the N3 REST analogue of
+ * `src/indexer/blockscout-catalog.ts` (the Neo X `x_query` registry): it IS the
+ * security policy. The guard (`n3-rest-guard.ts`) is a pure function of this map.
+ * An endpoint is reachable ONLY if it appears here, and the guard builds the
+ * concrete request path + query params from the descriptor field-by-field —
+ * never from a raw, model-authored string.
+ *
+ * Threat model (mirrors Blockscout's):
+ *  - SSRF / path traversal: the model NEVER supplies a path. The catalog holds
+ *    fixed path TEMPLATES (e.g. "accounts/{address}"); the guard substitutes ONLY
+ *    a validated typed segment (n3Address / scriptHash / txid / blockRef) into the
+ *    `{...}` placeholder. Every such segment is a base58 N3 address, a 0x+hex
+ *    reference, or a decimal — slash-free and traversal-free by construction.
+ *    `fetchN3Index` additionally blocks redirects and caps the body at 4 MiB.
+ *  - Query params: only the per-endpoint `queryParams` allowlist is honoured; each
+ *    value is re-validated (integer + clamp for pagination, `sanitizeString` for
+ *    free-text). Unknown query keys are rejected. `fetchN3Index` URL-encodes
+ *    params, so the residual risk is only upstream cost, bounded by the response
+ *    cap + timeout.
+ *  - Read-only: every route below is a GET reader. No write endpoints are present.
+ *
+ * These tools are MAINNET-ONLY: the tool schema exposes no network field; the
+ * handler resolves to mainnet (see `resolveIndexerNetwork` in the tool handler).
+ *
+ * Endpoints verified live against https://api.n3index.dev (all 200 with real
+ * mainnet data). Pagination params: limit (default 20, cap 100), offset (default
+ * 0, cap 10000).
+ */
+
+/** How the guard validates a `{...}` path segment before substituting it into a template. */
+export type N3PathParamType =
+  | 'n3Address' // validateAddress -> 34-char base58 Neo N3 address
+  | 'scriptHash' // validateScriptHash -> 0x + 40 hex contract/token script hash
+  | 'txid' // validateHash -> 0x + 64 hex transaction hash
+  | 'blockRef'; // decimal block index OR 0x + 64 hex block hash
+
+/** How the guard validates a query-string value. */
+export type QueryParamType =
+  | 'int' // validateInteger, then clamped to the per-key cap (limit<=100, offset<=10000)
+  | 'string'; // sanitizeString, 1..N chars, non-empty
+
+export interface PathParamSpec {
+  /** Input key AND `{key}` placeholder in the template (e.g. 'address', 'hash', 'txid', 'blockRef'). */
+  key: string;
+  type: N3PathParamType;
+}
+
+export interface QueryParamSpec {
+  type: QueryParamType;
+  /** Permitted values (unused for the current N3 catalog; kept for shape parity). */
+  values?: readonly string[];
+  /** When true the guard rejects a call that omits this query param. Defaults to false. */
+  required?: boolean;
+}
+
+/** Coarse grouping surfaced in the tool description / error text (LLM guidance). */
+export type EndpointCategory =
+  | 'summary'
+  | 'block'
+  | 'transaction'
+  | 'address'
+  | 'token'
+  | 'contract'
+  | 'governance'
+  | 'analytics'
+  | 'search';
+
+export interface EndpointDescriptor {
+  /** Fixed path under the network segment with at most one `{key}` placeholder. Never model-authored. */
+  pathTemplate: string;
+  /** The single typed path segment, if the template has a `{...}` placeholder. */
+  pathParam?: PathParamSpec;
+  /** Allowlisted query keys; the guard emits ONLY these, each re-validated. */
+  queryParams?: Record<string, QueryParamSpec>;
+  category: EndpointCategory;
+  /** One-line description surfaced in the tool description and error text. */
+  summary: string;
+}
+
+interface CatalogEntry {
+  pathTemplate: string;
+  pathParam?: PathParamSpec;
+  queryParams?: Record<string, QueryParamSpec>;
+  category: EndpointCategory;
+  summary: string;
+}
+
+/** Path param helpers (one typed segment each). */
+const ADDRESS_PARAM: PathParamSpec = { key: 'address', type: 'n3Address' };
+const HASH_PARAM: PathParamSpec = { key: 'hash', type: 'scriptHash' };
+const TXID_PARAM: PathParamSpec = { key: 'txid', type: 'txid' };
+const BLOCK_PARAM: PathParamSpec = { key: 'blockRef', type: 'blockRef' };
+
+/** Fresh pagination allowlist (a new object per endpoint so nothing is aliased/shared once frozen). */
+function pagination(): Record<string, QueryParamSpec> {
+  return { limit: { type: 'int' }, offset: { type: 'int' } };
+}
+
+/**
+ * Source-of-truth entries. Kept as a plain record so the guard test can assert catalog
+ * invariants (deep freeze, placeholder/pathParam consistency) before the frozen Map is
+ * built. Keyed by the stable, LLM-facing endpoint key (e.g. 'get_address_summary').
+ */
+const ENTRIES: Record<string, CatalogEntry> = {
+  // ── Chain-wide summary / lists (no path param) ────────────────────────────
+  network_summary: {
+    pathTemplate: 'summary',
+    category: 'summary',
+    summary: 'Chain-wide summary (height, totals, headline stats) for the network.',
+  },
+  list_blocks: {
+    pathTemplate: 'blocks',
+    category: 'block',
+    summary: 'Recent Neo N3 blocks, newest first.',
+    queryParams: pagination(),
+  },
+  list_transactions: {
+    pathTemplate: 'transactions',
+    category: 'transaction',
+    summary: 'Recent Neo N3 transactions, newest first.',
+    queryParams: pagination(),
+  },
+  list_tokens: {
+    pathTemplate: 'tokens',
+    category: 'token',
+    summary: 'Token registry (NEP-17 / NEP-11), newest/most-active first.',
+    queryParams: pagination(),
+  },
+  list_contracts: {
+    pathTemplate: 'contracts',
+    category: 'contract',
+    summary: 'Deployed contract registry, newest first.',
+    queryParams: pagination(),
+  },
+  list_candidate_voters: {
+    pathTemplate: 'governance/voters',
+    category: 'governance',
+    summary: 'Governance voters, optionally filtered to a single candidate public key.',
+    queryParams: { ...pagination(), candidate: { type: 'string' } },
+  },
+  analytics_daily: {
+    pathTemplate: 'analytics/daily',
+    category: 'analytics',
+    summary: 'Daily on-chain analytics series (transactions, addresses, transfers per day).',
+    queryParams: pagination(),
+  },
+  search: {
+    pathTemplate: 'search',
+    category: 'search',
+    summary: 'Global search across blocks, transactions, addresses, tokens, and contracts.',
+    queryParams: { q: { type: 'string', required: true } },
+  },
+
+  // ── By block {blockRef} ───────────────────────────────────────────────────
+  get_block: {
+    pathTemplate: 'blocks/{blockRef}',
+    pathParam: BLOCK_PARAM,
+    category: 'block',
+    summary: 'A single block by height (index) or block hash.',
+  },
+
+  // ── By transaction {txid} ─────────────────────────────────────────────────
+  get_transaction: {
+    pathTemplate: 'transactions/{txid}',
+    pathParam: TXID_PARAM,
+    category: 'transaction',
+    summary: 'A single transaction (signers, witnesses, system/network fees) by its hash.',
+  },
+
+  // ── By account {address} ──────────────────────────────────────────────────
+  get_address_summary: {
+    pathTemplate: 'accounts/{address}',
+    pathParam: ADDRESS_PARAM,
+    category: 'address',
+    summary: 'Account summary (first/last seen, balances count, activity) for an address.',
+  },
+  list_address_balances: {
+    pathTemplate: 'accounts/{address}/balances',
+    pathParam: ADDRESS_PARAM,
+    category: 'address',
+    summary: 'Current token balances held by an address.',
+    queryParams: pagination(),
+  },
+  list_address_transactions: {
+    pathTemplate: 'accounts/{address}/transactions',
+    pathParam: ADDRESS_PARAM,
+    category: 'address',
+    summary: 'Transactions involving an address, newest first.',
+    queryParams: pagination(),
+  },
+  list_address_transfers: {
+    pathTemplate: 'accounts/{address}/transfers',
+    pathParam: ADDRESS_PARAM,
+    category: 'address',
+    summary: 'Token transfers involving an address, newest first.',
+    queryParams: pagination(),
+  },
+
+  // ── By token {hash} ───────────────────────────────────────────────────────
+  get_token: {
+    pathTemplate: 'tokens/{hash}',
+    pathParam: HASH_PARAM,
+    category: 'token',
+    summary: 'Token metadata (symbol, decimals, supply, holder count) by script hash.',
+  },
+  list_token_holders: {
+    pathTemplate: 'tokens/{hash}/holders',
+    pathParam: HASH_PARAM,
+    category: 'token',
+    summary: 'Holders (and balances) of a token contract by script hash.',
+    queryParams: pagination(),
+  },
+
+  // ── By contract {hash} ────────────────────────────────────────────────────
+  get_contract: {
+    pathTemplate: 'contracts/{hash}',
+    pathParam: HASH_PARAM,
+    category: 'contract',
+    summary: 'Contract manifest / metadata by script hash.',
+  },
+  list_contract_calls: {
+    pathTemplate: 'contracts/{hash}/calls',
+    pathParam: HASH_PARAM,
+    category: 'contract',
+    summary: 'Recent invocations of a contract by script hash, newest first.',
+    queryParams: pagination(),
+  },
+  list_contract_notifications: {
+    pathTemplate: 'contracts/{hash}/notifications',
+    pathParam: HASH_PARAM,
+    category: 'contract',
+    summary: 'Recent notifications (events) emitted by a contract, newest first.',
+    queryParams: pagination(),
+  },
+};
+
+/** Recursively freeze a descriptor and its nested param specs. */
+function freezeDescriptor(entry: CatalogEntry): EndpointDescriptor {
+  if (entry.pathParam) {
+    Object.freeze(entry.pathParam);
+  }
+  if (entry.queryParams) {
+    for (const spec of Object.values(entry.queryParams)) {
+      if (spec.values) {
+        Object.freeze(spec.values);
+      }
+      Object.freeze(spec);
+    }
+    Object.freeze(entry.queryParams);
+  }
+  return Object.freeze(entry);
+}
+
+/**
+ * The immutable n3index REST endpoint registry. Keyed by the stable, LLM-facing endpoint key
+ * (e.g. 'get_address_summary'); the value carries the fixed path template and its typed param
+ * allowlist. Deeply frozen so no code path can mutate the security policy at runtime.
+ */
+export const N3_REST_CATALOG: ReadonlyMap<string, EndpointDescriptor> = Object.freeze(
+  new Map<string, EndpointDescriptor>(
+    Object.entries(ENTRIES).map(([key, entry]) => [key, freezeDescriptor(entry)]),
+  ),
+);

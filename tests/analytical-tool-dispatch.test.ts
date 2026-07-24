@@ -9,7 +9,12 @@ const emptyNeoServices = new Map<NeoNetwork, NeoService>();
 const emptyContractServices = new Map<NeoNetwork, ContractService>();
 
 const VALID_N3_ADDRESS = 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr';
+const VALID_N3_TOKEN_HASH = '0xd2a4cff31913016155e38e474a2c06d08be276cf';
 const VALID_EVM_ADDRESS = '0x1111111111111111111111111111111111111111';
+
+// The live n3index REST base. The N3 analytical tools are mainnet-only (no network field on
+// the newer ones; resolveIndexerNetwork defaults to mainnet), so every request targets this.
+const N3_MAINNET = 'https://api.n3index.dev/mainnet';
 
 function jsonResponse(body: unknown, init: { ok?: boolean; status?: number } = {}) {
   return {
@@ -27,9 +32,13 @@ describe('callTool analytical dispatch', () => {
     global.fetch = realFetch;
   });
 
-  test('routes n3_get_address to the indexer JSON-RPC client with a validated address', async () => {
+  // ── Neo N3 analytical tools → live n3index REST API ──────────────────────────
+  // Each vetted endpoint KEY + typed params is rebuilt into a concrete REST path by the guard
+  // and GET-fetched at `${N3_MAINNET}/<path>` — never a model-authored path (SSRF/traversal-proof).
+
+  test('routes n3_get_address to the n3index REST API with a validated base58 address', async () => {
     const fetchMock = jest.fn().mockResolvedValue(
-      jsonResponse({ jsonrpc: '2.0', id: 1, result: { address: VALID_N3_ADDRESS } }),
+      jsonResponse({ data: { address: VALID_N3_ADDRESS } }),
     );
     global.fetch = fetchMock as any;
 
@@ -42,16 +51,14 @@ describe('callTool analytical dispatch', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe('https://api.n3index.dev/mainnet');
-    const sent = JSON.parse(init.body as string);
-    expect(sent.method).toBe('GetAddressByAddress');
-    expect(sent.params).toEqual({ Address: VALID_N3_ADDRESS });
-    expect(response.result).toEqual({ address: VALID_N3_ADDRESS });
+    expect(url).toBe(`${N3_MAINNET}/accounts/${VALID_N3_ADDRESS}`);
+    expect(init.method).toBe('GET');
+    expect(response.result).toEqual({ data: { address: VALID_N3_ADDRESS } });
   });
 
-  test('query_indexer routes a vetted method to mainnet with mapped PascalCase params', async () => {
+  test('query_indexer routes a vetted endpoint to the mainnet REST path with a substituted segment', async () => {
     const fetchMock = jest.fn().mockResolvedValue(
-      jsonResponse({ jsonrpc: '2.0', id: 1, result: { address: VALID_N3_ADDRESS } }),
+      jsonResponse({ data: { address: VALID_N3_ADDRESS } }),
     );
     global.fetch = fetchMock as any;
 
@@ -65,20 +72,50 @@ describe('callTool analytical dispatch', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0];
     // Mainnet only: no network param on the tool, resolveIndexerNetwork -> mainnet.
-    expect(url).toBe('https://api.n3index.dev/mainnet');
-    const sent = JSON.parse(init.body as string);
-    expect(sent.method).toBe('GetAddressByAddress');
-    expect(sent.params).toEqual({ Address: VALID_N3_ADDRESS });
-    expect(response.result).toEqual({ address: VALID_N3_ADDRESS });
+    expect(url).toBe(`${N3_MAINNET}/accounts/${VALID_N3_ADDRESS}`);
+    expect(init.method).toBe('GET');
+    expect(response.result).toEqual({ data: { address: VALID_N3_ADDRESS } });
   });
 
-  test('query_indexer rejects a non-allowlisted method with NO network call', async () => {
+  test('query_indexer surfaces a 404 as an empty/not-found result (result: null), not an error', async () => {
+    const fetchMock = jest.fn().mockResolvedValue(jsonResponse(null, { status: 404 }));
+    global.fetch = fetchMock as any;
+
+    const response = await callTool(
+      'query_indexer',
+      { method: 'get_transaction', params: { txid: `0x${'ab'.repeat(32)}` } },
+      emptyNeoServices,
+      emptyContractServices,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe(`${N3_MAINNET}/transactions/0x${'ab'.repeat(32)}`);
+    expect(response.error).toBeUndefined();
+    expect(response.result).toBeNull();
+  });
+
+  test('query_indexer rejects a non-allowlisted endpoint with NO network call', async () => {
     const fetchMock = jest.fn();
     global.fetch = fetchMock as any;
 
     const response = await callTool(
       'query_indexer',
       { method: 'DropDatabase', params: {} },
+      emptyNeoServices,
+      emptyContractServices,
+    );
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(response.error).toBeDefined();
+  });
+
+  test('query_indexer rejects a legacy JSON-RPC method name (backend is now REST) with NO network call', async () => {
+    const fetchMock = jest.fn();
+    global.fetch = fetchMock as any;
+
+    const response = await callTool(
+      'query_indexer',
+      { method: 'GetAddressByAddress', params: { address: VALID_N3_ADDRESS } },
       emptyNeoServices,
       emptyContractServices,
     );
@@ -102,28 +139,55 @@ describe('callTool analytical dispatch', () => {
     expect(response.error).toBeDefined();
   });
 
-  test('query_indexer clamps pagination on a curated wrapper method', async () => {
-    const fetchMock = jest.fn().mockResolvedValue(jsonResponse({ jsonrpc: '2.0', id: 1, result: [] }));
+  test('query_indexer rejects a path-traversal path param (SSRF-proof) with NO network call', async () => {
+    const fetchMock = jest.fn();
     global.fetch = fetchMock as any;
 
-    await callTool(
+    const response = await callTool(
       'query_indexer',
-      {
-        method: 'list_asset_holders',
-        params: { contractHash: '0xd2a4cff31913016155e38e474a2c06d08be276cf', limit: 5000 },
-      },
+      { method: 'get_address_summary', params: { address: '../../../../etc/passwd' } },
       emptyNeoServices,
       emptyContractServices,
     );
 
-    const sent = JSON.parse(fetchMock.mock.calls[0][1].body as string);
-    expect(sent.method).toBe('GetAssetHoldersListByContractHash');
-    expect(sent.params.Limit).toBe(100);
-    expect(sent.params.ContractHash).toBe('0xd2a4cff31913016155e38e474a2c06d08be276cf');
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(response.error).toBeDefined();
   });
 
-  test('clamps n3 pagination Limit to 100', async () => {
-    const fetchMock = jest.fn().mockResolvedValue(jsonResponse({ jsonrpc: '2.0', id: 1, result: [] }));
+  test('query_indexer rejects a raw REST path passed as the endpoint key with NO network call', async () => {
+    const fetchMock = jest.fn();
+    global.fetch = fetchMock as any;
+
+    const response = await callTool(
+      'query_indexer',
+      { method: 'accounts/{address}', params: { address: VALID_N3_ADDRESS } },
+      emptyNeoServices,
+      emptyContractServices,
+    );
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(response.error).toBeDefined();
+  });
+
+  test('query_indexer clamps pagination limit to 100 on a paginated endpoint', async () => {
+    const fetchMock = jest.fn().mockResolvedValue(jsonResponse({ data: [] }));
+    global.fetch = fetchMock as any;
+
+    await callTool(
+      'query_indexer',
+      { method: 'list_token_holders', params: { hash: VALID_N3_TOKEN_HASH, limit: 5000 } },
+      emptyNeoServices,
+      emptyContractServices,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      `${N3_MAINNET}/tokens/${VALID_N3_TOKEN_HASH}/holders?limit=100`,
+    );
+  });
+
+  test('n3_list_transactions_by_address maps skip->offset and clamps limit to 100', async () => {
+    const fetchMock = jest.fn().mockResolvedValue(jsonResponse({ data: [] }));
     global.fetch = fetchMock as any;
 
     await callTool(
@@ -133,10 +197,75 @@ describe('callTool analytical dispatch', () => {
       emptyContractServices,
     );
 
-    const sent = JSON.parse(fetchMock.mock.calls[0][1].body as string);
-    expect(sent.method).toBe('GetRawTransactionByAddress');
-    expect(sent.params).toEqual({ Address: VALID_N3_ADDRESS, Limit: 100, Skip: 10 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      `${N3_MAINNET}/accounts/${VALID_N3_ADDRESS}/transactions?limit=100&offset=10`,
+    );
   });
+
+  test('n3_get_block resolves a block height into the {blockRef} segment', async () => {
+    const fetchMock = jest.fn().mockResolvedValue(jsonResponse({ data: { index: 42 } }));
+    global.fetch = fetchMock as any;
+
+    await callTool(
+      'n3_get_block',
+      { block: '42' },
+      emptyNeoServices,
+      emptyContractServices,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe(`${N3_MAINNET}/blocks/42`);
+  });
+
+  test('n3_list_nep17_transfers_by_contract is repointed to the token holders REST endpoint', async () => {
+    const fetchMock = jest.fn().mockResolvedValue(jsonResponse({ data: [] }));
+    global.fetch = fetchMock as any;
+
+    await callTool(
+      'n3_list_nep17_transfers_by_contract',
+      { contractHash: VALID_N3_TOKEN_HASH, limit: 20 },
+      emptyNeoServices,
+      emptyContractServices,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      `${N3_MAINNET}/tokens/${VALID_N3_TOKEN_HASH}/holders?limit=20`,
+    );
+  });
+
+  test('n3_contract_by_name is repointed to the global search REST endpoint (q=name)', async () => {
+    const fetchMock = jest.fn().mockResolvedValue(jsonResponse({ data: { hits: [] } }));
+    global.fetch = fetchMock as any;
+
+    await callTool(
+      'n3_contract_by_name',
+      { name: 'flamingo' },
+      emptyNeoServices,
+      emptyContractServices,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe(`${N3_MAINNET}/search?q=flamingo`);
+  });
+
+  test('returns a validation error (no fetch) for an invalid N3 address', async () => {
+    const fetchMock = jest.fn();
+    global.fetch = fetchMock as any;
+
+    const response = await callTool(
+      'n3_get_address',
+      { address: 'not-a-neo-address' },
+      emptyNeoServices,
+      emptyContractServices,
+    );
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(response.error).toBeDefined();
+  });
+
+  // ── Neo X (Blockscout v2) tools — unchanged, must keep working ───────────────
 
   test('routes x_get_address to Blockscout with a normalized 0x address', async () => {
     const fetchMock = jest.fn().mockResolvedValue(jsonResponse({ hash: VALID_EVM_ADDRESS }));
@@ -221,11 +350,12 @@ describe('callTool analytical dispatch', () => {
   });
 
   // --- Phase 2 gated tools: query_indexer_find + x_graphql ---
-  // Both must (a) refuse with a clear "disabled" error and NO network call while their
-  // feature flag is off (the default), (b) POST a guard-sanitized request when the flag is
-  // stubbed on, and (c) reject an injection attempt (a $where operator / a mutation) with
-  // NO network call even when enabled. The flags are reset after each case so a stubbed
-  // enable can never leak into another test.
+  // query_indexer_find still targets the (currently-unreachable) neo3fura JSON-RPC gateway and
+  // stays GATED; x_graphql targets the Blockscout GraphQL endpoint and stays GATED. Both must
+  // (a) refuse with a clear "disabled" error and NO network call while their feature flag is off
+  // (the default), (b) POST a guard-sanitized request when the flag is stubbed on, and (c) reject
+  // an injection attempt (a $where operator / a mutation) with NO network call even when enabled.
+  // The flags are reset after each case so a stubbed enable can never leak into another test.
   describe('gated Phase 2 tools', () => {
     afterEach(() => {
       config.n3index.findEnabled = false;
@@ -264,7 +394,7 @@ describe('callTool analytical dispatch', () => {
       expect((response.error as { message: string }).message).toMatch(/disabled/i);
     });
 
-    test('query_indexer_find (enabled) POSTs the sanitized PascalCase Filter to mainnet', async () => {
+    test('query_indexer_find (enabled) POSTs the sanitized PascalCase Filter to the JSON-RPC gateway', async () => {
       config.n3index.findEnabled = true;
       const fetchMock = jest.fn().mockResolvedValue(
         jsonResponse({ jsonrpc: '2.0', id: 1, result: [] }),
@@ -285,8 +415,9 @@ describe('callTool analytical dispatch', () => {
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
       const [url, init] = fetchMock.mock.calls[0];
-      // Mainnet only: query_indexer_find exposes no network field.
-      expect(url).toBe('https://api.n3index.dev/mainnet');
+      // Mainnet only: query_indexer_find exposes no network field. It still uses the JSON-RPC
+      // transport (the neo3fura gateway), which is why it stays gated off by default.
+      expect(url).toBe(N3_MAINNET);
       const sent = JSON.parse(init.body as string);
       expect(sent.method).toBe('GetTransactionList');
       // The whole { Filter, Sort, Limit, Skip } request is rebuilt by the guard: only the

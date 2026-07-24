@@ -8,7 +8,7 @@ import { WalletService } from './services/wallet-service';
 import { ContractService } from './contracts/contract-service';
 import { callTool } from './handlers/tool-handler';
 import { setupResourceHandlers } from './handlers/resource-handler';
-import { METHOD_CATALOG } from './indexer/indexer-catalog';
+import { N3_REST_CATALOG } from './indexer/n3-rest-catalog';
 import { X_ENDPOINT_CATALOG } from './indexer/blockscout-catalog';
 import { COLLECTION_CATALOG } from './indexer/indexer-collections';
 import {
@@ -17,8 +17,8 @@ import {
   MAX_GRAPHQL_FIELDS,
 } from './indexer/blockscout-graphql-guard';
 
-/** Vetted indexer method keys advertised in the query_indexer tool description. */
-const INDEXER_METHOD_NAMES: readonly string[] = [...METHOD_CATALOG.keys()];
+/** Vetted n3index REST endpoint keys advertised in the query_indexer tool description. */
+const N3_REST_ENDPOINT_NAMES: readonly string[] = [...N3_REST_CATALOG.keys()];
 /** Vetted Neo X Blockscout endpoint keys advertised in the x_query tool description. */
 const X_ENDPOINT_NAMES: readonly string[] = [...X_ENDPOINT_CATALOG.keys()];
 /** Vetted indexer collection keys advertised in the query_indexer_find tool description. */
@@ -764,12 +764,26 @@ export class NeoN3McpServer {
       },
     );
 
-    registerAnalyticalTool(
+    // n3_application_log has no n3index REST endpoint (the deployed indexer exposes no
+    // per-transaction application log). It is therefore backed by the working, NeoService-based
+    // get_application_log path (live RPC) — a thin alias that keeps the tool name + schema
+    // stable. It initializes services (like the other NeoService-delegated tools) before
+    // dispatch, then delegates to callTool('get_application_log', ...).
+    registerDelegatedTool(
       'n3_application_log',
-      'Neo N3 analytics: get the indexed application log (executions + notifications) for a transaction hash.',
+      'Neo N3 analytics: get the application log (executions + notifications) for a transaction hash.',
       {
         txid: z.string().describe('Transaction hash (64 hex chars, optional 0x prefix)'),
         ...n3NetworkField,
+      },
+      async (args) => {
+        try {
+          await this.ensureServicesInitialized();
+          const result = await callTool('get_application_log', args, this.neoServices, this.contractServices);
+          return this.formatDelegatedToolResponse(result);
+        } catch (error: unknown) {
+          return this.createErrorResponse(error);
+        }
       },
     );
 
@@ -783,25 +797,30 @@ export class NeoN3McpServer {
       },
     );
 
-    // --- Generic catalog-driven indexer query (task #39, Neo N3 MAINNET only) ---
-    // query_indexer answers arbitrary on-chain questions by dispatching a VETTED,
-    // read-only indexer method with typed params. It never forwards a client-authored
-    // Mongo object (injection-proof by construction). No network field: mainnet only.
+    // --- Generic catalog-driven indexer query (n3index REST, Neo N3 MAINNET only) ---
+    // query_indexer answers arbitrary on-chain questions by dispatching a VETTED, read-only
+    // n3index REST endpoint with typed params. The concrete path is built by substituting only
+    // a validated typed segment (address/scriptHash/txid/blockRef) into a fixed template, and
+    // only allowlisted query keys (limit/offset/candidate/q) are forwarded — no model-authored
+    // path or query string ever reaches the network (SSRF/traversal-proof). `method` is a REST
+    // endpoint KEY (not a JSON-RPC method); the { method, params } interface is unchanged. No
+    // network field: mainnet only.
     registerAnalyticalTool(
       'query_indexer',
-      'Neo N3 (mainnet) generic indexer query. Answer an on-chain question by choosing a '
-        + 'vetted read-only method and passing its typed params. Categories: address/account, '
-        + 'blocks, transactions, transfers (NEP-17/NEP-11), assets/tokens, contracts, governance '
-        + '(candidates/committee/votes), and chain state. Example: '
-        + '{"method":"list_asset_holders","params":{"contractHash":"0x...","limit":20}}. '
-        + 'Unknown methods and unknown params are rejected; limit/skip are capped.',
+      'Neo N3 (mainnet) generic indexer query over the live n3index REST API. Answer an on-chain '
+        + 'question by choosing a vetted read-only endpoint and passing its typed params. '
+        + 'Categories: chain summary, blocks, transactions, accounts/addresses, tokens, contracts, '
+        + 'governance (candidate voters), analytics, and search. Example: '
+        + '{"method":"list_token_holders","params":{"hash":"0x...","limit":20}}. '
+        + 'Unknown endpoints, unknown params, and unsafe path values are rejected before any '
+        + 'network call; limit/offset are capped.',
       {
         method: z.string().describe(
-          'One of the vetted indexer methods: ' + INDEXER_METHOD_NAMES.join(', '),
+          'One of the vetted n3index REST endpoints: ' + N3_REST_ENDPOINT_NAMES.join(', '),
         ),
         params: z.record(z.unknown()).optional().describe(
-          'Typed params for the chosen method (e.g. { address }, { contractHash, limit }). '
-            + 'Only the method\'s declared params are accepted.',
+          'Typed params for the chosen endpoint (e.g. { address }, { hash, limit }, '
+            + '{ blockRef }, { q }). Only the endpoint\'s declared params are accepted.',
         ),
       },
     );
@@ -853,8 +872,10 @@ export class NeoN3McpServer {
     // collection's indexed-field allowlist (injection/DoS-proof). No network field: mainnet only.
     registerAnalyticalTool(
       'query_indexer_find',
-      'Neo N3 (mainnet) constrained-filter indexer query. GATED OFF by default — enable with '
-        + 'N3INDEX_FIND_ENABLED; while disabled it returns a "disabled" error. Author a small, '
+      'Neo N3 (mainnet) constrained-filter indexer query. Targets the neo3fura JSON-RPC gateway, '
+        + 'which is currently UNREACHABLE, so this tool stays GATED OFF by default — enable with '
+        + 'N3INDEX_FIND_ENABLED; while disabled it returns a "disabled" error. (The other N3 '
+        + 'analytical tools use the live n3index REST API instead.) Author a small, '
         + 'vetted filter over ONE allowlisted collection: ' + INDEXER_COLLECTION_NAMES.join(', ')
         + '. Only that collection\'s indexed fields may be filtered/sorted; a value is a scalar '
         + '(equality), { $in: [...] }, a range ($gt/$gte/$lt/$lte), or { $exists }. Unknown '

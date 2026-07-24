@@ -24,11 +24,12 @@ import {
 import { handleError, createSuccessResponse } from '../utils/error-handler';
 import { chargeSessionRateLimit } from '../utils/session-rate-limit';
 import { callIndexerRpc } from '../contracts/indexer-rpc-client';
-import { assertAllowedMethod, buildMethodParams } from '../indexer/indexer-query-guard';
 import { assertAllowedEndpoint, buildEndpointRequest } from '../indexer/blockscout-query-guard';
 import { assertAllowedCollection, validateFind } from '../indexer/indexer-find-guard';
 import { validateGraphqlQuery } from '../indexer/blockscout-graphql-guard';
 import { fetchBlockscout, resolveNeoxNetwork, NeoxNetwork } from '../contracts/blockscout-client';
+import { fetchN3Index } from '../contracts/n3index-rest-client';
+import { assertAllowedN3Endpoint, buildN3EndpointRequest } from '../indexer/n3-rest-guard';
 import { postBlockscoutGraphql } from '../contracts/blockscout-graphql-client';
 import { ValidationError } from '../utils/errors';
 import {
@@ -357,30 +358,14 @@ async function handleGetContractStatus(input: Record<string, unknown>, contractS
   }
 }
 
-// --- Analytical indexer (neo3fura) read tools ---
-
-const DEFAULT_PAGE_LIMIT = 20;
-const MAX_PAGE_LIMIT = 100;
-
-/** Clamp an optional Limit param to [1, MAX_PAGE_LIMIT], defaulting to DEFAULT_PAGE_LIMIT. */
-function resolveLimit(value: unknown): number {
-  if (value === undefined || value === null) {
-    return DEFAULT_PAGE_LIMIT;
-  }
-  const parsed = validateInteger(value as string | number);
-  if (parsed < 1) {
-    return 1;
-  }
-  return Math.min(parsed, MAX_PAGE_LIMIT);
-}
-
-/** Resolve an optional Skip param to a non-negative integer, defaulting to 0. */
-function resolveSkip(value: unknown): number {
-  if (value === undefined || value === null) {
-    return 0;
-  }
-  return validateInteger(value as string | number);
-}
+// --- Analytical indexer (n3index REST) read tools ---
+//
+// The DEPLOYED n3index indexer (api.n3index.dev) is a REST API returning { data, meta }
+// envelopes at GET `${base}/${network}/<path>` — NOT the neo3fura JSON-RPC gateway (which is
+// currently unreachable). These tools therefore mirror the working Neo X x_query layer:
+// resolveIndexerNetwork (mainnet-default) -> assertAllowedN3Endpoint -> buildN3EndpointRequest
+// -> fetchN3Index. The model supplies an endpoint KEY + typed params; a raw path is NEVER
+// constructed, so the request is SSRF/traversal-proof by construction.
 
 /** Resolve and validate the N3 network for an indexer read (defaults to mainnet). */
 function resolveIndexerNetwork(input: Record<string, unknown>): NeoNetwork {
@@ -390,131 +375,102 @@ function resolveIndexerNetwork(input: Record<string, unknown>): NeoNetwork {
   return NeoNetwork.MAINNET;
 }
 
-async function handleN3GetAddress(input: Record<string, unknown>): Promise<unknown> {
+/**
+ * Shared REST dispatch for the N3 analytical tools. Resolves the (mainnet-default) network,
+ * asserts `endpoint` is a vetted N3_REST_CATALOG key, rebuilds { path, params } field-by-field
+ * from the descriptor (the caller-supplied typed segment is validated + substituted and unknown
+ * keys are rejected — SSRF/traversal-proof), then GETs the live REST resource. This is the same
+ * three-step shape as the Neo X x_query -> fetchBlockscout wiring. `fetchN3Index` returns the raw
+ * { data, meta } envelope, or null on 404 (surfaced as an empty/not-found success result).
+ */
+async function dispatchN3RestEndpoint(
+  input: Record<string, unknown>,
+  endpoint: string,
+  params: Record<string, unknown>,
+): Promise<unknown> {
   try {
     const network = resolveIndexerNetwork(input);
-    const address = validateAddress(input.address as string);
-    const result = await callIndexerRpc(network, 'GetAddressByAddress', { Address: address });
+    const desc = assertAllowedN3Endpoint(endpoint);
+    const { path, params: query } = buildN3EndpointRequest(desc, params);
+    const result = await fetchN3Index(network, path, query);
     return createSuccessResponse(result);
   } catch (error) {
     return handleError(error);
   }
+}
+
+async function handleN3GetAddress(input: Record<string, unknown>): Promise<unknown> {
+  return dispatchN3RestEndpoint(input, 'get_address_summary', { address: input.address });
 }
 
 async function handleN3ListTransactionsByAddress(input: Record<string, unknown>): Promise<unknown> {
-  try {
-    const network = resolveIndexerNetwork(input);
-    const address = validateAddress(input.address as string);
-    const result = await callIndexerRpc(network, 'GetRawTransactionByAddress', {
-      Address: address,
-      Limit: resolveLimit(input.limit),
-      Skip: resolveSkip(input.skip),
-    });
-    return createSuccessResponse(result);
-  } catch (error) {
-    return handleError(error);
-  }
+  return dispatchN3RestEndpoint(input, 'list_address_transactions', {
+    address: input.address,
+    limit: input.limit,
+    offset: input.skip,
+  });
 }
 
 async function handleN3ListTransfersByAddress(input: Record<string, unknown>): Promise<unknown> {
-  try {
-    const network = resolveIndexerNetwork(input);
-    const address = validateAddress(input.address as string);
-    const result = await callIndexerRpc(network, 'GetNep17TransferByAddress', {
-      Address: address,
-      Limit: resolveLimit(input.limit),
-      Skip: resolveSkip(input.skip),
-    });
-    return createSuccessResponse(result);
-  } catch (error) {
-    return handleError(error);
-  }
+  return dispatchN3RestEndpoint(input, 'list_address_transfers', {
+    address: input.address,
+    limit: input.limit,
+    offset: input.skip,
+  });
 }
 
 async function handleN3AssetHolders(input: Record<string, unknown>): Promise<unknown> {
-  try {
-    const network = resolveIndexerNetwork(input);
-    const contractHash = validateScriptHash(input.contractHash as string);
-    const result = await callIndexerRpc(network, 'GetAssetHoldersListByContractHash', {
-      ContractHash: contractHash,
-      Limit: resolveLimit(input.limit),
-      Skip: resolveSkip(input.skip),
-    });
-    return createSuccessResponse(result);
-  } catch (error) {
-    return handleError(error);
-  }
+  return dispatchN3RestEndpoint(input, 'list_token_holders', {
+    hash: input.contractHash,
+    limit: input.limit,
+    offset: input.skip,
+  });
 }
 
 async function handleN3AssetsHeldByAddress(input: Record<string, unknown>): Promise<unknown> {
-  try {
-    const network = resolveIndexerNetwork(input);
-    const address = validateAddress(input.address as string);
-    const result = await callIndexerRpc(network, 'GetAssetsHeldByAddress', {
-      Address: address,
-      Limit: resolveLimit(input.limit),
-      Skip: resolveSkip(input.skip),
-    });
-    return createSuccessResponse(result);
-  } catch (error) {
-    return handleError(error);
-  }
-}
-
-async function handleN3ApplicationLog(input: Record<string, unknown>): Promise<unknown> {
-  try {
-    const network = resolveIndexerNetwork(input);
-    const txid = validateHash(input.txid as string).toLowerCase();
-    const result = await callIndexerRpc(network, 'GetApplicationLogByTransactionHash', {
-      TransactionHash: txid,
-    });
-    return createSuccessResponse(result);
-  } catch (error) {
-    return handleError(error);
-  }
+  return dispatchN3RestEndpoint(input, 'list_address_balances', {
+    address: input.address,
+    limit: input.limit,
+    offset: input.skip,
+  });
 }
 
 async function handleN3ContractByName(input: Record<string, unknown>): Promise<unknown> {
-  try {
-    const network = resolveIndexerNetwork(input);
-    const rawName = typeof input.name === 'string' ? sanitizeString(input.name) : '';
-    if (!rawName) {
-      throw new ValidationError('Contract name must be a non-empty string');
-    }
-    const result = await callIndexerRpc(network, 'GetContractListByName', {
-      Name: rawName,
-      Limit: resolveLimit(input.limit),
-      Skip: resolveSkip(input.skip),
-    });
-    return createSuccessResponse(result);
-  } catch (error) {
-    return handleError(error);
-  }
+  // n3index has no by-name contract search endpoint; the global `search` returns typed hits
+  // (including contract matches), so this repoints to `search` (q = name). Live data; the
+  // tool name/schema are unchanged (its limit/skip do not apply to search and are ignored).
+  return dispatchN3RestEndpoint(input, 'search', { q: input.name });
 }
 
 // --- Generic catalog-driven indexer query (Phase 1: no client-authored Mongo) ---
 
 /**
- * Generic vetted-method indexer query. `input.method` MUST be a member of the
- * immutable METHOD_CATALOG (assertAllowedMethod); the upstream params object is
- * rebuilt field-by-field from the catalog spec by buildMethodParams, so no caller
- * key is spread through to the upstream and NO client-authored Mongo filter is
- * constructed on this path — injection-proof by construction (T1/T2/T18).
+ * Generic vetted-endpoint indexer query over the live n3index REST API. `input.method` MUST be
+ * a member of the immutable N3_REST_CATALOG (assertAllowedN3Endpoint) — it is now a REST
+ * endpoint KEY (e.g. "get_address_summary"), NOT a JSON-RPC method — and the concrete request
+ * path + query params are rebuilt field-by-field from the descriptor by buildN3EndpointRequest,
+ * so no caller string is ever spread into the path and no unknown query key is forwarded —
+ * SSRF/path-traversal-proof by construction (fetchN3Index also blocks redirects and caps the
+ * body at 4 MiB).
  *
- * MAINNET ONLY: the tool schema exposes no network field, so resolveIndexerNetwork
- * resolves to mainnet.
+ * The tool input interface stays { method, params } so the frontend/query-builder contract is
+ * unchanged.
+ *
+ * MAINNET ONLY: the tool schema exposes no network field, so resolveIndexerNetwork -> mainnet.
  */
 async function handleQueryIndexer(input: Record<string, unknown>): Promise<unknown> {
   try {
     const network = resolveIndexerNetwork(input);
-    const desc = assertAllowedMethod(typeof input.method === 'string' ? input.method : '');
-    // Prefer an explicit `params` object; fall back to the flat input (the guard
-    // rejects any key outside the method's schema, so the fallback is safe).
+    const desc = assertAllowedN3Endpoint(typeof input.method === 'string' ? input.method : '');
+    // Prefer an explicit `params` object; otherwise fall back to the flat input MINUS the
+    // `method` discriminator. The N3 REST guard tolerates network/endpoint/params but not
+    // `method`, so it must be stripped before the strict per-endpoint whitelist runs.
+    const { method: _method, ...flat } = input;
     const source = (input.params && typeof input.params === 'object' && !Array.isArray(input.params))
       ? (input.params as Record<string, unknown>)
-      : input;
-    const params = buildMethodParams(desc, source);
-    const result = await callIndexerRpc(network, desc.rpcMethod, params);
+      : flat;
+    const { path, params } = buildN3EndpointRequest(desc, source);
+    const result = await fetchN3Index(network, path, params);
     return createSuccessResponse(result);
   } catch (error) {
     return handleError(error);
@@ -557,46 +513,47 @@ async function handleQueryIndexerFind(input: Record<string, unknown>): Promise<u
   }
 }
 
-// --- Curated thin wrappers (ergonomic NL over the generic catalog path) ---
-// Each forwards a fixed catalog method via handleQueryIndexer, inheriting the exact
-// same allowlist / param-whitelist / mainnet guarantees.
+// --- Curated thin wrappers (ergonomic NL over the generic REST catalog path) ---
+// Each forwards a fixed REST catalog endpoint via dispatchN3RestEndpoint, inheriting the exact
+// same allowlist / param-whitelist / mainnet guarantees. The tool `skip` param maps to the REST
+// `offset` query key.
 
 async function handleN3ListBlocks(input: Record<string, unknown>): Promise<unknown> {
-  return handleQueryIndexer({ method: 'list_blocks', params: { limit: input.limit, skip: input.skip } });
+  return dispatchN3RestEndpoint(input, 'list_blocks', { limit: input.limit, offset: input.skip });
 }
 
 async function handleN3ListTransactions(input: Record<string, unknown>): Promise<unknown> {
-  return handleQueryIndexer({ method: 'list_transactions', params: { limit: input.limit, skip: input.skip } });
+  return dispatchN3RestEndpoint(input, 'list_transactions', { limit: input.limit, offset: input.skip });
 }
 
 async function handleN3GetTransactionIndexer(input: Record<string, unknown>): Promise<unknown> {
-  return handleQueryIndexer({
-    method: 'get_transaction',
-    params: { transactionHash: input.transactionHash ?? input.txid ?? input.hash },
+  return dispatchN3RestEndpoint(input, 'get_transaction', {
+    txid: input.transactionHash ?? input.txid ?? input.hash,
   });
 }
 
 async function handleN3GetBlockIndexer(input: Record<string, unknown>): Promise<unknown> {
-  const ref = input.blockHash ?? input.blockHeight ?? input.hashOrHeight ?? input.block;
-  const isHeight = typeof ref === 'number'
-    || (typeof ref === 'string' && /^[0-9]+$/.test(ref.trim()));
-  return isHeight
-    ? handleQueryIndexer({ method: 'get_block_by_height', params: { blockHeight: ref } })
-    : handleQueryIndexer({ method: 'get_block_by_hash', params: { blockHash: ref } });
+  // The REST get_block endpoint accepts either a height (integer) or a 0x block hash in the one
+  // {blockRef} segment (validateN3BlockRef in the guard resolves both), so no branch is needed.
+  return dispatchN3RestEndpoint(input, 'get_block', {
+    blockRef: input.block ?? input.blockHash ?? input.blockHeight ?? input.hashOrHeight,
+  });
 }
 
 async function handleN3ListNep17TransfersByContract(input: Record<string, unknown>): Promise<unknown> {
-  return handleQueryIndexer({
-    method: 'list_nep17_transfers_by_contract',
-    params: { contractHash: input.contractHash, limit: input.limit, skip: input.skip },
+  // n3index has NO transfers-by-token-contract endpoint; repointed to the token's holders
+  // (list_token_holders), the closest live per-contract resource. Tool name/schema unchanged.
+  return dispatchN3RestEndpoint(input, 'list_token_holders', {
+    hash: input.contractHash,
+    limit: input.limit,
+    offset: input.skip,
   });
 }
 
 async function handleN3ListAssets(input: Record<string, unknown>): Promise<unknown> {
-  return handleQueryIndexer({
-    method: 'list_assets',
-    params: { standard: input.standard, limit: input.limit, skip: input.skip },
-  });
+  // REST list_tokens has no `standard` filter; the schema still accepts `standard` (contract
+  // unchanged) but it is not forwarded. Pagination is honoured.
+  return dispatchN3RestEndpoint(input, 'list_tokens', { limit: input.limit, offset: input.skip });
 }
 
 // --- Neo X (Blockscout v2) read tools ---
@@ -770,7 +727,8 @@ const N3_INDEXER_TOOLS = new Set([
   'n3_list_transfers_by_address',
   'n3_asset_holders',
   'n3_assets_held_by_address',
-  'n3_application_log',
+  // n3_application_log has NO n3index REST endpoint; it is registered in index.ts as a thin
+  // alias to the working NeoService-backed get_application_log tool, so it never reaches here.
   'n3_contract_by_name',
   // Generic catalog-driven query + curated wrappers (task #39, mainnet-only).
   'query_indexer',
@@ -811,8 +769,6 @@ async function dispatchAnalyticalTool(name: string, input: Record<string, unknow
       return await handleN3AssetHolders(input) as Record<string, unknown>;
     case 'n3_assets_held_by_address':
       return await handleN3AssetsHeldByAddress(input) as Record<string, unknown>;
-    case 'n3_application_log':
-      return await handleN3ApplicationLog(input) as Record<string, unknown>;
     case 'n3_contract_by_name':
       return await handleN3ContractByName(input) as Record<string, unknown>;
     case 'query_indexer':
