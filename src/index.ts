@@ -8,6 +8,10 @@ import { WalletService } from './services/wallet-service';
 import { ContractService } from './contracts/contract-service';
 import { callTool } from './handlers/tool-handler';
 import { setupResourceHandlers } from './handlers/resource-handler';
+import { METHOD_CATALOG } from './indexer/indexer-catalog';
+
+/** Vetted indexer method keys advertised in the query_indexer tool description. */
+const INDEXER_METHOD_NAMES: readonly string[] = [...METHOD_CATALOG.keys()];
 import { config, NetworkMode, validateConfig } from './config';
 import { SERVER_NAME, SERVER_VERSION } from './version';
 import { logger } from './utils/logger';
@@ -758,6 +762,67 @@ export class NeoN3McpServer {
         name: z.string().describe('Contract name or substring to search for'),
         ...n3PaginationFields,
         ...n3NetworkField,
+      },
+    );
+
+    // --- Generic catalog-driven indexer query (task #39, Neo N3 MAINNET only) ---
+    // query_indexer answers arbitrary on-chain questions by dispatching a VETTED,
+    // read-only indexer method with typed params. It never forwards a client-authored
+    // Mongo object (injection-proof by construction). No network field: mainnet only.
+    registerAnalyticalTool(
+      'query_indexer',
+      'Neo N3 (mainnet) generic indexer query. Answer an on-chain question by choosing a '
+        + 'vetted read-only method and passing its typed params. Categories: address/account, '
+        + 'blocks, transactions, transfers (NEP-17/NEP-11), assets/tokens, contracts, governance '
+        + '(candidates/committee/votes), and chain state. Example: '
+        + '{"method":"list_asset_holders","params":{"contractHash":"0x...","limit":20}}. '
+        + 'Unknown methods and unknown params are rejected; limit/skip are capped.',
+      {
+        method: z.string().describe(
+          'One of the vetted indexer methods: ' + INDEXER_METHOD_NAMES.join(', '),
+        ),
+        params: z.record(z.unknown()).optional().describe(
+          'Typed params for the chosen method (e.g. { address }, { contractHash, limit }). '
+            + 'Only the method\'s declared params are accepted.',
+        ),
+      },
+    );
+
+    // Curated ergonomic wrappers over query_indexer (fixed method, friendly params).
+    registerAnalyticalTool(
+      'n3_list_blocks',
+      'Neo N3 (mainnet) analytics: list recent blocks, newest first (paginated).',
+      { ...n3PaginationFields },
+    );
+    registerAnalyticalTool(
+      'n3_list_transactions',
+      'Neo N3 (mainnet) analytics: list recent transactions, newest first (paginated).',
+      { ...n3PaginationFields },
+    );
+    registerAnalyticalTool(
+      'n3_get_transaction',
+      'Neo N3 (mainnet) analytics: get a single transaction by its hash.',
+      { transactionHash: z.string().describe('Transaction hash (0x + 64 hex)') },
+    );
+    registerAnalyticalTool(
+      'n3_get_block',
+      'Neo N3 (mainnet) analytics: get a full block by its hash or height.',
+      { block: z.string().describe('Block hash (0x + 64 hex) or block height (integer)') },
+    );
+    registerAnalyticalTool(
+      'n3_list_nep17_transfers_by_contract',
+      'Neo N3 (mainnet) analytics: list NEP-17 transfers for a token contract (paginated).',
+      {
+        contractHash: z.string().describe('Token contract script hash (0x + 40 hex)'),
+        ...n3PaginationFields,
+      },
+    );
+    registerAnalyticalTool(
+      'n3_list_assets',
+      'Neo N3 (mainnet) analytics: list the token/asset registry, optionally by standard.',
+      {
+        standard: z.enum(['NEP17', 'NEP11']).optional().describe('Filter by token standard'),
+        ...n3PaginationFields,
       },
     );
 
