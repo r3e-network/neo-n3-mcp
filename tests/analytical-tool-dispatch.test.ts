@@ -169,4 +169,53 @@ describe('callTool analytical dispatch', () => {
     expect(fetchMock).not.toHaveBeenCalled();
     expect(response.error).toBeDefined();
   });
+
+  test('x_query routes a vetted endpoint to Blockscout with a substituted typed path segment', async () => {
+    const fetchMock = jest.fn().mockResolvedValue(jsonResponse({ hash: VALID_EVM_ADDRESS }));
+    global.fetch = fetchMock as any;
+
+    const response = await callTool(
+      'x_query',
+      { endpoint: 'get_address', params: { address: VALID_EVM_ADDRESS } },
+      emptyNeoServices,
+      emptyContractServices,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // Mainnet only: x_query exposes no network field, resolveNeoxNetworkParam -> neox-mainnet.
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      `https://xexplorer.neo.org/api/v2/addresses/${VALID_EVM_ADDRESS}`,
+    );
+    expect(response.result).toEqual({ hash: VALID_EVM_ADDRESS });
+  });
+
+  test('x_query rejects a non-allowlisted endpoint with NO network call', async () => {
+    const fetchMock = jest.fn();
+    global.fetch = fetchMock as any;
+
+    const response = await callTool(
+      'x_query',
+      { endpoint: 'bogus', params: {} },
+      emptyNeoServices,
+      emptyContractServices,
+    );
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(response.error).toBeDefined();
+  });
+
+  test('x_query rejects a path-traversal path param (SSRF-proof) with NO network call', async () => {
+    const fetchMock = jest.fn();
+    global.fetch = fetchMock as any;
+
+    const response = await callTool(
+      'x_query',
+      { endpoint: 'get_address', params: { address: '../../../../etc/passwd' } },
+      emptyNeoServices,
+      emptyContractServices,
+    );
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(response.error).toBeDefined();
+  });
 });

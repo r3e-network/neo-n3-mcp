@@ -25,6 +25,7 @@ import { handleError, createSuccessResponse } from '../utils/error-handler';
 import { rateLimiter } from '../utils/rate-limiter';
 import { callIndexerRpc } from '../contracts/indexer-rpc-client';
 import { assertAllowedMethod, buildMethodParams } from '../indexer/indexer-query-guard';
+import { assertAllowedEndpoint, buildEndpointRequest } from '../indexer/blockscout-query-guard';
 import { fetchBlockscout, resolveNeoxNetwork, NeoxNetwork } from '../contracts/blockscout-client';
 import { ValidationError } from '../utils/errors';
 import {
@@ -700,6 +701,36 @@ async function handleXTransaction(input: Record<string, unknown>): Promise<unkno
   }
 }
 
+// --- Generic catalog-driven Neo X query (Blockscout v2, mainnet-only) ---
+
+/**
+ * Generic vetted-endpoint Neo X query. `input.endpoint` MUST be a member of the
+ * immutable X_ENDPOINT_CATALOG (assertAllowedEndpoint); the concrete request path and
+ * query params are rebuilt field-by-field from the endpoint descriptor by
+ * buildEndpointRequest, so no caller string is ever spread into the path and no unknown
+ * query key is forwarded — SSRF/path-traversal-proof by construction (fetchBlockscout
+ * also blocks redirects and caps the body at 4 MiB).
+ *
+ * MAINNET ONLY: the tool schema exposes no network field, so resolveNeoxNetworkParam
+ * resolves to neox-mainnet.
+ */
+async function handleXQuery(input: Record<string, unknown>): Promise<unknown> {
+  try {
+    const network = resolveNeoxNetworkParam(input);
+    const desc = assertAllowedEndpoint(typeof input.endpoint === 'string' ? input.endpoint : '');
+    // Prefer an explicit `params` object; fall back to the flat input (the guard rejects
+    // any key outside the endpoint's allowlist, and tolerates endpoint/params/network).
+    const source = (input.params && typeof input.params === 'object' && !Array.isArray(input.params))
+      ? (input.params as Record<string, unknown>)
+      : input;
+    const { path, params } = buildEndpointRequest(desc, source);
+    const result = await fetchBlockscout(network, path, params);
+    return createSuccessResponse(result);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
 const N3_INDEXER_TOOLS = new Set([
   'n3_get_address',
   'n3_list_transactions_by_address',
@@ -727,6 +758,8 @@ const NEOX_TOOLS = new Set([
   'x_token_holders',
   'x_block',
   'x_transaction',
+  // Generic catalog-driven Blockscout query (mainnet-only).
+  'x_query',
 ]);
 
 async function dispatchAnalyticalTool(name: string, input: Record<string, unknown>): Promise<Record<string, unknown>> {
@@ -775,6 +808,8 @@ async function dispatchAnalyticalTool(name: string, input: Record<string, unknow
       return await handleXBlock(input) as Record<string, unknown>;
     case 'x_transaction':
       return await handleXTransaction(input) as Record<string, unknown>;
+    case 'x_query':
+      return await handleXQuery(input) as Record<string, unknown>;
     default:
       throw new McpError(ErrorCode.InvalidParams, `Tool ${name} not found.`);
   }

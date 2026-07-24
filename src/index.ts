@@ -9,9 +9,12 @@ import { ContractService } from './contracts/contract-service';
 import { callTool } from './handlers/tool-handler';
 import { setupResourceHandlers } from './handlers/resource-handler';
 import { METHOD_CATALOG } from './indexer/indexer-catalog';
+import { X_ENDPOINT_CATALOG } from './indexer/blockscout-catalog';
 
 /** Vetted indexer method keys advertised in the query_indexer tool description. */
 const INDEXER_METHOD_NAMES: readonly string[] = [...METHOD_CATALOG.keys()];
+/** Vetted Neo X Blockscout endpoint keys advertised in the x_query tool description. */
+const X_ENDPOINT_NAMES: readonly string[] = [...X_ENDPOINT_CATALOG.keys()];
 import { config, NetworkMode, validateConfig } from './config';
 import { SERVER_NAME, SERVER_VERSION } from './version';
 import { logger } from './utils/logger';
@@ -900,6 +903,33 @@ export class NeoN3McpServer {
       {
         hash: z.string().describe('Neo X 0x transaction hash (64 hex chars)'),
         ...neoxNetworkField,
+      },
+    );
+
+    // --- Generic catalog-driven Neo X query (Blockscout v2, Neo X MAINNET only) ---
+    // x_query answers arbitrary Neo X on-chain questions by dispatching a VETTED,
+    // read-only Blockscout v2 REST endpoint with typed params. The concrete path is
+    // built by substituting only a validated typed segment (evmAddress/evmHash/blockRef)
+    // into a fixed template, and only allowlisted query keys are forwarded — no
+    // model-authored path or query string ever reaches the network (SSRF/traversal-proof
+    // by construction). No network field: Neo X mainnet only.
+    registerAnalyticalTool(
+      'x_query',
+      'Neo X (mainnet) generic explorer query over Blockscout. Answer an on-chain question '
+        + 'by choosing a vetted read-only endpoint and passing its typed params. Categories: '
+        + 'chain-wide lists (blocks/transactions/token-transfers/tokens/contracts/search/stats), '
+        + 'address, token, transaction, block, and smart contract. Example: '
+        + '{"endpoint":"get_address","params":{"address":"0x..."}}. Unknown endpoints, unknown '
+        + 'params, and unsafe path values are rejected before any network call.',
+      {
+        endpoint: z.string().describe(
+          'One of the vetted Neo X Blockscout endpoints: ' + X_ENDPOINT_NAMES.join(', '),
+        ),
+        params: z.record(z.unknown()).optional().describe(
+          'Typed params for the chosen endpoint (e.g. { address }, { hash }, { blockRef }, '
+            + 'plus any allowlisted query keys such as { q } or { filter }). Only the '
+            + 'endpoint\'s declared params are accepted.',
+        ),
       },
     );
 

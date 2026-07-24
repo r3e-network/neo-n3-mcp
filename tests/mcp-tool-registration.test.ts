@@ -58,6 +58,7 @@ const READ_ONLY_TOOL_NAMES = [
   'x_get_address',
   'x_list_token_transfers',
   'x_list_transactions_by_address',
+  'x_query',
   'x_search',
   'x_simulate_call',
   'x_token_holders',
