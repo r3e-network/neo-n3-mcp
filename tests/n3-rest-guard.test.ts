@@ -344,7 +344,7 @@ describe('N3_REST_CATALOG — invariants', () => {
   });
 
   it('reports the expected verified endpoint count', () => {
-    expect(N3_REST_CATALOG.size).toBe(19);
+    expect(N3_REST_CATALOG.size).toBe(25);
   });
 
   it('exposes exactly the vetted semantic endpoint keys', () => {
@@ -361,12 +361,18 @@ describe('N3_REST_CATALOG — invariants', () => {
         'list_address_transfers',
         'list_blocks',
         'list_candidate_voters',
+        'list_address_labels',
         'list_contract_calls',
+        'list_contract_events',
+        'list_contract_labels',
         'list_contract_notifications',
         'list_contracts',
+        'list_nns_domains',
         'list_token_holders',
         'list_tokens',
         'list_transactions',
+        'list_validators',
+        'network_status',
         'network_summary',
         'search',
       ].sort(),

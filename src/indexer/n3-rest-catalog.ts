@@ -141,8 +141,23 @@ const ENTRIES: Record<string, CatalogEntry> = {
   list_candidate_voters: {
     pathTemplate: 'governance/voters',
     category: 'governance',
-    summary: 'Governance voters, optionally filtered to a single candidate public key.',
-    queryParams: { ...pagination(), candidate: { type: 'string' } },
+    // `candidate` is REQUIRED upstream: the indexer answers
+    // GET /{network}/governance/voters with 400 {"error":"candidate public key is
+    // required"} when it is absent (verified live). Declaring it required lets the
+    // guard reject the call with actionable guidance instead of spending a round
+    // trip on a guaranteed 400.
+    summary:
+      'Governance voters for one candidate, by that candidate\'s 33-byte compressed public key (66 hex chars).',
+    queryParams: { ...pagination(), candidate: { type: 'string', required: true } },
+  },
+  list_validators: {
+    pathTemplate: 'metadata/validators',
+    category: 'governance',
+    // Pairs with list_candidate_voters: this is where the candidate public keys
+    // that endpoint requires come from.
+    summary:
+      'Consensus validators and governance candidates with their public keys and addresses. Use a public key from here as the `candidate` for list_candidate_voters.',
+    queryParams: { limit: { type: 'int' } },
   },
   analytics_daily: {
     pathTemplate: 'analytics/daily',
@@ -155,6 +170,34 @@ const ENTRIES: Record<string, CatalogEntry> = {
     category: 'search',
     summary: 'Global search across blocks, transactions, addresses, tokens, and contracts.',
     queryParams: { q: { type: 'string', required: true } },
+  },
+  network_status: {
+    pathTemplate: 'status',
+    category: 'summary',
+    summary:
+      'Indexer health: whether it is ready, the last indexed block vs the chain tip, and the lag between them.',
+  },
+
+  // ── Naming / metadata (answers "what is this thing called?") ──────────────
+  list_nns_domains: {
+    pathTemplate: 'nns/domains',
+    category: 'address',
+    summary: 'Registered NNS domain names and the addresses they resolve to.',
+    queryParams: pagination(),
+  },
+  list_address_labels: {
+    pathTemplate: 'metadata/addresses',
+    category: 'address',
+    summary:
+      'Known-address labels (exchange, project, and service names). Optionally filter to specific addresses with a comma-separated `addresses` list.',
+    queryParams: { limit: { type: 'int' }, addresses: { type: 'string' } },
+  },
+  list_contract_labels: {
+    pathTemplate: 'metadata/contracts',
+    category: 'contract',
+    summary:
+      'Known-contract labels (display name, symbol, logo, source). Optionally filter to specific script hashes with a comma-separated `hashes` list.',
+    queryParams: { limit: { type: 'int' }, hashes: { type: 'string' } },
   },
 
   // ── By block {blockRef} ───────────────────────────────────────────────────
@@ -237,6 +280,20 @@ const ENTRIES: Record<string, CatalogEntry> = {
     category: 'contract',
     summary: 'Recent notifications (events) emitted by a contract, newest first.',
     queryParams: pagination(),
+  },
+  list_contract_events: {
+    pathTemplate: 'contracts/{hash}/events',
+    pathParam: HASH_PARAM,
+    category: 'contract',
+    // Richer than list_contract_notifications: decoded events, and filterable.
+    summary:
+      'Decoded events emitted by a contract, filterable by event name, transaction hash, or block height.',
+    queryParams: {
+      ...pagination(),
+      event_name: { type: 'string' },
+      tx_hash: { type: 'string' },
+      block_height: { type: 'int' },
+    },
   },
 };
 
