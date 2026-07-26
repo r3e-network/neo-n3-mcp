@@ -6,9 +6,24 @@ import path from 'path';
 describe('published package surface', () => {
   const repoRoot = path.resolve(__dirname, '..');
   const packageJsonPath = path.join(repoRoot, 'package.json');
+  const tsc = path.join(repoRoot, 'node_modules', '.bin', 'tsc');
+
+  // dist/ is shared: the MCP suites spawn `node dist/index.js` out of it. This suite
+  // must therefore never delete or rewrite a populated dist — doing so made sibling
+  // suites load a half-written tree ("Cannot find module './services/neo-service'").
+  // Build only when it is missing, and never through `npm run build`, whose `clean`
+  // step removes the directory first.
+  beforeAll(() => {
+    if (fs.existsSync(path.join(repoRoot, 'dist', 'index.js'))) {
+      return;
+    }
+    execFileSync(tsc, [], { cwd: repoRoot, encoding: 'utf8' });
+  }, 120_000);
 
   test('excludes internal planning and operational docs from npm tarball', () => {
-    const packJson = execFileSync('npm', ['pack', '--json', '--dry-run'], {
+    // --ignore-scripts keeps the prepack lifecycle (and its clean+rebuild) out of a
+    // read-only assertion about the tarball's file list.
+    const packJson = execFileSync('npm', ['pack', '--json', '--dry-run', '--ignore-scripts'], {
       cwd: repoRoot,
       encoding: 'utf8'
     });
@@ -58,33 +73,43 @@ describe('published package surface', () => {
   });
 
   test('does not leak undeclared transitive SDK imports through declarations', () => {
-    execFileSync('npm', ['run', 'build'], {
-      cwd: repoRoot,
-      encoding: 'utf8',
-    });
-    const declarationFiles: string[] = [];
-    const visit = (directory: string) => {
-      for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-        const entryPath = path.join(directory, entry.name);
-        if (entry.isDirectory()) {
-          visit(entryPath);
-        } else if (entry.name.endsWith('.d.ts')) {
-          declarationFiles.push(entryPath);
+    // Emit into a scratch directory rather than the shared dist/: a rebuild in place races
+    // the MCP suites that spawn `node dist/index.js`.
+    const declarationRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neo-n3-mcp-decls-'));
+    try {
+      execFileSync(tsc, ['--outDir', declarationRoot], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+      });
+      const declarationFiles: string[] = [];
+      const visit = (directory: string) => {
+        for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+          const entryPath = path.join(directory, entry.name);
+          if (entry.isDirectory()) {
+            visit(entryPath);
+          } else if (entry.name.endsWith('.d.ts')) {
+            declarationFiles.push(entryPath);
+          }
         }
-      }
-    };
-    visit(path.join(repoRoot, 'dist'));
+      };
+      visit(declarationRoot);
+      expect(declarationFiles.length).toBeGreaterThan(0);
 
-    const leakedFiles = declarationFiles.filter((file) =>
-      fs.readFileSync(file, 'utf8').includes('@cityofzion/neon-core')
-    );
-    expect(leakedFiles.map((file) => path.relative(repoRoot, file))).toEqual([]);
-  });
+      const leakedFiles = declarationFiles.filter((file) =>
+        fs.readFileSync(file, 'utf8').includes('@cityofzion/neon-core')
+      );
+      expect(leakedFiles.map((file) => path.relative(declarationRoot, file))).toEqual([]);
+    } finally {
+      fs.rmSync(declarationRoot, { recursive: true, force: true });
+    }
+  }, 120_000);
 
   test('typechecks a strict consumer against the packed package', () => {
     const consumerRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neo-n3-mcp-consumer-'));
     try {
-      execFileSync('npm', ['pack', '--silent', '--pack-destination', consumerRoot], {
+      // --ignore-scripts: prepack would clean and rebuild dist/ underneath the MCP suites.
+      // beforeAll has already guaranteed dist/ is populated for the tarball.
+      execFileSync('npm', ['pack', '--silent', '--ignore-scripts', '--pack-destination', consumerRoot], {
         cwd: repoRoot,
         encoding: 'utf8',
       });
@@ -168,4 +193,54 @@ describe('published package surface', () => {
     expect(packageJson.scripts['test:mcp:live']).toContain('mcp-comprehensive.test.ts');
     expect(packageJson.scripts['test:mcp:stress']).toContain('mcp-stress.test.ts');
   });
+
+  test('excludes networked MCP suites from the default jest run', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const jestConfig = require('../jest.config.js') as { testPathIgnorePatterns?: string[] };
+
+    expect(jestConfig.testPathIgnorePatterns).toContain('<rootDir>/tests/mcp-');
+    expect(jestConfig.testPathIgnorePatterns).toContain('/node_modules/');
+  });
+
+  test('resolves each MCP script to exactly its intended suites', () => {
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')) as Record<string, any>;
+    const jestBin = path.join(repoRoot, 'node_modules', '.bin', 'jest');
+
+    // jest applies testPathIgnorePatterns even to explicitly named test files, so every
+    // script running tests/mcp-* must override the list from jest.config.js. That flag is a
+    // yargs array option: placed before the file arguments it swallows them as further
+    // ignore patterns, silently inverting the selection. Resolve the real list rather than
+    // matching on the script text.
+    const expectedSuites: Record<string, string[]> = {
+      'test:mcp': [
+        'mcp-build-smoke',
+        'mcp-lifecycle',
+        'mcp-tool-registration',
+        'mcp-http-transport',
+      ],
+      'test:mcp:smoke': ['mcp-build-smoke'],
+      'test:mcp:live': [
+        'mcp-comprehensive',
+        'mcp-latest-features',
+        'mcp-protocol-compliance',
+      ],
+      'test:mcp:stress': ['mcp-stress'],
+    };
+
+    for (const [scriptName, suites] of Object.entries(expectedSuites)) {
+      const args = (packageJson.scripts[scriptName] as string)
+        .split(' ')
+        .slice(1)
+        .map((token) => token.replace(/'/g, ''));
+      const listed = execFileSync(jestBin, [...args, '--listTests'], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+      })
+        .split('\n')
+        .filter((line) => line.trim().length > 0)
+        .map((line) => path.basename(line.trim()).replace(/\.test\.ts$/, ''));
+
+      expect(listed.sort()).toEqual([...suites].sort());
+    }
+  }, 180_000);
 });

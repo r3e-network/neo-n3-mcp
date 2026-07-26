@@ -17,9 +17,9 @@
     "start": "node dist/index.js",
     "test": "npm run test:unit",
     "test:unit": "jest --testMatch='**/tests/**/*.test.ts' --testPathIgnorePatterns='tests/mcp-'",
-    "test:mcp": "jest --runInBand tests/mcp-build-smoke.test.ts tests/mcp-lifecycle.test.ts tests/mcp-tool-registration.test.ts tests/mcp-http-transport.test.ts",
-    "test:mcp:live": "jest --runInBand tests/mcp-comprehensive.test.ts tests/mcp-latest-features.test.ts tests/mcp-protocol-compliance.test.ts",
-    "test:mcp:stress": "jest --runInBand tests/mcp-stress.test.ts",
+    "test:mcp": "jest --runInBand tests/mcp-build-smoke.test.ts tests/mcp-lifecycle.test.ts tests/mcp-tool-registration.test.ts tests/mcp-http-transport.test.ts --testPathIgnorePatterns='/node_modules/'",
+    "test:mcp:live": "jest --runInBand tests/mcp-comprehensive.test.ts tests/mcp-latest-features.test.ts tests/mcp-protocol-compliance.test.ts --testPathIgnorePatterns='/node_modules/'",
+    "test:mcp:stress": "jest --runInBand tests/mcp-stress.test.ts --testPathIgnorePatterns='/node_modules/'",
     "test:integration": "node tests/mcp-integration-test.js",
     "test:all": "npm run test:unit && npm run build && npm run test:mcp",
     "test:coverage": "jest --coverage --testPathIgnorePatterns='tests/mcp-'",
@@ -47,7 +47,7 @@
     "dev:http": "ts-node src/http.ts",
     "start:mcp-http": "node dist/mcp-http.js",
     "dev:mcp-http": "ts-node src/mcp-http.ts",
-    "test:mcp:smoke": "jest --runInBand tests/mcp-build-smoke.test.ts"
+    "test:mcp:smoke": "jest --runInBand tests/mcp-build-smoke.test.ts --testPathIgnorePatterns='/node_modules/'"
   },
   "bin": {
     "neo-n3-mcp": "dist/index.js"
