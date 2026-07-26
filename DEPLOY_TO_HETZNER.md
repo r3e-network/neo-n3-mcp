@@ -61,17 +61,31 @@ MCP_HTTP_BEARER=<secret>
 
 ## 3. 发布新版本
 
+**顺序不能改。** `npm run build` 的 `clean` 会**先删掉 `dist/`**，然后才用 `tsc` 编译，而
+`typescript` 是 `devDependencies`。生产上 `node_modules` 是裁剪过的（只有生产依赖），所以
+一旦跳过完整安装直接 build，就是先把正在跑的代码删掉、再以 `tsc: not found` 失败，服务只能对着
+空的 `dist/` 反复重启；把同样两条命令再跑一遍当回滚也一样失败——缺的是编译器，不是版本。
+
 ```bash
 ssh root@95.216.148.60
 cd /opt/neo-mcp
-git pull --ff-only
-npm ci --omit=dev=false
+git fetch origin --prune
+git reset --hard origin/master     # /opt/neo-mcp 是部署检出，不保留本地改动
+
+npm ci                             # 完整安装，dev 依赖提供 tsc
 npm run build                      # clean + tsc，会重建 dist/
+test -f dist/mcp-http.js           # 失败就停在这里：旧的 dist/ 已经没了
+npm prune --omit=dev               # 回到只有生产依赖；dist/ 不受影响
+
 sudo systemctl restart neo-mcp
 journalctl -u neo-mcp -n 50 --no-pager
 ```
 
 `Restart=always` 会掩盖启动期崩溃（服务看着在跑，其实在反复重启），所以 `journalctl` 这一步不能省。
+
+不要写 `npm ci --omit=dev=false`：`--omit` 只接受 `dev|optional|peer`，npm 会报
+`invalid config` 并忽略整个参数，看起来能用纯属巧合；而有人把它「修正」成 `--omit=dev`，
+下一次 build 就会把生产打挂。要装全量就写裸的 `npm ci`。
 
 ## 4. nginx 与证书
 
