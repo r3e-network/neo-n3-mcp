@@ -2,6 +2,9 @@ FROM node:22-alpine@sha256:4d64b49e6c891c8fc821007cb1cdc6c0db7773110ac2c34bf2e69
 
 WORKDIR /app
 COPY package.json package-lock.json tsconfig.json ./
+# tools/ holds the CommonJS-callable brace-expansion wrapper referenced by a
+# `file:` devDependency, so it has to exist before npm ci links it.
+COPY tools ./tools
 RUN npm ci
 COPY src ./src
 RUN npm run build

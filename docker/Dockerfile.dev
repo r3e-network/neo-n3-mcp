@@ -10,6 +10,9 @@ ENV NODE_ENV=development \
     LOG_CONSOLE=true
 
 COPY package.json package-lock.json tsconfig.json jest.config.js ./
+# tools/ holds the CommonJS-callable brace-expansion wrapper referenced by a
+# `file:` devDependency, so it has to exist before npm ci links it.
+COPY tools ./tools
 RUN npm ci
 COPY src ./src
 COPY tests ./tests

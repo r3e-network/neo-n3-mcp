@@ -1,0 +1,14 @@
+{
+  "name": "@r3e/brace-expansion-cjs",
+  "version": "1.0.0",
+  "description": "CommonJS-callable wrapper around the patched brace-expansion 5.x",
+  "main": "index.js",
+  "license": "MIT",
+  "private": true,
+  "files": [
+    "index.js"
+  ],
+  "dependencies": {
+    "brace-expansion-upstream": "npm:brace-expansion@5.0.8"
+  }
+}
