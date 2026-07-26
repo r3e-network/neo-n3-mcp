@@ -226,6 +226,33 @@ sudo chmod 0600 /etc/neo-mcp.env
 sudo systemctl enable --now neo-mcp
 ```
 
+## Upgrading an Existing Deployment
+
+`npm run build` runs `clean` first, which deletes `dist/`, and then compiles with `tsc`
+from `devDependencies`. A host that installed with `npm ci --omit=dev` — the normal steady
+state for a production checkout — has no `tsc`, so the clean succeeds, the compile fails
+with `tsc: not found`, and the service restarts onto an empty `dist/`. Running the same two
+commands again as a rollback fails the same way, because the missing compiler is the cause
+rather than the revision. Install the full tree, build, then prune back:
+
+```bash
+cd /opt/neo-mcp
+git fetch origin --prune
+git reset --hard origin/master
+
+npm ci                    # full install: devDependencies supply tsc
+npm run build             # clean + compile
+test -f dist/mcp-http.js  # stop here if this fails; the old build is already gone
+npm prune --omit=dev      # production-only tree again; dist/ is untouched
+
+sudo systemctl restart neo-mcp
+journalctl -u neo-mcp -n 50 --no-pager
+```
+
+Build somewhere else and copy `dist/` in if a host must never hold devDependencies.
+Container deployments avoid the problem entirely, since each image is built from a clean
+context and rolled back by pinning the previous digest.
+
 ## Health and Operations
 
 `GET /live` is the unauthenticated process liveness route used by the container health check. It does not call Neo RPC.
