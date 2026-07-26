@@ -19,6 +19,9 @@ logo/
 # Scripts
 scripts/
 
+# Local build-time tooling (dev-only dependency wrappers)
+tools/
+
 # Data directories
 wallets/
 neo-data/

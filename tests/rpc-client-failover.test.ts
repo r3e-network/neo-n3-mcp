@@ -132,25 +132,39 @@ describe('createRpcClient endpoint failover', () => {
     // plain Error would silently downgrade that handling.
     // A 50ms budget is spent by the first stall, so the second endpoint is not asked:
     // the caller's deadline outranks the wish to try one more node.
-    const fetchMock = jest.fn().mockImplementation((_url: string, init: any) =>
-      new Promise((_resolve, reject) => {
-        init.signal.addEventListener('abort', () => {
-          const error: any = new Error('aborted');
-          error.name = 'AbortError';
-          reject(error);
-        });
-      }));
-    const client = createRpcClient(
-      ['https://a.example:443', 'https://b.example:443'],
-      50,
-      fetchMock as any,
-    );
+    //
+    // Fake timers, because the budget arithmetic has to be exact. On real timers a
+    // libuv timer can fire a whole millisecond before Date.now() agrees it is due, so
+    // the 50ms abort leaves 1ms of "remaining" budget and the second endpoint is asked
+    // after all — the suite then failed on the faster CI runner only.
+    jest.useFakeTimers();
+    try {
+      const fetchMock = jest.fn().mockImplementation((_url: string, init: any) =>
+        new Promise((_resolve, reject) => {
+          init.signal.addEventListener('abort', () => {
+            const error: any = new Error('aborted');
+            error.name = 'AbortError';
+            reject(error);
+          });
+        }));
+      const client = createRpcClient(
+        ['https://a.example:443', 'https://b.example:443'],
+        50,
+        fetchMock as any,
+      );
 
-    await expect(client.execute(versionQuery())).rejects.toMatchObject({
-      name: 'RpcDeadlineError',
-      message: expect.stringMatching(/1 of 2 Neo RPC endpoints tried within the 50ms budget/i),
-    });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+      const pending = client.execute(versionQuery());
+      const assertion = expect(pending).rejects.toMatchObject({
+        name: 'RpcDeadlineError',
+        message: expect.stringMatching(/1 of 2 Neo RPC endpoints tried within the 50ms budget/i),
+      });
+      await jest.advanceTimersByTimeAsync(51);
+      await assertion;
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   test('does not failover when a method is unsupported: callers have their own fallback', async () => {
