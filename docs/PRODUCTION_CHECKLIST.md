@@ -1,6 +1,6 @@
 # Production Checklist
 
-Use this checklist before deploying `@r3e/neo-n3-mcp` in MCP stdio or HTTP mode.
+Use this checklist before deploying `@r3e/neo-mcp` in MCP stdio or HTTP mode.
 
 ## Runtime and Build
 
@@ -89,8 +89,8 @@ Example process logging:
 ```bash
 LOG_LEVEL=info
 LOG_CONSOLE=false
-LOG_FILE=/var/log/neo-n3-mcp/server.log
-WALLETS_DIR=/var/lib/neo-n3-mcp/wallets
+LOG_FILE=/var/log/neo-mcp/server.log
+WALLETS_DIR=/var/lib/neo-mcp/wallets
 ```
 
 ## Container Deployment

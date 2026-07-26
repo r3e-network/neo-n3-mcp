@@ -10,7 +10,7 @@ const packageVersion = require('../package.json').version as string;
 /**
  * MCP Protocol Compliance Test Suite
  * 
- * Tests the Neo N3 MCP server against the latest protocol specification (2025-03-26)
+ * Tests the Neo MCP server against the latest protocol specification (2025-03-26)
  * Validates all MCP protocol methods, error handling, and compliance requirements.
  */
 
@@ -81,7 +81,7 @@ describe('MCP Protocol Compliance Tests', () => {
       const serverInfo = client.getServerVersion();
       
       expect(serverInfo).toBeDefined();
-      expect(serverInfo.name).toBe('neo-n3-mcp-server');
+      expect(serverInfo.name).toBe('neo-mcp-server');
       expect(serverInfo.version).toMatch(/^\d+\.\d+\.\d+$/);
       expect(serverInfo.version).toBe(packageVersion);
     });
@@ -134,7 +134,7 @@ describe('MCP Protocol Compliance Tests', () => {
     });
 
     test('should execute blockchain info tool correctly', async () => {
-      const response = await client.callTool({ name: 'get_blockchain_info', arguments: {} });
+      const response = await client.callTool({ name: 'get_chain_info', arguments: { chain: 'n3' } });
       
       expect(response).toBeDefined();
       expect(response.content).toBeDefined();
@@ -155,7 +155,7 @@ describe('MCP Protocol Compliance Tests', () => {
 
     test('should execute tools with parameters correctly', async () => {
       const testAddress = 'NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj';
-      const response = await client.callTool({ name: 'get_balance', arguments: { address: testAddress } });
+      const response = await client.callTool({ name: 'get_balance', arguments: { chain: 'n3', address: testAddress } });
       
       expect(response).toBeDefined();
       expect(response.content).toBeDefined();
@@ -167,7 +167,7 @@ describe('MCP Protocol Compliance Tests', () => {
     });
 
     test('should handle tool errors gracefully', async () => {
-      const response = await client.callTool({ name: 'get_balance', arguments: { address: 'invalid_address' } });
+      const response = await client.callTool({ name: 'get_balance', arguments: { chain: 'n3', address: 'invalid_address' } });
       expect(response.isError).toBe(true);
       expect(response.content).toBeDefined();
     });
@@ -293,17 +293,28 @@ describe('MCP Protocol Compliance Tests', () => {
     });
 
     test('should handle malformed tool arguments', async () => {
-      const response = await client.callTool({ name: 'get_balance', arguments: { invalid_param: 'test' } });
+      const response = await client.callTool({ name: 'get_balance', arguments: { chain: 'n3', invalid_param: 'test' } });
 
       expect(response.isError).toBe(true);
       expect(response.content?.[0]?.text).toContain('Invalid arguments');
     });
 
     test('should validate required parameters', async () => {
-      const response = await client.callTool({ name: 'get_balance', arguments: {} }); // Missing required 'address' parameter
+      // `chain` is supplied so the rejection is attributable to the missing address.
+      const response = await client.callTool({ name: 'get_balance', arguments: { chain: 'n3' } });
 
       expect(response.isError).toBe(true);
       expect(response.content?.[0]?.text).toContain('address');
+    });
+
+    test('should reject a dual-chain call that omits the chain selector', async () => {
+      const response = await client.callTool({
+        name: 'get_balance',
+        arguments: { address: 'NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj' },
+      });
+
+      expect(response.isError).toBe(true);
+      expect(response.content?.[0]?.text).toContain('chain');
     });
   });
 
@@ -340,7 +351,7 @@ describe('MCP Protocol Compliance Tests', () => {
 
   describe('Latest Protocol Features', () => {
     test('should support content types correctly', async () => {
-      const response = await client.callTool({ name: 'get_blockchain_info', arguments: {} });
+      const response = await client.callTool({ name: 'get_chain_info', arguments: { chain: 'n3' } });
       
       expect(response.content[0].type).toBe('text');
       expect(typeof response.content[0].text).toBe('string');
@@ -352,12 +363,12 @@ describe('MCP Protocol Compliance Tests', () => {
     test('should handle progress notifications if supported', async () => {
       // This tests if the server can handle progress reporting
       // For now, just ensure tools complete without progress errors
-      const response = await client.callTool({ name: 'get_blockchain_info', arguments: {} });
+      const response = await client.callTool({ name: 'get_chain_info', arguments: { chain: 'n3' } });
       expect(response).toBeDefined();
     });
 
     test('should support proper metadata in responses', async () => {
-      const response = await client.callTool({ name: 'get_blockchain_info', arguments: {} });
+      const response = await client.callTool({ name: 'get_chain_info', arguments: { chain: 'n3' } });
       
       // Validate response structure matches latest protocol
       expect(response.content).toBeDefined();
@@ -378,7 +389,7 @@ describe('MCP Protocol Compliance Tests', () => {
       const resources = await client.listResources();
       expect(resources.resources.length).toBeGreaterThan(0);
       
-      const blockchainInfo = await client.callTool({ name: 'get_blockchain_info', arguments: {} });
+      const blockchainInfo = await client.callTool({ name: 'get_chain_info', arguments: { chain: 'n3' } });
       const data = JSON.parse(blockchainInfo.content[0].text);
       expect(data.height).toBeGreaterThan(0);
       
@@ -393,11 +404,11 @@ describe('MCP Protocol Compliance Tests', () => {
       // chain starts from an address supplied by the caller instead.
       const address = 'NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj';
 
-      const balance = await client.callTool({ name: 'get_balance', arguments: { address } });
+      const balance = await client.callTool({ name: 'get_balance', arguments: { chain: 'n3', address } });
       const balanceData = JSON.parse(balance.content[0].text);
       expect(balanceData.address).toBe(address);
 
-      const networkInfo = await client.callTool({ name: 'get_blockchain_info', arguments: {} });
+      const networkInfo = await client.callTool({ name: 'get_chain_info', arguments: { chain: 'n3' } });
       const networkData = JSON.parse(networkInfo.content[0].text);
       expect(networkData.network).toBeDefined();
     });

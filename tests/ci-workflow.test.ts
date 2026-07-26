@@ -64,7 +64,7 @@ function runReleaseGate(
   try {
     fs.writeFileSync(
       path.join(directory, 'package.json'),
-      JSON.stringify({ name: '@r3e/neo-n3-mcp', version })
+      JSON.stringify({ name: '@r3e/neo-mcp', version })
     );
     const result = spawnSync('bash', ['-euo', 'pipefail', '-c', extractReleaseGateScript(workflow)], {
       cwd: directory,
@@ -135,7 +135,7 @@ describe('CI workflow', () => {
     const workflow = fs.readFileSync(workflowPath, 'utf8');
     const dockerJob = getJobBlock(workflow, 'docker');
 
-    expect(dockerJob).toContain('NEO_MCP_IMAGE_REPOSITORY: r3enetwork/neo-n3-mcp');
+    expect(dockerJob).toContain('NEO_MCP_IMAGE_REPOSITORY: r3enetwork/neo-mcp');
     expect(dockerJob).toContain(
       '[[ ! "$NEO_MCP_IMAGE_DIGEST" =~ ^[0-9a-f]{64}$ ]]'
     );
@@ -178,7 +178,7 @@ describe('CI workflow', () => {
     const result = runReleaseGate(workflow, version as string, tag as string, prerelease as boolean);
 
     expect(result).toMatchObject({ status: 0, stderr: '' });
-    expect(result.output).toContain('package-name=@r3e/neo-n3-mcp');
+    expect(result.output).toContain('package-name=@r3e/neo-mcp');
     expect(result.output).toContain(`version=${version}`);
     expect(result.output).toContain(`is-prerelease=${prerelease}`);
     expect(result.output).toContain(`npm-dist-tag=${npmTag}`);
@@ -278,7 +278,7 @@ describe('CI workflow', () => {
     expect(dockerPublish).not.toContain('type=raw,value=latest');
     expect(dockerPublish).not.toContain('pattern={{major}}');
     expect(promote).toContain('needs: [release-gate, publish, docker-publish]');
-    expect(promote).toContain('group: neo-n3-mcp-release-promotion');
+    expect(promote).toContain('group: neo-mcp-release-promotion');
     expect(promote).toContain('cancel-in-progress: false');
     expect(promote).toContain('Ensure promotion does not move backward');
     expect(promote).toContain('npm dist-tag add');

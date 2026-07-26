@@ -1,6 +1,6 @@
-# Neo N3 MCP Website
+# Neo MCP Website
 
-This is the official website for the Neo N3 MCP Server, built with modern HTML, CSS, and JavaScript. The site is designed to be deployed on Netlify.
+This is the official website for the Neo MCP Server, built with modern HTML, CSS, and JavaScript. The site is designed to be deployed on Netlify.
 
 ## 📁 Structure
 
@@ -235,10 +235,10 @@ For website-specific issues:
 - Review Netlify documentation
 - Check browser console for errors
 
-For Neo N3 MCP Server issues:
+For Neo MCP Server issues:
 - See the main project documentation
 - Open issues on the GitHub repository
 
 ## 📄 License
 
-This website is part of the Neo N3 MCP Server project and follows the same MIT license. 
+This website is part of the Neo MCP Server project and follows the same MIT license. 

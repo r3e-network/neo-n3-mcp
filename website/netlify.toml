@@ -124,13 +124,13 @@
 # GitHub repository redirect
 [[redirects]]
   from = "/github"
-  to = "https://github.com/r3e-network/neo-n3-mcp"
+  to = "https://github.com/r3e-network/neo-mcp"
   status = 301
 
 # NPM package redirect
 [[redirects]]
   from = "/npm"
-  to = "https://www.npmjs.com/package/@r3e/neo-n3-mcp"
+  to = "https://www.npmjs.com/package/@r3e/neo-mcp"
   status = 301
 
 # Documentation shortcuts

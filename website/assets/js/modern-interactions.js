@@ -1,4 +1,4 @@
-// Modern Interactions for Neo N3 MCP Website
+// Modern Interactions for Neo MCP Website
 
 // Intersection Observer for scroll animations
 const observeElements = () => {

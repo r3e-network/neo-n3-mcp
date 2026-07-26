@@ -12,7 +12,7 @@ import {
 /**
  * Comprehensive MCP Server Test Suite
  * 
- * This test suite validates the Neo N3 MCP server against all MCP protocol requirements
+ * This test suite validates the Neo MCP server against all MCP protocol requirements
  * and demonstrates comprehensive functionality testing with the latest protocol features.
  */
 
@@ -90,15 +90,15 @@ describe('Comprehensive MCP Server Tests', () => {
       
       const toolNames = response.tools.map((tool: any) => tool.name);
       const expectedTools = [
-        'get_blockchain_info',
-        'get_block_count',
+        'get_chain_info',
+        'get_block_height',
         'get_block',
         'get_transaction',
         'get_balance',
         'get_nep17_transfers',
         'get_nep11_balances',
         'get_nep11_transfers',
-        'invoke_contract',
+        'call_contract',
         'get_contract_status',
         'get_network_mode'
       ];
@@ -107,11 +107,19 @@ describe('Comprehensive MCP Server Tests', () => {
         expect(toolNames).toContain(expectedTool);
       });
 
-      // Three names a stale reading of this list would expect are absent on purpose.
+      // Five names a stale reading of this list would expect are absent on purpose.
       // `create_wallet`/`import_wallet` never appear: key custody is outside the
       // model-facing channel. `transfer_assets` is a signing tool gated behind
       // `NEO_ENABLE_WRITES` plus a signer WIF file, so the default surface is read-only.
-      ['create_wallet', 'import_wallet', 'transfer_assets'].forEach(gatedTool => {
+      // `get_blockchain_info`/`get_block_count` are the pre-unification Neo-N3-only
+      // names, now folded into the chain-selecting tools asserted above.
+      [
+        'create_wallet',
+        'import_wallet',
+        'transfer_assets',
+        'get_blockchain_info',
+        'get_block_count',
+      ].forEach(gatedTool => {
         expect(toolNames).not.toContain(gatedTool);
       });
 
@@ -129,8 +137,8 @@ describe('Comprehensive MCP Server Tests', () => {
 
     test('should execute blockchain info tool with valid data', async () => {
       const response = await client.callTool({
-        name: 'get_blockchain_info',
-        arguments: {}
+        name: 'get_chain_info',
+        arguments: { chain: 'n3' }
       });
 
       expect(response).toBeDefined();
@@ -153,8 +161,8 @@ describe('Comprehensive MCP Server Tests', () => {
 
     test('should handle block count retrieval correctly', async () => {
       const response = await client.callTool({
-        name: 'get_block_count',
-        arguments: {}
+        name: 'get_block_height',
+        arguments: { chain: 'n3' }
       });
 
       const data = JSON.parse(response.content[0].text);
@@ -170,7 +178,7 @@ describe('Comprehensive MCP Server Tests', () => {
       
       const response = await client.callTool({
         name: 'get_balance',
-        arguments: { address: testAddress }
+        arguments: { chain: 'n3', address: testAddress }
       });
 
       const data = JSON.parse(response.content[0].text);
@@ -311,21 +319,34 @@ describe('Comprehensive MCP Server Tests', () => {
     });
 
     test('should validate required parameters', async () => {
+      // `chain` is supplied so the rejection is attributable to the missing address
+      // rather than to the chain selector, which has its own case below.
       try {
         const response = await client.callTool({
           name: 'get_balance',
-          arguments: {} // Missing required 'address' parameter
+          arguments: { chain: 'n3' } // Missing required 'address' parameter
         });
         expect(response.isError).toBe(true);
+        expect((response.content?.[0]?.text || '').toLowerCase()).toContain('address');
       } catch (error: any) {
         expect((error.message || '').toLowerCase()).toContain('address');
       }
     });
 
+    test('should require an explicit chain selector', async () => {
+      const response = await client.callTool({
+        name: 'get_balance',
+        arguments: { address: 'NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj' } // Missing required 'chain'
+      });
+
+      expect(response.isError).toBe(true);
+      expect((response.content?.[0]?.text || '').toLowerCase()).toContain('chain');
+    });
+
     test('should handle invalid addresses properly', async () => {
       const response = await client.callTool({
         name: 'get_balance',
-        arguments: { address: 'invalid_address_format' }
+        arguments: { chain: 'n3', address: 'invalid_address_format' }
       });
 
       expect(response.isError).toBe(true);
@@ -340,8 +361,8 @@ describe('Comprehensive MCP Server Tests', () => {
       // This tests the error handling when blockchain services are unavailable
       // The exact behavior depends on the service implementation
       const response = await client.callTool({
-        name: 'get_blockchain_info',
-        arguments: {}
+        name: 'get_chain_info',
+        arguments: { chain: 'n3' }
       });
       
       // Should either succeed or fail gracefully with proper error
@@ -390,8 +411,8 @@ describe('Comprehensive MCP Server Tests', () => {
 
     test('should handle large data responses properly', async () => {
       const response = await client.callTool({
-        name: 'get_blockchain_info',
-        arguments: {}
+        name: 'get_chain_info',
+        arguments: { chain: 'n3' }
       });
 
       const content = response.content[0];
@@ -414,7 +435,7 @@ describe('Comprehensive MCP Server Tests', () => {
       // Check the address balance
       const balanceResponse = await callToolWithRpcRetry(client, {
         name: 'get_balance',
-        arguments: { address }
+        arguments: { chain: 'n3', address }
       });
 
       const balance = JSON.parse(balanceResponse.content[0].text);
@@ -422,8 +443,8 @@ describe('Comprehensive MCP Server Tests', () => {
 
       // Get network info for context
       const networkResponse = await callToolWithRpcRetry(client, {
-        name: 'get_blockchain_info',
-        arguments: {}
+        name: 'get_chain_info',
+        arguments: { chain: 'n3' }
       });
 
       const networkInfo = JSON.parse(networkResponse.content[0].text);
@@ -435,8 +456,8 @@ describe('Comprehensive MCP Server Tests', () => {
     test('should support blockchain exploration workflow', async () => {
       // Get current blockchain info
       const infoResponse = await client.callTool({
-        name: 'get_blockchain_info',
-        arguments: {}
+        name: 'get_chain_info',
+        arguments: { chain: 'n3' }
       });
       
       const info = JSON.parse(infoResponse.content[0].text);
@@ -483,8 +504,8 @@ describe('Comprehensive MCP Server Tests', () => {
   describe('📊 Protocol Compliance Validation', () => {
     test('should follow MCP response format standards', async () => {
       const response = await client.callTool({
-        name: 'get_blockchain_info',
-        arguments: {}
+        name: 'get_chain_info',
+        arguments: { chain: 'n3' }
       });
 
       // Validate MCP response structure

@@ -1,12 +1,12 @@
 /**
- * MCP Streamable HTTP transport for the Neo N3 MCP server.
+ * MCP Streamable HTTP transport for the Neo MCP server.
  *
  * This serves the SAME MCP server that `src/index.ts` serves over stdio, but on
  * the MCP Streamable HTTP transport, so remote MCP clients can reach it over the
  * network. It is unrelated to `src/http-server.ts`, which is a custom REST API.
  *
  * Non-custodial boundary: the remote HTTP surface is READ-ONLY by design. It
- * builds a `NeoN3McpServer` per session (which does construct a wallet store),
+ * builds a `NeoMcpServer` per session (which does construct a wallet store),
  * but it hard-disables writes for every session (see `createReadOnlyNeoServer`),
  * so the signing/broadcast tools (`transfer_assets`, `invoke_contract_write`,
  * `claim_gas`, `deploy_contract`) are never registered on the network surface,
@@ -26,7 +26,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
-import { NeoN3McpServer } from './index';
+import { NeoMcpServer } from './index';
 import { config } from './config';
 import { SERVER_VERSION } from './version';
 import { logger } from './utils/logger';
@@ -95,14 +95,14 @@ export interface McpHttpServerOptions {
   headersTimeoutMs?: number;
   /** Finite deadline for receiving a complete request; bounds slow-request socket pinning. */
   requestTimeoutMs?: number;
-  /** Factory for the per-session MCP server. Defaults to a real `NeoN3McpServer`. */
-  createMcpServer?: () => NeoN3McpServer;
+  /** Factory for the per-session MCP server. Defaults to a real `NeoMcpServer`. */
+  createMcpServer?: () => NeoMcpServer;
 }
 
 interface McpHttpSession {
   readonly id: string;
   readonly transport: StreamableHTTPServerTransport;
-  readonly neoServer: NeoN3McpServer;
+  readonly neoServer: NeoMcpServer;
   readonly mcpServer: McpServer;
   lastSeenMs: number;
   /** Number of open long-lived SSE streams; a session with any is never idle. */
@@ -179,23 +179,23 @@ function errorMessage(error: unknown): string {
 }
 
 /**
- * Reads the MCP server instance that `NeoN3McpServer` (src/index.ts) builds and,
+ * Reads the MCP server instance that `NeoMcpServer` (src/index.ts) builds and,
  * over stdio, connects inside `run()`. The field is TypeScript-`private`, which
  * is a compile-time marker only; reading it here keeps the published type
  * surface of `dist/index.d.ts` unchanged and leaves the stdio entrypoint
  * untouched. The guard turns an upstream rename into an immediate, explicit
  * startup failure instead of a confusing runtime TypeError.
  */
-function getMcpServer(instance: NeoN3McpServer): McpServer {
+function getMcpServer(instance: NeoMcpServer): McpServer {
   const candidate = (instance as unknown as { server?: unknown }).server as McpServer | undefined;
   if (!candidate || typeof candidate.connect !== 'function' || typeof candidate.close !== 'function') {
-    throw new Error('NeoN3McpServer does not expose an MCP server instance to bind to a transport');
+    throw new Error('NeoMcpServer does not expose an MCP server instance to bind to a transport');
   }
   return candidate;
 }
 
 /**
- * Serves the Neo N3 MCP server over the MCP Streamable HTTP transport.
+ * Serves the Neo MCP server over the MCP Streamable HTTP transport.
  *
  * Endpoints:
  * - `POST|GET|DELETE {path}` - the Streamable HTTP MCP endpoint (bearer protected)
@@ -215,7 +215,7 @@ export class McpHttpServer {
   private readonly bodyTimeoutMs: number;
   private readonly headersTimeoutMs: number;
   private readonly requestTimeoutMs: number;
-  private readonly createMcpServer: () => NeoN3McpServer;
+  private readonly createMcpServer: () => NeoMcpServer;
 
   private readonly sessions = new Map<string, McpHttpSession>();
   private httpServer: http.Server | null = null;
@@ -442,7 +442,7 @@ export class McpHttpServer {
       }
 
       if (!this.isAuthorized(readHeader(req, 'authorization'))) {
-        res.setHeader('WWW-Authenticate', 'Bearer realm="neo-n3-mcp"');
+        res.setHeader('WWW-Authenticate', 'Bearer realm="neo-mcp"');
         this.sendJsonRpcError(res, 401, JSON_RPC_SERVER_ERROR, 'Unauthorized', true);
         return;
       }
@@ -559,7 +559,7 @@ export class McpHttpServer {
 
     // The increment and ALL construction (createMcpServer, getMcpServer, the
     // transport) live inside the try so the finally's decrement always runs. If
-    // any of them throws (e.g. a wallets-directory fs fault in the NeoN3McpServer
+    // any of them throws (e.g. a wallets-directory fs fault in the NeoMcpServer
     // constructor), pendingSessions is still released - otherwise N such throws
     // would latch the capacity guard and 503 every future initialize forever.
     this.pendingSessions += 1;
@@ -874,7 +874,7 @@ async function closeSessionResources(
  * Runs a synchronous construction with `config.writes.enabled` pinned to false,
  * restoring the previous value afterwards. The remote HTTP surface is read-only
  * by design (non-custodial): the AI never holds keys and never signs, so the
- * signing/broadcast tools must never be registered here. `NeoN3McpServer` reads
+ * signing/broadcast tools must never be registered here. `NeoMcpServer` reads
  * `config.writes.enabled` synchronously in its constructor, so this pin is only
  * held for the (synchronous) duration of `construct`.
  */
@@ -894,8 +894,8 @@ export function withWritesDisabled<T>(construct: () => T): T {
  * `claim_gas`, `deploy_contract`) are never registered over the network,
  * regardless of NEO_ENABLE_WRITES.
  */
-function createReadOnlyNeoServer(): NeoN3McpServer {
-  return withWritesDisabled(() => new NeoN3McpServer());
+function createReadOnlyNeoServer(): NeoMcpServer {
+  return withWritesDisabled(() => new NeoMcpServer());
 }
 
 function readIntEnv(env: NodeJS.ProcessEnv, key: string, fallback: number): number {

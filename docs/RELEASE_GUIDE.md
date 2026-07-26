@@ -1,6 +1,6 @@
 # Quick Release Guide
 
-This is the short release checklist for Neo N3 MCP. See [VERSION_MANAGEMENT.md](./VERSION_MANAGEMENT.md) for the full process.
+This is the short release checklist for Neo MCP. See [VERSION_MANAGEMENT.md](./VERSION_MANAGEMENT.md) for the full process.
 
 ## Prepare a Release
 

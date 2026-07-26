@@ -1,4 +1,4 @@
-# Neo N3 MCP Website Architecture Review
+# Neo MCP Website Architecture Review
 
 ## Current Status Overview
 
@@ -53,14 +53,14 @@
 <nav class="navbar">
   <div class="nav-logo">
     <img src="/assets/images/neo-logo.svg" alt="Neo N3" class="logo-icon">
-    <span class="logo-text">Neo N3 MCP</span>
+    <span class="logo-text">Neo MCP</span>
   </div>
 ```
 
 **Modern navigation:**
 ```html
 <nav class="nav">
-  <a href="/" class="nav-logo">Neo N3 MCP</a> <!-- Uses CSS ::before for ◆ -->
+  <a href="/" class="nav-logo">Neo MCP</a> <!-- Uses CSS ::before for ◆ -->
 ```
 
 ### 4. **Component Style Differences**

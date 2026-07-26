@@ -34,7 +34,7 @@ function runDockerReplacementScenario(repoRoot: string, scenario: DockerReplacem
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'neo-n3-docker-run-'));
   const dockerPath = path.join(directory, 'docker');
   const callLogPath = path.join(directory, 'docker-calls');
-  const containerName = 'neo-n3-mcp-server';
+  const containerName = 'neo-mcp-server';
   const fakeDocker = [
     '#!/usr/bin/env bash',
     'set -euo pipefail',
@@ -294,7 +294,7 @@ describe('production assets', () => {
       'utf8'
     );
 
-    expect(compose).toContain('image: neo-n3-mcp:local');
+    expect(compose).toContain('image: neo-mcp:local');
     expect(compose).toContain('pull_policy: build');
     expect(registryCompose).toContain('build: !reset null');
     expect(registryCompose).toMatch(
@@ -343,7 +343,7 @@ describe('production assets', () => {
     ) as { scripts: Record<string, string> };
 
     expect(packageJson.scripts['docker:build:dev']).toContain('--tag dev');
-    expect(packageJson.scripts['docker:run:dev']).toContain('--image neo-n3-mcp:dev');
+    expect(packageJson.scripts['docker:run:dev']).toContain('--image neo-mcp:dev');
   });
 
   test('the Docker run helper applies the production confinement defaults', () => {
@@ -446,7 +446,7 @@ describe('production assets', () => {
     expect(releaseScript).toContain(
       '[[ ! "$compose_image_digest" =~ ^[0-9a-f]{64}$ ]]'
     );
-    expect(releaseScript).toContain('NEO_MCP_IMAGE_REPOSITORY=neo-n3-mcp');
+    expect(releaseScript).toContain('NEO_MCP_IMAGE_REPOSITORY=neo-mcp');
     expect(releaseScript).toContain('NEO_MCP_IMAGE_DIGEST="$compose_image_digest"');
     expect(releaseScript).not.toMatch(/\bNEO_MCP_IMAGE=/);
     expect(releaseScript).toContain(

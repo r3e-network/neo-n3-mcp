@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-image_name="neo-n3-mcp"
+image_name="neo-mcp"
 tag="latest"
 target="production"
 dockerfile="docker/Dockerfile"
@@ -15,7 +15,7 @@ Usage: scripts/docker-build.sh [options]
 
 Options:
   -t, --tag TAG            Image tag (default: latest)
-  -n, --name NAME          Image name (default: neo-n3-mcp)
+  -n, --name NAME          Image name (default: neo-mcp)
   -d, --dev                Build the development image
   -p, --push               Push the image after a successful build
   -r, --registry REGISTRY  Prefix the image with a registry

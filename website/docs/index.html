@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Documentation - Neo N3 MCP Server</title>
-    <meta name="description" content="Current documentation for the Neo N3 MCP stdio server, authenticated HTTP API, testing, architecture, and deployment assets.">
+    <title>Documentation - Neo MCP Server</title>
+    <meta name="description" content="Current documentation for the Neo MCP stdio server, authenticated HTTP API, testing, architecture, and deployment assets.">
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,25 +30,25 @@
 <body>
     <nav class="nav">
         <div class="nav-container">
-            <a href="/" class="nav-logo">Neo N3 MCP</a>
+            <a href="/" class="nav-logo">Neo MCP</a>
             <div class="nav-menu">
                 <a href="/" class="nav-link">Home</a>
                 <a href="/docs" class="nav-link active">Docs</a>
                 <a href="/docs/api" class="nav-link">API</a>
                 <a href="/docs/testing" class="nav-link">Testing</a>
-                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank" rel="noreferrer">GitHub</a>
+                <a href="https://github.com/r3e-network/neo-mcp" class="btn btn-primary" target="_blank" rel="noreferrer">GitHub</a>
             </div>
         </div>
     </nav>
 
     <main class="page-container">
         <header class="docs-header">
-            <h1 class="docs-title">Neo N3 MCP documentation</h1>
+            <h1 class="docs-title">Neo MCP documentation</h1>
             <p class="docs-lead">Reference material for the MCP stdio server, authenticated HTTP transport, deterministic validation, and checked-in deployment assets.</p>
         </header>
 
         <div class="callout">
-            <strong>Current baseline:</strong> Node.js 22 or newer, 25 MCP tools, three fixed resources, one parameterized block resource, and HTTP bound to <code>127.0.0.1</code> by default.
+            <strong>Current baseline:</strong> Node.js 22 or newer, 32 public MCP tools across Neo N3 and Neo X, three fixed resources, one parameterized block resource, and HTTP bound to <code>127.0.0.1</code> by default.
         </div>
 
         <section class="docs-section">
@@ -74,7 +74,7 @@
                     <h3>Deployment</h3>
                     <p>Use the production Compose file, bearer authentication, wallet persistence, and health checks.</p>
                 </a>
-                <a class="docs-card" href="https://github.com/r3e-network/neo-n3-mcp/blob/master/docs/EXAMPLES.md" target="_blank" rel="noreferrer">
+                <a class="docs-card" href="https://github.com/r3e-network/neo-mcp/blob/master/docs/EXAMPLES.md" target="_blank" rel="noreferrer">
                     <h3>Examples</h3>
                     <p>See current MCP calls, generic contract flow, and authenticated HTTP commands.</p>
                 </a>
@@ -85,10 +85,12 @@
             <h2>Operating model</h2>
             <ul class="fact-list">
                 <li>MCP stdio supports <code>mainnet</code>, <code>testnet</code>, or <code>both</code>.</li>
+                <li>Tools that both chains implement require an explicit <code>chain</code>, <code>"n3"</code> or <code>"neox"</code>, with no default.</li>
                 <li>HTTP requires one network and defaults to <code>127.0.0.1:3000</code>.</li>
                 <li>A non-loopback HTTP host requires an API key of at least 32 bytes.</li>
                 <li>When a key is configured, every HTTP route except <code>/live</code> and <code>/health</code> requires a bearer token.</li>
-                <li>State-changing MCP tools require an explicit network and <code>confirm</code> as the JSON boolean <code>true</code>.</li>
+                <li>State-changing MCP tools require an explicit network, an <code>idempotencyKey</code>, and form-elicited approval of the exact intent fingerprint.</li>
+                <li>The remote MCP HTTP transport is read-only; write tools are reachable only over stdio when writes are explicitly enabled.</li>
                 <li>Remote RPC endpoints require HTTPS unless <code>NEO_ALLOW_INSECURE_RPC=true</code> is explicitly set.</li>
                 <li>Signed transaction fees are capped at 20 GAS by default, leaving headroom above Neo's 10 GAS native deployment minimum.</li>
                 <li>The production Compose definition persists <code>/app/wallets</code> and binds the host port to loopback by default.</li>
@@ -104,7 +106,7 @@
     <footer class="footer">
         <div class="footer-container">
             <div class="footer-bottom">
-                <span>Neo N3 MCP Server</span>
+                <span>Neo MCP Server</span>
                 <span>MIT licensed</span>
             </div>
         </div>

@@ -16,13 +16,22 @@ import { ElicitRequestSchema } from '@modelcontextprotocol/sdk/types.js';
  * "expected 40, received 41". Update this list in the same commit that registers a tool.
  */
 const READ_ONLY_TOOL_NAMES = [
+  'build_contract_call',
+  'build_transfer',
+  'call_contract',
   'estimate_invoke_fees',
   'estimate_transfer_fees',
+  'explorer_get_address',
+  'explorer_list_address_assets',
+  'explorer_list_address_transactions',
+  'explorer_list_address_transfers',
+  'explorer_list_token_holders',
+  'explorer_search',
   'get_application_log',
   'get_balance',
   'get_block',
-  'get_block_count',
-  'get_blockchain_info',
+  'get_block_height',
+  'get_chain_info',
   'get_contract_info',
   'get_contract_status',
   'get_nep11_balances',
@@ -30,42 +39,40 @@ const READ_ONLY_TOOL_NAMES = [
   'get_nep17_transfers',
   'get_network_mode',
   'get_transaction',
+  'get_transaction_status',
   'get_unclaimed_gas',
   'get_wallet',
-  'invoke_contract',
   'list_famous_contracts',
-  'n3_application_log',
-  'n3_asset_holders',
-  'n3_assets_held_by_address',
-  'n3_build_invoke',
-  'n3_build_transfer',
-  'n3_contract_by_name',
-  'n3_get_address',
-  'n3_get_block',
-  'n3_get_transaction',
-  'n3_list_assets',
-  'n3_list_blocks',
-  'n3_list_nep17_transfers_by_contract',
-  'n3_list_transactions',
-  'n3_list_transactions_by_address',
-  'n3_list_transfers_by_address',
-  'n3_test_invoke',
-  'query_indexer',
-  'query_indexer_find',
+  'query_explorer',
+  'query_explorer_find',
+  'query_explorer_graphql',
+  'simulate_call',
   'wait_for_transaction',
-  'x_block',
-  'x_build_contract_call',
-  'x_build_transfer',
-  'x_get_address',
-  'x_graphql',
-  'x_list_token_transfers',
-  'x_list_transactions_by_address',
-  'x_query',
-  'x_search',
-  'x_simulate_call',
-  'x_token_holders',
-  'x_token_info',
-  'x_transaction',
+];
+
+/**
+ * Public tools that must accept a `chain` selector because both Neo N3 and Neo X
+ * implement the operation. A tool losing its selector would silently pin callers
+ * to one chain, so the enum values are pinned here too.
+ */
+const CHAIN_SELECTING_TOOL_NAMES = [
+  'build_contract_call',
+  'build_transfer',
+  'call_contract',
+  'explorer_get_address',
+  'explorer_list_address_transactions',
+  'explorer_list_address_transfers',
+  'explorer_list_token_holders',
+  'explorer_search',
+  'get_balance',
+  'get_block',
+  'get_block_height',
+  'get_chain_info',
+  'get_contract_info',
+  'get_transaction',
+  'get_transaction_status',
+  'query_explorer',
+  'simulate_call',
 ];
 
 /** The only secret-free write tools, added exclusively when NEO_ENABLE_WRITES is set. */
@@ -84,12 +91,9 @@ const WRITE_ENABLED_TOOL_NAMES = [...READ_ONLY_TOOL_NAMES, ...WRITE_TOOL_NAMES].
  * They must stay on the default read-only surface: the caller signs in their own wallet.
  */
 const NON_CUSTODIAL_CONSTRUCTION_TOOL_NAMES = [
-  'n3_build_invoke',
-  'n3_build_transfer',
-  'n3_test_invoke',
-  'x_build_contract_call',
-  'x_build_transfer',
-  'x_simulate_call',
+  'build_contract_call',
+  'build_transfer',
+  'simulate_call',
 ];
 
 const sortedToolNames = (tools: Array<{ name: string }>): string[] =>
@@ -128,11 +132,11 @@ describe('Modern MCP tool registration', () => {
     transport = null;
   });
 
-  test('applies one shared rate limit across directly handled modern tools', async () => {
+  test('applies one shared rate limit across the whole public tool surface', async () => {
     const first = await client!.callTool({ name: 'get_network_mode', arguments: {} });
     const second = await client!.callTool({
       name: 'get_balance',
-      arguments: { address: 'invalid-address' },
+      arguments: { chain: 'n3', address: 'invalid-address' },
     });
 
     expect(first.isError).not.toBe(true);
@@ -147,7 +151,7 @@ describe('Modern MCP tool registration', () => {
     );
   });
 
-  test('charges callTool-delegated tools only once', async () => {
+  test('charges each registry-routed tool call exactly once', async () => {
     const first = await client!.callTool({
       name: 'get_wallet',
       arguments: { address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr' },
@@ -174,15 +178,44 @@ describe('Modern MCP tool registration', () => {
     );
   });
 
-  test('advertises invoke_contract as strictly read-only', async () => {
+  test('advertises call_contract as strictly read-only', async () => {
     const response = await client!.listTools();
-    const invokeContract = response.tools.find(tool => tool.name === 'invoke_contract');
+    const callContract = response.tools.find(tool => tool.name === 'call_contract');
 
-    expect(invokeContract).toBeDefined();
-    expect(invokeContract?.inputSchema.properties).not.toHaveProperty('signers');
-    expect(invokeContract?.inputSchema.properties).not.toHaveProperty('fromWIF');
-    expect(invokeContract?.inputSchema.properties).not.toHaveProperty('wif');
-    expect(invokeContract?.inputSchema.properties).not.toHaveProperty('confirm');
+    expect(callContract).toBeDefined();
+    expect(callContract?.inputSchema.properties).not.toHaveProperty('signers');
+    expect(callContract?.inputSchema.properties).not.toHaveProperty('fromWIF');
+    expect(callContract?.inputSchema.properties).not.toHaveProperty('wif');
+    expect(callContract?.inputSchema.properties).not.toHaveProperty('confirm');
+  });
+
+  test('requires an explicit chain on every dual-chain tool', async () => {
+    const response = await client!.listTools();
+
+    for (const name of CHAIN_SELECTING_TOOL_NAMES) {
+      const tool = response.tools.find(candidate => candidate.name === name);
+      expect(tool).toBeDefined();
+      const properties = tool?.inputSchema.properties as
+        | Record<string, { enum?: unknown[] }>
+        | undefined;
+      expect(properties).toHaveProperty('chain');
+      expect(properties?.chain?.enum).toEqual(['n3', 'neox']);
+      expect(tool?.inputSchema.required).toEqual(expect.arrayContaining(['chain']));
+    }
+  });
+
+  test('routes a dual-chain tool to the chain the caller selected', async () => {
+    const rejected = await client!.callTool({
+      name: 'get_block',
+      arguments: { chain: 'ethereum', hashOrHeight: 1 },
+    });
+
+    expect(rejected.isError).toBe(true);
+    expect(rejected.content).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: 'text', text: expect.stringMatching(/chain/i) }),
+      ]),
+    );
   });
 
   test('does not advertise unsupported estimate_invoke_fees signers', async () => {

@@ -1,0 +1,1002 @@
+/**
+ * Unified, chain-parameterized MCP tool registry.
+ *
+ * The public surface exposes ONE tool per capability. Every capability both
+ * chains implement carries a required `chain: 'n3' | 'neox'` discriminator; the
+ * registry maps the (public tool, chain) pair onto the internal handler name
+ * that `callTool` / `dispatchNeoxNodeTool` already dispatch, rewriting arguments
+ * where the two backends disagree on shape:
+ *
+ *   - Neo X explorer + construct handlers take `network: 'neox-mainnet' |
+ *     'neox-testnet'`, while Neo X *node* handlers take the public
+ *     `'mainnet' | 'testnet'`. Callers only ever say `mainnet`/`testnet`.
+ *   - Blockscout list endpoints are cursor-paginated, so `limit`/`skip` are
+ *     dropped on Neo X explorer routes and kept on the curated Neo N3 ones.
+ *   - `query_indexer` selects a REST endpoint with `method`; `x_query` uses
+ *     `endpoint`. Neither (nor `query_indexer_find` / `x_graphql`) takes a
+ *     `network` field — they are mainnet-only.
+ *
+ * Non-custodial invariant: no route in this table can reach a key-custody tool
+ * (`create_wallet` / `import_wallet`) or a server-signed write tool
+ * (`transfer_assets` / `invoke_contract_write` / `claim_gas` /
+ * `deploy_contract`). Construct tools return UNSIGNED proposals only.
+ */
+
+import { z } from 'zod';
+import { ValidationError } from '../utils/errors';
+
+export type Chain = 'n3' | 'neox';
+
+export const CHAINS: readonly Chain[] = ['n3', 'neox'] as const;
+
+/** A resolved dispatch target for one (public tool, chain) pair. */
+export interface ToolRoute {
+  /** Public tool name the caller asked for. */
+  publicName: string;
+  /** Internal handler name understood by callTool / dispatchNeoxNodeTool. */
+  internalName: string;
+  /** Resolved chain, or undefined for chain-less meta tools. */
+  chain?: Chain;
+  /** Arguments to hand the internal handler (fresh object, `chain` stripped). */
+  args: Record<string, unknown>;
+  /** Whether Neo N3 services must be initialized before dispatch. */
+  requiresServices: boolean;
+  /** Whether the wallet service must be passed to callTool. */
+  requiresWallet: boolean;
+}
+
+type ArgMapper = (args: Record<string, unknown>) => Record<string, unknown>;
+
+interface RouteSpec {
+  internalName: string;
+  requiresServices?: boolean;
+  requiresWallet?: boolean;
+  mapArgs?: ArgMapper;
+}
+
+export interface PublicToolSpec {
+  name: string;
+  description: string;
+  inputSchema: Record<string, z.ZodTypeAny>;
+  /** Chains this tool supports; empty for chain-less meta tools. */
+  chains: readonly Chain[];
+  routes: Partial<Record<Chain, RouteSpec>> & { meta?: RouteSpec };
+}
+
+// --- shared schema fragments -------------------------------------------------
+
+const chainField = (chains: readonly Chain[]) => ({
+  chain: z.enum(chains as unknown as [Chain, ...Chain[]]).describe(
+    `Target chain: ${chains.map((c) => `"${c}"`).join(' or ')} (required, no default)`,
+  ),
+});
+
+const networkField = {
+  network: z.enum(['mainnet', 'testnet']).optional().describe(
+    'Network for the selected chain: "mainnet" (default) or "testnet"',
+  ),
+};
+
+const paginationFields = {
+  limit: z.number().int().min(1).max(100).optional().describe(
+    'Max rows to return (1-100, default 20). Ignored on Neo X, which is cursor-paginated.',
+  ),
+  skip: z.number().int().nonnegative().optional().describe(
+    'Rows to skip (default 0). Ignored on Neo X, which is cursor-paginated.',
+  ),
+};
+
+// --- argument helpers --------------------------------------------------------
+
+/** Copy only the keys present in `args`, preserving absence (never inject undefined). */
+function pick(args: Record<string, unknown>, keys: readonly string[]): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const key of keys) {
+    if (key in args && args[key] !== undefined) out[key] = args[key];
+  }
+  return out;
+}
+
+/** Rename `from` to `to` when present. */
+function rename(
+  args: Record<string, unknown>,
+  from: string,
+  to: string,
+): Record<string, unknown> {
+  const out = { ...args };
+  if (from in out) {
+    if (out[from] !== undefined) out[to] = out[from];
+    delete out[from];
+  }
+  return out;
+}
+
+/** Rewrite the public mainnet/testnet network onto the Neo X `neox-*` form. */
+function neoxNetwork(args: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...args };
+  const network = out.network;
+  if (network === undefined) {
+    delete out.network;
+    return out;
+  }
+  if (network === 'mainnet' || network === 'neox-mainnet') out.network = 'neox-mainnet';
+  else if (network === 'testnet' || network === 'neox-testnet') out.network = 'neox-testnet';
+  else {
+    throw new ValidationError(
+      `Invalid network "${String(network)}" for chain "neox": expected "mainnet" or "testnet".`,
+    );
+  }
+  return out;
+}
+
+/** Keep the public mainnet/testnet form (Neo X node handlers read it directly). */
+function passNetwork(args: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...args };
+  if (out.network === undefined) delete out.network;
+  else if (out.network !== 'mainnet' && out.network !== 'testnet') {
+    throw new ValidationError(
+      `Invalid network "${String(out.network)}": expected "mainnet" or "testnet".`,
+    );
+  }
+  return out;
+}
+
+function dropPagination(args: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...args };
+  delete out.limit;
+  delete out.skip;
+  return out;
+}
+
+/** n3 curated/node handler args: identity, minus undefined network. */
+const n3Args: ArgMapper = (args) => passNetwork(args);
+
+/** Neo X explorer route: neox-* network, no cursor-incompatible pagination. */
+const xExplorerArgs = (keys: readonly string[]): ArgMapper => (args) =>
+  neoxNetwork(dropPagination(pick(args, [...keys, 'network'])));
+
+// --- public tool table -------------------------------------------------------
+
+const SPECS: PublicToolSpec[] = [
+  // ---------- meta ----------
+  {
+    name: 'get_network_mode',
+    description:
+      'Get the active network mode (mainnet-only, testnet-only, or both) and the list of '
+      + 'Neo networks this server will talk to.',
+    inputSchema: {},
+    chains: [],
+    routes: { meta: { internalName: 'get_network_mode' } },
+  },
+  {
+    name: 'get_wallet',
+    description:
+      'Get sanitized metadata for a locally stored wallet by address. Never returns private '
+      + 'keys, WIFs, or mnemonics — this server holds no signing material.',
+    inputSchema: { address: z.string().describe('Neo N3 address') },
+    chains: [],
+    routes: {
+      meta: {
+        internalName: 'get_wallet',
+        requiresWallet: true,
+        mapArgs: (args) => pick(args, ['address']),
+      },
+    },
+  },
+
+  // ---------- node reads (multi-chain) ----------
+  {
+    name: 'get_chain_info',
+    description:
+      'Get chain summary information: current height plus network identity (Neo N3 validators, '
+      + 'or the Neo X EVM chain id).',
+    inputSchema: { ...chainField(CHAINS), ...networkField },
+    chains: CHAINS,
+    routes: {
+      n3: {
+        internalName: 'get_blockchain_info',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(pick(args, ['network'])),
+      },
+      neox: {
+        internalName: 'x_node_get_chain_info',
+        mapArgs: (args) => passNetwork(pick(args, ['network'])),
+      },
+    },
+  },
+  {
+    name: 'get_block_height',
+    description: 'Get the current block height (and block count) for the selected chain and network.',
+    inputSchema: { ...chainField(CHAINS), ...networkField },
+    chains: CHAINS,
+    routes: {
+      n3: {
+        internalName: 'get_block_count',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(pick(args, ['network'])),
+      },
+      neox: {
+        internalName: 'x_node_get_block_height',
+        mapArgs: (args) => passNetwork(pick(args, ['network'])),
+      },
+    },
+  },
+  {
+    name: 'get_block',
+    description: 'Get block details by block height/number or block hash.',
+    inputSchema: {
+      ...chainField(CHAINS),
+      hashOrHeight: z.union([z.string(), z.number()]).describe(
+        'Block hash (0x + 64 hex) or block height/number',
+      ),
+      includeTransactions: z.boolean().optional().describe(
+        'Neo X only: include full transaction objects in the block',
+      ),
+      ...networkField,
+    },
+    chains: CHAINS,
+    routes: {
+      n3: {
+        internalName: 'get_block',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(pick(args, ['hashOrHeight', 'network'])),
+      },
+      neox: {
+        internalName: 'x_node_get_block',
+        mapArgs: (args) => passNetwork(
+          rename(pick(args, ['hashOrHeight', 'includeTransactions', 'network']),
+            'hashOrHeight', 'blockHashOrHeight'),
+        ),
+      },
+    },
+  },
+  {
+    name: 'get_transaction',
+    description: 'Get transaction details by transaction hash.',
+    inputSchema: {
+      ...chainField(CHAINS),
+      hash: z.string().describe('Transaction hash (0x + 64 hex)'),
+      ...networkField,
+    },
+    chains: CHAINS,
+    routes: {
+      n3: {
+        internalName: 'get_transaction',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(rename(pick(args, ['hash', 'network']), 'hash', 'txid')),
+      },
+      neox: {
+        internalName: 'x_node_get_transaction',
+        mapArgs: (args) => passNetwork(pick(args, ['hash', 'network'])),
+      },
+    },
+  },
+  {
+    name: 'get_transaction_status',
+    description:
+      'Get the confirmation status of a transaction: whether it is known, confirmed, and '
+      + 'whether execution succeeded (with the revert/fault reason when it did not).',
+    inputSchema: {
+      ...chainField(CHAINS),
+      hash: z.string().describe('Transaction hash (0x + 64 hex)'),
+      ...networkField,
+    },
+    chains: CHAINS,
+    routes: {
+      n3: {
+        internalName: 'n3_node_get_transaction_status',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(pick(args, ['hash', 'network'])),
+      },
+      neox: {
+        internalName: 'x_node_get_transaction_status',
+        mapArgs: (args) => passNetwork(pick(args, ['hash', 'network'])),
+      },
+    },
+  },
+  {
+    name: 'get_balance',
+    description:
+      'Get balances for an address: NEO, GAS, and NEP-17 tokens on Neo N3, or the native '
+      + 'GAS balance on Neo X.',
+    inputSchema: {
+      ...chainField(CHAINS),
+      address: z.string().describe('Neo N3 address (base58) or Neo X 0x address'),
+      ...networkField,
+    },
+    chains: CHAINS,
+    routes: {
+      n3: {
+        internalName: 'get_balance',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(pick(args, ['address', 'network'])),
+      },
+      neox: {
+        internalName: 'x_node_get_balance',
+        mapArgs: (args) => passNetwork(pick(args, ['address', 'network'])),
+      },
+    },
+  },
+  {
+    name: 'call_contract',
+    description:
+      'Run a read-only contract call without signing or broadcasting: invokefunction on '
+      + 'Neo N3, eth_call on Neo X.',
+    inputSchema: {
+      ...chainField(CHAINS),
+      contract: z.string().optional().describe(
+        'Contract reference: script hash, Neo address, or known contract name (Neo N3); '
+        + '0x contract address (Neo X)',
+      ),
+      scriptHash: z.string().optional().describe('Neo N3: contract script hash (0x + 40 hex)'),
+      operation: z.string().optional().describe('Neo N3: contract method name'),
+      args: z.array(z.unknown()).optional().describe('Method arguments'),
+      data: z.string().optional().describe('Neo X: pre-encoded 0x-hex calldata'),
+      functionSignature: z.string().optional().describe(
+        'Neo X: canonical signature to ABI-encode, e.g. "balanceOf(address)"',
+      ),
+      from: z.string().optional().describe('Neo X: caller 0x address'),
+      ...networkField,
+    },
+    chains: CHAINS,
+    routes: {
+      n3: {
+        internalName: 'invoke_contract',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(
+          pick(args, ['contract', 'scriptHash', 'operation', 'args', 'network']),
+        ),
+      },
+      neox: {
+        internalName: 'x_node_call_contract',
+        mapArgs: (args) => passNetwork(
+          pick(args, ['contract', 'data', 'functionSignature', 'args', 'from', 'network']),
+        ),
+      },
+    },
+  },
+  {
+    name: 'get_contract_info',
+    description:
+      'Get contract metadata: manifest, ABI operations, and known-name resolution on Neo N3, '
+      + 'or verified source/compiler metadata from the Neo X explorer.',
+    inputSchema: {
+      ...chainField(CHAINS),
+      contract: z.string().optional().describe(
+        'Neo N3: known contract name, script hash, or Neo address',
+      ),
+      address: z.string().optional().describe('Neo X: 0x contract address (40 hex chars)'),
+      ...networkField,
+    },
+    chains: CHAINS,
+    routes: {
+      n3: {
+        internalName: 'get_contract_info',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(pick(args, ['contract', 'network'])),
+      },
+      neox: {
+        internalName: 'x_query',
+        mapArgs: (args) => {
+          const address = args.address ?? args.contract;
+          if (typeof address !== 'string' || !address.trim()) {
+            throw new ValidationError(
+              'get_contract_info on chain "neox" requires a 0x contract address.',
+            );
+          }
+          return { endpoint: 'get_smart_contract', params: { address: address.trim() } };
+        },
+      },
+    },
+  },
+
+  // ---------- node reads (Neo N3 only) ----------
+  {
+    name: 'get_application_log',
+    description:
+      'Neo N3: get the application log (executions, notifications, and consumed GAS) for a '
+      + 'transaction hash.',
+    inputSchema: {
+      hash: z.string().describe('Transaction hash (0x + 64 hex)'),
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'get_application_log',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(rename(pick(args, ['hash', 'network']), 'hash', 'txid')),
+      },
+    },
+  },
+  {
+    name: 'wait_for_transaction',
+    description:
+      'Neo N3: poll until a transaction is confirmed on-chain (or the timeout elapses), '
+      + 'optionally returning its application log.',
+    inputSchema: {
+      hash: z.string().describe('Transaction hash (0x + 64 hex)'),
+      timeoutMs: z.number().int().positive().optional().describe('Timeout in milliseconds'),
+      pollIntervalMs: z.number().int().positive().optional().describe('Poll interval in milliseconds'),
+      includeApplicationLog: z.boolean().optional().describe(
+        'Include the application log once the transaction confirms',
+      ),
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'wait_for_transaction',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(rename(
+          pick(args, ['hash', 'timeoutMs', 'pollIntervalMs', 'includeApplicationLog', 'network']),
+          'hash', 'txid',
+        )),
+      },
+    },
+  },
+  {
+    name: 'get_unclaimed_gas',
+    description: 'Neo N3: get the amount of GAS currently claimable by an address.',
+    inputSchema: { address: z.string().describe('Neo N3 address'), ...networkField },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'get_unclaimed_gas',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(pick(args, ['address', 'network'])),
+      },
+    },
+  },
+  {
+    name: 'get_nep17_transfers',
+    description: 'Neo N3: get NEP-17 token transfer history for an address, from live RPC.',
+    inputSchema: {
+      address: z.string().describe('Neo N3 address'),
+      fromTimestampMs: z.number().int().nonnegative().optional().describe(
+        'Optional start timestamp in Unix epoch milliseconds',
+      ),
+      toTimestampMs: z.number().int().nonnegative().optional().describe(
+        'Optional end timestamp in Unix epoch milliseconds',
+      ),
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'get_nep17_transfers',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(
+          pick(args, ['address', 'fromTimestampMs', 'toTimestampMs', 'network']),
+        ),
+      },
+    },
+  },
+  {
+    name: 'get_nep11_balances',
+    description: 'Neo N3: get NEP-11 (NFT) balances for an address, from live RPC.',
+    inputSchema: { address: z.string().describe('Neo N3 address'), ...networkField },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'get_nep11_balances',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(pick(args, ['address', 'network'])),
+      },
+    },
+  },
+  {
+    name: 'get_nep11_transfers',
+    description: 'Neo N3: get NEP-11 (NFT) transfer history for an address, from live RPC.',
+    inputSchema: {
+      address: z.string().describe('Neo N3 address'),
+      fromTimestampMs: z.number().int().nonnegative().optional().describe(
+        'Optional start timestamp in Unix epoch milliseconds',
+      ),
+      toTimestampMs: z.number().int().nonnegative().optional().describe(
+        'Optional end timestamp in Unix epoch milliseconds',
+      ),
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'get_nep11_transfers',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(
+          pick(args, ['address', 'fromTimestampMs', 'toTimestampMs', 'network']),
+        ),
+      },
+    },
+  },
+  {
+    name: 'get_contract_status',
+    description:
+      'Neo N3: check whether a contract is deployed and inspect its current on-chain status '
+      + 'by known name, script hash, or Neo address.',
+    inputSchema: {
+      contract: z.string().optional().describe(
+        'Contract reference: known name, script hash, or Neo address',
+      ),
+      contractName: z.string().optional().describe('Supported contract name'),
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'get_contract_status',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(pick(args, ['contract', 'contractName', 'network'])),
+      },
+    },
+  },
+  {
+    name: 'list_famous_contracts',
+    description: 'Neo N3: list the well-known contracts this server can resolve by name.',
+    inputSchema: { ...networkField },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'list_famous_contracts',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(pick(args, ['network'])),
+      },
+    },
+  },
+  {
+    name: 'estimate_transfer_fees',
+    description: 'Neo N3: estimate the network and system fees for a NEP-17 transfer.',
+    inputSchema: {
+      from: z.string().describe('Sender Neo N3 address'),
+      to: z.string().describe('Recipient Neo N3 address'),
+      asset: z.string().describe('"NEO", "GAS", or a NEP-17 contract script hash'),
+      amount: z.string().describe('Human-readable decimal amount (e.g. "1.5")'),
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'estimate_transfer_fees',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(rename(
+          rename(pick(args, ['from', 'to', 'asset', 'amount', 'network']), 'from', 'fromAddress'),
+          'to', 'toAddress',
+        )),
+      },
+    },
+  },
+  {
+    name: 'estimate_invoke_fees',
+    description: 'Neo N3: estimate the network and system fees for a contract invocation.',
+    inputSchema: {
+      from: z.string().describe('Signer Neo N3 address'),
+      contract: z.string().optional().describe(
+        'Contract reference: known name, script hash, or Neo address',
+      ),
+      scriptHash: z.string().optional().describe('Contract script hash (0x + 40 hex)'),
+      operation: z.string().describe('Contract method name'),
+      args: z.array(z.unknown()).optional().describe('Method arguments'),
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'estimate_invoke_fees',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(rename(
+          pick(args, ['from', 'contract', 'scriptHash', 'operation', 'args', 'network']),
+          'from', 'signerAddress',
+        )),
+      },
+    },
+  },
+
+  // ---------- construct / simulate (unsigned only) ----------
+  {
+    name: 'simulate_call',
+    description:
+      'SIMULATE a contract call read-only and return the preview (Neo N3 test-invoke state, '
+      + 'gasConsumed, stack; Neo X eth_call result plus gas estimate). Never signs or broadcasts.',
+    inputSchema: {
+      ...chainField(CHAINS),
+      scriptHash: z.string().optional().describe('Neo N3: contract script hash (0x + 40 hex)'),
+      operation: z.string().optional().describe('Neo N3: contract method name to simulate'),
+      args: z.array(z.unknown()).optional().describe('Method arguments'),
+      signers: z.array(z.object({
+        account: z.string().describe('Neo N3 address or 0x script hash'),
+        scopes: z.string().optional().describe('Witness scope (default CalledByEntry)'),
+      })).optional().describe('Neo N3: optional witness signers for CheckWitness-gated methods'),
+      to: z.string().optional().describe('Neo X: target contract/account 0x address'),
+      data: z.string().optional().describe('Neo X: 0x-hex calldata'),
+      from: z.string().optional().describe('Neo X: caller 0x address'),
+      value: z.string().optional().describe('Neo X: wei value as a decimal string'),
+      ...networkField,
+    },
+    chains: CHAINS,
+    routes: {
+      n3: {
+        internalName: 'n3_test_invoke',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(
+          pick(args, ['scriptHash', 'operation', 'args', 'signers', 'network']),
+        ),
+      },
+      neox: {
+        internalName: 'x_simulate_call',
+        mapArgs: (args) => neoxNetwork(pick(args, ['to', 'data', 'from', 'value', 'network'])),
+      },
+    },
+  },
+  {
+    name: 'build_transfer',
+    description:
+      'CONSTRUCT an UNSIGNED transfer proposal: a NeoLine dapi invoke payload on Neo N3, or an '
+      + 'unsigned EVM value transfer on Neo X. The user signs it in their own wallet.',
+    inputSchema: {
+      ...chainField(CHAINS),
+      from: z.string().describe('Sender address (Neo N3 base58, or Neo X 0x)'),
+      to: z.string().describe('Recipient address (Neo N3 base58, or Neo X 0x)'),
+      asset: z.string().optional().describe(
+        'Neo N3: "NEO", "GAS", or a NEP-17 contract script hash',
+      ),
+      amount: z.string().optional().describe('Neo N3: human-readable decimal amount (e.g. "1.5")'),
+      decimals: z.number().int().min(0).max(255).optional().describe('Neo N3: token decimals'),
+      amountWei: z.string().optional().describe('Neo X: amount in wei as a decimal string'),
+      ...networkField,
+    },
+    chains: CHAINS,
+    routes: {
+      n3: {
+        internalName: 'n3_build_transfer',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(
+          pick(args, ['from', 'to', 'asset', 'amount', 'decimals', 'network']),
+        ),
+      },
+      neox: {
+        internalName: 'x_build_transfer',
+        mapArgs: (args) => neoxNetwork(pick(args, ['from', 'to', 'amountWei', 'network'])),
+      },
+    },
+  },
+  {
+    name: 'build_contract_call',
+    description:
+      'CONSTRUCT an UNSIGNED contract-invocation proposal: a NeoLine dapi invoke payload on '
+      + 'Neo N3, or an unsigned EVM transaction on Neo X. The user signs it in their own wallet.',
+    inputSchema: {
+      ...chainField(CHAINS),
+      from: z.string().describe('Signer address (Neo N3 base58, or Neo X 0x)'),
+      scriptHash: z.string().optional().describe('Neo N3: contract script hash (0x + 40 hex)'),
+      operation: z.string().optional().describe('Neo N3: contract method name'),
+      args: z.array(z.unknown()).optional().describe('Method arguments'),
+      signers: z.array(z.object({
+        account: z.string().describe('Neo N3 address or 0x script hash'),
+        scopes: z.string().optional().describe('Witness scope (default CalledByEntry)'),
+      })).optional().describe('Neo N3: optional explicit witness signers'),
+      to: z.string().optional().describe('Neo X: target contract 0x address'),
+      data: z.string().optional().describe('Neo X: pre-encoded 0x-hex calldata'),
+      functionSignature: z.string().optional().describe(
+        'Neo X: canonical signature to ABI-encode, e.g. "transfer(address,uint256)"',
+      ),
+      valueWei: z.string().optional().describe('Neo X: wei value to attach as a decimal string'),
+      ...networkField,
+    },
+    chains: CHAINS,
+    routes: {
+      n3: {
+        internalName: 'n3_build_invoke',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(
+          pick(args, ['from', 'scriptHash', 'operation', 'args', 'signers', 'network']),
+        ),
+      },
+      neox: {
+        internalName: 'x_build_contract_call',
+        mapArgs: (args) => neoxNetwork(
+          pick(args, ['from', 'to', 'data', 'functionSignature', 'args', 'valueWei', 'network']),
+        ),
+      },
+    },
+  },
+
+  // ---------- explorer / indexer reads ----------
+  {
+    name: 'explorer_get_address',
+    description:
+      'Explorer analytics: get the indexed account summary for an address (balances, type, '
+      + 'tags, first-seen).',
+    inputSchema: {
+      ...chainField(CHAINS),
+      address: z.string().describe('Neo N3 address/script hash, or Neo X 0x address'),
+      ...networkField,
+    },
+    chains: CHAINS,
+    routes: {
+      n3: {
+        internalName: 'n3_get_address',
+        mapArgs: (args) => n3Args(pick(args, ['address', 'network'])),
+      },
+      neox: { internalName: 'x_get_address', mapArgs: xExplorerArgs(['address']) },
+    },
+  },
+  {
+    name: 'explorer_list_address_transactions',
+    description: 'Explorer analytics: list transactions involving an address, newest first.',
+    inputSchema: {
+      ...chainField(CHAINS),
+      address: z.string().describe('Neo N3 address/script hash, or Neo X 0x address'),
+      ...paginationFields,
+      ...networkField,
+    },
+    chains: CHAINS,
+    routes: {
+      n3: {
+        internalName: 'n3_list_transactions_by_address',
+        mapArgs: (args) => n3Args(pick(args, ['address', 'limit', 'skip', 'network'])),
+      },
+      neox: {
+        internalName: 'x_list_transactions_by_address',
+        mapArgs: xExplorerArgs(['address']),
+      },
+    },
+  },
+  {
+    name: 'explorer_list_address_transfers',
+    description:
+      'Explorer analytics: list token transfers for an address (NEP-17 on Neo N3, '
+      + 'ERC-20/721/1155 on Neo X).',
+    inputSchema: {
+      ...chainField(CHAINS),
+      address: z.string().describe('Neo N3 address/script hash, or Neo X 0x address'),
+      ...paginationFields,
+      ...networkField,
+    },
+    chains: CHAINS,
+    routes: {
+      n3: {
+        internalName: 'n3_list_transfers_by_address',
+        mapArgs: (args) => n3Args(pick(args, ['address', 'limit', 'skip', 'network'])),
+      },
+      neox: { internalName: 'x_list_token_transfers', mapArgs: xExplorerArgs(['address']) },
+    },
+  },
+  {
+    name: 'explorer_list_address_assets',
+    description: 'Neo N3 explorer analytics: list the assets (with balances) held by an address.',
+    inputSchema: {
+      address: z.string().describe('Neo N3 address or 0x script hash'),
+      ...paginationFields,
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'n3_assets_held_by_address',
+        mapArgs: (args) => n3Args(pick(args, ['address', 'limit', 'skip', 'network'])),
+      },
+    },
+  },
+  {
+    name: 'explorer_list_token_holders',
+    description:
+      'Explorer analytics: list the holders of a token contract, with balances (NEP-17 on '
+      + 'Neo N3, ERC-20 on Neo X).',
+    inputSchema: {
+      ...chainField(CHAINS),
+      contractHash: z.string().describe(
+        'Token contract script hash (Neo N3) or 0x token contract address (Neo X)',
+      ),
+      ...paginationFields,
+      ...networkField,
+    },
+    chains: CHAINS,
+    routes: {
+      n3: {
+        internalName: 'n3_asset_holders',
+        mapArgs: (args) => n3Args(pick(args, ['contractHash', 'limit', 'skip', 'network'])),
+      },
+      neox: {
+        internalName: 'x_token_holders',
+        mapArgs: (args) => neoxNetwork(
+          rename(dropPagination(pick(args, ['contractHash', 'network'])),
+            'contractHash', 'address'),
+        ),
+      },
+    },
+  },
+  {
+    name: 'explorer_search',
+    description:
+      'Explorer analytics: full-text search across blocks, transactions, addresses, tokens, '
+      + 'and contracts.',
+    inputSchema: {
+      ...chainField(CHAINS),
+      q: z.string().describe('Search query (address, token name/symbol, block, or tx hash)'),
+      ...networkField,
+    },
+    chains: CHAINS,
+    routes: {
+      n3: {
+        internalName: 'query_indexer',
+        mapArgs: (args) => {
+          const q = args.q;
+          if (typeof q !== 'string' || !q.trim()) {
+            throw new ValidationError('explorer_search requires a non-empty "q" query string.');
+          }
+          return { method: 'search', params: { q: q.trim() } };
+        },
+      },
+      neox: { internalName: 'x_search', mapArgs: xExplorerArgs(['q']) },
+    },
+  },
+  {
+    name: 'query_explorer',
+    description:
+      'Generic explorer query: pick one vetted read-only endpoint from the chain catalog '
+      + '(n3index REST for Neo N3, Blockscout v2 for Neo X) and pass its typed params. '
+      + 'Mainnet only; unknown endpoints and params are rejected before any network call.',
+    inputSchema: {
+      ...chainField(CHAINS),
+      endpoint: z.string().describe('One of the vetted catalog endpoints for the selected chain'),
+      params: z.record(z.unknown()).optional().describe(
+        'Typed params for the chosen endpoint. Only that endpoint\'s declared keys are accepted; '
+        + 'Neo N3 pagination uses `offset` here (not `skip`).',
+      ),
+    },
+    chains: CHAINS,
+    routes: {
+      n3: {
+        internalName: 'query_indexer',
+        mapArgs: (args) => rename(pick(args, ['endpoint', 'params']), 'endpoint', 'method'),
+      },
+      neox: {
+        internalName: 'x_query',
+        mapArgs: (args) => pick(args, ['endpoint', 'params']),
+      },
+    },
+  },
+  {
+    name: 'query_explorer_find',
+    description:
+      'Neo N3 constrained-filter indexer query: author a small vetted filter over one '
+      + 'allowlisted collection. Gated off by default (N3INDEX_FIND_ENABLED); mainnet only.',
+    inputSchema: {
+      collection: z.string().describe('One of the vetted indexer collections'),
+      filter: z.record(z.unknown()).optional().describe(
+        'Small Mongo-shaped filter over the collection\'s indexed fields only',
+      ),
+      sort: z.record(z.unknown()).optional().describe(
+        'Optional sort spec over sortable fields: { field: 1 | -1 | "asc" | "desc" }',
+      ),
+      limit: z.number().int().min(1).max(100).optional().describe('Max rows (default 20, capped)'),
+      skip: z.number().int().nonnegative().optional().describe('Rows to skip (default 0, capped)'),
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'query_indexer_find',
+        mapArgs: (args) => pick(args, ['collection', 'filter', 'sort', 'limit', 'skip']),
+      },
+    },
+  },
+  {
+    name: 'query_explorer_graphql',
+    description:
+      'Neo X arbitrary Blockscout GraphQL read query. Gated off by default '
+      + '(NEOX_GRAPHQL_ENABLED); mutations, subscriptions, introspection, and directives are '
+      + 'rejected. Mainnet only.',
+    inputSchema: {
+      query: z.string().describe('A read-only GraphQL query document'),
+      variables: z.record(z.unknown()).optional().describe(
+        'Optional GraphQL variables as a plain, bounded JSON object',
+      ),
+    },
+    chains: ['neox'],
+    routes: {
+      neox: {
+        internalName: 'x_graphql',
+        mapArgs: (args) => pick(args, ['query', 'variables']),
+      },
+    },
+  },
+];
+
+// --- exported surface --------------------------------------------------------
+
+export const PUBLIC_TOOLS: Readonly<Record<string, PublicToolSpec>> = Object.freeze(
+  SPECS.reduce<Record<string, PublicToolSpec>>((acc, spec) => {
+    acc[spec.name] = spec;
+    return acc;
+  }, {}),
+);
+
+const PUBLIC_TOOL_NAMES: readonly string[] = SPECS.map((spec) => spec.name);
+
+export function publicToolNames(): string[] {
+  return [...PUBLIC_TOOL_NAMES];
+}
+
+export function listPublicTools(): PublicToolSpec[] {
+  return [...SPECS];
+}
+
+export function isPublicTool(name: string): boolean {
+  return Object.prototype.hasOwnProperty.call(PUBLIC_TOOLS, name);
+}
+
+export function supportedChains(name: string): Chain[] {
+  const spec = PUBLIC_TOOLS[name];
+  if (!spec) {
+    throw new ValidationError(`Unknown tool "${name}".`);
+  }
+  return [...spec.chains];
+}
+
+function resolveChain(spec: PublicToolSpec, args: Record<string, unknown>): Chain | undefined {
+  const requested = args.chain;
+
+  // Chain-less meta tools: ignore any chain the caller sends.
+  if (spec.chains.length === 0) return undefined;
+
+  // Single-chain tools: chain is optional, but a wrong one is an error.
+  if (spec.chains.length === 1) {
+    const only = spec.chains[0];
+    if (requested !== undefined && requested !== only) {
+      throw new ValidationError(
+        `Tool "${spec.name}" does not support chain "${String(requested)}"; `
+        + `it is ${only === 'n3' ? 'Neo N3' : 'Neo X'} only.`,
+      );
+    }
+    return only;
+  }
+
+  // Multi-chain tools: chain is required, with no silent default.
+  if (typeof requested !== 'string' || requested.length === 0) {
+    throw new ValidationError(
+      `Tool "${spec.name}" requires a "chain" argument: `
+      + `${spec.chains.map((c) => `"${c}"`).join(' or ')}.`,
+    );
+  }
+  if (!(spec.chains as readonly string[]).includes(requested)) {
+    throw new ValidationError(
+      `Tool "${spec.name}" does not support chain "${requested}"; `
+      + `supported: ${spec.chains.join(', ')}.`,
+    );
+  }
+  return requested as Chain;
+}
+
+/**
+ * Resolve a public tool call onto its internal handler and argument shape.
+ * Throws ValidationError for unknown tools, missing/unsupported chains, and
+ * invalid network values.
+ */
+export function resolveRoute(name: string, args: Record<string, unknown> = {}): ToolRoute {
+  const spec = PUBLIC_TOOLS[name];
+  if (!spec) {
+    throw new ValidationError(`Unknown tool "${name}".`);
+  }
+
+  const chain = resolveChain(spec, args);
+  const route = chain ? spec.routes[chain] : spec.routes.meta;
+  if (!route) {
+    throw new ValidationError(
+      `Tool "${name}" does not support chain "${String(chain)}".`,
+    );
+  }
+
+  const incoming: Record<string, unknown> = { ...args };
+  delete incoming.chain;
+
+  const mapped = route.mapArgs ? route.mapArgs(incoming) : incoming;
+
+  return {
+    publicName: name,
+    internalName: route.internalName,
+    chain,
+    args: { ...mapped },
+    requiresServices: route.requiresServices === true,
+    requiresWallet: route.requiresWallet === true,
+  };
+}

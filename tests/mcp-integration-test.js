@@ -1,7 +1,7 @@
 /**
- * Neo N3 MCP Server Integration Test
+ * Neo MCP Server Integration Test
  *
- * This test demonstrates the working of the Neo N3 MCP server by simulating a client
+ * This test demonstrates the working of the Neo MCP server by simulating a client
  * that connects to the server and uses its capabilities.
  */
 
@@ -38,11 +38,11 @@ class McpIntegrationTest {
    * Start the server and connect to it
    */
   async startServer() {
-    console.log('Starting Neo N3 MCP server...');
+    console.log('Starting Neo MCP server...');
 
     // Create a client
     this.client = new Client(
-      { name: 'Neo N3 MCP Integration Test', version: '1.0.0' },
+      { name: 'Neo MCP Integration Test', version: '1.0.0' },
       { capabilities: { tools: {}, resources: {}, prompts: {} } }
     );
 
@@ -175,8 +175,8 @@ class McpIntegrationTest {
   async testGetBlockchainInfo() {
     try {
       const result = await this.withTimeout(
-        this.client.callTool({ name: 'get_blockchain_info', arguments: {} }),
-        'get_blockchain_info'
+        this.client.callTool({ name: 'get_chain_info', arguments: { chain: 'n3' } }),
+        'get_chain_info'
       );
 
       // Verify that blockchain info was returned
@@ -209,8 +209,8 @@ class McpIntegrationTest {
   async testGetBlockCount() {
     try {
       const result = await this.withTimeout(
-        this.client.callTool({ name: 'get_block_count', arguments: {} }),
-        'get_block_count'
+        this.client.callTool({ name: 'get_block_height', arguments: { chain: 'n3' } }),
+        'get_block_height'
       );
 
       // Verify that block count was returned
@@ -245,7 +245,7 @@ class McpIntegrationTest {
       const testAddress = 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr';
 
       const result = await this.withTimeout(
-        this.client.callTool({ name: 'get_balance', arguments: { address: testAddress } }),
+        this.client.callTool({ name: 'get_balance', arguments: { chain: 'n3', address: testAddress } }),
         'get_balance'
       );
 
@@ -379,7 +379,7 @@ class McpIntegrationTest {
    * Run all tests
    */
   async runTests() {
-    console.log('=== Neo N3 MCP Integration Test ===\n');
+    console.log('=== Neo MCP Integration Test ===\n');
 
     try {
       // Start the server and connect

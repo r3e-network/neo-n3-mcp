@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Getting Started - Neo N3 MCP Server</title>
-    <meta name="description" content="Install and configure the Neo N3 MCP stdio server or authenticated HTTP API on Node.js 22 and newer.">
+    <title>Getting Started - Neo MCP Server</title>
+    <meta name="description" content="Install and configure the Neo MCP stdio server or authenticated HTTP API on Node.js 22 and newer.">
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,13 +31,13 @@
 <body>
     <nav class="nav">
         <div class="nav-container">
-            <a href="/" class="nav-logo">Neo N3 MCP</a>
+            <a href="/" class="nav-logo">Neo MCP</a>
             <div class="nav-menu">
                 <a href="/" class="nav-link">Home</a>
                 <a href="/docs" class="nav-link active">Docs</a>
                 <a href="/docs/api" class="nav-link">API</a>
                 <a href="/docs/testing" class="nav-link">Testing</a>
-                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank" rel="noreferrer">GitHub</a>
+                <a href="https://github.com/r3e-network/neo-mcp" class="btn btn-primary" target="_blank" rel="noreferrer">GitHub</a>
             </div>
         </div>
     </nav>
@@ -55,7 +55,7 @@
             <div class="step">
                 <div class="step-label">Step 1</div>
                 <h3>Run the package</h3>
-                <pre><code>npx -y @r3e/neo-n3-mcp</code></pre>
+                <pre><code>npx -y @r3e/neo-mcp</code></pre>
             </div>
             <div class="step">
                 <div class="step-label">Step 2</div>
@@ -64,7 +64,7 @@
   "mcpServers": {
     "neo-n3": {
       "command": "npx",
-      "args": ["-y", "@r3e/neo-n3-mcp"],
+      "args": ["-y", "@r3e/neo-mcp"],
       "env": {
         "NEO_NETWORK": "testnet",
         "NEO_TESTNET_RPC": "https://testnet1.neo.coz.io:443"
@@ -72,23 +72,23 @@
     }
   }
 }</code></pre>
-                <p>Stdio mode supports <code>mainnet</code>, <code>testnet</code>, or <code>both</code>. With <code>both</code>, read-only calls without an explicit network use mainnet. State-changing tools always require an explicit network and <code>confirm: true</code>.</p>
+                <p>Stdio mode supports <code>mainnet</code>, <code>testnet</code>, or <code>both</code>. With <code>both</code>, read-only calls without an explicit network use mainnet. State-changing tools always require an explicit network, an <code>idempotencyKey</code>, and acceptance of the returned intent fingerprint through form elicitation.</p>
             </div>
             <div class="step">
                 <div class="step-label">Step 3</div>
                 <h3>Make a read-only call</h3>
                 <pre><code>{
-  "name": "get_block_count",
-  "arguments": { "network": "testnet" }
+  "name": "get_block_height",
+  "arguments": { "chain": "n3", "network": "testnet" }
 }</code></pre>
-                <p>The response contains <code>blockCount</code> and the latest zero-based <code>height</code>.</p>
+                <p>The response contains <code>blockCount</code> and the latest zero-based <code>height</code>. Tools that both chains implement require the <code>chain</code> discriminator, <code>"n3"</code> or <code>"neox"</code>; there is no default.</p>
             </div>
         </section>
 
         <section class="docs-section">
             <h2>Build from source</h2>
-            <pre><code>git clone https://github.com/r3e-network/neo-n3-mcp.git
-cd neo-n3-mcp
+            <pre><code>git clone https://github.com/r3e-network/neo-mcp.git
+cd neo-mcp
 npm ci
 npm run build
 npm run verify</code></pre>
@@ -143,6 +143,6 @@ docker compose -f docker/docker-compose.yml up -d</code></pre>
         </section>
     </main>
 
-    <footer class="footer"><div class="footer-container"><div class="footer-bottom"><span>Neo N3 MCP Server</span><span>MIT licensed</span></div></div></footer>
+    <footer class="footer"><div class="footer-container"><div class="footer-bottom"><span>Neo MCP Server</span><span>MIT licensed</span></div></div></footer>
 </body>
 </html>

@@ -117,7 +117,7 @@ export async function startMcpTestClient({
   capabilities = { tools: {}, resources: {}, prompts: {} },
 }: StartMcpTestClientParams): Promise<{ client: Client; transport: StdioClientTransport }> {
   const ownsWalletDirectory = !env.WALLETS_DIR;
-  const walletsDir = env.WALLETS_DIR || mkdtempSync(join(tmpdir(), 'neo-n3-mcp-test-wallets-'));
+  const walletsDir = env.WALLETS_DIR || mkdtempSync(join(tmpdir(), 'neo-mcp-test-wallets-'));
   const client = new Client(clientInfo, { capabilities });
   const transport = new StdioClientTransport({
     command: 'node',

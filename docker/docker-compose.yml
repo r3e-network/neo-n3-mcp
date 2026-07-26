@@ -1,4 +1,4 @@
-name: neo-n3-mcp
+name: neo-mcp
 
 services:
   neo-mcp:
@@ -6,9 +6,9 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
       target: production
-    image: neo-n3-mcp:local
+    image: neo-mcp:local
     pull_policy: build
-    container_name: neo-n3-mcp-server
+    container_name: neo-mcp-server
     restart: unless-stopped
     stop_grace_period: "${STOP_GRACE_PERIOD:-30s}"
     pids_limit: ${PIDS_LIMIT:-256}
@@ -65,9 +65,9 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
       target: production
-    image: neo-n3-mcp:local
+    image: neo-mcp:local
     pull_policy: build
-    container_name: neo-n3-mcp-http
+    container_name: neo-mcp-http
     command: ["node", "dist/mcp-http.js"]
     restart: unless-stopped
     init: true

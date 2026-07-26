@@ -1,7 +1,7 @@
 {
-  "name": "@r3e/neo-n3-mcp",
+  "name": "@r3e/neo-mcp",
   "version": "3.1.0",
-  "description": "MCP server and HTTP API for Neo N3 blockchain integration",
+  "description": "MCP server and HTTP API for Neo N3 and Neo X blockchain integration",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -36,7 +36,7 @@
     "docker:build": "./scripts/docker-build.sh",
     "docker:build:dev": "./scripts/docker-build.sh --dev --tag dev",
     "docker:run": "./scripts/docker-run.sh",
-    "docker:run:dev": "./scripts/docker-run.sh --image neo-n3-mcp:dev --network testnet",
+    "docker:run:dev": "./scripts/docker-run.sh --image neo-mcp:dev --network testnet",
     "docker:up": "docker compose -f docker/docker-compose.yml up -d",
     "docker:up:dev": "docker compose -f docker/docker-compose.dev.yml up -d",
     "docker:down": "docker compose -f docker/docker-compose.yml down",
@@ -50,7 +50,7 @@
     "test:mcp:smoke": "jest --runInBand tests/mcp-build-smoke.test.ts --testPathIgnorePatterns='/node_modules/'"
   },
   "bin": {
-    "neo-n3-mcp": "dist/index.js"
+    "neo-mcp": "dist/index.js"
   },
   "files": [
     "dist",
@@ -62,6 +62,8 @@
     "blockchain",
     "mcp",
     "n3",
+    "neox",
+    "evm",
     "modelcontextprotocol",
     "http",
     "api",
@@ -74,11 +76,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/r3e-network/neo-n3-mcp.git"
+    "url": "git+https://github.com/r3e-network/neo-mcp.git"
   },
-  "homepage": "https://github.com/r3e-network/neo-n3-mcp#readme",
+  "homepage": "https://github.com/r3e-network/neo-mcp#readme",
   "bugs": {
-    "url": "https://github.com/r3e-network/neo-n3-mcp/issues"
+    "url": "https://github.com/r3e-network/neo-mcp/issues"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",

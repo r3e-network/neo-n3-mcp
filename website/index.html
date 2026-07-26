@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neo N3 MCP Server</title>
-    <meta name="description" content="A Neo N3 MCP server with 25 tools, 4 resources, hardened HTTP access, wallet persistence, and generic smart-contract discovery.">
+    <title>Neo MCP Server</title>
+    <meta name="description" content="A Neo MCP server with 25 tools, 4 resources, hardened HTTP access, wallet persistence, and generic smart-contract discovery.">
     <meta name="keywords" content="neo n3, blockchain, mcp, development, smart contracts, defi, enterprise">
     
     <!-- Open Graph -->
-    <meta property="og:title" content="Neo N3 MCP Server">
+    <meta property="og:title" content="Neo MCP Server">
     <meta property="og:description" content="Connect MCP clients and HTTP integrations to Neo N3 blockchain, asset, wallet, and contract operations.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://neo-n3-mcp.netlify.app">
@@ -427,12 +427,12 @@
     <!-- Navigation -->
     <nav class="nav" id="nav">
         <div class="nav-container">
-            <a href="/" class="nav-logo">Neo N3 MCP</a>
+            <a href="/" class="nav-logo">Neo MCP</a>
             <div class="nav-menu">
                 <a href="/#features" class="nav-link">Features</a>
                 <a href="/examples" class="nav-link">Examples</a>
                 <a href="/docs" class="nav-link">Documentation</a>
-                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+                <a href="https://github.com/r3e-network/neo-mcp" class="btn btn-primary" target="_blank">Get Started</a>
             </div>
         </div>
     </nav>
@@ -442,14 +442,14 @@
         <div class="hero-container">
             <div class="hero-content">
                 <div class="hero-badge">Neo N3 for MCP and HTTP clients</div>
-                <h1 class="hero-title">Neo N3 MCP Server</h1>
+                <h1 class="hero-title">Neo MCP Server</h1>
                 <p class="hero-subtitle">
                     Use 25 focused tools for blockchain data, assets, wallets, transaction workflows,
                     and contracts resolved by verified script hash, address, or live metadata.
                 </p>
                 
                 <div class="hero-actions">
-                    <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary btn-large" target="_blank">
+                    <a href="https://github.com/r3e-network/neo-mcp" class="btn btn-primary btn-large" target="_blank">
                         🚀 Get Started
                     </a>
                     <a href="/docs" class="btn btn-secondary btn-large">
@@ -487,10 +487,10 @@
                     <div class="code-body">
                         <div class="code-line">
                             <span class="code-prompt">$</span>
-                            <span class="code-command"> npx -y @r3e/neo-n3-mcp</span>
+                            <span class="code-command"> npx -y @r3e/neo-mcp</span>
                         </div>
                         <div class="code-line">
-                            <span class="code-output">✓ Neo N3 MCP Server started</span>
+                            <span class="code-output">✓ Neo MCP Server started</span>
                         </div>
                         <div class="code-line">
                             <span class="code-prompt">$</span>
@@ -609,7 +609,7 @@
             <div class="section-header">
                 <h2 class="section-title">Code Examples</h2>
                 <p class="section-subtitle">
-                    See Neo N3 MCP in action with real-world examples
+                    See Neo MCP in action with real-world examples
                 </p>
             </div>
             
@@ -627,6 +627,7 @@
                             <div class="code-content">
                                 <pre><span class="code-comment">// Query a provisioned account</span>
 <span class="code-keyword">const</span> balance = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'get_balance'</span>, {
+  chain: <span class="code-string">'n3'</span>,
   network: <span class="code-string">'testnet'</span>,
   address: accountAddress
 });
@@ -648,8 +649,9 @@ console.<span class="code-method">log</span>(balance.balance);</pre>
                     <div class="example-content">
                         <div class="code-window">
                             <div class="code-content">
-                                <pre><span class="code-comment">// Invoke smart contracts</span>
-<span class="code-keyword">const</span> result = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'invoke_contract'</span>, {
+                                <pre><span class="code-comment">// Read a contract method, no signing</span>
+<span class="code-keyword">const</span> result = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'call_contract'</span>, {
+  chain: <span class="code-string">'n3'</span>,
   network: <span class="code-string">'mainnet'</span>,
   contract: <span class="code-string">'0xd2a4cff31913016155e38e474a2c06d08be276cf'</span>,
   operation: <span class="code-string">'symbol'</span>,
@@ -699,11 +701,13 @@ console.<span class="code-method">log</span>(<span class="code-string">'TX ID:'<
                     <div class="example-content">
                         <div class="code-window">
                             <div class="code-content">
-                                <pre><span class="code-comment">// Get blockchain info</span>
-<span class="code-keyword">const</span> info = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'get_blockchain_info'</span>, {
+                                <pre><span class="code-comment">// Get chain info</span>
+<span class="code-keyword">const</span> info = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'get_chain_info'</span>, {
+  chain: <span class="code-string">'n3'</span>,
   network: <span class="code-string">'testnet'</span>
 });
 <span class="code-keyword">const</span> block = <span class="code-keyword">await</span> neo.<span class="code-method">callTool</span>(<span class="code-string">'get_block'</span>, {
+  chain: <span class="code-string">'n3'</span>,
   network: <span class="code-string">'testnet'</span>,
   hashOrHeight: info.height
 });
@@ -731,11 +735,11 @@ console.<span class="code-method">log</span>(<span class="code-string">'Hash:'</
                     <span class="install-title">Quick Install</span>
                     <button class="copy-btn" onclick="copyInstallCommand()">Copy</button>
                 </div>
-                <div class="install-code">npm install @r3e/neo-n3-mcp</div>
+                <div class="install-code">npm install @r3e/neo-mcp</div>
             </div>
             
             <div class="hero-actions">
-                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary btn-large" target="_blank">
+                <a href="https://github.com/r3e-network/neo-mcp" class="btn btn-primary btn-large" target="_blank">
                     ⭐ Star on GitHub
                 </a>
                 <a href="/docs" class="btn btn-secondary btn-large">
@@ -750,7 +754,7 @@ console.<span class="code-method">log</span>(<span class="code-string">'Hash:'</
         <div class="footer-container">
             <div class="footer-grid">
                 <div>
-                    <div class="footer-brand">Neo N3 MCP</div>
+                    <div class="footer-brand">Neo MCP</div>
                     <p class="footer-description">
                         A focused MCP and HTTP integration surface for Neo N3 data, assets,
                         wallets, transactions, and smart contracts.
@@ -769,20 +773,20 @@ console.<span class="code-method">log</span>(<span class="code-string">'Hash:'</
                     <div class="footer-links">
                         <a href="https://docs.neo.org/" class="footer-link" target="_blank">Neo N3 Docs</a>
                         <a href="https://modelcontextprotocol.io/" class="footer-link" target="_blank">MCP Protocol</a>
-                        <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="footer-link" target="_blank">NPM Package</a>
+                        <a href="https://www.npmjs.com/package/@r3e/neo-mcp" class="footer-link" target="_blank">NPM Package</a>
                     </div>
                 </div>
                 <div>
                     <h4 class="footer-title">Community</h4>
                     <div class="footer-links">
-                        <a href="https://github.com/r3e-network/neo-n3-mcp" class="footer-link" target="_blank">GitHub</a>
-                        <a href="https://github.com/r3e-network/neo-n3-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
+                        <a href="https://github.com/r3e-network/neo-mcp" class="footer-link" target="_blank">GitHub</a>
+                        <a href="https://github.com/r3e-network/neo-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
                         <a href="https://discord.gg/neo" class="footer-link" target="_blank">Discord</a>
                     </div>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>© 2025 Neo N3 MCP. Open source under MIT License.</p>
+                <p>© 2025 Neo MCP. Open source under MIT License.</p>
                 <p>Built with ❤️ for the Neo ecosystem</p>
             </div>
         </div>
@@ -801,7 +805,7 @@ console.<span class="code-method">log</span>(<span class="code-string">'Hash:'</
 
         // Copy install command
         function copyInstallCommand() {
-            const command = 'npm install @r3e/neo-n3-mcp';
+            const command = 'npm install @r3e/neo-mcp';
             navigator.clipboard.writeText(command).then(() => {
                 const btn = document.querySelector('.copy-btn');
                 btn.textContent = 'Copied!';

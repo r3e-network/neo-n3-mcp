@@ -8,7 +8,7 @@ This repository ships three processes that are easy to confuse. They are not int
 
 | Entrypoint | Command | Wire protocol | Listens on | Intended client |
 | --- | --- | --- | --- | --- |
-| MCP stdio | `npm start` (or `npx -y @r3e/neo-n3-mcp`) | MCP JSON-RPC over stdin/stdout | nothing; the client spawns the process | A local MCP client on the same machine: Claude Desktop, Cursor, an IDE |
+| MCP stdio | `npm start` (or `npx -y @r3e/neo-mcp`) | MCP JSON-RPC over stdin/stdout | nothing; the client spawns the process | A local MCP client on the same machine: Claude Desktop, Cursor, an IDE |
 | MCP Streamable HTTP | `npm run start:mcp-http` | MCP JSON-RPC over HTTP, per the MCP Streamable HTTP transport | `MCP_HTTP_HOST:MCP_HTTP_PORT` (default `127.0.0.1:3001`) | A remote MCP client, such as the Neo Explorer agent |
 | REST API | `npm run start:http` | Bespoke REST/JSON. **Not MCP.** | `HTTP_HOST:PORT` (default `127.0.0.1:3000`) | Dashboards, `curl`, service-to-service callers |
 
@@ -82,7 +82,7 @@ Two terminals: the MCP server, then the explorer that calls it.
 ### 1. Start the MCP HTTP server
 
 ```bash
-cd /path/to/neo-n3-mcp
+cd /path/to/neo-mcp
 npm ci
 npm run build
 

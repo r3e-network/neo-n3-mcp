@@ -1,5 +1,5 @@
 /**
- * Configuration for the Neo N3 MCP server
+ * Configuration for the Neo MCP server
  */
 
 import { assertValidRpcUrl } from './utils/rpc-url';
@@ -154,7 +154,7 @@ const testnetRpcUrls = resolveRpcUrlList(
   DEFAULT_TESTNET_RPC_URLS
 );
 
-const logFilePath = readEnv('LOG_FILE') || './logs/neo-n3-mcp.log';
+const logFilePath = readEnv('LOG_FILE') || './logs/neo-mcp.log';
 const logToConsole = readBooleanEnv('LOG_CONSOLE');
 const isTestLikeEnvironment = (process.env.NODE_ENV || '').toLowerCase().includes('test');
 const walletsDirectory = readEnv('WALLETS_DIR') || DEFAULT_WALLETS_DIR;

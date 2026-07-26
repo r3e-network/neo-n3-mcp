@@ -1,6 +1,6 @@
 # Docker Guide
 
-The Docker assets run the Neo N3 MCP HTTP entrypoint on Node.js 22 Alpine images.
+The Docker assets run the Neo MCP HTTP entrypoint on Node.js 22 Alpine images.
 
 ## Production Compose
 
@@ -14,7 +14,7 @@ docker compose -f docker/docker-compose.yml up -d
 Production defaults:
 
 - `HTTP_API_KEY` is required and must contain at least 32 bytes.
-- Compose builds the checked-out source as `neo-n3-mcp:local`; it does not pull a mutable registry tag.
+- Compose builds the checked-out source as `neo-mcp:local`; it does not pull a mutable registry tag.
 - The container listens on `0.0.0.0:3000`.
 - The host publishes `127.0.0.1:3000`; set `HTTP_BIND_ADDRESS` or `PORT` to change the host-side binding.
 - `/app/wallets` is persisted in the `neo-mcp-wallets` named volume.
@@ -42,7 +42,7 @@ Restrict the published port to that proxy. Direct remote plaintext HTTP is unsup
 Run a published image through the registry overlay with a repository and immutable digest. Replace the example digest with the release artifact's 64-character lowercase hexadecimal digest:
 
 ```bash
-NEO_MCP_IMAGE_REPOSITORY=r3enetwork/neo-n3-mcp \
+NEO_MCP_IMAGE_REPOSITORY=r3enetwork/neo-mcp \
 NEO_MCP_IMAGE_DIGEST=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef \
 HTTP_API_KEY="$HTTP_API_KEY" \
   docker compose -f docker/docker-compose.yml \
@@ -76,10 +76,10 @@ npm run docker:test
 
 ```bash
 docker build --file docker/Dockerfile --target production \
-  --tag neo-n3-mcp:latest .
+  --tag neo-mcp:latest .
 
 docker build --file docker/Dockerfile.dev --target development \
-  --tag neo-n3-mcp:dev .
+  --tag neo-mcp:dev .
 ```
 
 Equivalent helper commands:
@@ -92,7 +92,7 @@ npm run docker:build:dev
 The build helper also supports custom names, tags, registries, and an optional push:
 
 ```bash
-./scripts/docker-build.sh --name neo-n3-mcp --tag 2.0.0 \
+./scripts/docker-build.sh --name neo-mcp --tag 2.0.0 \
   --registry r3enetwork --push
 ```
 
@@ -116,7 +116,7 @@ docker run --rm \
   --env HTTP_API_KEY \
   --env WALLETS_DIR=/app/wallets \
   --volume neo-mcp-wallets:/app/wallets \
-  neo-n3-mcp:latest
+  neo-mcp:latest
 ```
 
 The checked-in run helper supplies the same security and persistence defaults:

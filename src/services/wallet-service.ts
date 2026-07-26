@@ -1,7 +1,7 @@
 /**
- * Wallet Service for Neo N3 MCP
+ * Wallet Service for Neo MCP
  *
- * This module provides wallet management functionality for the Neo N3 MCP server.
+ * This module provides wallet management functionality for the Neo MCP server.
  */
 
 import * as neonJs from '@cityofzion/neon-js';

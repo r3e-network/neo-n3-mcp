@@ -15,7 +15,7 @@ import { readBoundedJson } from '../utils/bounded-json';
 import { NetworkError, ValidationError } from '../utils/errors';
 import { config } from '../config';
 
-type FetchLike = typeof fetch;
+export type FetchLike = typeof fetch;
 
 export type NeoxEvmNetwork = 'neox-mainnet' | 'neox-testnet';
 
@@ -36,6 +36,22 @@ export const EVM_READ_ONLY_METHODS: ReadonlySet<string> = new Set([
   'eth_getBalance',
   'eth_blockNumber',
   'net_version',
+  // Live chain reads used by the unified node tools (get_block, get_transaction,
+  // get_transaction_status, get_contract_code). Every one is a pure query: the
+  // node computes nothing it would not compute for a block explorer.
+  'eth_getBlockByNumber',
+  'eth_getBlockByHash',
+  'eth_getBlockTransactionCountByNumber',
+  'eth_getBlockTransactionCountByHash',
+  'eth_getTransactionByHash',
+  'eth_getTransactionByBlockNumberAndIndex',
+  'eth_getTransactionByBlockHashAndIndex',
+  'eth_getTransactionReceipt',
+  'eth_getCode',
+  'eth_getLogs',
+  'eth_maxPriorityFeePerGas',
+  'eth_feeHistory',
+  'eth_syncing',
 ]);
 
 /**

@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-image="neo-n3-mcp:latest"
-container_name="neo-n3-mcp-server"
+image="neo-mcp:latest"
+container_name="neo-mcp-server"
 bind_address="127.0.0.1"
 port="3000"
 network="mainnet"
@@ -23,8 +23,8 @@ Usage: scripts/docker-run.sh [options]
 Set HTTP_API_KEY to a value of at least 32 bytes, or provide an env file.
 
 Options:
-  -i, --image IMAGE         Image to run (default: neo-n3-mcp:latest)
-  -n, --name NAME           Container name (default: neo-n3-mcp-server)
+  -i, --image IMAGE         Image to run (default: neo-mcp:latest)
+  -n, --name NAME           Container name (default: neo-mcp-server)
   -b, --bind ADDRESS        Host bind address (default: 127.0.0.1)
   -p, --port PORT           Host port (default: 3000)
   -N, --network NETWORK     Neo network: mainnet or testnet

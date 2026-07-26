@@ -12,7 +12,7 @@ import {
 /**
  * MCP Server Stress Test Suite
  * 
- * This test suite validates the Neo N3 MCP server's performance, reliability,
+ * This test suite validates the Neo MCP server's performance, reliability,
  * and stability under various stress conditions and load scenarios.
  */
 
@@ -106,8 +106,8 @@ describe('MCP Server Stress Tests', () => {
       const promises = Array(concurrentCalls).fill(0).map(async (_, index) => {
         try {
           const response = await client.callTool({
-            name: 'get_blockchain_info',
-            arguments: {}
+            name: 'get_chain_info',
+            arguments: { chain: 'n3' }
           });
           
           const data = JSON.parse(response.content[0].text);
@@ -144,8 +144,8 @@ describe('MCP Server Stress Tests', () => {
 
     test('should handle mixed heavy operations', async () => {
       const operations = [
-        () => client.callTool({ name: 'get_blockchain_info', arguments: {} }),
-        () => client.callTool({ name: 'get_block_count', arguments: {} }),
+        () => client.callTool({ name: 'get_chain_info', arguments: { chain: 'n3' } }),
+        () => client.callTool({ name: 'get_block_height', arguments: { chain: 'n3' } }),
         () => client.callTool({ name: 'list_famous_contracts', arguments: {} }),
         // This slot held `create_wallet`, which is no longer dispatchable; it answered with an
         // isError response that the old `toBeDefined()` check counted as a success, so the slot
@@ -300,7 +300,7 @@ describe('MCP Server Stress Tests', () => {
           // Check balance
           const balanceResponse = await callToolWithRpcRetry(client, {
             name: 'get_balance',
-            arguments: { address }
+            arguments: { chain: 'n3', address }
           });
           const balance = JSON.parse(balanceResponse.content[0].text);
 
@@ -339,15 +339,15 @@ describe('MCP Server Stress Tests', () => {
       const runWorkflow = async () => {
         // Get blockchain info
         const infoResponse = await client.callTool({
-          name: 'get_blockchain_info',
-          arguments: {}
+          name: 'get_chain_info',
+          arguments: { chain: 'n3' }
         });
         const info = JSON.parse(infoResponse.content[0].text);
         
         // Get block count
         const countResponse = await client.callTool({
-          name: 'get_block_count',
-          arguments: {}
+          name: 'get_block_height',
+          arguments: { chain: 'n3' }
         });
         const count = JSON.parse(countResponse.content[0].text);
         
@@ -393,12 +393,12 @@ describe('MCP Server Stress Tests', () => {
     test('should recover from invalid operations gracefully', async () => {
       const validOperations = [
         () => client.callTool({ name: 'get_network_mode', arguments: {} }),
-        () => client.callTool({ name: 'get_blockchain_info', arguments: {} })
+        () => client.callTool({ name: 'get_chain_info', arguments: { chain: 'n3' } })
       ];
 
       const invalidOperations = [
         () => client.callTool({ name: 'invalid_tool', arguments: {} }),
-        () => client.callTool({ name: 'get_balance', arguments: { address: 'invalid' } }),
+        () => client.callTool({ name: 'get_balance', arguments: { chain: 'n3', address: 'invalid' } }),
         () => client.readResource({ uri: 'neo://invalid/resource' })
       ];
 
@@ -447,7 +447,7 @@ describe('MCP Server Stress Tests', () => {
       // Cause some errors first
       const errorCauses = [
         () => client.callTool({ name: 'invalid_tool', arguments: {} }),
-        () => client.callTool({ name: 'get_balance', arguments: { address: 'bad' } }),
+        () => client.callTool({ name: 'get_balance', arguments: { chain: 'n3', address: 'bad' } }),
         () => client.readResource({ uri: 'neo://bad/resource' })
       ];
 
@@ -504,8 +504,8 @@ describe('MCP Server Stress Tests', () => {
         
         try {
           await client.callTool({
-            name: 'get_blockchain_info',
-            arguments: {}
+            name: 'get_chain_info',
+            arguments: { chain: 'n3' }
           });
           
           const responseTime = Date.now() - startTime;
@@ -544,7 +544,7 @@ describe('MCP Server Stress Tests', () => {
         try {
           // Mix of different operations to test memory usage
           const operations = [
-            () => client.callTool({ name: 'get_blockchain_info', arguments: {} }),
+            () => client.callTool({ name: 'get_chain_info', arguments: { chain: 'n3' } }),
             () => client.callTool({ name: 'list_famous_contracts', arguments: {} }),
             () => client.readResource({ uri: 'neo://network/status' }),
             () => client.listTools()

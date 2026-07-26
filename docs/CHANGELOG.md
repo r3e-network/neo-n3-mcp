@@ -1,22 +1,34 @@
 # Changelog
 
-All notable changes to the Neo N3 MCP project will be documented in this file.
+All notable changes to the Neo MCP project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.1.0] - 2026-07-11
+## [3.1.0] - 2026-07-25
 
-- Prepared the production-ready write-safety, RPC hardening, HTTP protection, Docker, packaging, and documentation improvements for the next minor release.
+### Breaking Changes
+- Renamed the package from `@r3e/neo-n3-mcp` to `@r3e/neo-mcp` and the binary to `neo-mcp`.
+- Renamed `get_blockchain_info` to `get_chain_info`, `get_block_count` to `get_block_height`, and the read-only `invoke_contract` to `call_contract`.
+- Tools that both chains implement now require an explicit `chain` argument, `n3` or `neox`, with no silent default.
+
+### Added
+- Neo X (EVM) read support across chain, block, transaction, balance, contract, and explorer tools.
+- Neo X mainnet and testnet RPC configuration plus Blockscout-backed explorer analytics.
+- `query_explorer_graphql` for Neo X, registered only when `NEOX_GRAPHQL_ENABLED=true`.
+- A single tool registry that resolves every public tool to a chain-specific route.
+
+### Changed
+- Collapsed the tool surface to 32 public tools shared across both chains.
 - Added durable write-operation recovery, idempotency, exact approval fingerprints, server-only signing, and fail-closed defaults.
-- Kept read-only MCP behavior backward compatible while exposing controlled write tools only when explicitly enabled.
+- Kept the remote MCP HTTP surface read-only and write tools registered only when explicitly enabled.
 
 ## [3.0.0] - 2026-07-11
 
 - Made all state-changing operations fail closed and disabled by default.
 - Replaced request-supplied WIFs with one owner-only server signer file.
 - Added durable idempotency journals, exact fingerprint approval, reconciliation, and byte-identical replay.
-- Split read-only `invoke_contract` from `invoke_contract_write`.
+- Split the read-only contract call, then named `invoke_contract`, from `invoke_contract_write`.
 - Removed model-facing wallet creation and import.
 - Added independent HTTP write approval and intent status routes.
 - Hardened RPC deadlines, response bounds, VM-state checks, network validation, fees, Docker, and release workflows.

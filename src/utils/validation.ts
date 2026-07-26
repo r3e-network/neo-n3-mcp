@@ -1,5 +1,5 @@
 /**
- * Validation utilities for Neo N3 MCP Server
+ * Validation utilities for Neo MCP Server
  * Provides robust validation for input parameters
  *
  * This module contains comprehensive validation functions for all Neo N3 blockchain

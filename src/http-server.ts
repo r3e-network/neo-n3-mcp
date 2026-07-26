@@ -1,7 +1,7 @@
 /**
- * HTTP Server for Neo N3 MCP
+ * HTTP Server for Neo MCP
  *
- * This module provides an HTTP server that exposes the Neo N3 MCP functionality
+ * This module provides an HTTP server that exposes the Neo MCP functionality
  * through a RESTful API.
  */
 
@@ -731,15 +731,15 @@ export class HttpServer {
 
     const labels = `network="${this.neoService.getNetwork()}"`;
     return [
-      '# HELP neo_n3_mcp_uptime_seconds Process uptime in seconds.',
-      '# TYPE neo_n3_mcp_uptime_seconds gauge',
-      `neo_n3_mcp_uptime_seconds ${process.uptime().toFixed(3)}`,
-      '# HELP neo_n3_mcp_network_info Current network mode marker.',
-      '# TYPE neo_n3_mcp_network_info gauge',
-      `neo_n3_mcp_network_info{${labels}} 1`,
-      '# HELP neo_n3_mcp_block_height Latest observed block height.',
-      '# TYPE neo_n3_mcp_block_height gauge',
-      `neo_n3_mcp_block_height{${labels}} ${blockHeight}`,
+      '# HELP neo_mcp_uptime_seconds Process uptime in seconds.',
+      '# TYPE neo_mcp_uptime_seconds gauge',
+      `neo_mcp_uptime_seconds ${process.uptime().toFixed(3)}`,
+      '# HELP neo_mcp_network_info Current network mode marker.',
+      '# TYPE neo_mcp_network_info gauge',
+      `neo_mcp_network_info{${labels}} 1`,
+      '# HELP neo_mcp_block_height Latest observed block height.',
+      '# TYPE neo_mcp_block_height gauge',
+      `neo_mcp_block_height{${labels}} ${blockHeight}`,
       ''
     ].join('\n');
   }

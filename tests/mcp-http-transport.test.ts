@@ -24,7 +24,7 @@ import {
   resolveMcpHttpOptionsFromEnv,
   withWritesDisabled,
 } from '../src/mcp-http-server';
-import { NeoN3McpServer } from '../src/index';
+import { NeoMcpServer } from '../src/index';
 import { config } from '../src/config';
 import { rateLimiter } from '../src/utils/rate-limiter';
 
@@ -157,7 +157,7 @@ describe('MCP Streamable HTTP transport', () => {
       const { client } = await connectClient(started);
 
       const result = await client.callTool(
-        { name: 'get_balance', arguments: { address: 'not-a-neo-address' } },
+        { name: 'get_balance', arguments: { chain: 'n3', address: 'not-a-neo-address' } },
         undefined,
         { timeout: 15_000 }
       );
@@ -628,11 +628,11 @@ describe('MCP Streamable HTTP transport', () => {
         maxSessions: 2,
         createMcpServer: () => {
           if (constructionShouldFail) {
-            // Mirrors a NeoN3McpServer constructor throw (e.g. a wallets-directory
+            // Mirrors a NeoMcpServer constructor throw (e.g. a wallets-directory
             // fs fault) on the increment/construction path.
             throw new Error('simulated wallets directory unavailable');
           }
-          return new NeoN3McpServer();
+          return new NeoMcpServer();
         },
       });
 
@@ -740,7 +740,7 @@ describe('MCP Streamable HTTP transport', () => {
       const prevSigner = config.writes.signerWifFile;
       const prevStateDir = config.writes.stateDirectory;
       // Turn writes fully on at the config level: with a valid signer and state
-      // dir, the raw NeoN3McpServer constructor WOULD register the write tools.
+      // dir, the raw NeoMcpServer constructor WOULD register the write tools.
       // The read-only factory must keep them off the remote surface anyway.
       config.writes.enabled = true;
       config.writes.signerWifFile = wifFile;

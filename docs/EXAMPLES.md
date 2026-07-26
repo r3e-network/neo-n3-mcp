@@ -1,16 +1,17 @@
-# Neo N3 MCP Examples
+# Neo MCP Examples
 
 ## Read-Only MCP
 
 ```javascript
 const height = await client.callTool({
-  name: 'get_block_count',
-  arguments: { network: 'testnet' },
+  name: 'get_block_height',
+  arguments: { chain: 'n3', network: 'testnet' },
 });
 
 const contract = await client.callTool({
-  name: 'invoke_contract',
+  name: 'call_contract',
   arguments: {
+    chain: 'n3',
     network: 'testnet',
     scriptHash: '0x0123456789abcdef0123456789abcdef01234567',
     operation: 'symbol',
@@ -18,6 +19,48 @@ const contract = await client.callTool({
   },
 });
 ```
+
+## Same Tools On Neo X
+
+Tools that exist on both chains take a required `chain` discriminator:
+
+```javascript
+const neoxHeight = await client.callTool({
+  name: 'get_block_height',
+  arguments: { chain: 'neox', network: 'testnet' },
+});
+
+const symbol = await client.callTool({
+  name: 'call_contract',
+  arguments: {
+    chain: 'neox',
+    network: 'testnet',
+    scriptHash: '0x0123456789abcdef0123456789abcdef01234567',
+    operation: 'symbol',
+    args: [],
+  },
+});
+```
+
+`call_contract` maps to `invokefunction` on Neo N3 and `eth_call` on Neo X. Neither variant can change state.
+
+## Unsigned Transaction Proposal
+
+```javascript
+const proposal = await client.callTool({
+  name: 'build_transfer',
+  arguments: {
+    chain: 'neox',
+    network: 'testnet',
+    fromAddress: '0x0123456789abcdef0123456789abcdef01234567',
+    toAddress: '0xfedcba9876543210fedcba9876543210fedcba98',
+    asset: 'GAS',
+    amount: '1',
+  },
+});
+```
+
+The result is an UNSIGNED proposal. A wallet reviews it, signs it, and broadcasts it; the server never holds a key.
 
 ## Controlled MCP Write
 

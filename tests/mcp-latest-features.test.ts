@@ -7,7 +7,7 @@ import { callToolWithRpcRetry, startMcpTestClient, stopMcpTestClient } from './m
 /**
  * Latest MCP Protocol Features Test Suite
  * 
- * Tests the Neo N3 MCP server's support for the latest protocol features
+ * Tests the Neo MCP server's support for the latest protocol features
  * introduced in MCP protocol version 2025-03-26 and SDK version 1.12.0+
  */
 
@@ -94,8 +94,8 @@ describe('Latest MCP Protocol Features', () => {
     test('should categorize tools by risk level', async () => {
       const response = await client.listTools();
       
-      const readOnlyTools = ['get_blockchain_info', 'get_block_count', 'get_balance', 'get_unclaimed_gas', 'get_nep17_transfers', 'get_nep11_balances', 'get_nep11_transfers', 'get_network_mode'];
-      const writeTools = ['transfer_assets', 'invoke_contract'];
+      const readOnlyTools = ['get_chain_info', 'get_block_height', 'get_balance', 'get_unclaimed_gas', 'get_nep17_transfers', 'get_nep11_balances', 'get_nep11_transfers', 'get_network_mode'];
+      const writeTools = ['transfer_assets', 'invoke_contract_write'];
       response.tools.forEach((tool: any) => {
         if (readOnlyTools.includes(tool.name)) {
           expect(tool.name).toBeDefined();
@@ -113,8 +113,8 @@ describe('Latest MCP Protocol Features', () => {
   describe('📊 Enhanced Content Types & Responses', () => {
     test('should support structured content responses', async () => {
       const response = await callToolWithRpcRetry(client, {
-        name: 'get_blockchain_info',
-        arguments: {}
+        name: 'get_chain_info',
+        arguments: { chain: 'n3' }
       });
 
       expect(response.content).toBeDefined();
@@ -165,7 +165,7 @@ describe('Latest MCP Protocol Features', () => {
     test('should support proper error responses with context', async () => {
       const response = await client.callTool({
         name: 'get_balance',
-        arguments: { address: 'invalid_address' }
+        arguments: { chain: 'n3', address: 'invalid_address' }
       });
 
       expect(response.isError).toBe(true);
@@ -178,8 +178,8 @@ describe('Latest MCP Protocol Features', () => {
   describe('🔄 Advanced Protocol Features', () => {
     test('should support multiple content types in single response', async () => {
       const response = await client.callTool({
-        name: 'get_blockchain_info',
-        arguments: {}
+        name: 'get_chain_info',
+        arguments: { chain: 'n3' }
       });
 
       // Current implementation uses text content
@@ -249,8 +249,8 @@ describe('Latest MCP Protocol Features', () => {
       
       const promises = Array(concurrentRequests).fill(0).map(() =>
         client.callTool({
-          name: 'get_blockchain_info',
-          arguments: {}
+          name: 'get_chain_info',
+          arguments: { chain: 'n3' }
         })
       );
       
@@ -273,7 +273,7 @@ describe('Latest MCP Protocol Features', () => {
         () => client.listResources(),
         () => client.callTool({ name: 'get_network_mode', arguments: {} }),
         () => client.readResource({ uri: 'neo://network/status' }),
-        () => client.callTool({ name: 'get_blockchain_info', arguments: {} })
+        () => client.callTool({ name: 'get_chain_info', arguments: { chain: 'n3' } })
       ];
       
       for (let i = 0; i < 10; i++) {
@@ -292,17 +292,17 @@ describe('Latest MCP Protocol Features', () => {
       const testCases = [
         {
           name: 'get_balance',
-          args: { address: '' }, // Empty address
+          args: { chain: 'n3', address: '' }, // Empty address
           expectError: true
         },
         {
           name: 'get_balance', 
-          args: { address: 'N' }, // Too short address
+          args: { chain: 'n3', address: 'N' }, // Too short address
           expectError: true
         },
         {
           name: 'get_block',
-          args: { hashOrHeight: -1 }, // Invalid block height
+          args: { chain: 'n3', hashOrHeight: -1 }, // Invalid block height
           expectError: true
         }
       ];
@@ -389,8 +389,8 @@ describe('Latest MCP Protocol Features', () => {
     test('should provide consistent state across operations', async () => {
       // Get blockchain info
       const info1 = await client.callTool({
-        name: 'get_blockchain_info',
-        arguments: {}
+        name: 'get_chain_info',
+        arguments: { chain: 'n3' }
       });
       
       // Wait a moment
@@ -398,8 +398,8 @@ describe('Latest MCP Protocol Features', () => {
       
       // Get blockchain info again
       const info2 = await client.callTool({
-        name: 'get_blockchain_info',
-        arguments: {}
+        name: 'get_chain_info',
+        arguments: { chain: 'n3' }
       });
       
       const data1 = JSON.parse(info1.content[0].text);
@@ -419,8 +419,8 @@ describe('Latest MCP Protocol Features', () => {
       
       // 1. Get network information
       const networkInfo = await client.callTool({
-        name: 'get_blockchain_info',
-        arguments: {}
+        name: 'get_chain_info',
+        arguments: { chain: 'n3' }
       });
       const networkData = JSON.parse(networkInfo.content[0].text);
       console.log(`📊 Network: ${networkData.network}, Height: ${networkData.height}`);
@@ -432,7 +432,7 @@ describe('Latest MCP Protocol Features', () => {
       // 3. Check balance for that address
       const balanceResponse = await client.callTool({
         name: 'get_balance',
-        arguments: { address }
+        arguments: { chain: 'n3', address }
       });
       const balance = JSON.parse(balanceResponse.content[0].text);
       console.log(`💰 Balance: ${balance.balance.length} assets`);

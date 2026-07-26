@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Contract Interaction - Neo N3 MCP Examples</title>
-    <meta name="description" content="Learn to inspect, invoke, estimate, and deploy Neo N3 smart contracts safely with the Neo N3 MCP Server.">
+    <title>Smart Contract Interaction - Neo MCP Examples</title>
+    <meta name="description" content="Learn to inspect, invoke, estimate, and deploy Neo N3 smart contracts safely with the Neo MCP Server.">
     <meta name="keywords" content="neo, blockchain, mcp, smart contracts, examples">
     
     <!-- Favicon -->
@@ -87,13 +87,13 @@
     <!-- Navigation -->
     <nav class="nav" id="nav">
         <div class="nav-container">
-            <a href="/" class="nav-logo">Neo N3 MCP</a>
+            <a href="/" class="nav-logo">Neo MCP</a>
             <div class="nav-menu">
                 <a href="/" class="nav-link">Home</a>
                 <a href="/#features" class="nav-link">Features</a>
                 <a href="/docs" class="nav-link">Docs</a>
                 <a href="/examples" class="nav-link active">Examples</a>
-                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+                <a href="https://github.com/r3e-network/neo-mcp" class="btn btn-primary" target="_blank">Get Started</a>
             </div>
         </div>
     </nav>
@@ -123,6 +123,7 @@
                     <pre>const GAS_HASH = "0xd2a4cff31913016155e38e474a2c06d08be276cf";
 
 const contractInfo = await tools.get_contract_info({
+  chain: "n3",
   contract: GAS_HASH,
   network: "mainnet"
 });
@@ -150,14 +151,16 @@ console.log("Deployment status:", contractStatus);</pre>
                 <div class="code-content">
                     <pre>const GAS_HASH = "0xd2a4cff31913016155e38e474a2c06d08be276cf";
 
-const symbol = await tools.invoke_contract({
+const symbol = await tools.call_contract({
+  chain: "n3",
   scriptHash: GAS_HASH,
   operation: "symbol",
   args: [],
   network: "mainnet"
 });
 
-const decimals = await tools.invoke_contract({
+const decimals = await tools.call_contract({
+  chain: "n3",
   scriptHash: GAS_HASH,
   operation: "decimals",
   args: [],
@@ -199,7 +202,7 @@ console.log("Formatted network fee (GAS):", fees.networkFeeGas);</pre>
 
         <div class="example-section">
             <h2>Confirmed Contract Write</h2>
-            <p>Write calls require an explicit network, a valid sender WIF, and a <code>confirm: true</code> safety acknowledgement:</p>
+            <p>Write calls require an explicit network, an <code>idempotencyKey</code>, a server-side signer key, and acceptance of the exact intent fingerprint returned through form elicitation:</p>
 
             <div class="code-window">
                 <div class="code-header">
@@ -286,7 +289,7 @@ console.log("Deployment receipt:", receipt);</pre>
         <div class="footer-container">
             <div class="footer-grid">
                 <div>
-                    <div class="footer-brand">Neo N3 MCP</div>
+                    <div class="footer-brand">Neo MCP</div>
                     <p class="footer-description">
                         A focused MCP and HTTP integration surface for Neo N3 data, assets,
                         wallets, transactions, and smart contracts.
@@ -305,20 +308,20 @@ console.log("Deployment receipt:", receipt);</pre>
                     <div class="footer-links">
                         <a href="https://docs.neo.org/" class="footer-link" target="_blank">Neo N3 Docs</a>
                         <a href="https://modelcontextprotocol.io/" class="footer-link" target="_blank">MCP Protocol</a>
-                        <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="footer-link" target="_blank">NPM Package</a>
+                        <a href="https://www.npmjs.com/package/@r3e/neo-mcp" class="footer-link" target="_blank">NPM Package</a>
                     </div>
                 </div>
                 <div>
                     <h4 class="footer-title">Community</h4>
                     <div class="footer-links">
-                        <a href="https://github.com/r3e-network/neo-n3-mcp" class="footer-link" target="_blank">GitHub</a>
-                        <a href="https://github.com/r3e-network/neo-n3-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
+                        <a href="https://github.com/r3e-network/neo-mcp" class="footer-link" target="_blank">GitHub</a>
+                        <a href="https://github.com/r3e-network/neo-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
                         <a href="https://discord.gg/neo" class="footer-link" target="_blank">Discord</a>
                     </div>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>© 2025 Neo N3 MCP. Open source under MIT License.</p>
+                <p>© 2025 Neo MCP. Open source under MIT License.</p>
                 <p>Built with ❤️ for the Neo ecosystem</p>
             </div>
         </div>

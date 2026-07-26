@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blockchain Explorer - Neo N3 MCP Examples</title>
+    <title>Blockchain Explorer - Neo MCP Examples</title>
     <meta name="description" content="Learn to query Neo N3 blockchain data: blocks, transactions, addresses, and network information with MCP server.">
     <meta name="keywords" content="neo, blockchain, mcp, explorer, examples">
     
@@ -87,13 +87,13 @@
     <!-- Navigation -->
     <nav class="nav" id="nav">
         <div class="nav-container">
-            <a href="/" class="nav-logo">Neo N3 MCP</a>
+            <a href="/" class="nav-logo">Neo MCP</a>
             <div class="nav-menu">
                 <a href="/" class="nav-link">Home</a>
                 <a href="/#features" class="nav-link">Features</a>
                 <a href="/docs" class="nav-link">Docs</a>
                 <a href="/examples" class="nav-link active">Examples</a>
-                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+                <a href="https://github.com/r3e-network/neo-mcp" class="btn btn-primary" target="_blank">Get Started</a>
             </div>
         </div>
     </nav>
@@ -122,11 +122,13 @@
                 <div class="code-content">
                     <pre>const networkMode = await tools.get_network_mode();
 
-const blockchain = await tools.get_blockchain_info({
+const blockchain = await tools.get_chain_info({
+  chain: "n3",
   network: "mainnet"
 });
 
-const blocks = await tools.get_block_count({
+const blocks = await tools.get_block_height({
+  chain: "n3",
   network: "mainnet"
 });
 
@@ -149,14 +151,16 @@ console.log("Validators:", blockchain.validators);</pre>
                 </div>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <div class="code-content">
-                    <pre>const blocks = await tools.get_block_count({ network: "mainnet" });
+                    <pre>const blocks = await tools.get_block_height({ chain: "n3", network: "mainnet" });
 
 const latestBlock = await tools.get_block({
+  chain: "n3",
   hashOrHeight: blocks.height,
   network: "mainnet"
 });
 
 const blockByHash = await tools.get_block({
+  chain: "n3",
   hashOrHeight: process.env.NEO_BLOCK_HASH,
   network: "mainnet"
 });
@@ -180,6 +184,7 @@ console.log("Block selected by hash:", blockByHash);</pre>
                     <pre>const txid = process.env.NEO_TXID;
 
 const transaction = await tools.get_transaction({
+  chain: "n3",
   txid,
   network: "mainnet"
 });
@@ -215,6 +220,7 @@ console.log({ transaction, applicationLog, receipt });</pre>
                     <pre>const address = "NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj";
 
 const balance = await tools.get_balance({
+  chain: "n3",
   address,
   network: "testnet"
 });
@@ -254,11 +260,13 @@ const status = await tools.get_contract_status({
 });
 
 const info = await tools.get_contract_info({
+  chain: "n3",
   contract: GAS_HASH,
   network: "mainnet"
 });
 
-const symbol = await tools.invoke_contract({
+const symbol = await tools.call_contract({
+  chain: "n3",
   scriptHash: GAS_HASH,
   operation: "symbol",
   args: [],
@@ -323,7 +331,7 @@ console.log({ balances, transfers });</pre>
         <div class="footer-container">
             <div class="footer-grid">
                 <div>
-                    <div class="footer-brand">Neo N3 MCP</div>
+                    <div class="footer-brand">Neo MCP</div>
                     <p class="footer-description">
                         A focused MCP and HTTP integration surface for Neo N3 data, assets,
                         wallets, transactions, and smart contracts.
@@ -342,20 +350,20 @@ console.log({ balances, transfers });</pre>
                     <div class="footer-links">
                         <a href="https://docs.neo.org/" class="footer-link" target="_blank">Neo N3 Docs</a>
                         <a href="https://modelcontextprotocol.io/" class="footer-link" target="_blank">MCP Protocol</a>
-                        <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="footer-link" target="_blank">NPM Package</a>
+                        <a href="https://www.npmjs.com/package/@r3e/neo-mcp" class="footer-link" target="_blank">NPM Package</a>
                     </div>
                 </div>
                 <div>
                     <h4 class="footer-title">Community</h4>
                     <div class="footer-links">
-                        <a href="https://github.com/r3e-network/neo-n3-mcp" class="footer-link" target="_blank">GitHub</a>
-                        <a href="https://github.com/r3e-network/neo-n3-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
+                        <a href="https://github.com/r3e-network/neo-mcp" class="footer-link" target="_blank">GitHub</a>
+                        <a href="https://github.com/r3e-network/neo-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
                         <a href="https://discord.gg/neo" class="footer-link" target="_blank">Discord</a>
                     </div>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>© 2025 Neo N3 MCP. Open source under MIT License.</p>
+                <p>© 2025 Neo MCP. Open source under MIT License.</p>
                 <p>Built with ❤️ for the Neo ecosystem</p>
             </div>
         </div>

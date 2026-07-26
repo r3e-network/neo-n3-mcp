@@ -38,6 +38,8 @@ import {
   dispatchN3ProposalTool,
   dispatchNeoxProposalTool,
 } from './proposal-tools';
+import { NEOX_NODE_TOOLS, dispatchNeoxNodeTool } from './neox-node-tools';
+import { handleN3TransactionStatus } from './n3-transaction-status';
 
 // --- Individual Tool Handlers ---
 
@@ -867,6 +869,17 @@ export async function callTool(name: string, input: Record<string, unknown>, neo
     }
   }
 
+  // Neo X node reads go to the allowlisted EVM JSON-RPC client. They must be
+  // dispatched before the N3 network resolution below, which would otherwise
+  // reject them for asking after a Neo N3 service they never use.
+  if (NEOX_NODE_TOOLS.has(name)) {
+    try {
+      return await dispatchNeoxNodeTool(name, input) as Record<string, unknown>;
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
   let neoService: NeoService | undefined;
   let contractService: ContractService | undefined;
   try {
@@ -915,6 +928,8 @@ export async function callTool(name: string, input: Record<string, unknown>, neo
         return await handleGetTransaction(input, neoService) as Record<string, unknown>;
       case 'get_application_log':
         return await handleGetApplicationLog(input, neoService) as Record<string, unknown>;
+      case 'n3_node_get_transaction_status':
+        return await handleN3TransactionStatus(input, neoService) as Record<string, unknown>;
       case 'wait_for_transaction':
         return await handleWaitForTransaction(input, neoService) as Record<string, unknown>;
       case 'get_balance':

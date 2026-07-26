@@ -1,6 +1,6 @@
 # Deployment Guide
 
-Neo N3 MCP supports two runtime modes:
+Neo MCP supports two runtime modes:
 
 - MCP stdio for local MCP clients such as Claude Desktop and Cursor
 - HTTP for authenticated REST-style access, health checks, and metrics
@@ -19,10 +19,10 @@ The stdio server supports `NEO_NETWORK=mainnet`, `testnet`, or `both`:
 ```bash
 NEO_NETWORK=testnet \
 NEO_TESTNET_RPC=https://testnet1.neo.coz.io:443 \
-npx -y @r3e/neo-n3-mcp
+npx -y @r3e/neo-mcp
 ```
 
-Read-only calls without an explicit network use mainnet when `NEO_NETWORK=both`. Every state-changing MCP call requires an explicit `network` and `confirm: true`, including when only one network is enabled.
+Read-only calls without an explicit network use mainnet when `NEO_NETWORK=both`. Tools that both chains implement require an explicit `chain`, `n3` or `neox`; there is no default. Every state-changing MCP call requires an explicit `network`, an `idempotencyKey`, and approval of the exact intent fingerprint, including when only one network is enabled.
 
 ## HTTP Deployment
 
@@ -77,6 +77,12 @@ curl -H "Authorization: Bearer $HTTP_API_KEY" \
 | `NEO_NETWORK` | Yes for HTTP | `both` | Set `mainnet` or `testnet` |
 | `NEO_MAINNET_RPC` | No | `https://mainnet1.neo.coz.io:443` | Mainnet RPC URL |
 | `NEO_TESTNET_RPC` | No | `https://testnet1.neo.coz.io:443` | Testnet RPC URL |
+| `NEOX_MAINNET_RPC_URLS` | No | Banelabs mainnet endpoints | Comma-separated Neo X mainnet JSON-RPC URLs |
+| `NEOX_TESTNET_RPC_URLS` | No | Banelabs and NGD testnet endpoints | Comma-separated Neo X testnet JSON-RPC URLs |
+| `NEOX_MAINNET_EXPLORER_API_BASE_URL` | No | `https://xexplorer.neo.org` | Blockscout base URL for Neo X mainnet analytics |
+| `NEOX_TESTNET_EXPLORER_API_BASE_URL` | No | `https://xt4scan.ngd.network` | Blockscout base URL for Neo X testnet |
+| `NEOX_TESTNET_ENABLED` | No | `true` | Set `false` to serve Neo X mainnet only |
+| `NEOX_GRAPHQL_ENABLED` | No | `false` | Registers `query_explorer_graphql` when `true` |
 | `NEO_RPC_TIMEOUT_MS` | No | `15000` | Positive per-operation RPC deadline in milliseconds |
 | `NEO_ALLOW_INSECURE_RPC` | No | `false` | Permit remote plaintext HTTP RPC URLs; use only in controlled environments |
 | `NEO_MAX_TRANSACTION_FEE_GAS` | No | `20` | Maximum combined system and network fee per signed transaction, in GAS |
@@ -112,7 +118,7 @@ docker compose -f docker/docker-compose.yml up -d
 For a published image, replace the example digest with the release artifact's 64-character lowercase hexadecimal digest:
 
 ```bash
-NEO_MCP_IMAGE_REPOSITORY=r3enetwork/neo-n3-mcp \
+NEO_MCP_IMAGE_REPOSITORY=r3enetwork/neo-mcp \
 NEO_MCP_IMAGE_DIGEST=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef \
 HTTP_API_KEY="$HTTP_API_KEY" \
   docker compose -f docker/docker-compose.yml \
@@ -122,7 +128,7 @@ HTTP_API_KEY="$HTTP_API_KEY" \
 It:
 
 - requires `HTTP_API_KEY` during Compose interpolation
-- builds the checked-out source as `neo-n3-mcp:local` by default instead of pulling a mutable tag
+- builds the checked-out source as `neo-mcp:local` by default instead of pulling a mutable tag
 - listens inside the container on `0.0.0.0:3000`
 - publishes the host port on `127.0.0.1` by default
 - provides `docker-compose.registry.yml`, an image-only overlay that requires `NEO_MCP_IMAGE_REPOSITORY` and a 64-character lowercase hexadecimal `NEO_MCP_IMAGE_DIGEST`, constructs an immutable digest reference, and cannot fall back to a local build
@@ -145,7 +151,7 @@ See the [Docker guide](./DOCKER.md) for image and development workflow details.
 
 ## Systemd Example
 
-Keep secrets in a root-readable environment file rather than in the unit itself. Example `/etc/neo-n3-mcp.env`:
+Keep secrets in a root-readable environment file rather than in the unit itself. Example `/etc/neo-mcp.env`:
 
 ```bash
 NEO_NETWORK=mainnet
@@ -153,9 +159,9 @@ NEO_MAINNET_RPC=https://mainnet1.neo.coz.io:443
 HTTP_HOST=127.0.0.1
 HTTP_API_KEY=replace-with-at-least-32-random-bytes
 PORT=3000
-WALLETS_DIR=/var/lib/neo-n3-mcp/wallets
+WALLETS_DIR=/var/lib/neo-mcp/wallets
 LOG_LEVEL=info
-LOG_FILE=/var/log/neo-n3-mcp/server.log
+LOG_FILE=/var/log/neo-mcp/server.log
 LOG_CONSOLE=false
 ```
 
@@ -163,7 +169,7 @@ Example unit:
 
 ```ini
 [Unit]
-Description=Neo N3 MCP HTTP Server
+Description=Neo MCP HTTP Server
 After=network-online.target
 Wants=network-online.target
 
@@ -171,17 +177,17 @@ Wants=network-online.target
 Type=simple
 User=neo-mcp
 Group=neo-mcp
-WorkingDirectory=/opt/neo-n3-mcp
+WorkingDirectory=/opt/neo-mcp
 Environment=NODE_ENV=production
-EnvironmentFile=/etc/neo-n3-mcp.env
-ExecStart=/usr/bin/npm run start:http --prefix /opt/neo-n3-mcp
+EnvironmentFile=/etc/neo-mcp.env
+ExecStart=/usr/bin/npm run start:http --prefix /opt/neo-mcp
 Restart=on-failure
 RestartSec=10
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/lib/neo-n3-mcp /var/log/neo-n3-mcp
+ReadWritePaths=/var/lib/neo-mcp /var/log/neo-mcp
 
 [Install]
 WantedBy=multi-user.target
@@ -190,10 +196,10 @@ WantedBy=multi-user.target
 Create the writable directories and restrict the environment file before starting the unit:
 
 ```bash
-sudo install -d -o neo-mcp -g neo-mcp -m 0700 /var/lib/neo-n3-mcp/wallets
-sudo install -d -o neo-mcp -g neo-mcp -m 0750 /var/log/neo-n3-mcp
-sudo chmod 0600 /etc/neo-n3-mcp.env
-sudo systemctl enable --now neo-n3-mcp
+sudo install -d -o neo-mcp -g neo-mcp -m 0700 /var/lib/neo-mcp/wallets
+sudo install -d -o neo-mcp -g neo-mcp -m 0750 /var/log/neo-mcp
+sudo chmod 0600 /etc/neo-mcp.env
+sudo systemctl enable --now neo-mcp
 ```
 
 ## Health and Operations

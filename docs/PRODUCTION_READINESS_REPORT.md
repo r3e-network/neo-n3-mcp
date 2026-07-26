@@ -1,6 +1,6 @@
 # Production Readiness Status
 
-This report summarizes repository-level hardening for Neo N3 MCP `3.0.0`. It is an evidence record, not a certification of any external deployment.
+This report summarizes repository-level hardening for Neo MCP `3.1.0`. It is an evidence record, not a certification of any external deployment.
 
 ## Current Assessment
 
@@ -57,7 +57,8 @@ The dependency graph uses a scoped `lodash@4.18.1` override under `@cityofzion/n
 - `HTTP_CORS_ORIGINS` is an optional exact-origin allowlist.
 - `HTTP_MAX_BODY_BYTES` defaults to 1 MiB.
 - POST and PUT bodies must be JSON objects.
-- State-changing MCP requests require an explicit network and `confirm` as the JSON boolean `true`; HTTP writes use boolean confirmation on the configured network.
+- State-changing MCP requests require an explicit network, a durable `idempotencyKey`, and form-elicited approval of the exact intent fingerprint; HTTP writes return `202 awaiting_approval` and need an independent approval call.
+- The remote MCP HTTP transport is read-only by design; write tools are reachable only over stdio when `NEO_ENABLE_WRITES=true`.
 - Rate limiting is active outside test-like environments by default.
 - `NEO_RPC_TIMEOUT_MS` defaults to 15000 milliseconds for each underlying RPC attempt.
 - Testnet RPC defaults to `https://testnet1.neo.coz.io:443`; remote plaintext HTTP RPC endpoints are rejected unless `NEO_ALLOW_INSECURE_RPC=true`.
@@ -86,11 +87,11 @@ Published GitHub releases can publish npm and Docker artifacts when repository s
 
 ## Functional Surface
 
-The server registers 25 MCP tools, three fixed network resources, and one parameterized block resource. Tool registration and generic contract-reference handling are tested.
+The server registers 32 public MCP tools spanning Neo N3 and Neo X, three fixed network resources, and one parameterized block resource. Tools that both chains implement require an explicit `chain` argument with no default. Tool registration, chain routing, and generic contract-reference handling are tested.
 
 Local contract metadata and name resolution do not certify that a named third-party contract is deployed, current, audited, or compatible on a particular network. Verify contract status, script hash, manifest, operations, and transaction behavior on-chain before relying on any third-party integration.
 
-`get_block_count` and HTTP blockchain-height responses distinguish the RPC `blockCount` from the latest height, calculated as `max(0, blockCount - 1)`.
+`get_block_height` and HTTP blockchain-height responses distinguish the RPC `blockCount` from the latest height, calculated as `max(0, blockCount - 1)`.
 
 Fee estimates expose exact decimal-string `networkFeeDatos` and `systemFeeDatos` values plus formatted `networkFeeGas` and `systemFeeGas` values. Contract deployment accepts a complete compiler-produced serialized NEF object with explicit hex or base64 encoding; raw VM bytecode is not a NEF artifact.
 

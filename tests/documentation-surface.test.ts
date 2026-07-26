@@ -8,12 +8,42 @@ describe('documentation surface', () => {
     const websiteApiDoc = fs.readFileSync(path.join(repoRoot, 'website/docs/api.html'), 'utf8');
 
     expect(websiteApiDoc).toContain('get_contract_status');
-    expect(websiteApiDoc).toContain('"name": "invoke_contract"');
+    expect(websiteApiDoc).toContain('"name": "call_contract"');
     expect(websiteApiDoc).toContain('known name, script hash, or Neo address');
     expect(websiteApiDoc).not.toContain('invoke_read_contract');
     expect(websiteApiDoc).not.toContain('invoke_write_contract');
     expect(websiteApiDoc).not.toContain('#blockchain-resources');
     expect(websiteApiDoc).not.toContain('#contract-resources');
+  });
+
+  test('website API docs document the chain parameter and the read-only MCP surface', () => {
+    const websiteApiDoc = fs.readFileSync(path.join(repoRoot, 'website/docs/api.html'), 'utf8');
+
+    expect(websiteApiDoc).toContain('id="chains"');
+    expect(websiteApiDoc).toContain('"chain": "n3"');
+    expect(websiteApiDoc).toContain('build_contract_call');
+    expect(websiteApiDoc).toContain('the MCP surface is read-only');
+
+    const toolsTableStart = websiteApiDoc.indexOf('id="tools"');
+    const toolsTableEnd = websiteApiDoc.indexOf('Optional local signing tools');
+    expect(toolsTableStart).toBeGreaterThan(-1);
+    expect(toolsTableEnd).toBeGreaterThan(toolsTableStart);
+
+    const registeredToolsSection = websiteApiDoc.slice(toolsTableStart, toolsTableEnd);
+    for (const signingTool of ['transfer_assets', 'invoke_contract_write', 'claim_gas', 'deploy_contract']) {
+      expect(registeredToolsSection).not.toContain(signingTool);
+    }
+  });
+
+  test('website API docs describe the HTTP write intent protocol, not key submission', () => {
+    const websiteApiDoc = fs.readFileSync(path.join(repoRoot, 'website/docs/api.html'), 'utf8');
+
+    expect(websiteApiDoc).toContain('/api/write-intents/');
+    expect(websiteApiDoc).toContain('awaiting_approval');
+    expect(websiteApiDoc).toContain('Idempotency-Key');
+    expect(websiteApiDoc).toContain('HTTP_WRITE_APPROVAL_API_KEY');
+    expect(websiteApiDoc).not.toContain('Requires WIF');
+    expect(websiteApiDoc).not.toContain('boolean confirmation');
   });
 
   test('user-facing website pages do not advertise stale tool or resource counts', () => {

@@ -8,8 +8,8 @@
 // session in the process drained ONE ~60 req/min bucket and starved the others,
 // while under stdio it harmlessly named "the single client that spawned me".
 //
-// Each HTTP session gets its own `NeoN3McpServer` (src/mcp-http-server.ts), and
-// every `NeoN3McpServer` builds its own `neoServices` Map (src/index.ts). The
+// Each HTTP session gets its own `NeoMcpServer` (src/mcp-http-server.ts), and
+// every `NeoMcpServer` builds its own `neoServices` Map (src/index.ts). The
 // stdio server builds exactly one. Keying the bucket by that Map's object
 // identity therefore gives each HTTP session an independent bucket and keeps the
 // single stdio client on one stable bucket — its previous behavior, unchanged.
@@ -35,7 +35,7 @@ import { rateLimiter } from './rate-limiter';
 const RATE_LIMIT_FALLBACK_KEY = 'mcp-client';
 
 // Object-identity → bucket key. A WeakMap so a closed session's entry is garbage
-// collected with its `NeoN3McpServer`; the mapping never needs manual eviction.
+// collected with its `NeoMcpServer`; the mapping never needs manual eviction.
 const sessionRateLimitKeys = new WeakMap<object, string>();
 let sessionRateLimitKeySeq = 0;
 

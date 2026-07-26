@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Reference - Neo N3 MCP Server</title>
-    <meta name="description" content="Reference for the 25 Neo N3 MCP tools, four resources, generic contract flow, and authenticated HTTP API.">
+    <title>API Reference - Neo MCP Server</title>
+    <meta name="description" content="Reference for the 32 chain-parameterized Neo MCP tools, four resources, generic contract flow, and authenticated HTTP API.">
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,13 +35,13 @@
 <body>
     <nav class="nav">
         <div class="nav-container">
-            <a href="/" class="nav-logo">Neo N3 MCP</a>
+            <a href="/" class="nav-logo">Neo MCP</a>
             <div class="nav-menu">
                 <a href="/" class="nav-link">Home</a>
                 <a href="/docs" class="nav-link">Docs</a>
                 <a href="/docs/api" class="nav-link active">API</a>
                 <a href="/docs/testing" class="nav-link">Testing</a>
-                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank" rel="noreferrer">GitHub</a>
+                <a href="https://github.com/r3e-network/neo-mcp" class="btn btn-primary" target="_blank" rel="noreferrer">GitHub</a>
             </div>
         </div>
     </nav>
@@ -49,11 +49,12 @@
     <main class="page-container">
         <header class="docs-header">
             <h1 class="docs-title">API reference</h1>
-            <p class="docs-lead">The server registers 25 MCP tools, three fixed resources, one parameterized resource, and an optional authenticated HTTP transport.</p>
+            <p class="docs-lead">The server registers 32 MCP tools across Neo N3 and Neo X, three fixed resources, one parameterized resource, and an optional authenticated HTTP transport.</p>
         </header>
 
         <nav class="jump-links" aria-label="API sections">
             <a href="#mcp-format">MCP format</a>
+            <a href="#chains">Chains</a>
             <a href="#tools">Tools</a>
             <a href="#resources">Resources</a>
             <a href="#contracts">Contract flow</a>
@@ -64,8 +65,8 @@
         <section class="docs-section" id="mcp-format">
             <h2>MCP request and response</h2>
             <pre><code>{
-  "name": "get_block_count",
-  "arguments": { "network": "testnet" }
+  "name": "get_block_height",
+  "arguments": { "chain": "n3", "network": "testnet" }
 }</code></pre>
             <p>Tool results are returned in MCP content. Most successful tools place formatted JSON in <code>content[0].text</code>.</p>
             <pre><code>{
@@ -76,40 +77,66 @@
             <p><code>blockCount</code> is the RPC count. The latest block index is <code>max(0, blockCount - 1)</code>.</p>
         </section>
 
+        <section class="docs-section" id="chains">
+            <h2>Chain and network parameters</h2>
+            <p>One tool covers both chains. Every tool that both chains implement takes a required <code>chain</code> discriminator; single-chain tools reject the chain they do not serve.</p>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Parameter</th><th>Values</th><th>Notes</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>chain</code></td><td><code>"n3"</code>, <code>"neox"</code></td><td>Neo N3 (native) or Neo X (EVM). Required on dual-chain tools.</td></tr>
+                        <tr><td><code>network</code></td><td><code>"mainnet"</code>, <code>"testnet"</code></td><td>Same two values on both chains; the server maps them onto each backend internally.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>Node tools read live RPC on either network. Explorer analytics tools are indexer-backed and mainnet-only, so they take no <code>network</code>: n3index for Neo N3, Blockscout for Neo X. Blockscout list endpoints are cursor-paginated, so <code>limit</code> and <code>skip</code> apply to Neo N3 explorer tools only.</p>
+        </section>
+
         <section class="docs-section" id="tools">
             <h2>Registered tools</h2>
             <div class="table-wrap">
                 <table>
-                    <thead><tr><th>Area</th><th>Tool</th><th>Purpose</th></tr></thead>
+                    <thead><tr><th>Area</th><th>Tool</th><th>Chains</th><th>Purpose</th></tr></thead>
                     <tbody>
-                        <tr><td>Network</td><td><code>get_network_mode</code></td><td>Return configured mode, available networks, and default network.</td></tr>
-                        <tr><td>Network</td><td><code>set_network_mode</code></td><td>Change the configured mode; service state is reinitialized.</td></tr>
-                        <tr><td>Blockchain</td><td><code>get_blockchain_info</code></td><td>Return chain information for the selected network.</td></tr>
-                        <tr><td>Blockchain</td><td><code>get_block_count</code></td><td>Return block count and latest block height.</td></tr>
-                        <tr><td>Blockchain</td><td><code>get_block</code></td><td>Fetch a block by height or hash.</td></tr>
-                        <tr><td>Blockchain</td><td><code>get_transaction</code></td><td>Fetch a transaction by hash.</td></tr>
-                        <tr><td>Blockchain</td><td><code>get_application_log</code></td><td>Fetch an application log by transaction hash.</td></tr>
-                        <tr><td>Blockchain</td><td><code>wait_for_transaction</code></td><td>Poll for confirmation with optional application log.</td></tr>
-                        <tr><td>Accounts</td><td><code>get_balance</code></td><td>Return NEO, GAS, and NEP-17 balances.</td></tr>
-                        <tr><td>Accounts</td><td><code>get_unclaimed_gas</code></td><td>Return claimable GAS for an address.</td></tr>
-                        <tr><td>Accounts</td><td><code>get_nep17_transfers</code></td><td>Return NEP-17 transfer history when the node supports it.</td></tr>
-                        <tr><td>Accounts</td><td><code>get_nep11_balances</code></td><td>Return NEP-11 balances when the node supports it.</td></tr>
-                        <tr><td>Accounts</td><td><code>get_nep11_transfers</code></td><td>Return NEP-11 transfer history when the node supports it.</td></tr>
-                        <tr><td>Wallets</td><td><code>get_wallet</code></td><td>Return sanitized local wallet metadata.</td></tr>
-                        <tr><td>Transactions</td><td><code>transfer_assets</code></td><td>Build and broadcast a confirmed NEP-17 transfer.</td></tr>
-                        <tr><td>Transactions</td><td><code>estimate_transfer_fees</code></td><td>Estimate fees without broadcasting.</td></tr>
-                        <tr><td>Transactions</td><td><code>claim_gas</code></td><td>Build and broadcast a confirmed GAS claim.</td></tr>
-                        <tr><td>Contracts</td><td><code>list_famous_contracts</code></td><td>Return the verified curated registry, currently empty until entries are validated.</td></tr>
-                        <tr><td>Contracts</td><td><code>get_contract_info</code></td><td>Resolve metadata and operations for a generic reference.</td></tr>
-                        <tr><td>Contracts</td><td><code>get_contract_status</code></td><td>Resolve and check current on-chain deployment status.</td></tr>
-                        <tr><td>Contracts</td><td><code>invoke_contract</code></td><td>Run a strictly read-only invocation.</td></tr>
-                        <tr><td>Contracts</td><td><code>invoke_contract_write</code></td><td>Create and approve an idempotent write.</td></tr>
-                        <tr><td>Contracts</td><td><code>estimate_invoke_fees</code></td><td>Estimate invocation fees for a signer.</td></tr>
-                        <tr><td>Contracts</td><td><code>deploy_contract</code></td><td>Deploy a complete compiler-produced serialized NEF artifact and manifest.</td></tr>
+                        <tr><td>Meta</td><td><code>get_network_mode</code></td><td>&mdash;</td><td>Return configured mode, available networks, and default network.</td></tr>
+                        <tr><td>Meta</td><td><code>get_wallet</code></td><td>&mdash;</td><td>Return sanitized local wallet metadata; never keys, WIFs, or mnemonics.</td></tr>
+                        <tr><td>Chain</td><td><code>get_chain_info</code></td><td>n3, neox</td><td>Height plus network identity (N3 validators, or the Neo X EVM chain id).</td></tr>
+                        <tr><td>Chain</td><td><code>get_block_height</code></td><td>n3, neox</td><td>Current block height and block count.</td></tr>
+                        <tr><td>Chain</td><td><code>get_block</code></td><td>n3, neox</td><td>Fetch a block by height/number or hash.</td></tr>
+                        <tr><td>Chain</td><td><code>get_transaction</code></td><td>n3, neox</td><td>Fetch a transaction by hash.</td></tr>
+                        <tr><td>Chain</td><td><code>get_transaction_status</code></td><td>n3, neox</td><td>Whether a transaction is known, confirmed, and executed successfully.</td></tr>
+                        <tr><td>Chain</td><td><code>get_application_log</code></td><td>n3</td><td>Executions, notifications, and consumed GAS for a transaction hash.</td></tr>
+                        <tr><td>Chain</td><td><code>wait_for_transaction</code></td><td>n3</td><td>Poll for confirmation with optional application log.</td></tr>
+                        <tr><td>Accounts</td><td><code>get_balance</code></td><td>n3, neox</td><td>NEO, GAS, and NEP-17 balances on Neo N3; native GAS balance on Neo X.</td></tr>
+                        <tr><td>Accounts</td><td><code>get_unclaimed_gas</code></td><td>n3</td><td>Claimable GAS for an address.</td></tr>
+                        <tr><td>Accounts</td><td><code>get_nep17_transfers</code></td><td>n3</td><td>NEP-17 transfer history from live RPC.</td></tr>
+                        <tr><td>Accounts</td><td><code>get_nep11_balances</code></td><td>n3</td><td>NEP-11 (NFT) balances from live RPC.</td></tr>
+                        <tr><td>Accounts</td><td><code>get_nep11_transfers</code></td><td>n3</td><td>NEP-11 (NFT) transfer history from live RPC.</td></tr>
+                        <tr><td>Contracts</td><td><code>call_contract</code></td><td>n3, neox</td><td>Read-only call: <code>invokefunction</code> on Neo N3, <code>eth_call</code> on Neo X.</td></tr>
+                        <tr><td>Contracts</td><td><code>get_contract_info</code></td><td>n3, neox</td><td>Manifest/ABI and known-name resolution on Neo N3; verified source on Neo X.</td></tr>
+                        <tr><td>Contracts</td><td><code>get_contract_status</code></td><td>n3</td><td>Resolve a reference and check current on-chain deployment status.</td></tr>
+                        <tr><td>Contracts</td><td><code>list_famous_contracts</code></td><td>n3</td><td>Well-known contracts this server can resolve by name.</td></tr>
+                        <tr><td>Fees</td><td><code>estimate_transfer_fees</code></td><td>n3</td><td>Network and system fees for a NEP-17 transfer, without broadcasting.</td></tr>
+                        <tr><td>Fees</td><td><code>estimate_invoke_fees</code></td><td>n3</td><td>Network and system fees for a contract invocation.</td></tr>
+                        <tr><td>Construct</td><td><code>simulate_call</code></td><td>n3, neox</td><td>Read-only preview: N3 test-invoke state and gasConsumed, or an EVM call result.</td></tr>
+                        <tr><td>Construct</td><td><code>build_transfer</code></td><td>n3, neox</td><td>UNSIGNED transfer proposal: NeoLine dapi payload, or an unsigned EVM transaction.</td></tr>
+                        <tr><td>Construct</td><td><code>build_contract_call</code></td><td>n3, neox</td><td>UNSIGNED invocation proposal for wallet-side signing.</td></tr>
+                        <tr><td>Explorer</td><td><code>explorer_get_address</code></td><td>n3, neox</td><td>Indexed account summary: balances, type, tags, first-seen.</td></tr>
+                        <tr><td>Explorer</td><td><code>explorer_list_address_transactions</code></td><td>n3, neox</td><td>Transactions involving an address, newest first.</td></tr>
+                        <tr><td>Explorer</td><td><code>explorer_list_address_transfers</code></td><td>n3, neox</td><td>Token transfers: NEP-17 on Neo N3, ERC-20/721/1155 on Neo X.</td></tr>
+                        <tr><td>Explorer</td><td><code>explorer_list_address_assets</code></td><td>n3</td><td>Assets held by an address, with balances.</td></tr>
+                        <tr><td>Explorer</td><td><code>explorer_list_token_holders</code></td><td>n3, neox</td><td>Holders of a token contract, with balances.</td></tr>
+                        <tr><td>Explorer</td><td><code>explorer_search</code></td><td>n3, neox</td><td>Full-text search over blocks, transactions, addresses, tokens, contracts.</td></tr>
+                        <tr><td>Explorer</td><td><code>query_explorer</code></td><td>n3, neox</td><td>One vetted read-only endpoint from the chain catalog (n3index or Blockscout).</td></tr>
+                        <tr><td>Explorer</td><td><code>query_explorer_find</code></td><td>n3</td><td>Constrained filter over one allowlisted collection; gated off by default.</td></tr>
+                        <tr><td>Explorer</td><td><code>query_explorer_graphql</code></td><td>neox</td><td>Blockscout GraphQL read query; gated off by default, no mutations.</td></tr>
                     </tbody>
                 </table>
             </div>
-            <div class="callout" style="margin-top: 1rem;"><strong>Write safety:</strong> state-changing MCP tools require an explicit <code>network</code> and accept only <code>confirm: true</code> as a JSON boolean, even when one network is enabled. Strings and numbers are rejected.</div>
+            <div class="callout" style="margin-top: 1rem;"><strong>Non-custodial by construction:</strong> the MCP surface is read-only. None of the 32 registered tools holds a private key, signs, or broadcasts. The <code>build_*</code> tools return UNSIGNED proposals that a wallet reviews and signs; key custody and broadcast stay with the user. Wallet creation and import are never exposed over MCP.</div>
+            <h3>Optional local signing tools</h3>
+            <p>A locally launched stdio server with <code>NEO_ENABLE_WRITES=true</code> and a <code>NEO_SIGNER_WIF_FILE</code> registers four additional tools that sign with that owner-supplied key. They are annotated destructive and idempotent, require an <code>idempotencyKey</code> and an explicit <code>network</code>, and require the caller to accept the exact returned intent fingerprint. They never accept WIFs, private keys, or passwords as arguments.</p>
+            <p>The remote MCP HTTP transport rejects this configuration and stays read-only regardless of the setting, so a hosted server never signs on a user's behalf.</p>
             <h3>Fee estimate fields</h3>
             <pre><code>{
   "networkFeeDatos": "10000000",
@@ -117,7 +144,7 @@
   "networkFeeGas": "0.1",
   "systemFeeGas": "0.05"
 }</code></pre>
-            <p>The datos fields are exact integer decimal strings; the GAS fields are formatted decimal strings. Signed transactions are rejected before broadcast when combined fees exceed <code>NEO_MAX_TRANSACTION_FEE_GAS</code>, which defaults to 20 GAS. Contract deployment needs headroom above Neo's 10 GAS native deployment minimum for network fee and invocation overhead.</p>
+            <p>The datos fields are exact integer decimal strings; the GAS fields are formatted decimal strings. Estimates are advisory: the signing wallet decides the fees it actually attaches.</p>
         </section>
 
         <section class="docs-section" id="resources">
@@ -137,31 +164,37 @@
 
         <section class="docs-section" id="contracts">
             <h2>Generic contract flow</h2>
-            <p>A contract reference can be a known name, script hash, or Neo address. Resolve and verify the reference on the selected network before invoking it. Local names and descriptions are not deployment or protocol guarantees.</p>
+            <p>On Neo N3 a contract reference can be a known name, script hash, or Neo address. Resolve and verify the reference on the selected network before calling it. Local names and descriptions are not deployment or protocol guarantees.</p>
             <pre><code>{
   "name": "get_contract_status",
   "arguments": {
+    "chain": "n3",
     "network": "testnet",
     "contract": "0x0123456789abcdef0123456789abcdef01234567"
   }
 }</code></pre>
-            <h3>Contract deployment input</h3>
+            <h3>Read a contract</h3>
+            <p>On Neo N3 this is an <code>invokefunction</code> test invoke with typed <code>args</code>. On Neo X it is an <code>eth_call</code> against a checksummed <code>0x</code> address.</p>
             <pre><code>{
-  "idempotencyKey": "deployment-2026-07-11-001",
-  "network": "testnet",
-  "nef": {
-    "encoding": "base64",
-    "data": "&lt;complete compiler-produced serialized NEF&gt;"
-  },
-  "manifest": { "name": "ExampleContract" }
-}</code></pre>
-            <p><code>nef.data</code> is the complete serialized <code>.nef</code> file, including its header and checksum. Raw VM bytecode is not accepted.</p>
-            <pre><code>{
-  "name": "invoke_contract",
+  "name": "call_contract",
   "arguments": {
+    "chain": "n3",
     "network": "testnet",
     "scriptHash": "0x0123456789abcdef0123456789abcdef01234567",
     "operation": "symbol",
+    "args": []
+  }
+}</code></pre>
+            <h3>Propose a write</h3>
+            <p>Writes are never executed server-side. <code>build_contract_call</code> returns an unsigned proposal plus the read-only simulation behind it, so a wallet can review the effect before signing.</p>
+            <pre><code>{
+  "name": "build_contract_call",
+  "arguments": {
+    "chain": "n3",
+    "network": "testnet",
+    "from": "NXV7ZhHiyM1aHXwpVsRZC6BwNFP2jghXAq",
+    "scriptHash": "0x0123456789abcdef0123456789abcdef01234567",
+    "operation": "transfer",
     "args": []
   }
 }</code></pre>
@@ -184,12 +217,34 @@
                         <tr><td>GET</td><td><code>/api/blockchain/height</code></td><td>Returns <code>blockCount</code> and <code>height</code>.</td></tr>
                         <tr><td>GET</td><td><code>/api/blocks/:hashOrHeight</code></td><td>Fetch block details.</td></tr>
                         <tr><td>GET</td><td><code>/api/transactions/:txid</code></td><td>Fetch transaction details.</td></tr>
-                        <tr><td>POST</td><td><code>/api/transfers</code></td><td>Requires WIF and boolean confirmation.</td></tr>
-                        <tr><td>POST</td><td><code>/api/contracts/invoke</code></td><td>Read without WIF; write requires WIF and confirmation.</td></tr>
-                        <tr><td>POST</td><td><code>/api/contracts/deploy</code></td><td>Requires WIF, a complete serialized <code>nef</code> object, manifest, and confirmation.</td></tr>
+                        <tr><td>POST</td><td><code>/api/contracts/invoke</code></td><td>Read-only invocation; rejects private key and confirmation fields.</td></tr>
+                        <tr><td>POST</td><td><code>/api/transfers</code></td><td>Reserves a transfer intent; returns <code>202</code>.</td></tr>
+                        <tr><td>POST</td><td><code>/api/accounts/claim-gas</code></td><td>Reserves a GAS claim intent; returns <code>202</code>.</td></tr>
+                        <tr><td>POST</td><td><code>/api/contracts/invoke/write</code></td><td>Reserves a contract write intent; explicit <code>scriptHash</code> only.</td></tr>
+                        <tr><td>POST</td><td><code>/api/contracts/deploy</code></td><td>Reserves a deployment intent; needs a serialized <code>nef</code> and manifest.</td></tr>
+                        <tr><td>GET</td><td><code>/api/write-intents/:intentId</code></td><td>Read a reserved intent and its current state.</td></tr>
+                        <tr><td>POST</td><td><code>/api/write-intents/:intentId/approve</code></td><td>Approves and executes the intent; separate approval key.</td></tr>
                     </tbody>
                 </table>
             </div>
+            <h3>Write intents</h3>
+            <p>State-changing routes never accept a key. They require <code>NEO_ENABLE_WRITES=true</code> and <code>NEO_SIGNER_WIF_FILE</code> on the server, an <code>Idempotency-Key</code> header, and a <code>network</code> matching the one the HTTP server was started with. Any <code>wif</code>, <code>privateKey</code>, <code>password</code>, <code>key</code>, or legacy <code>confirm</code> field in the body is rejected with <code>400</code>.</p>
+            <p>A successful reservation returns <code>202</code> with the intent, not a transaction:</p>
+            <pre><code>{
+  "intentId": "&lt;64 hex&gt;",
+  "fingerprint": "&lt;64 hex&gt;",
+  "state": "awaiting_approval",
+  "operation": "transfer_assets",
+  "network": "testnet",
+  "signerAddress": "NXV7ZhHiyM1aHXwpVsRZC6BwNFP2jghXAq",
+  "payload": { "toAddress": "...", "asset": "GAS", "amount": "1.5" }
+}</code></pre>
+            <p>Execution is a second, separately authorized call. The approval route uses <code>HTTP_WRITE_APPROVAL_API_KEY</code> instead of <code>HTTP_API_KEY</code>, and the body must echo the exact fingerprint returned above, so holding the read key alone can never move funds.</p>
+            <pre><code>POST /api/write-intents/&lt;intentId&gt;/approve
+Authorization: Bearer &lt;HTTP_WRITE_APPROVAL_API_KEY&gt;
+
+{ "fingerprint": "&lt;64 hex&gt;" }</code></pre>
+            <p>Replaying the same <code>Idempotency-Key</code> with a different payload is refused rather than silently reserving a second intent.</p>
         </section>
 
         <section class="docs-section" id="errors">
@@ -198,6 +253,6 @@
         </section>
     </main>
 
-    <footer class="footer"><div class="footer-container"><div class="footer-bottom"><span>Neo N3 MCP Server</span><span>MIT licensed</span></div></div></footer>
+    <footer class="footer"><div class="footer-container"><div class="footer-bottom"><span>Neo MCP Server</span><span>MIT licensed</span></div></div></footer>
 </body>
 </html>

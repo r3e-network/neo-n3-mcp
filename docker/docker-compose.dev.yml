@@ -1,4 +1,4 @@
-name: neo-n3-mcp-dev
+name: neo-mcp-dev
 
 services:
   neo-mcp-dev:
@@ -6,8 +6,8 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.dev
       target: development
-    image: neo-n3-mcp:dev
-    container_name: neo-n3-mcp-dev
+    image: neo-mcp:dev
+    container_name: neo-mcp-dev
     restart: unless-stopped
     ports:
       - "127.0.0.1:${PORT:-3000}:3000"
@@ -50,8 +50,8 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.dev
       target: development
-    image: neo-n3-mcp:dev
-    container_name: neo-n3-mcp-http-dev
+    image: neo-mcp:dev
+    container_name: neo-mcp-http-dev
     restart: unless-stopped
     init: true
     ports:
@@ -95,7 +95,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.dev
       target: development
-    image: neo-n3-mcp:dev
+    image: neo-mcp:dev
     environment:
       - NODE_ENV=test
       - NEO_NETWORK=testnet

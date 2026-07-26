@@ -111,7 +111,7 @@ jobs:
       - name: Validate Compose files
         env:
           HTTP_API_KEY: ci-only-api-key-0000000000000000
-          NEO_MCP_IMAGE_REPOSITORY: r3enetwork/neo-n3-mcp
+          NEO_MCP_IMAGE_REPOSITORY: r3enetwork/neo-mcp
           NEO_MCP_IMAGE_DIGEST: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         run: |
           if [[ ! "$NEO_MCP_IMAGE_DIGEST" =~ ^[0-9a-f]{64}$ ]]; then
@@ -122,18 +122,18 @@ jobs:
           docker compose -f docker/docker-compose.yml -f docker/docker-compose.registry.yml config
           docker compose -f docker/docker-compose.dev.yml config
       - name: Build development image
-        run: docker build -f docker/Dockerfile.dev -t neo-n3-mcp:dev .
+        run: docker build -f docker/Dockerfile.dev -t neo-mcp:dev .
       - name: Build production image
-        run: docker build -f docker/Dockerfile -t neo-n3-mcp:latest .
+        run: docker build -f docker/Dockerfile -t neo-mcp:latest .
       - name: Check production image health
         run: |
-          docker run --detach --name neo-n3-mcp-ci \
+          docker run --detach --name neo-mcp-ci \
             --env NEO_NETWORK=testnet \
             --env HTTP_API_KEY=ci-only-api-key-0000000000000000 \
-            neo-n3-mcp:latest
-          trap 'docker logs neo-n3-mcp-ci; docker rm --force neo-n3-mcp-ci' EXIT
+            neo-mcp:latest
+          trap 'docker logs neo-mcp-ci; docker rm --force neo-mcp-ci' EXIT
           for _ in $(seq 1 30); do
-            status=$(docker inspect --format '{{.State.Health.Status}}' neo-n3-mcp-ci)
+            status=$(docker inspect --format '{{.State.Health.Status}}' neo-mcp-ci)
             [ "$status" = healthy ] && exit 0
             [ "$status" = unhealthy ] && exit 1
             sleep 1
@@ -233,7 +233,7 @@ jobs:
     needs: release-gate
     if: github.event_name == 'release'
     concurrency:
-      group: neo-n3-mcp-npm-${{ needs.release-gate.outputs.version }}
+      group: neo-mcp-npm-${{ needs.release-gate.outputs.version }}
       cancel-in-progress: false
     permissions:
       contents: read
@@ -296,12 +296,12 @@ jobs:
     outputs:
       image-digest: ${{ steps.digest.outputs.digest }}
     concurrency:
-      group: neo-n3-mcp-docker-${{ needs.release-gate.outputs.version }}
+      group: neo-mcp-docker-${{ needs.release-gate.outputs.version }}
       cancel-in-progress: false
     permissions:
       contents: read
     env:
-      IMAGE_REPOSITORY: ${{ secrets.DOCKER_USERNAME }}/neo-n3-mcp
+      IMAGE_REPOSITORY: ${{ secrets.DOCKER_USERNAME }}/neo-mcp
       IMAGE_VERSION: ${{ needs.release-gate.outputs.version }}
     steps:
       - name: Checkout repository
@@ -361,7 +361,7 @@ jobs:
         run: |
           set -euo pipefail
           IMAGE_REF="${IMAGE_REPOSITORY}:${IMAGE_VERSION}"
-          container_name="neo-n3-mcp-release-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          container_name="neo-mcp-release-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           wallet_volume="${container_name}-wallets"
           cleanup() {
             exit_code=$?
@@ -425,12 +425,12 @@ jobs:
     needs: [release-gate, publish, docker-publish]
     if: github.event_name == 'release'
     concurrency:
-      group: neo-n3-mcp-release-promotion
+      group: neo-mcp-release-promotion
       cancel-in-progress: false
     permissions:
       contents: read
     env:
-      IMAGE_REPOSITORY: ${{ secrets.DOCKER_USERNAME }}/neo-n3-mcp
+      IMAGE_REPOSITORY: ${{ secrets.DOCKER_USERNAME }}/neo-mcp
       NPM_DIST_TAG: ${{ needs.release-gate.outputs.npm-dist-tag }}
       NPM_STAGING_TAG: ${{ needs.release-gate.outputs.npm-staging-tag }}
       PACKAGE_NAME: ${{ needs.release-gate.outputs.package-name }}

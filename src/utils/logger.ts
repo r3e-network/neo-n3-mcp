@@ -1,5 +1,5 @@
 /**
- * Logging utility for Neo N3 MCP Server
+ * Logging utility for Neo MCP Server
  * Provides structured logging to console and/or file
  */
 
@@ -45,7 +45,7 @@ export function rotateLogFile(
 
 const DEFAULT_LOG_LEVEL = 'info';
 const DEFAULT_LOG_CONSOLE = !(process.env.NODE_ENV || '').toLowerCase().includes('test');
-const DEFAULT_LOG_FILE_PATH = './logs/neo-n3-mcp.log';
+const DEFAULT_LOG_FILE_PATH = './logs/neo-mcp.log';
 const LOGGER_HOOKS_REGISTERED = '__neoN3McpLoggerHooksRegistered__';
 const REDACTED = '[REDACTED]';
 const SENSITIVE_CONTEXT_KEY = /(?:^|_)(?:args?|arguments?|authorization|api_?key|password|private_?key|secret|token|wif)(?:$|_)/i;

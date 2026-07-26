@@ -1,5 +1,5 @@
 /**
- * Rate limiting utility for Neo N3 MCP Server
+ * Rate limiting utility for Neo MCP Server
  * Prevents abuse by limiting request frequency
  */
 

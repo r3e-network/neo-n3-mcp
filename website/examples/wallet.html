@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wallet Operations - Neo N3 MCP Examples</title>
-    <meta name="description" content="Learn wallet operations with Neo N3 MCP Server: create wallets, check balances, and transfer assets.">
+    <title>Wallet Operations - Neo MCP Examples</title>
+    <meta name="description" content="Learn wallet operations with Neo MCP Server: create wallets, check balances, and transfer assets.">
     <meta name="keywords" content="neo, blockchain, mcp, wallet, examples">
     
     <!-- Favicon -->
@@ -87,13 +87,13 @@
     <!-- Navigation -->
     <nav class="nav" id="nav">
         <div class="nav-container">
-            <a href="/" class="nav-logo">Neo N3 MCP</a>
+            <a href="/" class="nav-logo">Neo MCP</a>
             <div class="nav-menu">
                 <a href="/" class="nav-link">Home</a>
                 <a href="/#features" class="nav-link">Features</a>
                 <a href="/docs" class="nav-link">Docs</a>
                 <a href="/examples" class="nav-link active">Examples</a>
-                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+                <a href="https://github.com/r3e-network/neo-mcp" class="btn btn-primary" target="_blank">Get Started</a>
             </div>
         </div>
     </nav>
@@ -122,7 +122,7 @@
                 <div class="code-content">
                     <pre>NEO_ENABLE_WRITES=true
 NEO_SIGNER_WIF_FILE=/run/secrets/neo-signer-wif
-NEO_WRITE_STATE_DIR=/var/lib/neo-n3-mcp/write-operations
+NEO_WRITE_STATE_DIR=/var/lib/neo-mcp/write-operations
 
 # The signer file is created out of band, owned by the server user, mode 0600.</pre>
                 </div>
@@ -164,6 +164,7 @@ console.log(wallet.address, wallet.publicKey);</pre>
 const localWallet = await tools.get_wallet({ address });
 
 const balance = await tools.get_balance({
+  chain: "n3",
   address,
   network: "testnet"
 });
@@ -356,7 +357,7 @@ console.log("Confirmed transfer:", result);</pre>
         <div class="footer-container">
             <div class="footer-grid">
                 <div>
-                    <div class="footer-brand">Neo N3 MCP</div>
+                    <div class="footer-brand">Neo MCP</div>
                     <p class="footer-description">
                         A focused MCP and HTTP integration surface for Neo N3 data, assets,
                         wallets, transactions, and smart contracts.
@@ -375,20 +376,20 @@ console.log("Confirmed transfer:", result);</pre>
                     <div class="footer-links">
                         <a href="https://docs.neo.org/" class="footer-link" target="_blank">Neo N3 Docs</a>
                         <a href="https://modelcontextprotocol.io/" class="footer-link" target="_blank">MCP Protocol</a>
-                        <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="footer-link" target="_blank">NPM Package</a>
+                        <a href="https://www.npmjs.com/package/@r3e/neo-mcp" class="footer-link" target="_blank">NPM Package</a>
                     </div>
                 </div>
                 <div>
                     <h4 class="footer-title">Community</h4>
                     <div class="footer-links">
-                        <a href="https://github.com/r3e-network/neo-n3-mcp" class="footer-link" target="_blank">GitHub</a>
-                        <a href="https://github.com/r3e-network/neo-n3-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
+                        <a href="https://github.com/r3e-network/neo-mcp" class="footer-link" target="_blank">GitHub</a>
+                        <a href="https://github.com/r3e-network/neo-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
                         <a href="https://discord.gg/neo" class="footer-link" target="_blank">Discord</a>
                     </div>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>© 2025 Neo N3 MCP. Open source under MIT License.</p>
+                <p>© 2025 Neo MCP. Open source under MIT License.</p>
                 <p>Built with ❤️ for the Neo ecosystem</p>
             </div>
         </div>

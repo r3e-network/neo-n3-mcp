@@ -1,6 +1,6 @@
 # Project Cleanup Summary
 
-This document records the repository cleanup and production hardening completed for Neo N3 MCP `3.0.0` in July 2026.
+This document records the repository cleanup and production hardening completed for Neo MCP `3.0.0` in July 2026.
 
 ## Cleanup Outcome
 

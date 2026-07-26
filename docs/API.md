@@ -1,21 +1,35 @@
-# Neo N3 MCP API Reference
+# Neo MCP API Reference
 
-This document describes the MCP tool surface and HTTP routes exposed by `@r3e/neo-n3-mcp` 3.x.
+This document describes the MCP tool surface and HTTP routes exposed by `@r3e/neo-mcp` 3.x.
+
+## Chain and Network Parameters
+
+Neo N3 and Neo X share one tool surface. Tools that exist on both chains take a `chain` parameter:
+
+| Parameter | Values | Meaning |
+| --- | --- | --- |
+| `chain` | `n3`, `neox` | Target chain. Required on every tool both chains implement; there is no silent default. Single-chain tools accept it optionally and reject the chain they do not serve. |
+| `network` | `mainnet`, `testnet` | Node network. Explorer-backed tools are mainnet only. |
+
+The registry rewrites `network` per route, so callers never spell out chain-qualified network names such as `neox-mainnet`. Neo X explorer data comes from Blockscout, whose list endpoints are cursor-paginated, so `limit` and `skip` apply to Neo N3 explorer tools only.
 
 ## MCP Surface
 
-The default server exposes 19 read-only tools:
+The default server exposes 32 read-only tools:
 
-- Network: `get_network_mode`
-- Blockchain: `get_blockchain_info`, `get_block_count`, `get_block`, `get_transaction`, `get_application_log`, `wait_for_transaction`
-- Accounts: `get_balance`, `get_unclaimed_gas`, `get_nep17_transfers`, `get_nep11_balances`, `get_nep11_transfers`
-- Wallet metadata: `get_wallet`
-- Contracts: `invoke_contract`, `list_famous_contracts`, `get_contract_info`, `get_contract_status`
-- Fees: `estimate_transfer_fees`, `estimate_invoke_fees`
+- Server: `get_network_mode`, `get_wallet` (no `chain` parameter)
+- Chain, both chains: `get_chain_info`, `get_block_height`, `get_block`, `get_transaction`, `get_transaction_status`, `get_balance`
+- Contracts, both chains: `call_contract`, `get_contract_info`, `simulate_call`
+- Construct, both chains: `build_transfer`, `build_contract_call`
+- Explorer, both chains: `explorer_get_address`, `explorer_list_address_transactions`, `explorer_list_address_transfers`, `explorer_list_token_holders`, `explorer_search`, `query_explorer`
+- Neo N3 only: `get_application_log`, `wait_for_transaction`, `get_unclaimed_gas`, `get_nep17_transfers`, `get_nep11_balances`, `get_nep11_transfers`, `get_contract_status`, `list_famous_contracts`, `estimate_transfer_fees`, `estimate_invoke_fees`, `explorer_list_address_assets`, `query_explorer_find`
+- Neo X only: `query_explorer_graphql`
 
-`invoke_contract` is strictly read-only. Its schema has no signer, private-key, or confirmation fields.
+`call_contract` is strictly read-only: `invokefunction` on Neo N3, `eth_call` on Neo X. Its schema has no signer, private-key, or confirmation fields.
 
-When `NEO_ENABLE_WRITES=true`, four annotated tools are added:
+`build_transfer` and `build_contract_call` return UNSIGNED proposals — a NeoLine dapi payload on Neo N3, an unsigned EVM transaction on Neo X. They never sign or broadcast, so key custody stays with the user's wallet.
+
+The MCP HTTP transport is read-only by design and ignores `NEO_ENABLE_WRITES`. On a locally launched stdio server, `NEO_ENABLE_WRITES=true` adds four annotated Neo N3 tools:
 
 - `transfer_assets`
 - `invoke_contract_write`
@@ -76,7 +90,7 @@ Write tools are marked destructive and idempotent. They never accept WIFs, priva
 
 ## HTTP Transport
 
-The HTTP server requires one configured network. `NEO_NETWORK=both` is rejected by this entrypoint.
+The REST HTTP server is Neo N3 only and takes no `chain` parameter. Neo X is reachable through the MCP tool surface. The HTTP server requires one configured network. `NEO_NETWORK=both` is rejected by this entrypoint.
 
 `HTTP_API_KEY` authenticates ordinary protected routes. When writes are enabled, `HTTP_WRITE_APPROVAL_API_KEY` is also required and must differ from `HTTP_API_KEY`.
 
@@ -99,9 +113,11 @@ Protected read routes include:
 - `GET /api/accounts/:address/nep17-transfers`
 - `GET /api/accounts/:address/nep11-balances`
 - `GET /api/accounts/:address/nep11-transfers`
+- `GET /api/network/mode`
 - `GET /api/contracts/:reference`
 - `GET /api/contracts/:reference/status`
 - `POST /api/contracts/invoke` for read-only invocation
+- `POST /api/contracts/:reference/invoke` for read-only invocation by name or hash
 - `POST /api/transfers/estimate-fees`
 - `POST /api/contracts/invoke/estimate-fees`
 

@@ -64,18 +64,18 @@ describe('published package surface', () => {
     });
     expect(packageJson.repository).toEqual({
       type: 'git',
-      url: 'git+https://github.com/r3e-network/neo-n3-mcp.git'
+      url: 'git+https://github.com/r3e-network/neo-mcp.git'
     });
-    expect(packageJson.homepage).toBe('https://github.com/r3e-network/neo-n3-mcp#readme');
+    expect(packageJson.homepage).toBe('https://github.com/r3e-network/neo-mcp#readme');
     expect(packageJson.bugs).toEqual({
-      url: 'https://github.com/r3e-network/neo-n3-mcp/issues'
+      url: 'https://github.com/r3e-network/neo-mcp/issues'
     });
   });
 
   test('does not leak undeclared transitive SDK imports through declarations', () => {
     // Emit into a scratch directory rather than the shared dist/: a rebuild in place races
     // the MCP suites that spawn `node dist/index.js`.
-    const declarationRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neo-n3-mcp-decls-'));
+    const declarationRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neo-mcp-decls-'));
     try {
       execFileSync(tsc, ['--outDir', declarationRoot], {
         cwd: repoRoot,
@@ -105,7 +105,7 @@ describe('published package surface', () => {
   }, 120_000);
 
   test('typechecks a strict consumer against the packed package', () => {
-    const consumerRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neo-n3-mcp-consumer-'));
+    const consumerRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neo-mcp-consumer-'));
     try {
       // --ignore-scripts: prepack would clean and rebuild dist/ underneath the MCP suites.
       // beforeAll has already guaranteed dist/ is populated for the tarball.
@@ -117,15 +117,15 @@ describe('published package surface', () => {
       expect(tarball).toBeDefined();
 
       fs.writeFileSync(path.join(consumerRoot, 'package.json'), JSON.stringify({
-        name: 'neo-n3-mcp-type-consumer',
+        name: 'neo-mcp-type-consumer',
         private: true,
         dependencies: {
-          '@r3e/neo-n3-mcp': `file:./${tarball}`,
+          '@r3e/neo-mcp': `file:./${tarball}`,
           '@types/node': '^22.20.1',
         },
       }, null, 2));
       fs.writeFileSync(path.join(consumerRoot, 'index.ts'), [
-        "import { EncodedNef, FeeEstimate, HttpServerOptions, NeoNetwork, NeoService } from '@r3e/neo-n3-mcp';",
+        "import { EncodedNef, FeeEstimate, HttpServerOptions, NeoNetwork, NeoService } from '@r3e/neo-mcp';",
         "const options: HttpServerOptions = { host: '127.0.0.1', maxBodyBytes: 1024 };",
         "const nef: EncodedNef = { encoding: 'hex', data: '00' };",
         "const fees: FeeEstimate = { networkFeeDatos: '1', systemFeeDatos: '2', networkFeeGas: '0.00000001', systemFeeGas: '0.00000002' };",
@@ -169,7 +169,7 @@ describe('published package surface', () => {
     const publicApi = require('../src/index') as Record<string, unknown>;
 
     expect(publicApi).toEqual(expect.objectContaining({
-      NeoN3McpServer: expect.any(Function),
+      NeoMcpServer: expect.any(Function),
       NeoService: expect.any(Function),
       WalletService: expect.any(Function),
       ContractService: expect.any(Function),
@@ -179,7 +179,7 @@ describe('published package surface', () => {
       config: expect.any(Object),
       validateConfig: expect.any(Function),
     }));
-    expect((publicApi.NeoN3McpServer as { prototype: Record<string, unknown> }).prototype)
+    expect((publicApi.NeoMcpServer as { prototype: Record<string, unknown> }).prototype)
       .toEqual(expect.objectContaining({
         run: expect.any(Function),
         close: expect.any(Function),

@@ -1,7 +1,7 @@
-// Neo N3 MCP Website JavaScript
+// Neo MCP Website JavaScript
 
 /**
- * Main JavaScript functionality for the Neo N3 MCP website
+ * Main JavaScript functionality for the Neo MCP website
  * Handles interactive features, animations, and user experience enhancements
  */
 
@@ -55,7 +55,7 @@ class NeoMCPWebsite {
      * Initialize all components
      */
     initializeComponents() {
-        console.log('🚀 Neo N3 MCP Website initialized');
+        console.log('🚀 Neo MCP Website initialized');
     }
 
     /**

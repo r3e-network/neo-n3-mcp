@@ -1,5 +1,5 @@
 /**
- * Custom error types for Neo N3 MCP Server
+ * Custom error types for Neo MCP Server
  * Provides specialized error classes for different categories of errors
  */
 

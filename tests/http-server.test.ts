@@ -759,8 +759,8 @@ describe('HttpServer', () => {
       const response = await request(port, '/metrics');
       expect(response.statusCode).toBe(200);
       expect(response.headers['content-type']).toContain('text/plain');
-      expect(response.body).toContain('neo_n3_mcp_uptime_seconds');
-      expect(response.body).toContain('neo_n3_mcp_block_height{network="mainnet"} 455');
+      expect(response.body).toContain('neo_mcp_uptime_seconds');
+      expect(response.body).toContain('neo_mcp_block_height{network="mainnet"} 455');
     } finally {
       await server.stop();
     }

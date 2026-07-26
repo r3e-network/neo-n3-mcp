@@ -84,14 +84,14 @@ HTTP_API_KEY="$compose_api_key" MCP_HTTP_BEARER="$compose_mcp_bearer" \
   docker compose -f docker/docker-compose.yml config >/dev/null
 HTTP_API_KEY="$compose_api_key" \
   MCP_HTTP_BEARER="$compose_mcp_bearer" \
-  NEO_MCP_IMAGE_REPOSITORY=neo-n3-mcp \
+  NEO_MCP_IMAGE_REPOSITORY=neo-mcp \
   NEO_MCP_IMAGE_DIGEST="$compose_image_digest" \
   docker compose -f docker/docker-compose.yml -f docker/docker-compose.registry.yml config >/dev/null
 docker compose -f docker/docker-compose.dev.yml config >/dev/null
 
 if [[ "$skip_docker" != true ]]; then
-  docker build --file docker/Dockerfile --target production --tag neo-n3-mcp:release-check .
-  docker build --file docker/Dockerfile.dev --target development --tag neo-n3-mcp:release-check-dev .
+  docker build --file docker/Dockerfile --target production --tag neo-mcp:release-check .
+  docker build --file docker/Dockerfile.dev --target development --tag neo-mcp:release-check-dev .
 fi
 
 if [[ "$dry_run" == true ]]; then

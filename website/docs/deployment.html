@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deployment - Neo N3 MCP Server</title>
-    <meta name="description" content="Deploy Neo N3 MCP with the checked-in production Compose file, bearer authentication, wallet persistence, and health checks.">
+    <title>Deployment - Neo MCP Server</title>
+    <meta name="description" content="Deploy Neo MCP with the checked-in production Compose file, bearer authentication, wallet persistence, and health checks.">
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,13 +33,13 @@
 <body>
     <nav class="nav">
         <div class="nav-container">
-            <a href="/" class="nav-logo">Neo N3 MCP</a>
+            <a href="/" class="nav-logo">Neo MCP</a>
             <div class="nav-menu">
                 <a href="/" class="nav-link">Home</a>
                 <a href="/docs" class="nav-link">Docs</a>
                 <a href="/docs/deployment" class="nav-link active">Deployment</a>
                 <a href="/docs/testing" class="nav-link">Testing</a>
-                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank" rel="noreferrer">GitHub</a>
+                <a href="https://github.com/r3e-network/neo-mcp" class="btn btn-primary" target="_blank" rel="noreferrer">GitHub</a>
             </div>
         </div>
     </nav>
@@ -74,7 +74,7 @@ docker compose -f docker/docker-compose.yml up -d</code></pre>
             <pre><code>PORT=8080 HTTP_API_KEY="$HTTP_API_KEY" \
   docker compose -f docker/docker-compose.yml up -d</code></pre>
             <h3>Registry image</h3>
-            <pre><code>NEO_MCP_IMAGE_REPOSITORY=r3enetwork/neo-n3-mcp \
+            <pre><code>NEO_MCP_IMAGE_REPOSITORY=r3enetwork/neo-mcp \
 NEO_MCP_IMAGE_DIGEST=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef \
 HTTP_API_KEY="$HTTP_API_KEY" \
   docker compose -f docker/docker-compose.yml \
@@ -143,6 +143,6 @@ curl -H "Authorization: Bearer $HTTP_API_KEY" \
         </section>
     </main>
 
-    <footer class="footer"><div class="footer-container"><div class="footer-bottom"><span>Neo N3 MCP Server</span><span>MIT licensed</span></div></div></footer>
+    <footer class="footer"><div class="footer-container"><div class="footer-bottom"><span>Neo MCP Server</span><span>MIT licensed</span></div></div></footer>
 </body>
 </html>

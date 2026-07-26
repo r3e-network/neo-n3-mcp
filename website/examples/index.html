@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Examples - Neo N3 MCP</title>
-    <meta name="description" content="Real-world examples and use cases for Neo N3 MCP Server. Learn through practical implementations and interactive code samples.">
+    <title>Examples - Neo MCP</title>
+    <meta name="description" content="Real-world examples and use cases for Neo MCP Server. Learn through practical implementations and interactive code samples.">
     <meta name="keywords" content="neo, blockchain, mcp, examples, tutorials, use cases">
     
     <!-- Favicon -->
@@ -309,13 +309,13 @@
     <!-- Navigation -->
     <nav class="nav" id="nav">
         <div class="nav-container">
-            <a href="/" class="nav-logo">Neo N3 MCP</a>
+            <a href="/" class="nav-logo">Neo MCP</a>
             <div class="nav-menu">
                 <a href="/" class="nav-link">Home</a>
                 <a href="/#features" class="nav-link">Features</a>
                 <a href="/docs" class="nav-link">Docs</a>
                 <a href="/examples" class="nav-link active">Examples</a>
-                <a href="https://github.com/r3e-network/neo-n3-mcp" class="btn btn-primary" target="_blank">Get Started</a>
+                <a href="https://github.com/r3e-network/neo-mcp" class="btn btn-primary" target="_blank">Get Started</a>
             </div>
         </div>
     </nav>
@@ -402,8 +402,9 @@ console.log('Confirmed:', confirmation.confirmed);</pre>
                     <div class="code-window">
                         <div class="code-content">
                             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                            <pre>// Get blockchain information
-const blockchainInfo = await neo.callTool('get_blockchain_info', {
+                            <pre>// Get chain information
+const blockchainInfo = await neo.callTool('get_chain_info', {
+  chain: 'n3',
   network: 'testnet'
 });
 
@@ -413,6 +414,7 @@ console.log('Network:', blockchainInfo.network);
 
 // Get the latest block by its numeric height
 const block = await neo.callTool('get_block', {
+  chain: 'n3',
   network: 'testnet',
   hashOrHeight: blockchainInfo.height
 });
@@ -455,6 +457,7 @@ console.log('Wallet address:', wallet.address);
 
 // Check wallet balance
 const balance = await neo.callTool('get_balance', {
+  chain: 'n3',
   address: wallet.address,
   network: 'testnet'
 });
@@ -489,8 +492,9 @@ balance.balance.forEach(asset => {
                     <div class="code-window">
                         <div class="code-content">
                             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                            <pre>// Invoke a smart contract method
-const result = await neo.callTool('invoke_contract', {
+                            <pre>// Read a smart contract method
+const result = await neo.callTool('call_contract', {
+  chain: 'n3',
   network: 'testnet',
   contract: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
   operation: 'symbol',
@@ -546,6 +550,7 @@ if (!status.deployed) {
 }
 
 const info = await neo.callTool('get_contract_info', {
+  chain: 'n3',
   network: 'mainnet',
   contract: reference
 });
@@ -636,6 +641,7 @@ console.log('Transaction confirmed:', txStatus.confirmed);</pre>
                             <pre>const txid = process.env.NEO_TXID;
 
 const transaction = await neo.callTool('get_transaction', {
+  chain: 'n3',
   network: 'mainnet',
   txid
 });
@@ -709,7 +715,7 @@ for (const execution of applicationLog.executions) {
         <div class="footer-container">
             <div class="footer-grid">
                 <div>
-                    <div class="footer-brand">Neo N3 MCP</div>
+                    <div class="footer-brand">Neo MCP</div>
                     <p class="footer-description">
                         A focused MCP and HTTP integration surface for Neo N3 data, assets,
                         wallets, transactions, and smart contracts.
@@ -728,20 +734,20 @@ for (const execution of applicationLog.executions) {
                     <div class="footer-links">
                         <a href="https://docs.neo.org/" class="footer-link" target="_blank">Neo N3 Docs</a>
                         <a href="https://modelcontextprotocol.io/" class="footer-link" target="_blank">MCP Protocol</a>
-                        <a href="https://www.npmjs.com/package/@r3e/neo-n3-mcp" class="footer-link" target="_blank">NPM Package</a>
+                        <a href="https://www.npmjs.com/package/@r3e/neo-mcp" class="footer-link" target="_blank">NPM Package</a>
                     </div>
                 </div>
                 <div>
                     <h4 class="footer-title">Community</h4>
                     <div class="footer-links">
-                        <a href="https://github.com/r3e-network/neo-n3-mcp" class="footer-link" target="_blank">GitHub</a>
-                        <a href="https://github.com/r3e-network/neo-n3-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
+                        <a href="https://github.com/r3e-network/neo-mcp" class="footer-link" target="_blank">GitHub</a>
+                        <a href="https://github.com/r3e-network/neo-mcp/discussions" class="footer-link" target="_blank">Discussions</a>
                         <a href="https://discord.gg/neo" class="footer-link" target="_blank">Discord</a>
                     </div>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>© 2025 Neo N3 MCP. Open source under MIT License.</p>
+                <p>© 2025 Neo MCP. Open source under MIT License.</p>
                 <p>Built with ❤️ for the Neo ecosystem</p>
             </div>
         </div>

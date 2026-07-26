@@ -1,8 +1,8 @@
-[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/r3e-network-neo-n3-mcp-badge.png)](https://mseep.ai/app/r3e-network-neo-n3-mcp)
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/r3e-network-neo-mcp-badge.png)](https://mseep.ai/app/r3e-network-neo-mcp)
 
-# Neo N3 MCP Server
+# Neo MCP Server
 
-`@r3e/neo-n3-mcp` is an MCP server for Neo N3 blockchain queries and controlled, auditable transaction submission. It ships three entrypoints:
+`@r3e/neo-mcp` is an MCP server for Neo N3 blockchain queries and controlled, auditable transaction submission. It ships three entrypoints:
 
 | Entrypoint | Command | Protocol |
 | --- | --- | --- |
@@ -19,14 +19,14 @@ Current version: `3.1.0`. Node.js `>=22` is required.
 Install and run the MCP stdio server:
 
 ```bash
-npm install -g @r3e/neo-n3-mcp
-neo-n3-mcp
+npm install -g @r3e/neo-mcp
+neo-mcp
 ```
 
 Or run it without a global install:
 
 ```bash
-npx -y @r3e/neo-n3-mcp
+npx -y @r3e/neo-mcp
 ```
 
 Example Claude Desktop or Cursor configuration:
@@ -36,7 +36,7 @@ Example Claude Desktop or Cursor configuration:
   "mcpServers": {
     "neo-n3": {
       "command": "npx",
-      "args": ["-y", "@r3e/neo-n3-mcp"],
+      "args": ["-y", "@r3e/neo-mcp"],
       "env": {
         "NEO_NETWORK": "testnet",
         "NEO_TESTNET_RPC": "https://testnet1.neo.coz.io:443",
@@ -52,7 +52,7 @@ Example Claude Desktop or Cursor configuration:
 The package root exports the MCP server, HTTP server, services, network enums, and validated configuration:
 
 ```ts
-import { NeoNetwork, NeoService } from '@r3e/neo-n3-mcp';
+import { NeoNetwork, NeoService } from '@r3e/neo-mcp';
 
 const neo = new NeoService(
   'https://testnet1.neo.coz.io:443',
@@ -63,7 +63,7 @@ const blockCount = await neo.getBlockCount();
 console.log({ blockCount, height: Math.max(0, blockCount - 1) });
 ```
 
-`NeoN3McpServer` exposes `run()` and `close()` for applications that manage the stdio transport lifecycle themselves.
+`NeoMcpServer` exposes `run()` and `close()` for applications that manage the stdio transport lifecycle themselves.
 
 ## Configuration
 
@@ -99,7 +99,7 @@ console.log({ blockCount, height: Math.max(0, blockCount - 1) });
 | `MAX_REQUESTS_PER_HOUR` | Per-client hour limit | `1000` |
 | `LOG_LEVEL` | `debug`, `info`, `warn`, or `error` | `info` |
 | `LOG_CONSOLE` | Enable console logging | enabled outside test environments |
-| `LOG_FILE` | Log file path; setting it enables file logging | `./logs/neo-n3-mcp.log` |
+| `LOG_FILE` | Log file path; setting it enables file logging | `./logs/neo-mcp.log` |
 | `LOG_FILE_ENABLED` | Enable file logging without setting `LOG_FILE` | `false` |
 | `PORT` | HTTP listen port | `3000` |
 
@@ -115,7 +115,7 @@ Writes are disabled by default. To enable them, create an owner-only signer file
 install -m 0600 /dev/stdin /run/secrets/neo-signer-wif
 export NEO_ENABLE_WRITES=true
 export NEO_SIGNER_WIF_FILE=/run/secrets/neo-signer-wif
-export NEO_WRITE_STATE_DIR=/var/lib/neo-n3-mcp/write-operations
+export NEO_WRITE_STATE_DIR=/var/lib/neo-mcp/write-operations
 export HTTP_WRITE_APPROVAL_API_KEY="$(openssl rand -hex 32)"
 ```
 
@@ -247,7 +247,7 @@ MCP_HTTP_BEARER="$(openssl rand -hex 32)" \
 To run a published image instead of building the checkout, use the digest-only registry overlay with the image repository and the release artifact's 64-character lowercase hexadecimal digest:
 
 ```bash
-NEO_MCP_IMAGE_REPOSITORY=r3enetwork/neo-n3-mcp \
+NEO_MCP_IMAGE_REPOSITORY=r3enetwork/neo-mcp \
 NEO_MCP_IMAGE_DIGEST=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef \
 HTTP_API_KEY="$HTTP_API_KEY" \
 MCP_HTTP_BEARER="$MCP_HTTP_BEARER" \
@@ -277,14 +277,19 @@ See [DOCKER.md](./docs/DOCKER.md) for image, volume, and helper-script details.
 
 ## MCP Tools and Resources
 
-The default MCP surface exposes 19 read-only tools. Enabling writes adds four tools, for 23 total:
+The default MCP surface exposes 32 read-only tools. Every tool that both chains implement takes a required `chain` discriminator, `"n3"` or `"neox"`, with no silent default; single-chain tools reject the chain they do not serve. The `network` parameter is always `"mainnet"` or `"testnet"`; the registry rewrites it for Neo X internally, so callers never spell out a chain-qualified network name.
 
-- Network: `get_network_mode`
-- Blockchain: `get_blockchain_info`, `get_block_count`, `get_block`, `get_transaction`, `get_application_log`, `wait_for_transaction`
-- Wallet metadata: `get_wallet`
-- Assets: `get_balance`, `get_unclaimed_gas`, `get_nep17_transfers`, `get_nep11_balances`, `get_nep11_transfers`, `estimate_transfer_fees`
-- Contracts: `invoke_contract`, `list_famous_contracts`, `get_contract_info`, `get_contract_status`, `estimate_invoke_fees`
-- Enabled writes: `transfer_assets`, `invoke_contract_write`, `claim_gas`, `deploy_contract`
+- Server: `get_network_mode`, `get_wallet`
+- Chain, both chains: `get_chain_info`, `get_block_height`, `get_block`, `get_transaction`, `get_transaction_status`, `get_balance`
+- Contracts, both chains: `call_contract`, `get_contract_info`, `simulate_call`
+- Construct, both chains: `build_transfer`, `build_contract_call`
+- Explorer, both chains: `explorer_get_address`, `explorer_list_address_transactions`, `explorer_list_address_transfers`, `explorer_list_token_holders`, `explorer_search`, `query_explorer`
+- Neo N3 only: `get_application_log`, `wait_for_transaction`, `get_unclaimed_gas`, `get_nep17_transfers`, `get_nep11_balances`, `get_nep11_transfers`, `get_contract_status`, `list_famous_contracts`, `estimate_transfer_fees`, `estimate_invoke_fees`, `explorer_list_address_assets`, `query_explorer_find`
+- Neo X only: `query_explorer_graphql`
+
+`call_contract` is strictly read-only: `invokefunction` on Neo N3, `eth_call` on Neo X. The `build_*` tools return UNSIGNED transaction proposals for a wallet to review and sign; no tool on this surface holds a key, signs, or broadcasts.
+
+A locally launched stdio server with `NEO_ENABLE_WRITES=true` and a `NEO_SIGNER_WIF_FILE` registers four additional Neo N3 tools that sign with that owner-supplied key: `transfer_assets`, `invoke_contract_write`, `claim_gas`, `deploy_contract`. They require an `idempotencyKey`, an explicit `network`, an MCP client with form elicitation, and acceptance of the exact returned intent fingerprint. The MCP HTTP transport is read-only by design and ignores the setting.
 
 The curated contract list is intentionally empty until each entry has a current network hash and a verified on-chain manifest. Generic contract tools accept a script hash, Neo address, exact N3Index name, or a name learned from a live manifest.
 
@@ -292,7 +297,7 @@ The curated contract list is intentionally empty until each entry has a current 
 
 `deploy_contract` accepts compiler output as a complete serialized NEF object, `nef: { encoding: "hex" | "base64", data: string }`, together with its manifest. Raw VM bytecode is not a deployable NEF artifact.
 
-`get_block_count` returns both `blockCount` and `height`, where `height` is `max(0, blockCount - 1)`.
+`get_block_height` returns both `blockCount` and `height`, where `height` is `max(0, blockCount - 1)`.
 
 Resources:
 
