@@ -165,39 +165,13 @@ export class NeoService {
    */
   async getBlockchainInfo() {
     try {
-      // Use dedicated methods
-      const blockCount = await this.withRpcDeadline(() => this.rpcClient.getBlockCount());
-
-      // Try to get validators using multiple approaches
-      let validators = [];
-      try {
-        // Try to get validators using multiple approaches
-        let validatorsResult: unknown = undefined;
-        try {
-          // Try execute method first
-          validatorsResult = await this.withRpcDeadline(
-            () => this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getvalidators', params: [] }))
-          );
-        } catch (executeError) {
-          if (!isUnsupportedRpcMethodError(executeError)) {
-            throw executeError;
-          }
-          // Fallback to getnextblockvalidators
-          try {
-            validatorsResult = await this.withRpcDeadline(
-              () => this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getnextblockvalidators', params: [] }))
-            );
-          } catch (nextError) {
-            logger.warn('All validator query methods failed; continuing without validators', { network: this.network });
-          }
-        }
-        if (validatorsResult && Array.isArray(validatorsResult)) {
-          validators = validatorsResult;
-        }
-      } catch (validatorError) {
-        logger.warn('Failed to get validators; continuing without validators', { network: this.network, error: validatorError instanceof Error ? validatorError.message : String(validatorError) });
-        // Continue without validators
-      }
+      // The height and the validator set are independent reads. Awaiting them one
+      // after the other made this tool cost the sum of two RPC budgets, so a single
+      // slow seed was paid for twice; overlapping them costs the slower of the two.
+      const [blockCount, validators] = await Promise.all([
+        this.withRpcDeadline(() => this.rpcClient.getBlockCount()),
+        this.getValidatorsOrEmpty(),
+      ]);
 
       return {
         blockCount,
@@ -208,6 +182,45 @@ export class NeoService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to get blockchain info: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Read the validator set, tolerating nodes that expose neither query.
+   *
+   * Missing validators are not a failure of getBlockchainInfo: the height is the
+   * part callers depend on, so this never rejects and reports an empty set
+   * instead. Keeping that swallowing here (rather than at the call site) is what
+   * lets the read run alongside the height read without the two failure modes
+   * getting tangled.
+   * @returns The validator set, or an empty array if it cannot be read
+   */
+  private async getValidatorsOrEmpty(): Promise<unknown[]> {
+    try {
+      let validatorsResult: unknown = undefined;
+      try {
+        // Try execute method first
+        validatorsResult = await this.withRpcDeadline(
+          () => this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getvalidators', params: [] }))
+        );
+      } catch (executeError) {
+        if (!isUnsupportedRpcMethodError(executeError)) {
+          throw executeError;
+        }
+        // Fallback to getnextblockvalidators
+        try {
+          validatorsResult = await this.withRpcDeadline(
+            () => this.rpcClient.execute(new neonJs.rpc.Query({ method: 'getnextblockvalidators', params: [] }))
+          );
+        } catch (nextError) {
+          logger.warn('All validator query methods failed; continuing without validators', { network: this.network, error: nextError instanceof Error ? nextError.message : String(nextError) });
+        }
+      }
+      return Array.isArray(validatorsResult) ? validatorsResult : [];
+    } catch (validatorError) {
+      logger.warn('Failed to get validators; continuing without validators', { network: this.network, error: validatorError instanceof Error ? validatorError.message : String(validatorError) });
+      // Continue without validators
+      return [];
     }
   }
 
@@ -915,13 +928,17 @@ export class NeoService {
             args: [neonJs.sc.ContractParam.hash160(address)]
           });
 
-          // Execute the scripts
-          const neoResult = await this.withRpcDeadline(
-            () => this.rpcClient.invokeScript(neonJs.u.HexString.fromHex(neoScript), [])
-          );
-          const gasResult = await this.withRpcDeadline(
-            () => this.rpcClient.invokeScript(neonJs.u.HexString.fromHex(gasScript), [])
-          );
+          // Execute the scripts together: the two balances are independent reads,
+          // and this is already the slow fallback path, so paying two RPC budgets
+          // in sequence is the difference between a usable answer and a timeout.
+          const [neoResult, gasResult] = await Promise.all([
+            this.withRpcDeadline(
+              () => this.rpcClient.invokeScript(neonJs.u.HexString.fromHex(neoScript), [])
+            ),
+            this.withRpcDeadline(
+              () => this.rpcClient.invokeScript(neonJs.u.HexString.fromHex(gasScript), [])
+            ),
+          ]);
 
           // Extract balances from results
           const extractBalance = (result: typeof neoResult, asset: string): string => {
@@ -1475,28 +1492,7 @@ export class NeoService {
         throw new Error(`Invalid address format for claiming GAS: ${fromAddress}`);
       }
 
-      const unclaimedGas = await this.withRpcDeadline(
-        () => this.rpcClient.getUnclaimedGas(fromAddress)
-      );
-      if (!/^\d+$/.test(unclaimedGas) || BigInt(unclaimedGas) < 50_000_000n) {
-        throw new Error('Minimum claim value is 0.5 GAS');
-      }
-
-      const neoScriptHash = this.getAssetHash('NEO');
-      const balanceResult = await this.withRpcDeadline(
-        () => this.rpcClient.invokeFunction(
-          neoScriptHash,
-          'balanceOf',
-          [neonJs.sc.ContractParam.hash160(fromAddress)]
-        )
-      );
-      const balanceValue = balanceResult.stack?.[0]?.value;
-      const rawNeoBalance = typeof balanceValue === 'string' || typeof balanceValue === 'number'
-        ? String(balanceValue)
-        : '';
-      if (balanceResult.state !== 'HALT' || !/^\d+$/.test(rawNeoBalance) || BigInt(rawNeoBalance) <= 0n) {
-        throw new Error('Failed to determine the NEO balance required to claim GAS');
-      }
+      const rawNeoBalance = await this.readClaimableNeoBalance(fromAddress);
 
       const prepared = await this.prepareClaimGasTransaction(fromAccount, rawNeoBalance);
       const txid = await this.submitPreparedTransaction(prepared);
@@ -1512,6 +1508,50 @@ export class NeoService {
     }
   }
 
+  /**
+   * Check that a GAS claim is worth making and return the NEO balance it moves.
+   *
+   * Claiming GAS is a self-transfer of the whole NEO balance, so both the
+   * unclaimed amount and that balance are needed, and neither depends on the
+   * other. They are read together: in sequence the claim cost two RPC budgets,
+   * which one slow seed was enough to turn into a timeout.
+   * @param fromAddress Address claiming the GAS
+   * @returns The raw (integer) NEO balance to be self-transferred
+   * @throws ValidationError if the claim is below the minimum or the balance is unusable
+   */
+  private async readClaimableNeoBalance(fromAddress: string): Promise<string> {
+    const unclaimedGasRead = this.withRpcDeadline(
+      () => this.rpcClient.getUnclaimedGas(fromAddress)
+    );
+    const neoBalanceRead = this.withRpcDeadline(
+      () => this.rpcClient.invokeFunction(
+        this.getAssetHash('NEO'),
+        'balanceOf',
+        [neonJs.sc.ContractParam.hash160(fromAddress)]
+      )
+    );
+    // The minimum-claim guard below decides first, so a below-minimum claim still
+    // reports exactly that. Marking the balance read as handled keeps an
+    // incidental failure on it from surfacing as an unhandled rejection in that
+    // case; the await further down is what actually reports it when it matters.
+    void neoBalanceRead.catch(() => undefined);
+
+    const unclaimedGas = await unclaimedGasRead;
+    if (!/^\d+$/.test(unclaimedGas) || BigInt(unclaimedGas) < 50_000_000n) {
+      throw new ValidationError('Minimum claim value is 0.5 GAS');
+    }
+
+    const balanceResult = await neoBalanceRead;
+    const balanceValue = balanceResult.stack?.[0]?.value;
+    const rawNeoBalance = typeof balanceValue === 'string' || typeof balanceValue === 'number'
+      ? String(balanceValue)
+      : '';
+    if (balanceResult.state !== 'HALT' || !/^\d+$/.test(rawNeoBalance) || BigInt(rawNeoBalance) <= 0n) {
+      throw new ValidationError('Failed to determine the NEO balance required to claim GAS');
+    }
+    return rawNeoBalance;
+  }
+
   async prepareClaimGasTransaction(
     fromAccount: NeonAccount,
     knownNeoBalance?: string
@@ -1520,25 +1560,7 @@ export class NeoService {
       throw new ValidationError('Invalid account for claiming GAS: missing address');
     }
     const fromAddress = String(fromAccount.address);
-    let rawNeoBalance = knownNeoBalance;
-    if (rawNeoBalance === undefined) {
-      const unclaimedGas = await this.withRpcDeadline(() => this.rpcClient.getUnclaimedGas(fromAddress));
-      if (!/^\d+$/.test(unclaimedGas) || BigInt(unclaimedGas) < 50_000_000n) {
-        throw new ValidationError('Minimum claim value is 0.5 GAS');
-      }
-      const balanceResult = await this.withRpcDeadline(() => this.rpcClient.invokeFunction(
-        this.getAssetHash('NEO'),
-        'balanceOf',
-        [neonJs.sc.ContractParam.hash160(fromAddress)]
-      ));
-      const balanceValue = balanceResult.stack?.[0]?.value;
-      rawNeoBalance = typeof balanceValue === 'string' || typeof balanceValue === 'number'
-        ? String(balanceValue)
-        : '';
-      if (balanceResult.state !== 'HALT' || !/^\d+$/.test(rawNeoBalance) || BigInt(rawNeoBalance) <= 0n) {
-        throw new ValidationError('Failed to determine the NEO balance required to claim GAS');
-      }
-    }
+    const rawNeoBalance = knownNeoBalance ?? await this.readClaimableNeoBalance(fromAddress);
     const { networkMagic, script } = await this.buildNep17TransferScript(
         fromAddress,
         fromAddress,
