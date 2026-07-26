@@ -12,6 +12,30 @@ Neo MCP supports two runtime modes:
 - Outbound access to the selected Neo RPC endpoint
 - Controlled persistent storage when wallet records are enabled
 
+### Dependency override for installs from npm
+
+This repository pins `@hono/node-server` to `^2.0.5` through `overrides`, so installs from
+this checkout and the published container images resolve the patched line. npm does not
+propagate `overrides` to downstream installers: if you add `@r3e/neo-mcp` as a dependency
+of your own project, npm resolves `@hono/node-server` through the MCP SDK's declared
+`^1.19.9` range instead, and `npm audit` reports GHSA-frvp-7c67-39w9.
+
+That advisory covers path traversal through encoded backslashes in `serveStatic` on
+Windows. Neither this server nor the SDK transport it uses calls `serveStatic`, so the
+vulnerable code is not reachable through the Neo MCP surface, and the SDK's range cannot
+resolve to a patched version on its own. To keep the finding out of your own audit, repeat
+the override in the consuming project:
+
+```json
+{
+  "overrides": {
+    "@hono/node-server": "^2.0.5"
+  }
+}
+```
+
+Drop the override once the MCP SDK widens its range to the patched line.
+
 ## MCP Stdio
 
 The stdio server supports `NEO_NETWORK=mainnet`, `testnet`, or `both`:
