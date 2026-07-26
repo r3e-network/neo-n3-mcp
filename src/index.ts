@@ -137,8 +137,8 @@ export class NeoN3McpServer {
       if (config.networkMode === NetworkMode.MAINNET_ONLY || config.networkMode === NetworkMode.BOTH) {
         logger.info('Initializing mainnet services...');
         
-        const mainnetNeoService = new NeoService(config.mainnetRpcUrl, NeoNetwork.MAINNET);
-        const mainnetContractService = new ContractService(config.mainnetRpcUrl, NeoNetwork.MAINNET);
+        const mainnetNeoService = new NeoService(config.mainnetRpcUrls, NeoNetwork.MAINNET);
+        const mainnetContractService = new ContractService(config.mainnetRpcUrls, NeoNetwork.MAINNET);
         
         this.neoServices.set(NeoNetwork.MAINNET, mainnetNeoService);
         this.contractServices.set(NeoNetwork.MAINNET, mainnetContractService);
@@ -150,8 +150,8 @@ export class NeoN3McpServer {
       if (config.networkMode === NetworkMode.TESTNET_ONLY || config.networkMode === NetworkMode.BOTH) {
         logger.info('Initializing testnet services...');
         
-        const testnetNeoService = new NeoService(config.testnetRpcUrl, NeoNetwork.TESTNET);
-        const testnetContractService = new ContractService(config.testnetRpcUrl, NeoNetwork.TESTNET);
+        const testnetNeoService = new NeoService(config.testnetRpcUrls, NeoNetwork.TESTNET);
+        const testnetContractService = new ContractService(config.testnetRpcUrls, NeoNetwork.TESTNET);
         
         this.neoServices.set(NeoNetwork.TESTNET, testnetNeoService);
         this.contractServices.set(NeoNetwork.TESTNET, testnetContractService);

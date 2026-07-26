@@ -2,7 +2,7 @@ import * as neonJs from '@cityofzion/neon-js';
 import { config } from '../config';
 import { KnownAccountMetadata, normalizeScriptHash, resolveKnownAccount, tryGetAddressFromScriptHash, tryGetScriptHashFromAddress } from '../metadata/known-accounts';
 import { logger } from '../utils/logger';
-import { createRpcClient, isDefinitiveRpcRejection, isUnsupportedRpcMethodError } from '../utils/rpc-client';
+import { createRpcClient, isDefinitiveRpcRejection, isUnsupportedRpcMethodError, toRpcUrlList } from '../utils/rpc-client';
 import { OperationAbortedError, RpcDeadlineError, SubmissionOutcomeUnknownError, withRpcDeadline } from '../utils/rpc-deadline';
 import { RateLimitError, ValidationError } from '../utils/errors';
 import { formatContractParameters } from '../utils/contract-params';
@@ -83,16 +83,19 @@ export class NeoService {
   private readonly minTransactionPollIntervalMs: number;
   private readonly maxConcurrentTransactionWaits: number;
   private readonly maxTransactionFeeDatos: bigint;
+  private readonly rpcUrls: readonly string[];
   private activeTransactionWaits = 0;
 
   /**
    * Create a new Neo service
-   * @param rpcUrl URL of the Neo N3 RPC node
+   * @param rpcUrl One RPC URL, or an ordered list of URLs to fail over between.
+   *   Reads advance to the next entry only when an endpoint does not answer;
+   *   transaction submission never retries. See utils/rpc-client.ts.
    * @param network Network type (mainnet or testnet)
    * @param options Additional service options
    */
   constructor(
-    rpcUrl: string,
+    rpcUrl: string | readonly string[],
     network: NeoNetwork = NeoNetwork.MAINNET,
     options: {
       rpcTimeoutMs?: number;
@@ -103,9 +106,11 @@ export class NeoService {
       maxTransactionFeeGas?: string;
     } = {}
   ) {
-    if (!rpcUrl) {
+    const rpcUrls = toRpcUrlList(rpcUrl);
+    if (rpcUrls.length === 0) {
       throw new Error('RPC URL is required');
     }
+    this.rpcUrls = rpcUrls;
 
     const rpcTimeoutMs = options.rpcTimeoutMs ?? config.rpcTimeoutMs;
     if (!Number.isSafeInteger(rpcTimeoutMs) || rpcTimeoutMs <= 0) {
@@ -113,10 +118,14 @@ export class NeoService {
     }
 
     try {
-      assertValidRpcUrl(rpcUrl, {
-        allowInsecureRemote: options.allowInsecureRpc ?? config.allowInsecureRpc,
-      });
-      this.rpcClient = createRpcClient(rpcUrl, rpcTimeoutMs);
+      // Every entry is validated, not just the first: an unusable URL in position
+      // three would otherwise stay hidden until the seeds ahead of it go down.
+      for (const url of rpcUrls) {
+        assertValidRpcUrl(url, {
+          allowInsecureRemote: options.allowInsecureRpc ?? config.allowInsecureRpc,
+        });
+      }
+      this.rpcClient = createRpcClient(rpcUrls, rpcTimeoutMs);
       const executeRpc = this.rpcClient.execute.bind(this.rpcClient);
       this.fetchRpcVersion = () => executeRpc(
         new neonJs.rpc.Query({ method: 'getversion', params: [] })
@@ -1688,6 +1697,14 @@ export class NeoService {
    */
   getNetwork(): NeoNetwork {
     return this.network;
+  }
+
+  /**
+   * Get the RPC endpoints this service reads from, in failover order.
+   * @returns The configured endpoints; index 0 is the one tried first.
+   */
+  getRpcUrls(): readonly string[] {
+    return this.rpcUrls;
   }
 
 }

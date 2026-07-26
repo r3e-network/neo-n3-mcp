@@ -19,7 +19,7 @@ import {
 } from '../utils/validation';
 import { ContractError, NetworkError, ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
-import { createRpcClient, isDefinitiveRpcRejection, isUnsupportedRpcMethodError } from '../utils/rpc-client';
+import { createRpcClient, isDefinitiveRpcRejection, isUnsupportedRpcMethodError, toRpcUrlList } from '../utils/rpc-client';
 import { RpcDeadlineError, SubmissionOutcomeUnknownError, withRpcDeadline } from '../utils/rpc-deadline';
 import { formatContractParameters } from '../utils/contract-params';
 import type { NeonAccount, NeonContractManifestJson, NeonRpcClient } from '../types/neon';
@@ -88,21 +88,26 @@ export class ContractService {
   private readonly discoveredContractsByName = new Map<string, string>();
   private readonly n3indexClient: N3IndexClient | null;
   private readonly remotelyResolvedContractsByName = new Map<string, N3IndexResolvedContract>();
+  private readonly rpcUrls: readonly string[];
 
   /**
    * Create a new ContractService
-   * @param rpcUrl URL of the Neo N3 RPC node
+   * @param rpcUrl One Neo N3 RPC URL, or an ordered list of URLs to fail over
+   *   between. Reads advance to the next entry only when an endpoint does not
+   *   answer; transaction submission never retries. See utils/rpc-client.ts.
    * @param network Network type (mainnet or testnet)
    * @throws NetworkError if RPC client initialization fails
    */
   constructor(
-    rpcUrl: string,
+    rpcUrl: string | readonly string[],
     network: NeoNetwork = NeoNetwork.MAINNET,
     options: ContractServiceOptions = {}
   ) {
-    if (!rpcUrl) {
+    const rpcUrls = toRpcUrlList(rpcUrl);
+    if (rpcUrls.length === 0) {
       throw new NetworkError('RPC URL is required');
     }
+    this.rpcUrls = rpcUrls;
 
     if (!Object.values(NeoNetwork).includes(network)) {
       throw new NetworkError(
@@ -120,19 +125,23 @@ export class ContractService {
     );
 
     try {
-      assertValidRpcUrl(rpcUrl, {
-        allowInsecureRemote: options.allowInsecureRpc ?? config.allowInsecureRpc,
-      });
-      this.rpcClient = createRpcClient(rpcUrl, this.rpcTimeoutMs);
+      // Every entry is validated, not just the first: an unusable URL in position
+      // three would otherwise stay hidden until the seeds ahead of it go down.
+      for (const url of rpcUrls) {
+        assertValidRpcUrl(url, {
+          allowInsecureRemote: options.allowInsecureRpc ?? config.allowInsecureRpc,
+        });
+      }
+      this.rpcClient = createRpcClient(rpcUrls, this.rpcTimeoutMs);
       const executeRpc = this.rpcClient.execute.bind(this.rpcClient);
       this.fetchRpcVersion = () => executeRpc(
         new neonJs.rpc.Query({ method: 'getversion', params: [] })
       );
 
-      logger.info(`ContractService initialized for ${network}`, { rpcUrl });
+      logger.info(`ContractService initialized for ${network}`, { rpcUrls });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error(`Failed to initialize Neo RPC client`, { error: errorMessage, rpcUrl, network });
+      logger.error(`Failed to initialize Neo RPC client`, { error: errorMessage, rpcUrls, network });
       throw new NetworkError(`Failed to initialize Neo RPC client: ${errorMessage}`);
     }
   }
@@ -1034,6 +1043,14 @@ export class ContractService {
 
   getNetwork(): NeoNetwork {
     return this.network;
+  }
+
+  /**
+   * Get the RPC endpoints this service reads from, in failover order.
+   * @returns The configured endpoints; index 0 is the one tried first.
+   */
+  getRpcUrls(): readonly string[] {
+    return this.rpcUrls;
   }
 
   private async withRpcDeadline<T>(operation: () => Promise<T>): Promise<T> {

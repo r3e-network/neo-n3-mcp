@@ -16,8 +16,24 @@ export enum NetworkMode {
   BOTH = 'both'
 }
 
-const DEFAULT_MAINNET_RPC = 'https://mainnet1.neo.coz.io:443';
-const DEFAULT_TESTNET_RPC = 'https://testnet1.neo.coz.io:443';
+// Neo N3 JSON-RPC seeds. Multiple entries per network are REQUIRED, not a
+// nicety: a single seed going down (mainnet1.neo.coz.io returned Cloudflare 520
+// for days) otherwise takes every read with it. Entries are tried in order and
+// only advanced past on transport faults; see utils/rpc-client.ts. All hosts
+// below were verified to answer getversion with the correct network magic
+// (mainnet 860833102, testnet 894710606).
+const DEFAULT_MAINNET_RPC_URLS = [
+  'https://mainnet3.neo.coz.io:443',
+  'https://mainnet4.neo.coz.io:443',
+  'https://mainnet5.neo.coz.io:443',
+  'https://rpc10.n3.nspcc.ru:10331',
+  'https://n3seed1.ngd.network:10332',
+];
+const DEFAULT_TESTNET_RPC_URLS = [
+  'https://testnet1.neo.coz.io:443',
+  'https://testnet2.neo.coz.io:443',
+  'https://rpc.t5.n3.nspcc.ru:20331',
+];
 const DEFAULT_NEO_RPC_TIMEOUT_MS = 15_000;
 const DEFAULT_NETWORK_MODE = NetworkMode.BOTH;
 const DEFAULT_N3INDEX_BASE_URL = 'https://api.n3index.dev';
@@ -102,14 +118,54 @@ function readListEnv(key: string): string[] {
     : [];
 }
 
+/**
+ * Resolves the ordered endpoint list for one Neo N3 network.
+ *
+ * Precedence: the plural list env wins, then the legacy singular env (which
+ * becomes the only entry, so an operator pinning one node keeps getting exactly
+ * that node), then the built-in multi-endpoint defaults.
+ */
+function resolveRpcUrlList(
+  listKey: string,
+  singularKeys: string[],
+  defaults: string[]
+): string[] {
+  const configured = readListEnv(listKey);
+  if (configured.length > 0) {
+    return [...new Set(configured)];
+  }
+
+  const singular = readEnv(...singularKeys);
+  if (singular) {
+    return [singular];
+  }
+
+  return [...defaults];
+}
+
+const mainnetRpcUrls = resolveRpcUrlList(
+  'NEO_MAINNET_RPC_URLS',
+  ['NEO_MAINNET_RPC', 'NEO_MAINNET_RPC_URL'],
+  DEFAULT_MAINNET_RPC_URLS
+);
+const testnetRpcUrls = resolveRpcUrlList(
+  'NEO_TESTNET_RPC_URLS',
+  ['NEO_TESTNET_RPC', 'NEO_TESTNET_RPC_URL'],
+  DEFAULT_TESTNET_RPC_URLS
+);
+
 const logFilePath = readEnv('LOG_FILE') || './logs/neo-n3-mcp.log';
 const logToConsole = readBooleanEnv('LOG_CONSOLE');
 const isTestLikeEnvironment = (process.env.NODE_ENV || '').toLowerCase().includes('test');
 const walletsDirectory = readEnv('WALLETS_DIR') || DEFAULT_WALLETS_DIR;
 
 export const config = {
-  mainnetRpcUrl: readEnv('NEO_MAINNET_RPC', 'NEO_MAINNET_RPC_URL') || DEFAULT_MAINNET_RPC,
-  testnetRpcUrl: readEnv('NEO_TESTNET_RPC', 'NEO_TESTNET_RPC_URL') || DEFAULT_TESTNET_RPC,
+  mainnetRpcUrls,
+  testnetRpcUrls,
+  // Kept as the primary endpoint for callers (and logs) that only need one URL.
+  // Always identical to the first list entry.
+  mainnetRpcUrl: mainnetRpcUrls[0],
+  testnetRpcUrl: testnetRpcUrls[0],
   rpcTimeoutMs: Number.parseInt(
     readEnv('NEO_RPC_TIMEOUT_MS') || String(DEFAULT_NEO_RPC_TIMEOUT_MS),
     10
@@ -325,19 +381,23 @@ export function validateConfig(): void {
     }
   }
 
-  const rpcUrls = [
-    ['NEO_MAINNET_RPC', readEnv('NEO_MAINNET_RPC', 'NEO_MAINNET_RPC_URL')],
-    ['NEO_TESTNET_RPC', readEnv('NEO_TESTNET_RPC', 'NEO_TESTNET_RPC_URL')],
+  // Every entry of every list is validated, not just the first: a bad URL in
+  // position three is silently unreachable until the first two seeds fail, i.e.
+  // exactly when the failover is needed most.
+  const rpcUrlLists = [
+    ['NEO_MAINNET_RPC', config.mainnetRpcUrls],
+    ['NEO_TESTNET_RPC', config.testnetRpcUrls],
   ] as const;
-  for (const [name, value] of rpcUrls) {
-    if (!value) continue;
-    try {
-      assertValidRpcUrl(value, { allowInsecureRemote: config.allowInsecureRpc });
-    } catch {
-      throw new Error(
-        `Invalid ${name}. Use HTTPS with a hostname and no embedded credentials. ` +
-        'Plain HTTP requires a loopback host or NEO_ALLOW_INSECURE_RPC=true.'
-      );
+  for (const [name, urls] of rpcUrlLists) {
+    for (const value of urls) {
+      try {
+        assertValidRpcUrl(value, { allowInsecureRemote: config.allowInsecureRpc });
+      } catch {
+        throw new Error(
+          `Invalid ${name}. Use HTTPS with a hostname and no embedded credentials. ` +
+          'Plain HTTP requires a loopback host or NEO_ALLOW_INSECURE_RPC=true.'
+        );
+      }
     }
   }
 }

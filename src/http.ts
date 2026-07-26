@@ -36,8 +36,9 @@ export function resolveHttpSecurity(host: string, apiKey: string | undefined): s
   return apiKey;
 }
 
-function getRpcUrl(network: NeoNetwork): string {
-  return network === NeoNetwork.TESTNET ? config.testnetRpcUrl : config.mainnetRpcUrl;
+/** Ordered endpoint list for the network, so the services can fail over. */
+function getRpcUrls(network: NeoNetwork): string[] {
+  return network === NeoNetwork.TESTNET ? config.testnetRpcUrls : config.mainnetRpcUrls;
 }
 
 export function parsePort(value: string | undefined): number {
@@ -54,13 +55,13 @@ export function parsePort(value: string | undefined): number {
 
 async function main() {
   const network = resolveHttpNetwork(config.networkMode);
-  const rpcUrl = getRpcUrl(network);
+  const rpcUrls = getRpcUrls(network);
   const port = parsePort(process.env.PORT);
 
-  const neoService = new NeoService(rpcUrl, network);
+  const neoService = new NeoService(rpcUrls, network);
   const apiKey = resolveHttpSecurity(config.http.host, config.http.apiKey);
   const walletService = new WalletService(config.wallets.directory);
-  const contractService = new ContractService(rpcUrl, network);
+  const contractService = new ContractService(rpcUrls, network);
   const writeCoordinator = config.writes.enabled
     ? new WriteCoordinator(
         new SignerProvider(config.writes.signerWifFile as string),
@@ -81,7 +82,7 @@ async function main() {
     port,
     host: config.http.host,
     network,
-    rpcUrl,
+    rpcUrls,
     networkMode: config.networkMode
   });
 
