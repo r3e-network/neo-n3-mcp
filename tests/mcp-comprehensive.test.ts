@@ -2,7 +2,12 @@ import { jest } from '@jest/globals';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import path from 'path';
-import { startMcpTestClient, stopMcpTestClient } from './mcp-test-utils';
+import {
+  callToolWithRpcRetry,
+  readResourceWithRpcRetry,
+  startMcpTestClient,
+  stopMcpTestClient,
+} from './mcp-test-utils';
 
 /**
  * Comprehensive MCP Server Test Suite
@@ -86,16 +91,13 @@ describe('Comprehensive MCP Server Tests', () => {
       const toolNames = response.tools.map((tool: any) => tool.name);
       const expectedTools = [
         'get_blockchain_info',
-        'get_block_count', 
+        'get_block_count',
         'get_block',
         'get_transaction',
         'get_balance',
         'get_nep17_transfers',
         'get_nep11_balances',
         'get_nep11_transfers',
-        'create_wallet',
-        'import_wallet',
-        'transfer_assets',
         'invoke_contract',
         'get_contract_status',
         'get_network_mode'
@@ -103,6 +105,14 @@ describe('Comprehensive MCP Server Tests', () => {
 
       expectedTools.forEach(expectedTool => {
         expect(toolNames).toContain(expectedTool);
+      });
+
+      // Three names a stale reading of this list would expect are absent on purpose.
+      // `create_wallet`/`import_wallet` never appear: key custody is outside the
+      // model-facing channel. `transfer_assets` is a signing tool gated behind
+      // `NEO_ENABLE_WRITES` plus a signer WIF file, so the default surface is read-only.
+      ['create_wallet', 'import_wallet', 'transfer_assets'].forEach(gatedTool => {
+        expect(toolNames).not.toContain(gatedTool);
       });
 
       // Validate tool structure
@@ -170,21 +180,21 @@ describe('Comprehensive MCP Server Tests', () => {
       console.log(`✅ Balance retrieved for ${testAddress}: ${data.balance.length} assets`);
     });
 
-    test('should create wallets with proper structure', async () => {
+    test('should refuse wallet creation and return no key material', async () => {
+      // There is no "proper structure" for a wallet here, because no wallet is minted:
+      // the tool is unregistered and its dispatch path rejects. What must hold is that the
+      // rejection leaks nothing — no password echo, no WIF, no freshly generated address.
+      const password = 'test-password-2024';
       const response = await client.callTool({
         name: 'create_wallet',
-        arguments: { password: 'test-password-2024' }
+        arguments: { password }
       });
 
-      const wallet = JSON.parse(response.content[0].text);
-      expect(wallet.address).toBeDefined();
-      expect(wallet.publicKey).toBeDefined();
-      expect(wallet.encryptedPrivateKey).toBeDefined();
-      
-      // Validate Neo N3 address format
-      expect(wallet.address).toMatch(/^N[A-Za-z0-9]{33}$/);
-      
-      console.log(`✅ Created wallet: ${wallet.address}`);
+      expect(response.isError).toBe(true);
+      const text = String(response.content[0].text);
+      expect(text).not.toContain(password);
+      expect(text).not.toMatch(/\b[5KL][1-9A-HJ-NP-Za-km-z]{50,51}\b/);
+      expect(text).not.toMatch(/\bN[A-Za-z0-9]{33}\b/);
     });
 
     test('should handle network mode operations', async () => {
@@ -238,8 +248,8 @@ describe('Comprehensive MCP Server Tests', () => {
     });
 
     test('should read network status resource', async () => {
-      const response = await client.readResource({ uri: 'neo://network/status' });
-      
+      const response = await readResourceWithRpcRetry(client, { uri: 'neo://network/status' });
+
       expect(response).toBeDefined();
       expect(response.contents).toBeDefined();
       expect(Array.isArray(response.contents)).toBe(true);
@@ -256,8 +266,8 @@ describe('Comprehensive MCP Server Tests', () => {
     });
 
     test('should read mainnet-specific resource', async () => {
-      const response = await client.readResource({ uri: 'neo://mainnet/status' });
-      
+      const response = await readResourceWithRpcRetry(client, { uri: 'neo://mainnet/status' });
+
       const content = response.contents[0];
       const data = JSON.parse(content.text);
       expect(data.network).toBe('mainnet');
@@ -266,8 +276,8 @@ describe('Comprehensive MCP Server Tests', () => {
     });
 
     test('should read testnet-specific resource', async () => {
-      const response = await client.readResource({ uri: 'neo://testnet/status' });
-      
+      const response = await readResourceWithRpcRetry(client, { uri: 'neo://testnet/status' });
+
       const content = response.contents[0];
       const data = JSON.parse(content.text);
       expect(data.network).toBe('testnet');
@@ -277,8 +287,8 @@ describe('Comprehensive MCP Server Tests', () => {
 
     test('should handle parameterized block resources', async () => {
       const blockHeight = 1000;
-      const response = await client.readResource({ uri: `neo://block/${blockHeight}` });
-      
+      const response = await readResourceWithRpcRetry(client, { uri: `neo://block/${blockHeight}` });
+
       const content = response.contents[0];
       const data = JSON.parse(content.text);
       expect(data.index).toBe(blockHeight);
@@ -396,35 +406,30 @@ describe('Comprehensive MCP Server Tests', () => {
   });
 
   describe('🔄 Workflow Integration Tests', () => {
-    test('should support complete wallet workflow', async () => {
-      // Create wallet
-      const walletResponse = await client.callTool({
-        name: 'create_wallet',
-        arguments: { password: 'workflow-test-2024' }
-      });
-      
-      const wallet = JSON.parse(walletResponse.content[0].text);
-      expect(wallet.address).toBeDefined();
+    test('should support complete address inspection workflow', async () => {
+      // This began by minting a wallet. Key custody left the model-facing channel, so the
+      // workflow now starts where a real caller starts: from an address it already holds.
+      const address = 'NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj';
 
-      // Check wallet balance
-      const balanceResponse = await client.callTool({
+      // Check the address balance
+      const balanceResponse = await callToolWithRpcRetry(client, {
         name: 'get_balance',
-        arguments: { address: wallet.address }
+        arguments: { address }
       });
-      
+
       const balance = JSON.parse(balanceResponse.content[0].text);
-      expect(balance.address).toBe(wallet.address);
+      expect(balance.address).toBe(address);
 
       // Get network info for context
-      const networkResponse = await client.callTool({
+      const networkResponse = await callToolWithRpcRetry(client, {
         name: 'get_blockchain_info',
         arguments: {}
       });
-      
+
       const networkInfo = JSON.parse(networkResponse.content[0].text);
       expect(networkInfo.height).toBeGreaterThan(0);
 
-      console.log(`✅ Complete workflow: wallet ${wallet.address} on ${networkInfo.network}`);
+      console.log(`✅ Complete workflow: address ${address} on ${networkInfo.network}`);
     });
 
     test('should support blockchain exploration workflow', async () => {
@@ -438,13 +443,13 @@ describe('Comprehensive MCP Server Tests', () => {
       
       // Get specific block
       const blockHeight = Math.max(1, info.height - 100); // Get a block 100 blocks ago
-      const blockResponse = await client.readResource({ uri: `neo://block/${blockHeight}` });
-      
+      const blockResponse = await readResourceWithRpcRetry(client, { uri: `neo://block/${blockHeight}` });
+
       const blockData = JSON.parse(blockResponse.contents[0].text);
       expect(blockData.index).toBe(blockHeight);
 
       // Get network status
-      const statusResponse = await client.readResource({ uri: 'neo://network/status' });
+      const statusResponse = await readResourceWithRpcRetry(client, { uri: 'neo://network/status' });
       const statusData = JSON.parse(statusResponse.contents[0].text);
       
       expect(statusData.height).toBeGreaterThanOrEqual(blockHeight);
@@ -462,12 +467,12 @@ describe('Comprehensive MCP Server Tests', () => {
       const mode = JSON.parse(modeResponse.content[0].text);
       
       // Read mainnet status
-      const mainnetResponse = await client.readResource({ uri: 'neo://mainnet/status' });
+      const mainnetResponse = await readResourceWithRpcRetry(client, { uri: 'neo://mainnet/status' });
       const mainnetData = JSON.parse(mainnetResponse.contents[0].text);
       expect(mainnetData.network).toBe('mainnet');
 
       // Read testnet status
-      const testnetResponse = await client.readResource({ uri: 'neo://testnet/status' });
+      const testnetResponse = await readResourceWithRpcRetry(client, { uri: 'neo://testnet/status' });
       const testnetData = JSON.parse(testnetResponse.contents[0].text);
       expect(testnetData.network).toBe('testnet');
 

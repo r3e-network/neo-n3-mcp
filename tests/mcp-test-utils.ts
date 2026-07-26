@@ -18,6 +18,98 @@ interface StartMcpTestClientParams {
 
 const ownedWalletDirectories = new WeakMap<StdioClientTransport, string>();
 
+/**
+ * Signatures of a fault in the RPC transport rather than in the thing under test. `fetch failed`
+ * is Node's undici wrapper for DNS/TLS/connection-reset errors, which public nodes produce as
+ * readily as an outright timeout.
+ */
+// 520 belongs here with the 5xx family: a Cloudflare-fronted seed whose origin is
+// dead answers 520, which is exactly the "endpoint did not answer" case the
+// client fails over on (mainnet1.neo.coz.io did this for days).
+const TRANSIENT_RPC_FAILURE =
+  /timed out|fetch failed|ECONNRESET|ECONNREFUSED|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up|502|503|504|520/i;
+
+/**
+ * Retry `operation` while it fails for transport reasons, then hand back its last result.
+ *
+ * `isTransientResult` lets a caller treat a *successful-looking* response as transient: MCP tools
+ * report an RPC fault as `isError` content rather than by throwing, so shape has to be inspected
+ * too. Thrown non-transient errors propagate on the first attempt, so a genuine rejection is never
+ * retried into a timeout.
+ */
+async function withRpcRetry<T>(
+  operation: () => Promise<T>,
+  isTransientResult: (result: T) => boolean,
+  { attempts = 3, delayMs = 1000 }: { attempts?: number; delayMs?: number } = {},
+): Promise<T> {
+  let lastResult: T;
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    let transient: boolean;
+    try {
+      lastResult = await operation();
+      lastError = undefined;
+      transient = isTransientResult(lastResult);
+    } catch (error) {
+      lastError = error;
+      transient = TRANSIENT_RPC_FAILURE.test(String((error as Error)?.message ?? ''));
+      if (!transient) {
+        throw error;
+      }
+    }
+    if (!transient) {
+      return lastResult!;
+    }
+    if (attempt < attempts) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
+    }
+  }
+  if (lastError) {
+    throw lastError;
+  }
+  return lastResult!;
+}
+
+/**
+ * Read a resource whose body is fetched from public Neo RPC, retrying transient RPC failures.
+ *
+ * Resource reads have no `isError` channel — a failed read throws — so only the thrown path needs
+ * inspecting here.
+ */
+export async function readResourceWithRpcRetry(
+  client: Client,
+  request: { uri: string },
+  options: { attempts?: number; delayMs?: number } = {},
+): Promise<any> {
+  return withRpcRetry(() => client.readResource(request), () => false, options);
+}
+
+/**
+ * Call a tool that reads through to public Neo RPC, retrying transient RPC failures.
+ *
+ * The protocol suites assert MCP framing and response shape, but their data comes from public
+ * RPC nodes that intermittently time out. Without a retry those suites fail for a reason they
+ * do not test: the tool answers `{"error": "Failed to ..."}` and the assertion trips on
+ * `JSON.parse`. Only RPC-layer failures are retried — an `isError` response whose text does not
+ * look like an RPC fault is returned as-is, so genuine rejections (an unregistered tool, a bad
+ * argument) still surface immediately instead of being retried into a timeout.
+ */
+export async function callToolWithRpcRetry(
+  client: Client,
+  request: { name: string; arguments: Record<string, unknown> },
+  options: { attempts?: number; delayMs?: number } = {},
+): Promise<any> {
+  return withRpcRetry(
+    () => client.callTool(request),
+    // A slow RPC read surfaces either as an isError response or as a thrown McpError, depending on
+    // where it failed; withRpcRetry covers the thrown path, this covers the reported one.
+    (response: any) =>
+      response?.isError === true
+      && TRANSIENT_RPC_FAILURE.test(String(response?.content?.[0]?.text ?? '')),
+    options,
+  );
+}
+
 export async function startMcpTestClient({
   serverPath,
   env,

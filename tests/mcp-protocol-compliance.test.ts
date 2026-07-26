@@ -172,29 +172,31 @@ describe('MCP Protocol Compliance Tests', () => {
       expect(response.content).toBeDefined();
     });
 
-    test('should import wallet with supported MCP arguments', async () => {
+    // Wallet provisioning is deliberately absent from the model-facing channel: the assistant
+    // never holds a key, so `create_wallet`/`import_wallet` are neither registered (see
+    // mcp-tool-registration.test.ts) nor dispatchable. These two tests pin the rejection so a
+    // future change that quietly re-exposes key material over MCP fails here.
+    test('should refuse to import a wallet through MCP', async () => {
       const account = new neonJs.wallet.Account();
       const response = await client.callTool({
         name: 'import_wallet',
         arguments: { privateKeyOrWIF: account.WIF, password: 'password123' }
       });
 
-      expect(response.isError).not.toBe(true);
-      const wallet = JSON.parse(response.content[0].text);
-      expect(wallet.address).toBe(account.address);
+      expect(response.isError).toBe(true);
+      expect(response.content[0].type).toBe('text');
+      // The WIF must never be echoed back, whatever the failure path.
+      expect(response.content[0].text).not.toContain(account.WIF);
     });
 
-    test('should validate wallet creation tool', async () => {
+    test('should refuse to create a wallet through MCP', async () => {
       const response = await client.callTool({ name: 'create_wallet', arguments: { password: 'password123' } });
-      
+
       expect(response).toBeDefined();
+      expect(response.isError).toBe(true);
       expect(response.content[0].type).toBe('text');
-      
-      const wallet = JSON.parse(response.content[0].text);
-      expect(wallet.address).toBeDefined();
-      expect(wallet.publicKey).toBeDefined();
-      expect(wallet.encryptedPrivateKey).toBeDefined();
-      expect(wallet.address).toMatch(/^N[A-Za-z0-9]{33}$/); // Neo N3 address format
+      // No Neo N3 address should be minted for the caller.
+      expect(response.content[0].text).not.toMatch(/\bN[A-Za-z0-9]{33}\b/);
     });
 
     test('should handle network switching tools', async () => {
@@ -386,14 +388,15 @@ describe('MCP Protocol Compliance Tests', () => {
     });
 
     test('should handle complex workflow scenarios', async () => {
-      // Create wallet -> Check balance -> Get network info
-      const wallet = await client.callTool({ name: 'create_wallet', arguments: { password: 'password123' } });
-      const walletData = JSON.parse(wallet.content[0].text);
-      
-      const balance = await client.callTool({ name: 'get_balance', arguments: { address: walletData.address } });
+      // Read-only workflow: address balance -> network info. The wallet-creation step this
+      // once began with is gone by design (keys never enter the model-facing channel), so the
+      // chain starts from an address supplied by the caller instead.
+      const address = 'NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj';
+
+      const balance = await client.callTool({ name: 'get_balance', arguments: { address } });
       const balanceData = JSON.parse(balance.content[0].text);
-      expect(balanceData.address).toBe(walletData.address);
-      
+      expect(balanceData.address).toBe(address);
+
       const networkInfo = await client.callTool({ name: 'get_blockchain_info', arguments: {} });
       const networkData = JSON.parse(networkInfo.content[0].text);
       expect(networkData.network).toBeDefined();

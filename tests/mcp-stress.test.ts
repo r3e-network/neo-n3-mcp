@@ -2,7 +2,12 @@ import { jest } from '@jest/globals';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import path from 'path';
-import { startMcpTestClient, stopMcpTestClient } from './mcp-test-utils';
+import {
+  callToolWithRpcRetry,
+  readResourceWithRpcRetry,
+  startMcpTestClient,
+  stopMcpTestClient,
+} from './mcp-test-utils';
 
 /**
  * MCP Server Stress Test Suite
@@ -142,7 +147,10 @@ describe('MCP Server Stress Tests', () => {
         () => client.callTool({ name: 'get_blockchain_info', arguments: {} }),
         () => client.callTool({ name: 'get_block_count', arguments: {} }),
         () => client.callTool({ name: 'list_famous_contracts', arguments: {} }),
-        () => client.callTool({ name: 'create_wallet', arguments: { password: 'stress-test' } }),
+        // This slot held `create_wallet`, which is no longer dispatchable; it answered with an
+        // isError response that the old `toBeDefined()` check counted as a success, so the slot
+        // measured nothing. `get_network_mode` is a real read that exercises the same path.
+        () => client.callTool({ name: 'get_network_mode', arguments: {} }),
         () => client.readResource({ uri: 'neo://network/status' }),
         () => client.readResource({ uri: 'neo://mainnet/status' }),
         () => client.listTools(),
@@ -158,10 +166,13 @@ describe('MCP Server Stress Tests', () => {
       for (let i = 0; i < iterations; i++) {
         try {
           const operation = operations[i % operations.length];
-          const result = await operation();
+          const result: any = await operation();
           expect(result).toBeDefined();
+          // A tool that fails returns an isError response rather than throwing, so a bare
+          // toBeDefined() would score a rejection as a success. list* results carry no isError.
+          expect(result.isError).not.toBe(true);
           successCount++;
-          
+
           if (i % 5 === 0) {
             console.log(`📊 Progress: ${i}/${iterations} operations completed`);
           }
@@ -236,12 +247,15 @@ describe('MCP Server Stress Tests', () => {
       console.log(`🚀 Starting ${concurrentReads} concurrent resource reads...`);
 
       const promises = Array(concurrentReads).fill(0).map(async (_, index) => {
+        const resource = resources[index % resources.length];
         try {
-          const resource = resources[index % resources.length];
-          const response = await client.readResource({ uri: resource });
+          // Each read is retried on transport faults. What this test measures is the server
+          // serving 15 reads at once; a public RPC node dropping a connection mid-run is not
+          // that, and without the retry it silently spends the 10% failure allowance.
+          const response = await readResourceWithRpcRetry(client, { uri: resource });
           return { success: true, resource, data: response.contents[0].text };
         } catch (error) {
-          return { success: false, resource: resources[index % resources.length], error: error.message };
+          return { success: false, resource, error: (error as Error).message };
         }
       });
 
@@ -251,57 +265,68 @@ describe('MCP Server Stress Tests', () => {
       console.log(`✅ Concurrent resource test completed:`);
       console.log(`   • Total reads: ${concurrentReads}`);
       console.log(`   • Successful: ${successCount}`);
+      // Print why any read failed: the assertion below only reports a count, which leaves a
+      // regression here indistinguishable from a bad afternoon on the public RPC nodes.
+      for (const failure of results.filter(r => !r.success)) {
+        console.log(`   • Failed ${failure.resource}: ${failure.error}`);
+      }
 
       expect(successCount).toBeGreaterThanOrEqual(concurrentReads * 0.9);
     }, STRESS_TEST_TIMEOUT);
   });
 
   describe('🎯 Complex Workflow Stress Tests', () => {
-    test('should handle complex wallet workflows under stress', async () => {
-      const walletCount = 10;
+    test('should handle complex address workflows under stress', async () => {
+      // Each iteration used to mint a wallet and then read its balance. Wallet provisioning is
+      // no longer on the model-facing surface, so the load shape is preserved — 10 sequential
+      // two-call workflows — with the mint replaced by a resource read.
+      const addresses = [
+        'NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj',
+        'NgaiKFjurmNmiRzDRQGs44yzByXuSkdGPF',
+      ];
+      const workflowCount = 10;
       const startTime = Date.now();
       let successfulWorkflows = 0;
 
-      console.log(`🚀 Starting ${walletCount} complex wallet workflows...`);
+      console.log(`🚀 Starting ${workflowCount} complex address workflows...`);
 
-      for (let i = 0; i < walletCount; i++) {
+      for (let i = 0; i < workflowCount; i++) {
+        const address = addresses[i % addresses.length];
         try {
-          // Create wallet
-          const walletResponse = await client.callTool({
-            name: 'create_wallet',
-            arguments: { password: `stress-test-${i}` }
-          });
-          const wallet = JSON.parse(walletResponse.content[0].text);
-          
+          // Read network status for context
+          const statusResponse = await readResourceWithRpcRetry(client, { uri: 'neo://network/status' });
+          const status = JSON.parse(statusResponse.contents[0].text);
+
           // Check balance
-          const balanceResponse = await client.callTool({
+          const balanceResponse = await callToolWithRpcRetry(client, {
             name: 'get_balance',
-            arguments: { address: wallet.address }
+            arguments: { address }
           });
           const balance = JSON.parse(balanceResponse.content[0].text);
-          
+
           // Validate workflow
-          expect(wallet.address).toMatch(/^N[A-Za-z0-9]{33}$/);
-          expect(balance.address).toBe(wallet.address);
-          
+          expect(status.height).toBeGreaterThan(0);
+          expect(balance.address).toBe(address);
+          expect(Array.isArray(balance.balance)).toBe(true);
+
           successfulWorkflows++;
-          
+
           if (i % 2 === 0) {
-            console.log(`📊 Completed ${i + 1}/${walletCount} wallet workflows`);
+            console.log(`📊 Completed ${i + 1}/${workflowCount} address workflows`);
           }
         } catch (error) {
-          console.error(`❌ Wallet workflow ${i} failed:`, error);
+          console.error(`❌ Address workflow ${i} failed:`, error);
         }
       }
 
       const duration = Date.now() - startTime;
 
-      console.log(`✅ Wallet workflow stress test completed:`);
-      console.log(`   • Total workflows: ${walletCount}`);
+      console.log(`✅ Address workflow stress test completed:`);
+      console.log(`   • Total workflows: ${workflowCount}`);
       console.log(`   • Successful: ${successfulWorkflows}`);
       console.log(`   • Total time: ${duration}ms`);
 
-      expect(successfulWorkflows).toBeGreaterThanOrEqual(walletCount * 0.9);
+      expect(successfulWorkflows).toBeGreaterThanOrEqual(workflowCount * 0.9);
     }, STRESS_TEST_TIMEOUT);
 
     test('should handle mixed blockchain exploration workflows', async () => {

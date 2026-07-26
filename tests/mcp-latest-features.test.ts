@@ -2,7 +2,7 @@ import { jest } from '@jest/globals';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import path from 'path';
-import { startMcpTestClient, stopMcpTestClient } from './mcp-test-utils';
+import { callToolWithRpcRetry, startMcpTestClient, stopMcpTestClient } from './mcp-test-utils';
 
 /**
  * Latest MCP Protocol Features Test Suite
@@ -112,7 +112,7 @@ describe('Latest MCP Protocol Features', () => {
 
   describe('📊 Enhanced Content Types & Responses', () => {
     test('should support structured content responses', async () => {
-      const response = await client.callTool({
+      const response = await callToolWithRpcRetry(client, {
         name: 'get_blockchain_info',
         arguments: {}
       });
@@ -369,22 +369,21 @@ describe('Latest MCP Protocol Features', () => {
     });
 
     test('should handle wallet operations securely', async () => {
-      // Create wallet with strong password
+      // The secure handling of wallet creation is to not do it here at all: key material never
+      // crosses the model-facing channel, so the tool is unregistered and undispatchable. What
+      // this test guards is that the refusal carries no key material of any kind.
       const strongPassword = 'SecurePassword123!@#';
       const response = await client.callTool({
         name: 'create_wallet',
         arguments: { password: strongPassword }
       });
-      
-      const wallet = JSON.parse(response.content[0].text);
-      expect(wallet.address).toBeDefined();
-      expect(wallet.encryptedPrivateKey).toBeDefined();
-      expect(wallet.publicKey).toBeDefined();
-      
-      // Ensure private key is encrypted (not raw WIF)
-      expect(wallet.encryptedPrivateKey).not.toMatch(/^[5KL][1-9A-HJ-NP-Za-km-z]{50,51}$/);
-      
-      console.log(`✅ Secure wallet creation: ${wallet.address}`);
+
+      expect(response.isError).toBe(true);
+      const text = String(response.content[0].text);
+      expect(text).not.toContain(strongPassword);
+      // No WIF, and no address that would imply a key was generated server-side.
+      expect(text).not.toMatch(/\b[5KL][1-9A-HJ-NP-Za-km-z]{50,51}\b/);
+      expect(text).not.toMatch(/\bN[A-Za-z0-9]{33}\b/);
     });
 
     test('should provide consistent state across operations', async () => {
@@ -426,18 +425,14 @@ describe('Latest MCP Protocol Features', () => {
       const networkData = JSON.parse(networkInfo.content[0].text);
       console.log(`📊 Network: ${networkData.network}, Height: ${networkData.height}`);
       
-      // 2. Create a new wallet
-      const walletResponse = await client.callTool({
-        name: 'create_wallet',
-        arguments: { password: 'workflow-test-2024' }
-      });
-      const wallet = JSON.parse(walletResponse.content[0].text);
-      console.log(`👛 Created wallet: ${wallet.address}`);
-      
-      // 3. Check wallet balance
+      // 2. Take an address as input. The workflow used to mint a wallet here; key custody was
+      // moved out of the MCP surface, so a caller-supplied address stands in.
+      const address = 'NZNos2WqTbu5oCgyfss9kUJgBXJqhuYAaj';
+
+      // 3. Check balance for that address
       const balanceResponse = await client.callTool({
         name: 'get_balance',
-        arguments: { address: wallet.address }
+        arguments: { address }
       });
       const balance = JSON.parse(balanceResponse.content[0].text);
       console.log(`💰 Balance: ${balance.balance.length} assets`);
@@ -457,7 +452,7 @@ describe('Latest MCP Protocol Features', () => {
       
       // Validate workflow completion
       expect(networkData.height).toBeGreaterThan(0);
-      expect(wallet.address).toMatch(/^N[A-Za-z0-9]{33}$/);
+      expect(balance.address).toBe(address);
       expect(Array.isArray(balance.balance)).toBe(true);
       expect(Array.isArray(contracts.contracts)).toBe(true);
       expect(status.height).toBeGreaterThan(0);

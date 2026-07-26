@@ -13,5 +13,9 @@ module.exports = {
     'src/**/*.{ts,js}',
     '!src/**/*.d.ts',
   ],
-  testTimeout: 10000
+  // Must stay above DEFAULT_NEO_RPC_TIMEOUT_MS (src/config.ts, 15s): the integration suites
+  // call public Neo RPC, and a test killed at 10s reported a bare "Exceeded timeout" instead
+  // of the RPC layer's own error, hiding which endpoint was slow. This is a ceiling, not a
+  // delay — unit tests still finish in milliseconds.
+  testTimeout: 45000
 };
