@@ -40,19 +40,24 @@ sudo systemctl enable --now neo-n3-mcp
 
 ## 2. 环境变量
 
-`/etc/neo-n3-mcp/env` 由 root 维护，权限必须是 `600`。变量名如下，**值不写入仓库**：
+`/etc/neo-n3-mcp/env` 由 root 维护，权限必须是 `600`。生产上实际只有这四个变量，**值不写入仓库**：
 
 ```
 NODE_ENV=production
-NEO_NETWORK=mainnet
 MCP_HTTP_PORT=3001
 MCP_HTTP_HOST=127.0.0.1
-MCP_BEARER_SECRET=<secret>
-LOG_LEVEL=info
+MCP_HTTP_BEARER=<secret>
 ```
 
+变量名以 `resolveMcpHttpOptionsFromEnv()`（`src/mcp-http-server.ts`）为准，不是 `MCP_BEARER_SECRET`
+之类的别名。其余可选项都有默认值，未设置时按默认走：`MCP_HTTP_PATH`（`/mcp`）、
+`MCP_HTTP_ALLOWED_ORIGINS`、`MCP_HTTP_ALLOWED_HOSTS`、`MCP_HTTP_MAX_SESSIONS`（128）、
+`MCP_HTTP_SESSION_TTL_MS`（1800000）、`LOG_LEVEL`、`NEO_NETWORK`、
+`MAX_REQUESTS_PER_MINUTE`、`MAX_REQUESTS_PER_HOUR`、`HTTP_MAX_BODY_BYTES`。
+
 `MCP_HTTP_HOST` 必须保持 `127.0.0.1`：TLS 与鉴权都在 nginx 之外没有第二层，直接暴露 3001 等于把
-只读 MCP 面裸露在公网。
+只读 MCP 面裸露在公网。代码本身也会兜底——`MCP_HTTP_HOST` 不是回环地址时，缺少 `MCP_HTTP_BEARER`
+（或长度不足）会直接启动失败。
 
 ## 3. 发布新版本
 
@@ -101,7 +106,7 @@ curl -si -X POST https://mcp.n3index.dev/mcp \
 ```bash
 vercel env ls                      # 只看变量名，值保持 Encrypted
 # NEOX_MCP_URL   -> https://mcp.n3index.dev/mcp
-# NEOX_MCP_BEARER-> 与 /etc/neo-n3-mcp/env 里的 MCP_BEARER_SECRET 一致
+# NEOX_MCP_BEARER-> 与 /etc/neo-n3-mcp/env 里的 MCP_HTTP_BEARER 一致
 ```
 
 `api/lib/mcpClient.js` 对所有非回环主机的明文 `http://` URL 直接失败（fail closed），
@@ -111,7 +116,7 @@ vercel env ls                      # 只看变量名，值保持 Encrypted
 
 顺序不能颠倒，否则中间会出现一段 401 窗口：
 
-1. 在 `/etc/neo-n3-mcp/env` 写入新 `MCP_BEARER_SECRET`（保持 `600`）。
+1. 在 `/etc/neo-n3-mcp/env` 写入新 `MCP_HTTP_BEARER`（保持 `600`）。
 2. `sudo systemctl restart neo-n3-mcp` 并查 `journalctl`。
 3. 更新 Vercel 的 `NEOX_MCP_BEARER`。
 4. 重新部署 `Neo-Explorer-UI`，再跑一次第 5 节的 401 检查与一次真实带工具调用的 `/api/agent` 请求。
