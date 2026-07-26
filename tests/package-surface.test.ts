@@ -152,7 +152,11 @@ describe('published package surface', () => {
         cwd: consumerRoot,
         encoding: 'utf8',
       });
-      execFileSync(path.join(repoRoot, 'node_modules', '.bin', 'tsc'), ['--project', 'tsconfig.json'], {
+      // Resolve the compiler through Node module resolution rather than a hard-coded
+      // <repoRoot>/node_modules/.bin path: a git worktree has no node_modules of its own and
+      // resolves dependencies from the main checkout higher up the tree.
+      const tscEntrypoint = require.resolve('typescript/bin/tsc');
+      execFileSync(process.execPath, [tscEntrypoint, '--project', 'tsconfig.json'], {
         cwd: consumerRoot,
         encoding: 'utf8',
       });
