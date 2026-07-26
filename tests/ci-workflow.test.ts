@@ -29,6 +29,48 @@ function getJobBlock(workflow: string, jobName: string): string {
   return nextJob < 0 ? workflow.slice(start) : workflow.slice(start, start + 2 + nextJob);
 }
 
+function getStepBlock(workflow: string, stepName: string): string {
+  const marker = `      - name: ${stepName}\n`;
+  const start = workflow.indexOf(marker);
+  if (start < 0) {
+    throw new Error(`Unable to locate the "${stepName}" step in the CI workflow`);
+  }
+
+  const remaining = workflow.slice(start + marker.length);
+  const nextStep = remaining.indexOf('\n      - name: ');
+  return nextStep < 0 ? workflow.slice(start) : workflow.slice(start, start + marker.length + nextStep);
+}
+
+function getStepEnvNames(stepBlock: string): string[] {
+  const envMarker = '        env:\n';
+  const envStart = stepBlock.indexOf(envMarker);
+  if (envStart < 0) {
+    return [];
+  }
+
+  const body = stepBlock.slice(envStart + envMarker.length);
+  const names: string[] = [];
+  for (const line of body.split('\n')) {
+    const match = /^ {10}([A-Za-z_][A-Za-z0-9_]*):/.exec(line);
+    if (!match) {
+      break;
+    }
+    names.push(match[1]);
+  }
+
+  return names;
+}
+
+function getRequiredComposeVariables(repoRoot: string, composeFile: string): string[] {
+  const contents = fs.readFileSync(path.join(repoRoot, composeFile), 'utf8');
+  const required = new Set<string>();
+  for (const match of contents.matchAll(/\$\{([A-Za-z_][A-Za-z0-9_]*):\?/g)) {
+    required.add(match[1]);
+  }
+
+  return [...required].sort();
+}
+
 function extractPromotionVersionScript(workflow: string): string {
   const marker = 'CURRENT_VERSION="$current_version" CANDIDATE_VERSION="$PACKAGE_VERSION" node <<\'NODE\'\n';
   const scriptStart = workflow.indexOf(marker) + marker.length;
@@ -140,6 +182,48 @@ describe('CI workflow', () => {
       '[[ ! "$NEO_MCP_IMAGE_DIGEST" =~ ^[0-9a-f]{64}$ ]]'
     );
     expect(dockerJob).not.toMatch(/\bNEO_MCP_IMAGE:/);
+  });
+
+  test('supplies every Compose variable the validation step renders', () => {
+    // Compose interpolates the whole file before selecting a service, so a required
+    // variable anywhere in a rendered file fails `config` even when its service is
+    // never started. This test exists because MCP_HTTP_BEARER became required in
+    // docker-compose.yml long after the workflow step was written, and the drift only
+    // surfaced in the container job.
+    const workflow = fs.readFileSync(workflowPath, 'utf8');
+    const repoRoot = path.join(__dirname, '..');
+    const step = getStepBlock(workflow, 'Validate Compose files');
+    const provided = new Set(getStepEnvNames(step));
+    const renderedFiles = [...step.matchAll(/-f (docker\/[A-Za-z0-9.\-]+\.yml)/g)].map(
+      (match) => match[1]
+    );
+
+    expect(renderedFiles.length).toBeGreaterThan(0);
+    const required = [
+      ...new Set(
+        renderedFiles.flatMap((composeFile) => getRequiredComposeVariables(repoRoot, composeFile))
+      ),
+    ].sort();
+
+    expect(required).toContain('MCP_HTTP_BEARER');
+    expect(required.filter((name) => !provided.has(name))).toEqual([]);
+  });
+
+  test('keeps Compose validation placeholders long enough for the secrets they stand in for', () => {
+    const workflow = fs.readFileSync(workflowPath, 'utf8');
+    const step = getStepBlock(workflow, 'Validate Compose files');
+    const values = new Map(
+      [...step.matchAll(/^ {10}([A-Za-z_][A-Za-z0-9_]*): (.+)$/gm)].map((match) => [
+        match[1],
+        match[2].trim(),
+      ])
+    );
+
+    for (const name of ['HTTP_API_KEY', 'MCP_HTTP_BEARER']) {
+      const value = values.get(name);
+      expect(typeof value).toBe('string');
+      expect((value as string).length).toBeGreaterThanOrEqual(32);
+    }
   });
 
   test('validates the release tag against the package version before either publish job', () => {

@@ -111,6 +111,7 @@ jobs:
       - name: Validate Compose files
         env:
           HTTP_API_KEY: ci-only-api-key-0000000000000000
+          MCP_HTTP_BEARER: ci-only-mcp-bearer-00000000000000
           NEO_MCP_IMAGE_REPOSITORY: r3enetwork/neo-mcp
           NEO_MCP_IMAGE_DIGEST: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         run: |
