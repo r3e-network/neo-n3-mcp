@@ -324,3 +324,24 @@ export const N3_REST_CATALOG: ReadonlyMap<string, EndpointDescriptor> = Object.f
     Object.entries(ENTRIES).map(([key, entry]) => [key, freezeDescriptor(entry)]),
   ),
 );
+
+/**
+ * Render every endpoint as `key(param, param)` for the generic query tool's description.
+ *
+ * The guard rejects any key outside an endpoint's allowlist, so a caller that guesses gets
+ * an error instead of data. The curated `n3_list_*` tools accept `skip` and translate it to
+ * the REST `offset` themselves, which makes `skip` the natural (wrong) guess here — so the
+ * real keys are published up front rather than discovered through a failed call. Derived
+ * from the catalog itself, so a new endpoint or param is documented the moment it is added.
+ */
+export function renderN3EndpointSignatures(): string {
+  return [...N3_REST_CATALOG]
+    .map(([key, descriptor]) => {
+      const params = [
+        ...(descriptor.pathParam ? [descriptor.pathParam.key] : []),
+        ...Object.keys(descriptor.queryParams ?? {}),
+      ];
+      return `${key}(${params.join(', ')})`;
+    })
+    .join(', ');
+}

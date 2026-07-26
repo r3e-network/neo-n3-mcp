@@ -15,6 +15,7 @@ import {
 } from '../src/indexer/n3-rest-guard';
 import {
   N3_REST_CATALOG,
+  renderN3EndpointSignatures,
   type EndpointDescriptor,
   type N3PathParamType,
 } from '../src/indexer/n3-rest-catalog';
@@ -386,6 +387,67 @@ describe('N3_REST_CATALOG — invariants', () => {
       if (d.pathParam) {
         expect(d.pathTemplate).toContain(`{${d.pathParam.key}}`);
       }
+    }
+  });
+});
+
+/**
+ * The guard rejects any param key that is not on an endpoint's allowlist, which is correct
+ * but only useful if the caller can discover the allowlist WITHOUT a failed call. The
+ * curated `n3_list_*` tools take `skip` and translate it to the REST `offset` internally,
+ * so a caller that has learned `skip` from those tools will send `skip` to the generic
+ * endpoint tool and burn a retry on "Unknown parameter". `renderN3EndpointSignatures()`
+ * renders the catalog's own allowlist into the tool description so the correct key is
+ * visible up front.
+ */
+describe('n3index REST endpoint signatures (self-documenting param allowlist)', () => {
+  it('names every catalog endpoint exactly once', () => {
+    const rendered = renderN3EndpointSignatures();
+
+    for (const key of N3_REST_CATALOG.keys()) {
+      // Match the endpoint key immediately followed by its "(" signature open, so a key
+      // that is a prefix of another (e.g. list_contracts / list_contract_calls) cannot
+      // satisfy the assertion by accident.
+      const occurrences = rendered.split(`${key}(`).length - 1;
+      expect(`${key}:${occurrences}`).toBe(`${key}:1`);
+    }
+  });
+
+  it('lists each endpoint\'s path param and query param keys, so `offset` is discoverable', () => {
+    const rendered = renderN3EndpointSignatures();
+    const signatureFor = (key: string): string => {
+      const match = rendered.match(new RegExp(`${key}\\(([^)]*)\\)`));
+      if (!match) throw new Error(`no rendered signature for ${key}`);
+      return match[1];
+    };
+
+    // Paginated list endpoint: the REST key is `offset`, NOT the `skip` of the curated tools.
+    expect(signatureFor('list_blocks').split(', ').sort()).toEqual(['limit', 'offset']);
+    expect(rendered).not.toContain('skip');
+
+    // Path param + pagination on the same endpoint.
+    expect(signatureFor('list_token_holders').split(', ').sort()).toEqual([
+      'hash',
+      'limit',
+      'offset',
+    ]);
+
+    // No params at all renders as an empty signature rather than being omitted.
+    expect(signatureFor('network_summary')).toBe('');
+  });
+
+  it('renders exactly the keys the guard accepts for every endpoint', () => {
+    const rendered = renderN3EndpointSignatures();
+
+    for (const [key, descriptor] of N3_REST_CATALOG) {
+      const allowed = [
+        ...(descriptor.pathParam ? [descriptor.pathParam.key] : []),
+        ...Object.keys(descriptor.queryParams ?? {}),
+      ].sort();
+      const match = rendered.match(new RegExp(`${key}\\(([^)]*)\\)`));
+      const shown = (match?.[1] ?? '').split(', ').filter(Boolean).sort();
+
+      expect(`${key}:${shown.join('|')}`).toBe(`${key}:${allowed.join('|')}`);
     }
   });
 });

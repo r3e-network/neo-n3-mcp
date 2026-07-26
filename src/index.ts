@@ -8,7 +8,7 @@ import { WalletService } from './services/wallet-service';
 import { ContractService } from './contracts/contract-service';
 import { callTool } from './handlers/tool-handler';
 import { setupResourceHandlers } from './handlers/resource-handler';
-import { N3_REST_CATALOG } from './indexer/n3-rest-catalog';
+import { N3_REST_CATALOG, renderN3EndpointSignatures } from './indexer/n3-rest-catalog';
 import { X_ENDPOINT_CATALOG } from './indexer/blockscout-catalog';
 import { COLLECTION_CATALOG } from './indexer/indexer-collections';
 import {
@@ -19,6 +19,8 @@ import {
 
 /** Vetted n3index REST endpoint keys advertised in the query_indexer tool description. */
 const N3_REST_ENDPOINT_NAMES: readonly string[] = [...N3_REST_CATALOG.keys()];
+/** `key(param, ...)` signatures so callers see each endpoint's exact param allowlist. */
+const N3_REST_ENDPOINT_SIGNATURES: string = renderN3EndpointSignatures();
 /** Vetted Neo X Blockscout endpoint keys advertised in the x_query tool description. */
 const X_ENDPOINT_NAMES: readonly string[] = [...X_ENDPOINT_CATALOG.keys()];
 /** Vetted indexer collection keys advertised in the query_indexer_find tool description. */
@@ -819,8 +821,10 @@ export class NeoN3McpServer {
           'One of the vetted n3index REST endpoints: ' + N3_REST_ENDPOINT_NAMES.join(', '),
         ),
         params: z.record(z.unknown()).optional().describe(
-          'Typed params for the chosen endpoint (e.g. { address }, { hash, limit }, '
-            + '{ blockRef }, { q }). Only the endpoint\'s declared params are accepted.',
+          'Typed params for the chosen endpoint. Only the keys listed for that endpoint are '
+            + 'accepted; anything else is rejected before the network call. Pagination uses '
+            + '`offset` here (NOT `skip`, which only the curated n3_list_* tools take). '
+            + 'Signatures: ' + N3_REST_ENDPOINT_SIGNATURES,
         ),
       },
     );
