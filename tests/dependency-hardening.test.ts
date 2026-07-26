@@ -158,4 +158,70 @@ describe('dependency hardening', () => {
       expect(installIndex).toBeGreaterThan(copyIndex);
     }
   );
+
+  // GHSA-frvp-7c67-39w9: @hono/node-server < 2.0.5 resolves encoded backslashes in
+  // serveStatic paths on Windows. The MCP SDK's streamableHttp transport - the one this
+  // server runs on - depends on `^1.19.9`, a range that can never reach the patched line,
+  // and npm does not propagate `overrides` to downstream installers. So our own installs
+  // and images are patched by the override below, while anyone who runs
+  // `npm install @r3e/neo-mcp` inherits the vulnerable copy and sees the advisory. These
+  // checks keep the override in place and keep that asymmetry documented.
+  describe('hono node server advisory', () => {
+    const MINIMUM_PATCHED_HONO = [2, 0, 5] as const;
+
+    function isAtLeastHonoPatched(version: string): boolean {
+      const parsed = parseVersion(version);
+      for (let index = 0; index < MINIMUM_PATCHED_HONO.length; index += 1) {
+        const actual = parsed[index] ?? 0;
+        const required = MINIMUM_PATCHED_HONO[index];
+        if (actual > required) return true;
+        if (actual < required) return false;
+      }
+      return true;
+    }
+
+    test('overrides the transport dependency onto the patched line', () => {
+      const override = packageJson.overrides['@hono/node-server'];
+
+      expect(typeof override).toBe('string');
+      expect(isAtLeastHonoPatched((override as string).replace(/^[^0-9]*/, ''))).toBe(true);
+    });
+
+    test('installs no @hono/node-server copy below the patched version', () => {
+      const vulnerable = collectInstalledManifests(repoRoot)
+        .map((manifestPath) => ({
+          manifestPath,
+          manifest: JSON.parse(fs.readFileSync(manifestPath, 'utf8')) as {
+            name?: string;
+            version?: string;
+          },
+        }))
+        .filter(({ manifest }) => manifest.name === '@hono/node-server')
+        .filter(({ manifest }) => !isAtLeastHonoPatched(manifest.version ?? '0.0.0'))
+        .map(
+          ({ manifest, manifestPath }) =>
+            `${path.relative(repoRoot, manifestPath)} @ ${manifest.version}`
+        );
+
+      expect(vulnerable).toEqual([]);
+    });
+
+    test('never reaches the serveStatic surface the advisory covers', () => {
+      const sources = fs
+        .readdirSync(path.join(repoRoot, 'src'), { recursive: true, encoding: 'utf8' })
+        .filter((entry) => entry.endsWith('.ts'))
+        .map((entry) => fs.readFileSync(path.join(repoRoot, 'src', entry), 'utf8'));
+
+      expect(sources.length).toBeGreaterThan(0);
+      expect(sources.filter((source) => /serveStatic|serve-static/.test(source))).toEqual([]);
+    });
+
+    test('tells downstream installers to apply the override themselves', () => {
+      const guide = fs.readFileSync(path.join(repoRoot, 'docs', 'DEPLOYMENT.md'), 'utf8');
+
+      expect(guide).toContain('GHSA-frvp-7c67-39w9');
+      expect(guide).toContain('@hono/node-server');
+      expect(guide).toContain('overrides');
+    });
+  });
 });
