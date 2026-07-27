@@ -359,7 +359,8 @@ const SPECS: PublicToolSpec[] = [
     name: 'get_contract_info',
     description:
       'Get contract metadata: manifest, ABI operations, and known-name resolution on Neo N3, '
-      + 'or verified source/compiler metadata from the Neo X explorer.',
+      + 'or verified source/compiler metadata from the Neo X explorer. Neo X explorer metadata '
+      + 'is mainnet only; Neo N3 supports both networks.',
     inputSchema: {
       ...chainField(CHAINS),
       contract: z.string().optional().describe(
@@ -378,6 +379,11 @@ const SPECS: PublicToolSpec[] = [
       neox: {
         internalName: 'x_query',
         mapArgs: (args) => {
+          if (args.network === 'testnet') {
+            throw new ValidationError(
+              'get_contract_info on chain "neox" is mainnet only; testnet explorer metadata is unavailable.',
+            );
+          }
           const address = args.address ?? args.contract;
           if (typeof address !== 'string' || !address.trim()) {
             throw new ValidationError(
@@ -809,7 +815,7 @@ const SPECS: PublicToolSpec[] = [
     name: 'explorer_search',
     description:
       'Explorer analytics: full-text search across blocks, transactions, addresses, tokens, '
-      + 'and contracts.',
+      + 'and contracts. Neo N3 index search is mainnet only; Neo X supports both networks.',
     inputSchema: {
       ...chainField(CHAINS),
       q: z.string().describe('Search query (address, token name/symbol, block, or tx hash)'),
@@ -820,6 +826,11 @@ const SPECS: PublicToolSpec[] = [
       n3: {
         internalName: 'query_indexer',
         mapArgs: (args) => {
+          if (args.network === 'testnet') {
+            throw new ValidationError(
+              'explorer_search on chain "n3" is mainnet only; use node tools for testnet lookups.',
+            );
+          }
           const q = args.q;
           if (typeof q !== 'string' || !q.trim()) {
             throw new ValidationError('explorer_search requires a non-empty "q" query string.');

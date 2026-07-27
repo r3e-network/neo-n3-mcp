@@ -354,6 +354,15 @@ describe('explorer routing', () => {
     expect(neox.args.q).toBe('neo');
   });
 
+  it('rejects explorer routes that cannot honor a requested testnet', () => {
+    expect(() => resolveRoute('explorer_search', {
+      chain: 'n3', q: 'neo', network: 'testnet',
+    })).toThrow(/mainnet only/);
+    expect(() => resolveRoute('get_contract_info', {
+      chain: 'neox', address: '0xdead', network: 'testnet',
+    })).toThrow(/mainnet only/);
+  });
+
   it('routes the generic catalog query per chain, renaming the selector', () => {
     const n3 = resolveRoute('query_explorer', {
       chain: 'n3', endpoint: 'list_blocks', params: { limit: 5 },
