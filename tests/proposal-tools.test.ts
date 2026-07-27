@@ -71,6 +71,8 @@ describe('n3_build_transfer', () => {
     expect(proposal.kind).toBe('invoke');
     expect(proposal.scriptHash).toBe(NEO_NATIVE_SCRIPT_HASH);
     expect(proposal.operation).toBe('transfer');
+    expect(proposal.from).toBe(FROM_ADDR);
+    expect(proposal.to).toBe(TO_ADDR);
     expect(proposal.args).toEqual([
       { type: 'Hash160', value: FROM_SH },
       { type: 'Hash160', value: TO_SH },

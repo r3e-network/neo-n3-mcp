@@ -28,6 +28,8 @@ export interface N3InvokeProposal {
   args: FormattedContractParameter[];
   signers: Array<{ account: string; scopes: string }>;
   from: string;
+  /** Recipient address for transfer proposals; absent for generic invokes. */
+  to?: string;
   summary: string;
   simulation?: N3Simulation;
   signingNote: string;
@@ -158,6 +160,7 @@ export function buildN3TransferProposal(input: {
     args,
     signers: [{ account: from, scopes: 'CalledByEntry' }],
     from,
+    to,
     summary: `Transfer ${input.amount} ${assetLabel} from ${from} to ${to} on Neo N3 ${input.network}.`,
     signingNote: SIGNING_NOTE_N3,
   };
