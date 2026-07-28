@@ -368,6 +368,7 @@ describe('ContractService', () => {
     });
 
     test('bounds contract-state RPC calls by the configured deadline', async () => {
+      jest.useFakeTimers();
       const TimeoutContractService = ContractService as unknown as new (
         rpcUrl: string,
         network: NeoNetwork,
@@ -380,16 +381,19 @@ describe('ContractService', () => {
       );
       service['rpcClient'].getContractState = jest.fn().mockReturnValue(new Promise(() => undefined));
 
-      const outcome = await Promise.race([
-        service.getContractStatus(genericContractHash).then(
+      try {
+        const outcomePromise = service.getContractStatus(genericContractHash).then(
           () => 'resolved',
           (error) => error,
-        ),
-        new Promise((resolve) => setTimeout(() => resolve('still-pending'), 100)),
-      ]);
+        );
+        await jest.advanceTimersByTimeAsync(10);
+        const outcome = await outcomePromise;
 
-      expect(outcome).toBeInstanceOf(Error);
-      expect((outcome as Error).message).toMatch(/timed out.*10ms/i);
+        expect(outcome).toBeInstanceOf(Error);
+        expect((outcome as Error).message).toMatch(/timed out.*10ms/i);
+      } finally {
+        jest.useRealTimers();
+      }
     });
 
     test('should resolve an unknown contract name through api.n3index.dev metadata', async () => {

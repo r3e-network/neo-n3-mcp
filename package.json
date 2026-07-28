@@ -17,7 +17,7 @@
     "start": "node dist/index.js",
     "test": "npm run test:unit",
     "test:unit": "jest --testMatch='**/tests/**/*.test.ts' --testPathIgnorePatterns='tests/mcp-'",
-    "test:mcp": "jest --runInBand tests/mcp-build-smoke.test.ts tests/mcp-lifecycle.test.ts tests/mcp-tool-registration.test.ts tests/mcp-http-transport.test.ts --testPathIgnorePatterns='/node_modules/'",
+    "test:mcp": "jest --runInBand tests/mcp-build-smoke.test.ts --testPathIgnorePatterns='/node_modules/' && jest --runInBand tests/mcp-lifecycle.test.ts --testPathIgnorePatterns='/node_modules/' && jest --runInBand tests/mcp-tool-registration.test.ts --testPathIgnorePatterns='/node_modules/' && jest --runInBand tests/mcp-http-transport.test.ts --testPathIgnorePatterns='/node_modules/'",
     "test:mcp:live": "jest --runInBand tests/mcp-comprehensive.test.ts tests/mcp-latest-features.test.ts tests/mcp-protocol-compliance.test.ts --testPathIgnorePatterns='/node_modules/'",
     "test:mcp:stress": "jest --runInBand tests/mcp-stress.test.ts --testPathIgnorePatterns='/node_modules/'",
     "test:integration": "node tests/mcp-integration-test.js",

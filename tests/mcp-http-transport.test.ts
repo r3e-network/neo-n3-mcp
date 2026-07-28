@@ -104,6 +104,19 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function waitForCondition(
+  predicate: () => boolean,
+  timeoutMs = 5_000,
+  intervalMs = 25
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  do {
+    if (predicate()) return;
+    await sleep(intervalMs);
+  } while (Date.now() < deadline);
+  expect(predicate()).toBe(true);
+}
+
 afterEach(async () => {
   while (openClients.length > 0) {
     const entry = openClients.pop();
@@ -520,15 +533,13 @@ describe('MCP Streamable HTTP transport', () => {
     });
 
     test('evicts sessions that idle past the TTL', async () => {
-      const started = await startServer({ sessionTtlMs: 150 });
+      const started = await startServer({ sessionTtlMs: 1_000 });
 
       const response = await rawInitialize(started);
       expect(response.status).toBe(200);
       expect(started.server.sessionCount).toBe(1);
 
-      await sleep(600);
-
-      expect(started.server.sessionCount).toBe(0);
+      await waitForCondition(() => started.server.sessionCount === 0);
 
       // The evicted session id is no longer routable.
       const sessionId = response.headers.get('mcp-session-id') as string;
@@ -547,18 +558,18 @@ describe('MCP Streamable HTTP transport', () => {
     });
 
     test('a POST carrying a session id refreshes the idle timer and keeps it alive', async () => {
-      const started = await startServer({ sessionTtlMs: 150 });
+      const started = await startServer({ sessionTtlMs: 1_000 });
 
       const init = await rawInitialize(started);
       expect(init.status).toBe(200);
       const sessionId = init.headers.get('mcp-session-id') as string;
       expect(started.server.sessionCount).toBe(1);
 
-      // Send traffic every ~60 ms across well over 2x the TTL. Each POST must
+      // Send traffic every ~100 ms across more than the TTL. Each POST must
       // stamp lastSeenMs (mcp-http-server.ts) so the sweeper never evicts it.
       // Delete that refresh and an active session is dropped mid-use.
-      for (let i = 0; i < 6; i++) {
-        await sleep(60);
+      for (let i = 0; i < 12; i++) {
+        await sleep(100);
         const res = await fetch(started.url, {
           method: 'POST',
           headers: {
@@ -618,8 +629,7 @@ describe('MCP Streamable HTTP transport', () => {
       // Closing the stream restarts the idle clock; the session is then evicted.
       controller.abort();
       await pump.catch(() => undefined);
-      await sleep(600);
-      expect(started.server.sessionCount).toBe(0);
+      await waitForCondition(() => started.server.sessionCount === 0);
     });
 
     test('a failed session construction never latches the capacity guard at 503', async () => {

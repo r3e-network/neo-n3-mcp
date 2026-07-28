@@ -17,6 +17,7 @@ interface StartMcpTestClientParams {
 }
 
 const ownedWalletDirectories = new WeakMap<StdioClientTransport, string>();
+const MCP_TEST_CONNECT_TIMEOUT_MS = 90_000;
 
 /**
  * Signatures of a fault in the RPC transport rather than in the thing under test. `fetch failed`
@@ -129,14 +130,31 @@ export async function startMcpTestClient({
     ownedWalletDirectories.set(transport, walletsDir);
   }
 
+  let connectTimeout: NodeJS.Timeout | undefined;
   try {
-    await client.connect(transport);
+    await Promise.race([
+      client.connect(transport),
+      new Promise<never>((_, reject) => {
+        connectTimeout = setTimeout(() => {
+          reject(new Error(`Timed out waiting ${MCP_TEST_CONNECT_TIMEOUT_MS}ms for MCP test client connection`));
+        }, MCP_TEST_CONNECT_TIMEOUT_MS);
+      }),
+    ]);
   } catch (error) {
+    try {
+      await transport.close();
+    } catch {
+      // Preserve the connection error; transport cleanup is best effort here.
+    }
     if (ownsWalletDirectory) {
       ownedWalletDirectories.delete(transport);
       rmSync(walletsDir, { recursive: true, force: true });
     }
     throw error;
+  } finally {
+    if (connectTimeout) {
+      clearTimeout(connectTimeout);
+    }
   }
 
   return { client, transport };

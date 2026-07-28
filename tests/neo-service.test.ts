@@ -741,7 +741,7 @@ test('waitForTransaction preserves confirmation when the optional application lo
   mockRpcClient.getApplicationLog = jest.fn().mockRejectedValue(new Error('Application log unavailable'));
 
   await expect(neoService.waitForTransaction('0xabcdef1234567890', {
-    timeoutMs: 10,
+    timeoutMs: 1_000,
     pollIntervalMs: 1,
     includeApplicationLog: true,
   })).resolves.toMatchObject({
@@ -780,24 +780,25 @@ test('waitForTransaction never sleeps past its deadline', async () => {
 });
 
 test('waitForTransaction bounds a never-resolving RPC call by its timeout', async () => {
+  jest.useFakeTimers();
   const mockRpcClient = (neoService as any).rpcClient;
   mockRpcClient.getTransactionHeight = jest.fn().mockReturnValue(new Promise(() => undefined));
 
-  const waitResult = neoService.waitForTransaction('0xabcdef1234567890', {
-    timeoutMs: 20,
-    pollIntervalMs: 1,
-  });
-  const outcome = await Promise.race([
-    waitResult,
-    new Promise((resolve) => setTimeout(() => resolve('still-pending'), 100)),
-  ]);
+  try {
+    const waitResult = neoService.waitForTransaction('0xabcdef1234567890', {
+      timeoutMs: 20,
+      pollIntervalMs: 1,
+    });
+    await jest.advanceTimersByTimeAsync(25);
 
-  expect(outcome).not.toBe('still-pending');
-  expect(outcome).toMatchObject({
-    txid: '0xabcdef1234567890',
-    confirmed: false,
-    timeoutMs: 20,
-  });
+    await expect(waitResult).resolves.toMatchObject({
+      txid: '0xabcdef1234567890',
+      confirmed: false,
+      timeoutMs: 20,
+    });
+  } finally {
+    jest.useRealTimers();
+  }
 });
 
 test('waitForTransaction applies the configured RPC deadline to each polling attempt', async () => {

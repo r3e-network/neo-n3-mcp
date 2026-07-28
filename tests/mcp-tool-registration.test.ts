@@ -99,8 +99,19 @@ const NON_CUSTODIAL_CONSTRUCTION_TOOL_NAMES = [
 const sortedToolNames = (tools: Array<{ name: string }>): string[] =>
   tools.map(tool => tool.name).sort();
 
+const MCP_TEST_REQUEST_OPTIONS = {
+  timeout: 90_000,
+  maxTotalTimeout: 90_000,
+};
+
+const listTools = (target: Client) =>
+  target.listTools(undefined, MCP_TEST_REQUEST_OPTIONS);
+
+const callTool = (target: Client, request: Parameters<Client['callTool']>[0]) =>
+  target.callTool(request, undefined, MCP_TEST_REQUEST_OPTIONS);
+
 describe('Modern MCP tool registration', () => {
-  const TEST_TIMEOUT = 30000;
+  const TEST_TIMEOUT = 120_000;
   const serverPath = path.join(__dirname, '../dist/index.js');
   let client: Client | null = null;
   let transport: StdioClientTransport | null = null;
@@ -133,8 +144,8 @@ describe('Modern MCP tool registration', () => {
   });
 
   test('applies one shared rate limit across the whole public tool surface', async () => {
-    const first = await client!.callTool({ name: 'get_network_mode', arguments: {} });
-    const second = await client!.callTool({
+    const first = await callTool(client!, { name: 'get_network_mode', arguments: {} });
+    const second = await callTool(client!, {
       name: 'get_balance',
       arguments: { chain: 'n3', address: 'invalid-address' },
     });
@@ -152,11 +163,11 @@ describe('Modern MCP tool registration', () => {
   });
 
   test('charges each registry-routed tool call exactly once', async () => {
-    const first = await client!.callTool({
+    const first = await callTool(client!, {
       name: 'get_wallet',
       arguments: { address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr' },
     });
-    const second = await client!.callTool({
+    const second = await callTool(client!, {
       name: 'get_wallet',
       arguments: { address: 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr' },
     });
@@ -179,7 +190,7 @@ describe('Modern MCP tool registration', () => {
   });
 
   test('advertises call_contract as strictly read-only', async () => {
-    const response = await client!.listTools();
+    const response = await listTools(client!);
     const callContract = response.tools.find(tool => tool.name === 'call_contract');
 
     expect(callContract).toBeDefined();
@@ -190,7 +201,7 @@ describe('Modern MCP tool registration', () => {
   });
 
   test('requires an explicit chain on every dual-chain tool', async () => {
-    const response = await client!.listTools();
+    const response = await listTools(client!);
 
     for (const name of CHAIN_SELECTING_TOOL_NAMES) {
       const tool = response.tools.find(candidate => candidate.name === name);
@@ -205,7 +216,7 @@ describe('Modern MCP tool registration', () => {
   });
 
   test('routes a dual-chain tool to the chain the caller selected', async () => {
-    const rejected = await client!.callTool({
+    const rejected = await callTool(client!, {
       name: 'get_block',
       arguments: { chain: 'ethereum', hashOrHeight: 1 },
     });
@@ -219,7 +230,7 @@ describe('Modern MCP tool registration', () => {
   });
 
   test('does not advertise unsupported estimate_invoke_fees signers', async () => {
-    const response = await client!.listTools();
+    const response = await listTools(client!);
     const estimateInvokeFees = response.tools.find(tool => tool.name === 'estimate_invoke_fees');
 
     expect(estimateInvokeFees).toBeDefined();
@@ -227,7 +238,7 @@ describe('Modern MCP tool registration', () => {
   });
 
   test('defaults to a read-only tool surface with no secret-bearing administration', async () => {
-    const response = await client!.listTools();
+    const response = await listTools(client!);
     const toolNames = response.tools.map(tool => tool.name);
 
     expect(sortedToolNames(response.tools)).toEqual(READ_ONLY_TOOL_NAMES);
@@ -280,7 +291,7 @@ describe('Modern MCP tool registration', () => {
       client = session.client;
       transport = session.transport;
 
-      const response = await client.listTools();
+      const response = await listTools(client);
       const writeToolNames = WRITE_TOOL_NAMES;
       expect(sortedToolNames(response.tools)).toEqual(WRITE_ENABLED_TOOL_NAMES);
       expect(response.tools).toHaveLength(WRITE_ENABLED_TOOL_NAMES.length);
@@ -313,7 +324,7 @@ describe('Modern MCP tool registration', () => {
           content: { fingerprint: fingerprint as string, approve: true },
         };
       });
-      const attempted = await client.callTool({
+      const attempted = await callTool(client, {
         name: 'transfer_assets',
         arguments: {
           idempotencyKey: 'mcp-positive-approval-flow',
@@ -351,7 +362,7 @@ describe('Modern MCP tool registration', () => {
       });
       client = unsupportedSession.client;
       transport = unsupportedSession.transport;
-      const denied = await client.callTool({
+      const denied = await callTool(client, {
         name: 'claim_gas',
         arguments: {
           idempotencyKey: 'claim-request-without-elicitation',

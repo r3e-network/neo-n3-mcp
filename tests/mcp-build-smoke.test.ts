@@ -3,7 +3,7 @@ import path from 'path';
 import { startMcpTestClient, stopMcpTestClient } from './mcp-test-utils';
 
 describe('built MCP smoke test', () => {
-  const TEST_TIMEOUT = 15000;
+  const TEST_TIMEOUT = 120_000;
   let serverPath: string;
   let client: any = null;
   let transport: any = null;

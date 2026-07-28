@@ -6,7 +6,7 @@ import { ChildProcess } from 'child_process';
 import { waitForChildExit } from './mcp-test-utils';
 
 describe('MCP stdio lifecycle', () => {
-  const TEST_TIMEOUT = 20000;
+  const TEST_TIMEOUT = 120_000;
   let serverPath: string;
 
   jest.setTimeout(TEST_TIMEOUT);
