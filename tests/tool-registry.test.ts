@@ -57,6 +57,7 @@ const EXPECTED_PUBLIC_TOOLS = [
   'build_contract_call',
   // explorer / indexer reads
   'explorer_get_address',
+  'analyze_address',
   'explorer_list_address_transactions',
   'explorer_list_address_transfers',
   'explorer_list_address_assets',
@@ -155,6 +156,7 @@ describe('chain discriminator', () => {
       'estimate_transfer_fees',
       'estimate_invoke_fees',
       'explorer_list_address_assets',
+      'analyze_address',
       'query_explorer_find',
     ];
     for (const name of n3Only) {
@@ -321,6 +323,8 @@ describe('explorer routing', () => {
       .toBe('n3_get_address');
     expect(resolveRoute('explorer_get_address', { chain: 'neox', address: '0x1' }).internalName)
       .toBe('x_get_address');
+    expect(resolveRoute('analyze_address', { address: 'N1' }).internalName)
+      .toBe('query_indexer');
     expect(resolveRoute('explorer_list_address_transactions', { chain: 'n3', address: 'N1' }).internalName)
       .toBe('n3_list_transactions_by_address');
     expect(resolveRoute('explorer_list_address_transactions', { chain: 'neox', address: '0x1' }).internalName)
@@ -335,6 +339,22 @@ describe('explorer routing', () => {
       .toBe('x_token_holders');
     expect(resolveRoute('explorer_list_address_assets', { address: 'N1' }).internalName)
       .toBe('n3_assets_held_by_address');
+  });
+
+  it('maps the dedicated address analysis tool to the bounded catalog endpoint', () => {
+    const route = resolveRoute('analyze_address', {
+      address: 'N1',
+      sample: 40,
+      limit: 8,
+      network: 'testnet',
+    });
+    expect(route.internalName).toBe('query_indexer');
+    expect(route.args).toEqual({
+      method: 'analyze_address',
+      params: { address: 'N1', sample: 40, limit: 8 },
+      network: 'testnet',
+    });
+    expect(route.requiresServices).toBe(false);
   });
 
   it('maps the unified token argument onto each backend name', () => {
@@ -436,6 +456,7 @@ describe('route metadata', () => {
     const analytical: Array<[string, Record<string, unknown>]> = [
       ['explorer_get_address', { chain: 'n3', address: 'N1' }],
       ['explorer_get_address', { chain: 'neox', address: '0x1' }],
+      ['analyze_address', { address: 'N1' }],
       ['query_explorer', { chain: 'n3', endpoint: 'list_blocks' }],
       ['query_explorer_graphql', { query: '{}' }],
       ['get_chain_info', { chain: 'neox' }],

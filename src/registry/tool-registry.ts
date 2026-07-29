@@ -727,6 +727,36 @@ const SPECS: PublicToolSpec[] = [
     },
   },
   {
+    name: 'analyze_address',
+    description:
+      'PRIMARY Neo N3 account-intelligence tool for address identity or relationship analysis. '
+      + 'Use this first instead of fanning out across summary, balance, transaction, transfer, '
+      + 'and search tools. Returns curated identity evidence, on-chain names, bounded transfer '
+      + 'relationships, co-signers, contract interactions, behavior signals, confidence, and '
+      + 'explicit sample boundaries; observed behavior never proves a real-world owner.',
+    inputSchema: {
+      address: z.string().describe('Neo N3 address or 0x script hash'),
+      sample: z.number().int().min(20).max(200).optional().describe(
+        'Recent transfer rows sampled per direction (20-200, default 100)',
+      ),
+      limit: z.number().int().min(4).max(24).optional().describe(
+        'Maximum ranked relationships to return (4-24, default 12)',
+      ),
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'query_indexer',
+        mapArgs: (args) => ({
+          method: 'analyze_address',
+          params: pick(args, ['address', 'sample', 'limit']),
+          ...n3Args(pick(args, ['network'])),
+        }),
+      },
+    },
+  },
+  {
     name: 'explorer_list_address_transactions',
     description: 'Explorer analytics: list transactions involving an address, newest first.',
     inputSchema: {

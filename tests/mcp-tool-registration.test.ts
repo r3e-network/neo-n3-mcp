@@ -16,6 +16,7 @@ import { ElicitRequestSchema } from '@modelcontextprotocol/sdk/types.js';
  * "expected 40, received 41". Update this list in the same commit that registers a tool.
  */
 const READ_ONLY_TOOL_NAMES = [
+  'analyze_address',
   'build_contract_call',
   'build_transfer',
   'call_contract',
