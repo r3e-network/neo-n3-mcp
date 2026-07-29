@@ -365,19 +365,21 @@ describe('explorer routing', () => {
 
   it('routes the generic catalog query per chain, renaming the selector', () => {
     const n3 = resolveRoute('query_explorer', {
-      chain: 'n3', endpoint: 'list_blocks', params: { limit: 5 },
+      chain: 'n3', endpoint: 'analyze_address', params: { address: 'N1', sample: 100 }, network: 'testnet',
     });
     expect(n3.internalName).toBe('query_indexer');
-    expect(n3.args.method).toBe('list_blocks');
-    expect(n3.args.params).toEqual({ limit: 5 });
+    expect(n3.args.method).toBe('analyze_address');
+    expect(n3.args.params).toEqual({ address: 'N1', sample: 100 });
+    expect(n3.args.network).toBe('testnet');
     expect('endpoint' in n3.args).toBe(false);
 
     const neox = resolveRoute('query_explorer', {
-      chain: 'neox', endpoint: 'list_blocks', params: { type: 'block' },
+      chain: 'neox', endpoint: 'list_blocks', params: { type: 'block' }, network: 'testnet',
     });
     expect(neox.internalName).toBe('x_query');
     expect(neox.args.endpoint).toBe('list_blocks');
     expect(neox.args.params).toEqual({ type: 'block' });
+    expect(neox.args.network).toBe('neox-testnet');
     expect('method' in neox.args).toBe(false);
   });
 

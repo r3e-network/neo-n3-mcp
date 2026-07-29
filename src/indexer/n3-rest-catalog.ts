@@ -25,11 +25,11 @@
  *    cap + timeout.
  *  - Read-only: every route below is a GET reader. No write endpoints are present.
  *
- * These tools are MAINNET-ONLY: the tool schema exposes no network field; the
- * handler resolves to mainnet (see `resolveIndexerNetwork` in the tool handler).
+ * The caller-facing registry pins an explicit mainnet/testnet selection before
+ * dispatch. Internal calls that omit network retain mainnet as the safe default.
  *
  * Endpoints verified live against https://api.n3index.dev (all 200 with real
- * mainnet data). Pagination params: limit (default 20, cap 100), offset (default
+ * data). Pagination params: limit (default 20, cap 100), offset (default
  * 0, cap 10000).
  */
 
@@ -222,6 +222,15 @@ const ENTRIES: Record<string, CatalogEntry> = {
     pathParam: ADDRESS_PARAM,
     category: 'address',
     summary: 'Account summary (first/last seen, balances count, activity) for an address.',
+  },
+  analyze_address: {
+    pathTemplate: 'accounts/{address}/intelligence',
+    pathParam: ADDRESS_PARAM,
+    category: 'address',
+    summary:
+      'Evidence-backed account identity, bounded transfer relationships, co-signers, '
+      + 'contract interactions, behavior signals, confidence, and sample boundaries.',
+    queryParams: { sample: { type: 'int' }, limit: { type: 'int' } },
   },
   list_address_balances: {
     pathTemplate: 'accounts/{address}/balances',

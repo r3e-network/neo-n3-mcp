@@ -458,7 +458,8 @@ async function handleN3ContractByName(input: Record<string, unknown>): Promise<u
  * The tool input interface stays { method, params } so the frontend/query-builder contract is
  * unchanged.
  *
- * MAINNET ONLY: the tool schema exposes no network field, so resolveIndexerNetwork -> mainnet.
+ * Network is supplied and pinned by the public tool registry. Internal callers
+ * that omit it retain mainnet as the default.
  */
 async function handleQueryIndexer(input: Record<string, unknown>): Promise<unknown> {
   try {

@@ -77,6 +77,33 @@ describe('callTool analytical dispatch', () => {
     expect(response.result).toEqual({ data: { address: VALID_N3_ADDRESS } });
   });
 
+  test('query_indexer routes bounded address intelligence to the selected N3 network', async () => {
+    const fetchMock = jest.fn().mockResolvedValue(
+      jsonResponse({ data: { address: VALID_N3_ADDRESS, engine_version: 'n3-address-intelligence/v1' } }),
+    );
+    global.fetch = fetchMock as any;
+
+    const response = await callTool(
+      'query_indexer',
+      {
+        method: 'analyze_address',
+        network: 'testnet',
+        params: { address: VALID_N3_ADDRESS, sample: 100, limit: 12 },
+      },
+      emptyNeoServices,
+      emptyContractServices,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toBe(
+      `https://api.n3index.dev/testnet/accounts/${VALID_N3_ADDRESS}/intelligence?sample=100&limit=12`,
+    );
+    expect(response.result).toEqual({
+      data: { address: VALID_N3_ADDRESS, engine_version: 'n3-address-intelligence/v1' },
+    });
+  });
+
   test('query_indexer surfaces a 404 as an empty/not-found result (result: null), not an error', async () => {
     const fetchMock = jest.fn().mockResolvedValue(jsonResponse(null, { status: 404 }));
     global.fetch = fetchMock as any;

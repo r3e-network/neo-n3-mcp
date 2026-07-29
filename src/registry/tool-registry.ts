@@ -14,7 +14,7 @@
  *     dropped on Neo X explorer routes and kept on the curated Neo N3 ones.
  *   - `query_indexer` selects a REST endpoint with `method`; `x_query` uses
  *     `endpoint`. Neither (nor `query_indexer_find` / `x_graphql`) takes a
- *     `network` field — they are mainnet-only.
+ *     `network` field for explicit network-scoped reads.
  *
  * Non-custodial invariant: no route in this table can reach a key-custody tool
  * (`create_wallet` / `import_wallet`) or a server-signed write tool
@@ -846,7 +846,7 @@ const SPECS: PublicToolSpec[] = [
     description:
       'Generic explorer query: pick one vetted read-only endpoint from the chain catalog '
       + '(n3index REST for Neo N3, Blockscout v2 for Neo X) and pass its typed params. '
-      + 'Mainnet only; unknown endpoints and params are rejected before any network call.',
+      + 'Unknown endpoints and params are rejected before any network call.',
     inputSchema: {
       ...chainField(CHAINS),
       endpoint: z.string().describe('One of the vetted catalog endpoints for the selected chain'),
@@ -854,16 +854,21 @@ const SPECS: PublicToolSpec[] = [
         'Typed params for the chosen endpoint. Only that endpoint\'s declared keys are accepted; '
         + 'Neo N3 pagination uses `offset` here (not `skip`).',
       ),
+      ...networkField,
     },
     chains: CHAINS,
     routes: {
       n3: {
         internalName: 'query_indexer',
-        mapArgs: (args) => rename(pick(args, ['endpoint', 'params']), 'endpoint', 'method'),
+        mapArgs: (args) => rename(
+          n3Args(pick(args, ['endpoint', 'params', 'network'])),
+          'endpoint',
+          'method',
+        ),
       },
       neox: {
         internalName: 'x_query',
-        mapArgs: (args) => pick(args, ['endpoint', 'params']),
+        mapArgs: (args) => neoxNetwork(pick(args, ['endpoint', 'params', 'network'])),
       },
     },
   },
