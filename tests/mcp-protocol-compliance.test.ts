@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
+import { Client } from "@modelcontextprotocol/client";
 import path from 'path';
 import * as neonJs from '@cityofzion/neon-js';
 import { startMcpTestClient, stopMcpTestClient } from './mcp-test-utils';
@@ -10,7 +10,7 @@ const packageVersion = require('../package.json').version as string;
 /**
  * MCP Protocol Compliance Test Suite
  * 
- * Tests the Neo MCP server against the latest protocol specification (2025-03-26)
+ * Tests the Neo MCP server against the MCP 2026-07-28 protocol specification.
  * Validates all MCP protocol methods, error handling, and compliance requirements.
  */
 
@@ -19,7 +19,6 @@ describe('MCP Protocol Compliance Tests', () => {
   let transport: StdioClientTransport | null = null;
   let serverPath: string;
 
-  const LATEST_PROTOCOL_VERSION = '2025-03-26';
   const TEST_TIMEOUT = 30000; // 30 seconds
 
   beforeAll(async () => {
@@ -37,7 +36,7 @@ describe('MCP Protocol Compliance Tests', () => {
 
   async function startServer() {
     try {
-      const session = await startMcpTestClient({
+      const fixture = await startMcpTestClient({
         serverPath,
         env: {
           ...process.env,
@@ -57,8 +56,8 @@ describe('MCP Protocol Compliance Tests', () => {
         }
       });
 
-      client = session.client;
-      transport = session.transport;
+      client = fixture.client;
+      transport = fixture.transport;
     } catch (error) {
       throw new Error(`Failed to connect to MCP server: ${error}`);
     }
@@ -70,14 +69,14 @@ describe('MCP Protocol Compliance Tests', () => {
     transport = null;
   }
 
-  describe('Protocol Initialization', () => {
+  describe('Protocol Discovery', () => {
     test('should support latest protocol version', async () => {
-      // The connection already validates protocol version during initialization
+      // The pinned v2 client validates protocol discovery during connect.
       expect(client).toBeDefined();
     });
 
     test('should return valid server info', async () => {
-      // Server info is available after initialization
+      // Server info is available after server/discover.
       const serverInfo = client.getServerVersion();
       
       expect(serverInfo).toBeDefined();
@@ -178,25 +177,25 @@ describe('MCP Protocol Compliance Tests', () => {
     // future change that quietly re-exposes key material over MCP fails here.
     test('should refuse to import a wallet through MCP', async () => {
       const account = new neonJs.wallet.Account();
-      const response = await client.callTool({
+      const error = await client.callTool({
         name: 'import_wallet',
         arguments: { privateKeyOrWIF: account.WIF, password: 'password123' }
-      });
+      }).catch((caught: unknown) => caught as { code?: number; message?: string });
 
-      expect(response.isError).toBe(true);
-      expect(response.content[0].type).toBe('text');
+      expect(error).toMatchObject({ code: -32602 });
       // The WIF must never be echoed back, whatever the failure path.
-      expect(response.content[0].text).not.toContain(account.WIF);
+      expect(String(error.message)).not.toContain(account.WIF);
     });
 
     test('should refuse to create a wallet through MCP', async () => {
-      const response = await client.callTool({ name: 'create_wallet', arguments: { password: 'password123' } });
+      const error = await client.callTool({
+        name: 'create_wallet',
+        arguments: { password: 'password123' },
+      }).catch((caught: unknown) => caught as { code?: number; message?: string });
 
-      expect(response).toBeDefined();
-      expect(response.isError).toBe(true);
-      expect(response.content[0].type).toBe('text');
+      expect(error).toMatchObject({ code: -32602 });
       // No Neo N3 address should be minted for the caller.
-      expect(response.content[0].text).not.toMatch(/\bN[A-Za-z0-9]{33}\b/);
+      expect(String(error.message)).not.toMatch(/\bN[A-Za-z0-9]{33}\b/);
     });
 
     test('should handle network switching tools', async () => {
@@ -286,10 +285,13 @@ describe('MCP Protocol Compliance Tests', () => {
 
   describe('Error Handling & Protocol Compliance', () => {
     test('should return proper error codes for invalid requests', async () => {
-      const response = await client.callTool({ name: 'non_existent_tool', arguments: {} });
+      const error = await client.callTool({
+        name: 'non_existent_tool',
+        arguments: {},
+      }).catch((caught: unknown) => caught as { code?: number; message?: string });
 
-      expect(response.isError).toBe(true);
-      expect(response.content?.[0]?.text).toContain('not found');
+      expect(error).toMatchObject({ code: -32602 });
+      expect(String(error.message)).toContain('not found');
     });
 
     test('should handle malformed tool arguments', async () => {

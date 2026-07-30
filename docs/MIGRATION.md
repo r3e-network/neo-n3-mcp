@@ -1,5 +1,67 @@
 # Migration Guide
 
+## Migrating to 4.0.0
+
+Version 4 supports only MCP `2026-07-28` and SDK v2. The removed
+initialization/session era is rejected deliberately; there is no compatibility
+flag.
+
+### Client Dependencies
+
+```bash
+npm uninstall @modelcontextprotocol/sdk
+npm install @modelcontextprotocol/client@^2
+```
+
+Import clients and transports from the split v2 package:
+
+```js
+import {
+  Client,
+  StreamableHTTPClientTransport,
+} from '@modelcontextprotocol/client';
+```
+
+Construct the client with a pinned protocol version and strict capabilities:
+
+```js
+const client = new Client(
+  { name: 'neo-client', version: '2.0.0' },
+  {
+    protocolVersion: '2026-07-28',
+    enforceStrictCapabilities: true,
+    inputRequired: { autoFulfill: false },
+  },
+);
+```
+
+### Removed Behavior
+
+- Do not send `initialize` or `notifications/initialized`.
+- Do not send or persist `Mcp-Session-Id`.
+- Do not use `GET /mcp` or `DELETE /mcp`.
+- Do not configure session limits, expiry, sticky routing, or session recovery.
+- Do not fall back to SDK v1 or an earlier MCP protocol version.
+
+HTTP MCP is stateless and accepts `POST` plus `OPTIONS` preflight. Discovery is
+performed with `server/discover`. Each request carries protocol version, client
+identity, and capabilities.
+
+### Write Approval
+
+MCP writes now use the 2026 multi-round-trip `input_required` result. Set an
+independent state-signing key:
+
+```bash
+export NEO_MCP_REQUEST_STATE_KEY="$(openssl rand -hex 32)"
+```
+
+The key is required when writes are enabled, must contain at least 32 bytes,
+and must differ from all HTTP bearer and approval keys. The client shows the
+exact intent to the human and re-enters the same tool with `inputResponse`.
+The server verifies the signed `requestState`, expiry, operation, network,
+intent ID, and canonical fingerprint before broadcasting.
+
 ## Migrating to 3.1.0
 
 Version 3.1 renames the package to `@r3e/neo-mcp` and unifies the read surface across Neo N3 and Neo X behind a single `chain` discriminator.
@@ -90,6 +152,8 @@ New MCP write:
 }
 ```
 
-The MCP client must support form elicitation and the user must approve the exact fingerprint.
+In 4.x, the MCP client must support `input_required` multi-round trips and the
+user must approve the exact fingerprint. Form elicitation is no longer
+supported.
 
 Old HTTP writes executed immediately. New HTTP writes return `202 awaiting_approval`; approve the returned `intentId` and exact `fingerprint` through `/api/write-intents/:intentId/approve` with the independent approval key.

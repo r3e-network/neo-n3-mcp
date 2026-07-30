@@ -1,7 +1,7 @@
 import { jest } from '@jest/globals';
 import path from 'path';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
+import { Client } from '@modelcontextprotocol/client';
 import { ChildProcess } from 'child_process';
 import { waitForChildExit } from './mcp-test-utils';
 
@@ -18,7 +18,10 @@ describe('MCP stdio lifecycle', () => {
   test('client shutdown terminates the spawned MCP server process', async () => {
     const client = new Client(
       { name: 'Lifecycle Test Client', version: '1.0.0' },
-      { capabilities: { tools: {}, resources: {}, prompts: {} } }
+      {
+        capabilities: { tools: {}, resources: {}, prompts: {} },
+        versionNegotiation: { mode: { pin: '2026-07-28' } },
+      },
     );
 
     const transport = new StdioClientTransport({

@@ -2,12 +2,10 @@ import { jest } from '@jest/globals';
 import path from 'path';
 import { chmodSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import type { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import type { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
+import type { Client } from "@modelcontextprotocol/client";
 import { startMcpTestClient, stopMcpTestClient } from './mcp-test-utils';
 import { TEST_WIF } from './test-wallet';
-import { ElicitRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-
 /**
  * The exact tool surface the server advertises when writes are disabled (the default).
  *
@@ -109,7 +107,7 @@ const listTools = (target: Client) =>
   target.listTools(undefined, MCP_TEST_REQUEST_OPTIONS);
 
 const callTool = (target: Client, request: Parameters<Client['callTool']>[0]) =>
-  target.callTool(request, undefined, MCP_TEST_REQUEST_OPTIONS);
+  target.callTool(request, MCP_TEST_REQUEST_OPTIONS);
 
 describe('Modern MCP tool registration', () => {
   const TEST_TIMEOUT = 120_000;
@@ -266,7 +264,7 @@ describe('Modern MCP tool registration', () => {
     const stateDirectory = path.join(directory, 'state');
     // A write state directory keeps a durable .writer.lock that is intentionally never
     // released, so the second server process below needs its own directory. It only
-    // exercises the elicitation-capability refusal and never reads the first journal.
+    // exercises the input-required capability refusal and never reads the first journal.
     const noElicitationStateDirectory = path.join(directory, 'state-no-elicitation');
     writeFileSync(signerFile, `${TEST_WIF}\n`, { mode: 0o600 });
     chmodSync(signerFile, 0o600);
@@ -283,6 +281,7 @@ describe('Modern MCP tool registration', () => {
           NEO_ENABLE_WRITES: 'true',
           NEO_SIGNER_WIF_FILE: signerFile,
           NEO_WRITE_STATE_DIR: stateDirectory,
+          NEO_MCP_REQUEST_STATE_KEY: 'mcp-write-test-request-state-key-000000000000000000',
           HTTP_WRITE_APPROVAL_API_KEY: 'independent-approval-key-1234567890',
           NEO_TESTNET_RPC: 'http://127.0.0.1:1',
         },
@@ -317,7 +316,7 @@ describe('Modern MCP tool registration', () => {
       }
 
       let approvalMessage = '';
-      client.setRequestHandler(ElicitRequestSchema, async (request) => {
+      client.setRequestHandler('elicitation/create', async (request) => {
         approvalMessage = request.params.message;
         const fingerprint = /Fingerprint: ([0-9a-f]{64})/.exec(approvalMessage)?.[1];
         return {
@@ -356,6 +355,7 @@ describe('Modern MCP tool registration', () => {
           NEO_ENABLE_WRITES: 'true',
           NEO_SIGNER_WIF_FILE: signerFile,
           NEO_WRITE_STATE_DIR: noElicitationStateDirectory,
+          NEO_MCP_REQUEST_STATE_KEY: 'mcp-write-test-request-state-key-000000000000000000',
           HTTP_WRITE_APPROVAL_API_KEY: 'independent-approval-key-1234567890',
         },
         clientInfo: { name: 'MCP No-Elicitation Client', version: '1.0.0' },
@@ -363,17 +363,14 @@ describe('Modern MCP tool registration', () => {
       });
       client = unsupportedSession.client;
       transport = unsupportedSession.transport;
-      const denied = await callTool(client, {
-        name: 'claim_gas',
-        arguments: {
-          idempotencyKey: 'claim-request-without-elicitation',
-          network: 'testnet',
-        },
-      });
-      expect(denied.isError).toBe(true);
-      expect(denied.content).toEqual(expect.arrayContaining([
-        expect.objectContaining({ text: expect.stringMatching(/form elicitation support/i) }),
-      ]));
+      await expect(callTool(client, {
+          name: 'claim_gas',
+          arguments: {
+            idempotencyKey: 'claim-request-without-elicitation',
+            network: 'testnet',
+          },
+        }))
+        .rejects.toThrow(/capabilit|elicitation/i);
     } finally {
       await stopMcpTestClient(client, transport);
       client = null;

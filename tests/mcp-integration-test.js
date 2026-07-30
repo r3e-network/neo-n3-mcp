@@ -5,8 +5,8 @@
  * that connects to the server and uses its capabilities.
  */
 
-const { Client } = require('@modelcontextprotocol/sdk/client/index.js');
-const { StdioClientTransport } = require('@modelcontextprotocol/sdk/client/stdio.js');
+const { Client } = require('@modelcontextprotocol/client');
+const { StdioClientTransport } = require('@modelcontextprotocol/client/stdio');
 const path = require('path');
 
 class McpIntegrationTest {
@@ -43,7 +43,10 @@ class McpIntegrationTest {
     // Create a client
     this.client = new Client(
       { name: 'Neo MCP Integration Test', version: '1.0.0' },
-      { capabilities: { tools: {}, resources: {}, prompts: {} } }
+      {
+        capabilities: { tools: {}, resources: {}, prompts: {} },
+        versionNegotiation: { mode: { pin: '2026-07-28' } },
+      }
     );
 
     // Create a transport that connects to the server
@@ -277,35 +280,30 @@ class McpIntegrationTest {
   }
 
   /**
-   * Test creating a wallet
+   * Verify that model-facing wallet provisioning is absent.
    */
-  async testCreateWallet() {
+  async testWalletProvisioningBoundary() {
+    const password = 'test12345';
     try {
-      const result = await this.withTimeout(
-        this.client.callTool({ name: 'create_wallet', arguments: { password: 'test12345' } }),
+      await this.withTimeout(
+        this.client.callTool({ name: 'create_wallet', arguments: { password } }),
         'create_wallet'
       );
-
-      // Verify that wallet was created
-      if (!result || !result.content || !result.content[0] || !result.content[0].text) {
-        throw new Error('Invalid wallet creation response');
-      }
-
-      // Parse the JSON response
-      const walletResponse = JSON.parse(result.content[0].text);
-
-      // Verify that the response contains expected fields
-      if (!walletResponse.address || !walletResponse.publicKey || !walletResponse.encryptedPrivateKey) {
-        throw new Error('Invalid wallet format');
-      }
-
-      console.log(`   Created wallet with address: ${walletResponse.address}`);
-
-      this.recordResult('Create Wallet', true, { address: walletResponse.address });
-      return walletResponse;
+      this.recordResult('Wallet Provisioning Boundary', false, {
+        error: 'create_wallet unexpectedly executed',
+      });
+      return false;
     } catch (error) {
-      this.recordResult('Create Wallet', false, { error: error.message });
-      return null;
+      const message = String(error?.message ?? error);
+      const refused = error?.code === -32602
+        && message.includes('not found')
+        && !message.includes(password)
+        && !/\b[5KL][1-9A-HJ-NP-Za-km-z]{50,51}\b/.test(message)
+        && !/\bN[A-Za-z0-9]{33}\b/.test(message);
+      this.recordResult('Wallet Provisioning Boundary', refused, {
+        result: refused ? 'unregistered and non-custodial' : message,
+      });
+      return refused;
     }
   }
 
@@ -391,7 +389,7 @@ class McpIntegrationTest {
       await this.testGetBlockchainInfo();
       await this.testGetBlockCount();
       await this.testGetBalance();
-      await this.testCreateWallet();
+      await this.testWalletProvisioningBoundary();
       await this.testGetNetworkMode();
       await this.testReadNetworkStatusResource();
 

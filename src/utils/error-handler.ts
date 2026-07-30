@@ -1,81 +1,81 @@
-import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
+import { ProtocolError, ProtocolErrorCode } from '@modelcontextprotocol/server';
 import { NeoMcpError, ErrorType } from './errors';
 import { logger } from './logger';
 
 /**
  * Error mapping from Neo N3 error messages to user-friendly messages
  */
-const ERROR_MAPPINGS: Record<string, { message: string, code: ErrorCode }> = {
+const ERROR_MAPPINGS: Record<string, { message: string, code: ProtocolErrorCode }> = {
   // Connection errors
   'ECONNREFUSED': {
     message: 'Could not connect to Neo N3 node. Please check the node URL and try again.',
-    code: ErrorCode.InternalError
+    code: ProtocolErrorCode.InternalError
   },
   'ETIMEDOUT': {
     message: 'Connection to Neo N3 node timed out. The network might be congested or the node might be down.',
-    code: ErrorCode.InternalError
+    code: ProtocolErrorCode.InternalError
   },
   'ENOTFOUND': {
     message: 'Neo N3 node address not found. Please check the node URL.',
-    code: ErrorCode.InternalError
+    code: ProtocolErrorCode.InternalError
   },
 
   // Transaction errors
   'Insufficient funds': {
     message: 'Insufficient funds to complete the transaction. Please ensure you have enough balance.',
-    code: ErrorCode.InvalidParams
+    code: ProtocolErrorCode.InvalidParams
   },
   'Invalid signature': {
     message: 'Invalid signature. Please check your wallet credentials.',
-    code: ErrorCode.InvalidParams
+    code: ProtocolErrorCode.InvalidParams
   },
   'Unknown asset': {
     message: 'Unknown asset. Please check the asset name or hash.',
-    code: ErrorCode.InvalidParams
+    code: ProtocolErrorCode.InvalidParams
   },
   'Transaction rejected': {
     message: 'Transaction was rejected by the network. It might conflict with network rules.',
-    code: ErrorCode.InternalError
+    code: ProtocolErrorCode.InternalError
   },
   'VM fault': {
     message: 'Smart contract execution failed. The operation could not be completed.',
-    code: ErrorCode.InternalError
+    code: ProtocolErrorCode.InternalError
   },
   'Already exists': {
     message: 'Transaction already exists in the blockchain.',
-    code: ErrorCode.InvalidParams
+    code: ProtocolErrorCode.InvalidParams
   },
 
   // Validation errors
   'Invalid address': {
     message: 'Invalid Neo N3 address format. Please provide a valid address.',
-    code: ErrorCode.InvalidParams
+    code: ProtocolErrorCode.InvalidParams
   },
   'Invalid hash': {
     message: 'Invalid hash format. Please provide a valid transaction or block hash.',
-    code: ErrorCode.InvalidParams
+    code: ProtocolErrorCode.InvalidParams
   },
   'Invalid amount': {
     message: 'Invalid amount. Please provide a valid positive number.',
-    code: ErrorCode.InvalidParams
+    code: ProtocolErrorCode.InvalidParams
   },
   'Invalid network': {
     message: 'Invalid network. Please use "mainnet" or "testnet".',
-    code: ErrorCode.InvalidParams
+    code: ProtocolErrorCode.InvalidParams
   },
 
   // Contract errors
   'Contract not found': {
     message: 'Smart contract not found. Please check the contract name or hash.',
-    code: ErrorCode.InvalidParams
+    code: ProtocolErrorCode.InvalidParams
   },
   'Method not found': {
     message: 'Contract method not found. Please check the operation name.',
-    code: ErrorCode.InvalidParams
+    code: ProtocolErrorCode.InvalidParams
   },
   'Invalid argument': {
     message: 'Invalid contract argument. Please check the argument types and values.',
-    code: ErrorCode.InvalidParams
+    code: ProtocolErrorCode.InvalidParams
   }
 };
 
@@ -84,7 +84,7 @@ const ERROR_MAPPINGS: Record<string, { message: string, code: ErrorCode }> = {
  * @param errorMessage The error message to match
  * @returns Matched error mapping or undefined
  */
-function findErrorMapping(errorMessage: string): { message: string, code: ErrorCode } | undefined {
+function findErrorMapping(errorMessage: string): { message: string, code: ProtocolErrorCode } | undefined {
   if (!errorMessage) return undefined;
 
   // Check for exact matches first
@@ -107,13 +107,13 @@ function findErrorMapping(errorMessage: string): { message: string, code: ErrorC
  * @param error Error to handle
  * @returns MCP-compatible error response
  */
-export function handleError(error: unknown): { error: { message: string, code: ErrorCode } } {
+export function handleError(error: unknown): { error: { message: string, code: ProtocolErrorCode } } {
   // Log the error for debugging
   const errObj = error as Record<string, unknown>;
   logger.error('Error occurred:', { error: String(error), stack: typeof errObj?.stack === 'string' ? errObj.stack : undefined });
 
   // If it's already an MCP error, use it directly
-  if (error instanceof McpError) {
+  if (error instanceof ProtocolError) {
     return {
       error: {
         message: error.message,
@@ -125,8 +125,8 @@ export function handleError(error: unknown): { error: { message: string, code: E
   // If it's a Neo MCP error, convert it
   if (error instanceof NeoMcpError) {
     const code = error.type === ErrorType.VALIDATION_ERROR ?
-      ErrorCode.InvalidParams :
-      ErrorCode.InternalError;
+      ProtocolErrorCode.InvalidParams :
+      ProtocolErrorCode.InternalError;
 
     return {
       error: {
@@ -165,7 +165,7 @@ export function handleError(error: unknown): { error: { message: string, code: E
     return {
       error: {
         message: errObj.message,
-        code: ErrorCode.InternalError
+        code: ProtocolErrorCode.InternalError
       }
     };
   }
@@ -185,7 +185,7 @@ export function handleError(error: unknown): { error: { message: string, code: E
     return {
       error: {
         message: error,
-        code: ErrorCode.InternalError
+        code: ProtocolErrorCode.InternalError
       }
     };
   }
@@ -194,7 +194,7 @@ export function handleError(error: unknown): { error: { message: string, code: E
   return {
     error: {
       message: 'Unknown error',
-      code: ErrorCode.InternalError
+      code: ProtocolErrorCode.InternalError
     }
   };
 }
@@ -232,7 +232,10 @@ export function createToolResponse(data: unknown): { content: Array<{ type: stri
  * @param code Error code
  * @returns MCP-compatible error response
  */
-export function createErrorResponse(message: string, code: ErrorCode = ErrorCode.InternalError): { error: { message: string, code: ErrorCode } } {
+export function createErrorResponse(
+  message: string,
+  code: ProtocolErrorCode = ProtocolErrorCode.InternalError,
+): { error: { message: string; code: ProtocolErrorCode } } {
   return {
     error: {
       message,

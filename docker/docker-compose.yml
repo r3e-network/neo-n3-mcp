@@ -57,7 +57,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # Remote MCP transport (Streamable HTTP). Same production image as neo-mcp,
+  # Remote MCP 2026-07-28 HTTP transport. Same production image as neo-mcp,
   # different entrypoint: this speaks MCP JSON-RPC, not the REST API.
   # See docs/remote-mcp-transport.md.
   neo-mcp-http:
@@ -104,8 +104,13 @@ services:
       # Required: the listener is not on loopback inside the container.
       - MCP_HTTP_BEARER=${MCP_HTTP_BEARER:?Set MCP_HTTP_BEARER to at least 32 bytes}
       - MCP_HTTP_ALLOWED_ORIGINS=${MCP_HTTP_ALLOWED_ORIGINS:-}
-      - MCP_HTTP_MAX_SESSIONS=${MCP_HTTP_MAX_SESSIONS:-128}
-      - MCP_HTTP_SESSION_TTL_MS=${MCP_HTTP_SESSION_TTL_MS:-1800000}
+      - MCP_HTTP_MAX_CONCURRENT_REQUESTS=${MCP_HTTP_MAX_CONCURRENT_REQUESTS:-128}
+      - MCP_HTTP_MAX_SUBSCRIPTIONS=${MCP_HTTP_MAX_SUBSCRIPTIONS:-128}
+      - MCP_HTTP_MAX_BODY_BYTES=${MCP_HTTP_MAX_BODY_BYTES:-4194304}
+      - MCP_HTTP_BODY_TIMEOUT_MS=${MCP_HTTP_BODY_TIMEOUT_MS:-30000}
+      - MCP_HTTP_HEADERS_TIMEOUT_MS=${MCP_HTTP_HEADERS_TIMEOUT_MS:-30000}
+      - MCP_HTTP_REQUEST_TIMEOUT_MS=${MCP_HTTP_REQUEST_TIMEOUT_MS:-300000}
+      - MCP_HTTP_KEEP_ALIVE_MS=${MCP_HTTP_KEEP_ALIVE_MS:-15000}
       # Pinned: a remotely reachable MCP listener must not carry a signer.
       - NEO_ENABLE_WRITES=false
       - WALLETS_DIR=/app/wallets

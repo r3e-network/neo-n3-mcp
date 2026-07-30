@@ -2,7 +2,7 @@
 
 Neo MCP follows [Semantic Versioning](https://semver.org/) using `MAJOR.MINOR.PATCH`.
 
-Current version: `3.1.0`.
+Current version: `4.0.0`.
 
 ## Version Source
 

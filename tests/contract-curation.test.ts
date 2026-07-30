@@ -1,5 +1,4 @@
 import { jest } from '@jest/globals';
-import { ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import { ContractService } from '../src/contracts/contract-service';
 import { FAMOUS_CONTRACTS } from '../src/contracts/contracts';
 import { callTool } from '../src/handlers/tool-handler';
@@ -8,6 +7,7 @@ import {
   tryGetAddressFromScriptHash,
 } from '../src/metadata/known-accounts';
 import { NeoNetwork, NeoService } from '../src/services/neo-service';
+import { ProtocolErrorCode } from '@modelcontextprotocol/server';
 
 const STALE_CONTRACTS = [
   {
@@ -131,7 +131,7 @@ describe('curated contract surface', () => {
 
       expect(result).toEqual({
         error: {
-          code: ErrorCode.InvalidParams,
+          code: ProtocolErrorCode.InvalidParams,
           message: expect.stringContaining(`Tool ${toolName} not found or requires network parameter.`),
         },
       });

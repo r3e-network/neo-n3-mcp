@@ -1,5 +1,5 @@
 // src/handlers/tool-handler.ts
-import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
+import { ProtocolError, ProtocolErrorCode } from '@modelcontextprotocol/server';
 import {
   MAX_TRANSACTION_WAIT_TIMEOUT_MS,
   MIN_TRANSACTION_POLL_INTERVAL_MS,
@@ -22,7 +22,7 @@ import {
   sanitizeString,
 } from '../utils/validation';
 import { handleError, createSuccessResponse } from '../utils/error-handler';
-import { chargeSessionRateLimit } from '../utils/session-rate-limit';
+import { chargeClientRateLimit } from '../utils/client-rate-limit';
 import { callIndexerRpc } from '../contracts/indexer-rpc-client';
 import { assertAllowedEndpoint, buildEndpointRequest } from '../indexer/blockscout-query-guard';
 import { assertAllowedCollection, validateFind } from '../indexer/indexer-find-guard';
@@ -96,7 +96,7 @@ async function handleGetBlock(input: Record<string, unknown>, neoService: NeoSer
     } else if (typeof input.hashOrHeight === 'number') {
       blockReference = validateInteger(input.hashOrHeight);
     } else {
-      throw new McpError(ErrorCode.InvalidParams, 'hashOrHeight must be a string or number');
+      throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'hashOrHeight must be a string or number');
     }
     const block = await neoService.getBlock(blockReference);
     return createSuccessResponse(block);
@@ -133,21 +133,21 @@ async function handleWaitForTransaction(input: Record<string, unknown>, neoServi
     const pollIntervalMs = input.pollIntervalMs !== undefined ? validateInteger(input.pollIntervalMs as string | number) : 1000;
 
     if (timeoutMs <= 0) {
-      throw new McpError(ErrorCode.InvalidParams, 'timeoutMs must be greater than zero.');
+      throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'timeoutMs must be greater than zero.');
     }
 
     if (pollIntervalMs <= 0) {
-      throw new McpError(ErrorCode.InvalidParams, 'pollIntervalMs must be greater than zero.');
+      throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'pollIntervalMs must be greater than zero.');
     }
     if (timeoutMs > MAX_TRANSACTION_WAIT_TIMEOUT_MS) {
-      throw new McpError(
-        ErrorCode.InvalidParams,
+      throw new ProtocolError(
+        ProtocolErrorCode.InvalidParams,
         `timeoutMs must not exceed ${MAX_TRANSACTION_WAIT_TIMEOUT_MS}.`
       );
     }
     if (pollIntervalMs < MIN_TRANSACTION_POLL_INTERVAL_MS) {
-      throw new McpError(
-        ErrorCode.InvalidParams,
+      throw new ProtocolError(
+        ProtocolErrorCode.InvalidParams,
         `pollIntervalMs must be at least ${MIN_TRANSACTION_POLL_INTERVAL_MS}.`
       );
     }
@@ -180,7 +180,7 @@ async function handleGetNep17Transfers(input: Record<string, unknown>, neoServic
     const toTimestampMs = input.toTimestampMs !== undefined ? validateInteger(input.toTimestampMs as string | number) : undefined;
 
     if (fromTimestampMs !== undefined && toTimestampMs !== undefined && fromTimestampMs > toTimestampMs) {
-      throw new McpError(ErrorCode.InvalidParams, 'fromTimestampMs must be less than or equal to toTimestampMs.');
+      throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'fromTimestampMs must be less than or equal to toTimestampMs.');
     }
 
     const result = await neoService.getNep17Transfers(input.address as string, {
@@ -210,7 +210,7 @@ async function handleGetNep11Transfers(input: Record<string, unknown>, neoServic
     const toTimestampMs = input.toTimestampMs !== undefined ? validateInteger(input.toTimestampMs as string | number) : undefined;
 
     if (fromTimestampMs !== undefined && toTimestampMs !== undefined && fromTimestampMs > toTimestampMs) {
-      throw new McpError(ErrorCode.InvalidParams, 'fromTimestampMs must be less than or equal to toTimestampMs.');
+      throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'fromTimestampMs must be less than or equal to toTimestampMs.');
     }
 
     const result = await neoService.getNep11Transfers(input.address as string, {
@@ -239,8 +239,8 @@ function resolveContractReference(input: Record<string, unknown>): string {
     return reference.trim();
   }
 
-  throw new McpError(
-    ErrorCode.InvalidParams,
+  throw new ProtocolError(
+    ProtocolErrorCode.InvalidParams,
     'Either scriptHash or a contract reference must be provided.'
   );
 }
@@ -281,7 +281,7 @@ async function handleGetWallet(input: Record<string, unknown>, walletService?: W
   try {
     validateAddress(input.address as string);
     if (!walletService) {
-      throw new McpError(ErrorCode.InternalError, 'Wallet service is not available.');
+      throw new ProtocolError(ProtocolErrorCode.InternalError, 'Wallet service is not available.');
     }
     const wallet = await walletService.getWallet(input.address as string);
     return createSuccessResponse(sanitizeWalletMetadata(wallet));
@@ -305,7 +305,7 @@ async function handleEstimateTransferFees(input: Record<string, unknown>, neoSer
 async function handleEstimateInvokeFees(input: Record<string, unknown>, neoService: NeoService, contractService: ContractService): Promise<unknown> {
   try {
     if (!input.signerAddress) {
-      throw new McpError(ErrorCode.InvalidParams, 'Signer address is required to estimate invocation fees.');
+      throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'Signer address is required to estimate invocation fees.');
     }
 
     const namedContractReference = !input?.scriptHash && (() => {
@@ -811,15 +811,15 @@ async function dispatchAnalyticalTool(name: string, input: Record<string, unknow
     case 'x_graphql':
       return await handleXGraphql(input) as Record<string, unknown>;
     default:
-      throw new McpError(ErrorCode.InvalidParams, `Tool ${name} not found.`);
+      throw new ProtocolError(ProtocolErrorCode.InvalidParams, `Tool ${name} not found.`);
   }
 }
 
 export async function callTool(name: string, input: Record<string, unknown>, neoServices: Map<NeoNetwork, NeoService>, contractServices: Map<NeoNetwork, ContractService>, walletService?: WalletService): Promise<Record<string, unknown>> {
-  chargeSessionRateLimit(neoServices);
+  chargeClientRateLimit(neoServices);
   if (name === 'create_wallet' || name === 'import_wallet') {
-    return handleError(new McpError(
-      ErrorCode.InvalidParams,
+    return handleError(new ProtocolError(
+      ProtocolErrorCode.InvalidParams,
       `${name} is not available through MCP. Provision signing wallets outside the model-facing channel.`
     ));
   }
@@ -836,8 +836,8 @@ export async function callTool(name: string, input: Record<string, unknown>, neo
     'confirm',
   ].some((field) => Object.prototype.hasOwnProperty.call(input, field));
   if (legacyWriteRequested || secretBearingInvocation) {
-    return handleError(new McpError(
-      ErrorCode.InvalidParams,
+    return handleError(new ProtocolError(
+      ProtocolErrorCode.InvalidParams,
       'State-changing calls must use the registered idempotent write tools with a server-held signer and elicited approval.'
     ));
   }
@@ -850,7 +850,7 @@ export async function callTool(name: string, input: Record<string, unknown>, neo
   }
 
   if (!input || typeof input !== 'object') {
-    throw new McpError(ErrorCode.InvalidParams, 'Invalid input parameters. Expected an object.');
+    throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'Invalid input parameters. Expected an object.');
   }
 
   // Analytical indexer (neo3fura) and Neo X (Blockscout) reads go straight to
@@ -900,7 +900,7 @@ export async function callTool(name: string, input: Record<string, unknown>, neo
     }
 
     if (!neoService || !contractService) {
-      throw new McpError(ErrorCode.InvalidParams, 'Requested network is not enabled or service unavailable.');
+      throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'Requested network is not enabled or service unavailable.');
     }
   } catch (error) {
     return handleError(error);
@@ -956,7 +956,7 @@ export async function callTool(name: string, input: Record<string, unknown>, neo
       case 'get_contract_status':
         return await handleGetContractStatus(input, contractService) as Record<string, unknown>;
       default:
-        throw new McpError(ErrorCode.InvalidParams, `Tool ${name} not found or requires network parameter.`);
+        throw new ProtocolError(ProtocolErrorCode.InvalidParams, `Tool ${name} not found or requires network parameter.`);
     }
   } catch (error) {
     return handleError(error);

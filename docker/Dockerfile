@@ -27,7 +27,7 @@ COPY --from=builder /app/dist ./dist
 RUN mkdir -p /app/wallets && chown node:node /app /app/wallets
 USER node
 
-# 3000 serves the REST API (default CMD). 3001 serves the MCP Streamable HTTP
+# 3000 serves the REST API (default CMD). 3001 serves MCP 2026-07-28 HTTP
 # transport when the container is started with `node dist/mcp-http.js`.
 EXPOSE 3000 3001
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \

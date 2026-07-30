@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
+import { Client } from "@modelcontextprotocol/client";
 import path from 'path';
 import {
   callToolWithRpcRetry,
@@ -193,13 +193,13 @@ describe('Comprehensive MCP Server Tests', () => {
       // the tool is unregistered and its dispatch path rejects. What must hold is that the
       // rejection leaks nothing — no password echo, no WIF, no freshly generated address.
       const password = 'test-password-2024';
-      const response = await client.callTool({
+      const error = await client.callTool({
         name: 'create_wallet',
         arguments: { password }
-      });
+      }).catch((caught: unknown) => caught as { code?: number; message?: string });
 
-      expect(response.isError).toBe(true);
-      const text = String(response.content[0].text);
+      expect(error).toMatchObject({ code: -32602 });
+      const text = String(error.message);
       expect(text).not.toContain(password);
       expect(text).not.toMatch(/\b[5KL][1-9A-HJ-NP-Za-km-z]{50,51}\b/);
       expect(text).not.toMatch(/\bN[A-Za-z0-9]{33}\b/);

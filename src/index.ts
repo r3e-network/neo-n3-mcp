@@ -1,7 +1,15 @@
 #!/usr/bin/env node
 
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { serveStdio, StdioServerHandle } from '@modelcontextprotocol/server/stdio';
+import {
+  acceptedContent,
+  createRequestStateCodec,
+  inputRequired,
+  inputResponse,
+  McpServer,
+  RequestStateCodec,
+  ServerContext,
+} from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import { NeoService, NeoNetwork } from './services/neo-service';
 import { WalletService } from './services/wallet-service';
@@ -21,9 +29,9 @@ import { config, NetworkMode, validateConfig } from './config';
 import { SERVER_NAME, SERVER_VERSION } from './version';
 import { logger } from './utils/logger';
 import {
-  chargeSessionRateLimit,
-  bindRateLimitSessionId as bindScopeRateLimitSessionId,
-} from './utils/session-rate-limit';
+  bindRateLimitClientId as bindScopeRateLimitClientId,
+  chargeClientRateLimit,
+} from './utils/client-rate-limit';
 import { SignerProvider } from './services/signer-provider';
 import { WriteCoordinator, WriteOperationName } from './services/write-coordinator';
 import { WriteOperationService } from './services/write-operation-service';
@@ -35,6 +43,20 @@ const N3_REST_ENDPOINT_SIGNATURES: string = renderN3EndpointSignatures();
 const X_ENDPOINT_NAMES: readonly string[] = [...X_ENDPOINT_CATALOG.keys()];
 /** Vetted indexer collection keys advertised in the query_explorer_find tool description. */
 const INDEXER_COLLECTION_NAMES: readonly string[] = [...COLLECTION_CATALOG.keys()];
+const WRITE_APPROVAL_INPUT_KEY = 'writeApproval';
+const WRITE_APPROVAL_TTL_SECONDS = 10 * 60;
+const WRITE_APPROVAL_SCHEMA = z.object({
+  fingerprint: z.string().regex(/^[0-9a-f]{64}$/),
+  approve: z.boolean(),
+}).strict();
+
+interface WriteApprovalState {
+  version: 1;
+  intentId: string;
+  fingerprint: string;
+  operation: WriteOperationName;
+  network: NeoNetwork;
+}
 
 /**
  * Catalog detail appended to a public tool's registry description, keyed by tool
@@ -71,7 +93,9 @@ export class NeoMcpServer {
   private contractServices: Map<NeoNetwork, ContractService>;
   private walletService: WalletService;
   private writeCoordinator?: WriteCoordinator;
+  private writeRequestStateCodec?: RequestStateCodec<WriteApprovalState>;
   private servicesInitialized = false;
+  private stdioHandle?: StdioServerHandle;
 
   private createTextResponse(payload: unknown) {
     return {
@@ -118,23 +142,45 @@ export class NeoMcpServer {
 
   constructor() {
     logger.info('Initializing Neo MCP Server (Modern API)...');
-    
+
+    if (config.writes.enabled) {
+      this.writeRequestStateCodec = createRequestStateCodec<WriteApprovalState>({
+        key: config.writes.requestStateKey as string,
+        ttlSeconds: WRITE_APPROVAL_TTL_SECONDS,
+        bind: (context) => context.mcpReq.method,
+      });
+    }
+
     // Create McpServer with high-level API
     this.server = new McpServer({
       name: SERVER_NAME,
       version: SERVER_VERSION,
+      description: 'Read, simulate, and construct unsigned Neo N3 and Neo X operations.',
+    }, {
+      capabilities: {
+        tools: {},
+        resources: {},
+      },
+      cacheHints: {
+        'server/discover': { ttlMs: 300_000, cacheScope: 'public' },
+        'tools/list': { ttlMs: 300_000, cacheScope: 'public' },
+        'resources/list': { ttlMs: 300_000, cacheScope: 'public' },
+        'resources/templates/list': { ttlMs: 300_000, cacheScope: 'public' },
+        'resources/read': { ttlMs: 1_000, cacheScope: 'public' },
+      },
+      inputRequired: {
+        maxRounds: 2,
+        legacyShim: false,
+      },
+      requestState: this.writeRequestStateCodec
+        ? { verify: this.writeRequestStateCodec.verify }
+        : undefined,
     });
 
     // Initialize service maps
     this.neoServices = new Map();
     this.contractServices = new Map();
     this.walletService = new WalletService(config.wallets.directory);
-    if (config.writes.enabled) {
-      this.writeCoordinator = new WriteCoordinator(
-        new SignerProvider(config.writes.signerWifFile as string),
-        new WriteOperationService(config.writes.stateDirectory),
-      );
-    }
 
     // Setup tools and resources using modern API
     this.setupTools();
@@ -262,42 +308,54 @@ export class NeoMcpServer {
    */
   private setupTools() {
     logger.info('Setting up tools with modern API...');
-    type ToolHandler = (args: Record<string, unknown>) => Promise<unknown>;
+    type ToolHandler = (
+      args: Record<string, unknown>,
+      context: ServerContext,
+    ) => Promise<unknown>;
     type ToolRegistrar = (
       name: string,
       description: string,
       inputSchema: Record<string, z.ZodTypeAny>,
       handler: ToolHandler,
     ) => void;
-    type WriteToolRegistrar = (
-      name: string,
-      description: string,
-      inputSchema: Record<string, z.ZodTypeAny>,
-      annotations: {
-        readOnlyHint: false;
-        destructiveHint: true;
-        idempotentHint: true;
-      },
-      handler: ToolHandler,
-    ) => void;
 
-    const sdkRegisterTool = this.server.tool.bind(this.server) as ToolRegistrar;
-    const sdkRegisterWriteTool = this.server.tool.bind(this.server) as unknown as WriteToolRegistrar;
     // Every read tool delegates to `callTool`, which charges this server
-    // instance's per-session bucket (its `neoServices` Map identity) on entry —
-    // the same bucket the resource reads use, so all of a session's charges
-    // share one bucket and distinct HTTP sessions get independent ones.
+    // instance's per-client bucket (its `neoServices` Map identity) on entry —
+    // the same bucket the resource reads use, so all calls from one stdio
+    // client or one derived HTTP client identity share a bucket.
     // Charging again in the registration wrapper would double-charge each read.
-    const registerDelegatedTool: ToolRegistrar = sdkRegisterTool;
+    const registerDelegatedTool: ToolRegistrar = (name, description, inputSchema, handler) => {
+      this.server.registerTool(
+        name,
+        {
+          description,
+          inputSchema: z.object(inputSchema),
+          annotations: {
+            readOnlyHint: true,
+            destructiveHint: false,
+            idempotentHint: true,
+          },
+        },
+        async (args, context) => handler(args as Record<string, unknown>, context) as never,
+      );
+    };
     const registerWriteTool: ToolRegistrar = (name, description, inputSchema, handler) => {
-      sdkRegisterWriteTool(name, description, inputSchema, {
-        readOnlyHint: false,
-        destructiveHint: true,
-        idempotentHint: true,
-      }, async (args) => {
-        chargeSessionRateLimit(this.neoServices);
-        return handler(args);
-      });
+      this.server.registerTool(
+        name,
+        {
+          description,
+          inputSchema: z.object(inputSchema),
+          annotations: {
+            readOnlyHint: false,
+            destructiveHint: true,
+            idempotentHint: true,
+          },
+        },
+        async (args, context) => {
+          chargeClientRateLimit(this.neoServices);
+          return handler(args as Record<string, unknown>, context) as never;
+        },
+      );
     };
 
     // ---------------------------------------------------------------------
@@ -346,11 +404,11 @@ export class NeoMcpServer {
           asset: z.string().describe('NEO, GAS, or an NEP-17 script hash'),
           amount: z.string().describe('Decimal token amount'),
         },
-        async (args) => await this.handleMcpWrite('transfer_assets', args, {
+        async (args, context) => await this.handleMcpWrite('transfer_assets', args, {
           toAddress: args.toAddress,
           asset: args.asset,
           amount: args.amount,
-        }),
+        }, context),
       );
 
       registerWriteTool(
@@ -363,11 +421,11 @@ export class NeoMcpServer {
           operation: z.string().min(1).describe('Contract method name'),
           args: z.array(z.unknown()).optional().describe('Contract method arguments'),
         },
-        async (args) => await this.handleMcpWrite('invoke_contract_write', args, {
+        async (args, context) => await this.handleMcpWrite('invoke_contract_write', args, {
           scriptHash: args.scriptHash,
           operation: args.operation,
           args: args.args ?? [],
-        }),
+        }, context),
       );
 
       registerWriteTool(
@@ -377,7 +435,7 @@ export class NeoMcpServer {
           idempotencyKey: z.string().min(8).max(128).describe('Stable unique key reused only for this exact GAS claim'),
           network: z.enum(['mainnet', 'testnet']).describe('Explicit transaction network'),
         },
-        async (args) => await this.handleMcpWrite('claim_gas', args, {}),
+        async (args, context) => await this.handleMcpWrite('claim_gas', args, {}, context),
       );
 
       registerWriteTool(
@@ -390,12 +448,12 @@ export class NeoMcpServer {
             encoding: z.enum(['hex', 'base64']),
             data: z.string().min(1),
           }).describe('Complete serialized NEF artifact and encoding'),
-          manifest: z.record(z.unknown()).describe('Neo N3 contract manifest'),
+          manifest: z.record(z.string(), z.unknown()).describe('Neo N3 contract manifest'),
         },
-        async (args) => await this.handleMcpWrite('deploy_contract', args, {
+        async (args, context) => await this.handleMcpWrite('deploy_contract', args, {
           nef: args.nef,
           manifest: args.manifest,
-        }),
+        }, context),
       );
     }
 
@@ -405,15 +463,13 @@ export class NeoMcpServer {
     operation: WriteOperationName,
     args: Record<string, unknown>,
     payload: Record<string, unknown>,
+    context: ServerContext,
   ) {
     try {
-      const coordinator = this.writeCoordinator;
-      if (!coordinator) {
+      const coordinator = this.getWriteCoordinator();
+      const requestStateCodec = this.writeRequestStateCodec;
+      if (!coordinator || !requestStateCodec) {
         throw new Error('State-changing tools are disabled');
-      }
-      const capabilities = this.server.server.getClientCapabilities();
-      if (!capabilities?.elicitation?.form) {
-        throw new Error('This write requires an MCP client with form elicitation support');
       }
 
       const network = validateNetwork(args.network as string);
@@ -430,35 +486,96 @@ export class NeoMcpServer {
         network,
         payload,
       });
-      const canonicalPayload = JSON.stringify(record.payload, null, 2);
-      const elicitation = await this.server.server.elicitInput({
-        mode: 'form',
-        message: `Approve ${operation} on ${network} from ${record.signerAddress}.\n\n`
-          + `Payload:\n${canonicalPayload}\n\nFingerprint: ${record.fingerprint}`,
-        requestedSchema: {
-          type: 'object',
-          properties: {
-            fingerprint: {
-              type: 'string',
-              title: 'Intent fingerprint',
-              description: record.fingerprint,
-              minLength: 64,
-              maxLength: 64,
-            },
-            approve: {
-              type: 'boolean',
-              title: 'Approve transaction',
-              default: false,
-            },
-          },
-          required: ['fingerprint', 'approve'],
-        },
-      });
 
-      const approved = elicitation.action === 'accept'
-        && elicitation.content?.approve === true
-        && elicitation.content.fingerprint === record.fingerprint;
-      if (!approved) {
+      const requestState = context.mcpReq.requestState<WriteApprovalState>();
+      const approvalResponse = inputResponse(
+        context.mcpReq.inputResponses,
+        WRITE_APPROVAL_INPUT_KEY,
+      );
+      if (!requestState) {
+        if (approvalResponse.kind !== 'missing') {
+          throw new Error('Write approval response requires signed requestState');
+        }
+        return inputRequired({
+          inputRequests: {
+            [WRITE_APPROVAL_INPUT_KEY]: inputRequired.elicit({
+              message: this.formatWriteApprovalMessage(operation, network, record),
+              requestedSchema: {
+                type: 'object',
+                properties: {
+                  fingerprint: {
+                    type: 'string',
+                    title: 'Intent fingerprint',
+                    description: record.fingerprint,
+                    minLength: 64,
+                    maxLength: 64,
+                  },
+                  approve: {
+                    type: 'boolean',
+                    title: 'Approve transaction',
+                    default: false,
+                  },
+                },
+                required: ['fingerprint', 'approve'],
+                additionalProperties: false,
+              },
+            }),
+          },
+          requestState: await requestStateCodec.mint({
+            version: 1,
+            intentId: record.intentId,
+            fingerprint: record.fingerprint,
+            operation,
+            network,
+          }, context),
+        });
+      }
+
+      this.assertWriteApprovalState(requestState, record.intentId, record.fingerprint, operation, network);
+      if (approvalResponse.kind === 'missing') {
+        return inputRequired({
+          inputRequests: {
+            [WRITE_APPROVAL_INPUT_KEY]: inputRequired.elicit({
+              message: this.formatWriteApprovalMessage(operation, network, record),
+              requestedSchema: {
+                type: 'object',
+                properties: {
+                  fingerprint: {
+                    type: 'string',
+                    title: 'Intent fingerprint',
+                    description: record.fingerprint,
+                    minLength: 64,
+                    maxLength: 64,
+                  },
+                  approve: {
+                    type: 'boolean',
+                    title: 'Approve transaction',
+                    default: false,
+                  },
+                },
+                required: ['fingerprint', 'approve'],
+                additionalProperties: false,
+              },
+            }),
+          },
+          requestState: await requestStateCodec.mint(requestState, context),
+        });
+      }
+      if (approvalResponse.kind !== 'elicit' || approvalResponse.action !== 'accept') {
+        if (record.state === 'awaiting_approval') coordinator.decline(record.intentId);
+        throw new Error('Write intent was declined or cancelled');
+      }
+
+      const approval = acceptedContent(
+        context.mcpReq.inputResponses,
+        WRITE_APPROVAL_INPUT_KEY,
+        WRITE_APPROVAL_SCHEMA,
+      );
+      if (
+        !approval
+        || approval.approve !== true
+        || approval.fingerprint !== record.fingerprint
+      ) {
         if (record.state === 'awaiting_approval') coordinator.decline(record.intentId);
         throw new Error('Write intent was not approved with its exact fingerprint');
       }
@@ -469,6 +586,58 @@ export class NeoMcpServer {
       );
     } catch (error) {
       return this.createErrorResponse(error);
+    }
+  }
+
+  /**
+   * Protocol negotiation may launch a disposable stdio discovery process.
+   * Acquire the durable single-writer lock only when the connected client
+   * actually calls a write tool, so the probe never competes with the serving
+   * process for the same journal.
+   */
+  private getWriteCoordinator(): WriteCoordinator | undefined {
+    if (!config.writes.enabled) {
+      return undefined;
+    }
+    if (!this.writeCoordinator) {
+      this.writeCoordinator = new WriteCoordinator(
+        new SignerProvider(config.writes.signerWifFile as string),
+        new WriteOperationService(config.writes.stateDirectory),
+      );
+    }
+    return this.writeCoordinator;
+  }
+
+  private formatWriteApprovalMessage(
+    operation: WriteOperationName,
+    network: NeoNetwork,
+    record: {
+      signerAddress: string;
+      payload: Record<string, unknown>;
+      fingerprint: string;
+    },
+  ): string {
+    return `Approve ${operation} on ${network} from ${record.signerAddress}.\n\n`
+      + `Payload:\n${JSON.stringify(record.payload, null, 2)}\n\n`
+      + `Fingerprint: ${record.fingerprint}`;
+  }
+
+  private assertWriteApprovalState(
+    state: WriteApprovalState,
+    intentId: string,
+    fingerprint: string,
+    operation: WriteOperationName,
+    network: NeoNetwork,
+  ): void {
+    if (
+      !state
+      || state.version !== 1
+      || state.intentId !== intentId
+      || state.fingerprint !== fingerprint
+      || state.operation !== operation
+      || state.network !== network
+    ) {
+      throw new Error('Write approval state does not match this exact intent');
     }
   }
 
@@ -486,15 +655,17 @@ export class NeoMcpServer {
   }
 
   /**
-   * Bind the transport's MCP session id to this server's rate-limit bucket so
-   * every per-session charge (registration-inlined tools, delegated tools, and
-   * resource reads) is billed under a bucket named by the session id. The
-   * Streamable HTTP transport (src/mcp-http-server.ts) calls this once the
-   * session id is known; the stdio entrypoint never calls it and keeps its
-   * single implicit bucket.
+   * Bind this server instance to a stable client rate-limit key. The stateless
+   * HTTP entrypoint derives the key at the trusted proxy boundary; stdio keeps
+   * one implicit bucket for its single client.
    */
-  bindRateLimitSessionId(sessionId: string): void {
-    bindScopeRateLimitSessionId(this.neoServices, sessionId);
+  bindRateLimitClientId(clientId: string): void {
+    bindScopeRateLimitClientId(this.neoServices, clientId);
+  }
+
+  /** Return the protocol server used by the HTTP and stdio serving entries. */
+  getProtocolServer(): McpServer {
+    return this.server;
   }
 
   /**
@@ -502,12 +673,12 @@ export class NeoMcpServer {
    */
   async run() {
     try {
-      logger.info('Starting Neo MCP Server...');
-      
-      const transport = new StdioServerTransport();
-      await this.server.connect(transport);
-      
-      logger.info('Neo MCP Server started and connected successfully');
+      logger.info('Starting Neo MCP Server with MCP 2026-07-28 over stdio...');
+      this.stdioHandle = serveStdio(() => this.server, {
+        legacy: 'reject',
+        onerror: (error) => logger.error('MCP stdio protocol error', { error: error.message }),
+      });
+      logger.info('Neo MCP Server started in modern-only mode');
     } catch (error) {
       logger.error('Failed to start Neo MCP Server', {
         error: error instanceof Error ? error.message : String(error)
@@ -518,7 +689,12 @@ export class NeoMcpServer {
 
   async close(): Promise<void> {
     try {
-      await this.server.close();
+      if (this.stdioHandle) {
+        await this.stdioHandle.close();
+        this.stdioHandle = undefined;
+      } else {
+        await this.server.close();
+      }
     } finally {
       logger.close();
     }

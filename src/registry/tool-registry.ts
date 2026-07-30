@@ -880,7 +880,7 @@ const SPECS: PublicToolSpec[] = [
     inputSchema: {
       ...chainField(CHAINS),
       endpoint: z.string().describe('One of the vetted catalog endpoints for the selected chain'),
-      params: z.record(z.unknown()).optional().describe(
+      params: z.record(z.string(), z.unknown()).optional().describe(
         'Typed params for the chosen endpoint. Only that endpoint\'s declared keys are accepted; '
         + 'Neo N3 pagination uses `offset` here (not `skip`).',
       ),
@@ -909,10 +909,10 @@ const SPECS: PublicToolSpec[] = [
       + 'allowlisted collection. Gated off by default (N3INDEX_FIND_ENABLED); mainnet only.',
     inputSchema: {
       collection: z.string().describe('One of the vetted indexer collections'),
-      filter: z.record(z.unknown()).optional().describe(
+      filter: z.record(z.string(), z.unknown()).optional().describe(
         'Small Mongo-shaped filter over the collection\'s indexed fields only',
       ),
-      sort: z.record(z.unknown()).optional().describe(
+      sort: z.record(z.string(), z.unknown()).optional().describe(
         'Optional sort spec over sortable fields: { field: 1 | -1 | "asc" | "desc" }',
       ),
       limit: z.number().int().min(1).max(100).optional().describe('Max rows (default 20, capped)'),
@@ -934,7 +934,7 @@ const SPECS: PublicToolSpec[] = [
       + 'rejected. Mainnet only.',
     inputSchema: {
       query: z.string().describe('A read-only GraphQL query document'),
-      variables: z.record(z.unknown()).optional().describe(
+      variables: z.record(z.string(), z.unknown()).optional().describe(
         'Optional GraphQL variables as a plain, bounded JSON object',
       ),
     },

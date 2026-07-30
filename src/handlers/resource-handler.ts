@@ -1,20 +1,20 @@
-import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer, ResourceTemplate } from '@modelcontextprotocol/server';
 import { NeoService } from '../services/neo-service';
 import { NetworkMode } from '../config';
 import { logger } from '../utils/logger';
-import { chargeSessionRateLimit } from '../utils/session-rate-limit';
+import { chargeClientRateLimit } from '../utils/client-rate-limit';
 import { validateInteger } from '../utils/validation';
 
-type ResourceServer = Pick<McpServer, 'resource'>;
+type ResourceServer = Pick<McpServer, 'registerResource'>;
 type ResourceNeoService = Pick<NeoService, 'getBlockchainInfo' | 'getBlock'>;
 
 export interface ResourceHandlerDependencies {
   networkMode: NetworkMode;
   getNeoService(networkParam?: string): Promise<ResourceNeoService>;
   /**
-   * Per-session scope object (the connection's `neoServices` Map) that keys the
-   * rate-limit bucket, so a resource read shares the same per-session bucket as
-   * that session's tool calls instead of a process-wide one. Omitted only by
+   * Per-client scope object (the server instance's `neoServices` Map) that keys
+   * the rate-limit bucket, so resource reads share the same client bucket as
+   * tool calls instead of a process-wide one. Omitted only by
    * isolation tests, which then share the fallback bucket.
    */
   rateLimitScope?: object;
@@ -38,11 +38,11 @@ export function setupResourceHandlers(
 ) {
   logger.debug('Setting up resource handlers...');
 
-  // Charge this session's bucket (keyed by `rateLimitScope`), not a shared
-  // process-wide one, so one session's resource reads cannot starve another's.
-  const limitResourceRequest = () => chargeSessionRateLimit(rateLimitScope);
+  // Charge this client's bucket (keyed by `rateLimitScope`), not a shared
+  // process-wide one, so one client's resource reads cannot starve another's.
+  const limitResourceRequest = () => chargeClientRateLimit(rateLimitScope);
 
-  server.resource(
+  server.registerResource(
     'neo-network-status',
     'neo://network/status',
     { description: 'Network status for the default configured Neo network.' },
@@ -55,7 +55,7 @@ export function setupResourceHandlers(
   );
 
   if (networkMode === NetworkMode.MAINNET_ONLY || networkMode === NetworkMode.BOTH) {
-    server.resource(
+    server.registerResource(
       'neo-mainnet-status',
       'neo://mainnet/status',
       { description: 'Network status snapshot for Neo mainnet.' },
@@ -69,7 +69,7 @@ export function setupResourceHandlers(
   }
 
   if (networkMode === NetworkMode.TESTNET_ONLY || networkMode === NetworkMode.BOTH) {
-    server.resource(
+    server.registerResource(
       'neo-testnet-status',
       'neo://testnet/status',
       { description: 'Network status snapshot for Neo testnet.' },
@@ -82,7 +82,7 @@ export function setupResourceHandlers(
     );
   }
 
-  server.resource(
+  server.registerResource(
     'neo-block',
     new ResourceTemplate('neo://block/{height}', { list: undefined }),
     { description: 'Read block details by height on the default configured network.' },

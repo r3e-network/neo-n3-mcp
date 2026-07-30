@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
+import { Client } from "@modelcontextprotocol/client";
 import path from 'path';
 import { callToolWithRpcRetry, startMcpTestClient, stopMcpTestClient } from './mcp-test-utils';
 
@@ -8,7 +8,7 @@ import { callToolWithRpcRetry, startMcpTestClient, stopMcpTestClient } from './m
  * Latest MCP Protocol Features Test Suite
  * 
  * Tests the Neo MCP server's support for the latest protocol features
- * introduced in MCP protocol version 2025-03-26 and SDK version 1.12.0+
+ * available in MCP protocol version 2026-07-28 and SDK v2.
  */
 
 describe('Latest MCP Protocol Features', () => {
@@ -32,7 +32,7 @@ describe('Latest MCP Protocol Features', () => {
   });
 
   async function startServer() {
-    const session = await startMcpTestClient({
+    const fixture = await startMcpTestClient({
       serverPath,
       env: { ...process.env, NODE_ENV: 'test' },
       clientInfo: { name: 'Latest Features Test Client', version: '1.0.0' },
@@ -48,8 +48,8 @@ describe('Latest MCP Protocol Features', () => {
       }
     });
 
-    client = session.client;
-    transport = session.transport;
+    client = fixture.client;
+    transport = fixture.transport;
   }
 
   async function stopServer() {
@@ -58,7 +58,7 @@ describe('Latest MCP Protocol Features', () => {
     transport = null;
   }
 
-  describe('🎯 Tool Annotations & Metadata (2025-03-26)', () => {
+  describe('Tool Annotations and Metadata (2026-07-28)', () => {
     test('should support tool annotations for better UX', async () => {
       const response = await client.listTools();
       
@@ -373,13 +373,13 @@ describe('Latest MCP Protocol Features', () => {
       // crosses the model-facing channel, so the tool is unregistered and undispatchable. What
       // this test guards is that the refusal carries no key material of any kind.
       const strongPassword = 'SecurePassword123!@#';
-      const response = await client.callTool({
+      const error = await client.callTool({
         name: 'create_wallet',
         arguments: { password: strongPassword }
-      });
+      }).catch((caught: unknown) => caught as { code?: number; message?: string });
 
-      expect(response.isError).toBe(true);
-      const text = String(response.content[0].text);
+      expect(error).toMatchObject({ code: -32602 });
+      const text = String(error.message);
       expect(text).not.toContain(strongPassword);
       // No WIF, and no address that would imply a key was generated server-side.
       expect(text).not.toMatch(/\b[5KL][1-9A-HJ-NP-Za-km-z]{50,51}\b/);

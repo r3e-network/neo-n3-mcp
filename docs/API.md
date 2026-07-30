@@ -1,6 +1,6 @@
 # Neo MCP API Reference
 
-This document describes the MCP tool surface and HTTP routes exposed by `@r3e/neo-mcp` 3.x.
+This document describes the MCP tool surface and HTTP routes exposed by `@r3e/neo-mcp` 4.x.
 
 ## Chain and Network Parameters
 
@@ -15,13 +15,13 @@ The registry rewrites `network` per route, so callers never spell out chain-qual
 
 ## MCP Surface
 
-The default server exposes 32 read-only tools:
+The default server exposes 33 read-only tools:
 
 - Server: `get_network_mode`, `get_wallet` (no `chain` parameter)
 - Chain, both chains: `get_chain_info`, `get_block_height`, `get_block`, `get_transaction`, `get_transaction_status`, `get_balance`
 - Contracts, both chains: `call_contract`, `get_contract_info`, `simulate_call`
 - Construct, both chains: `build_transfer`, `build_contract_call`
-- Explorer, both chains: `explorer_get_address`, `explorer_list_address_transactions`, `explorer_list_address_transfers`, `explorer_list_token_holders`, `explorer_search`, `query_explorer`
+- Explorer, both chains: `explorer_get_address`, `analyze_address`, `explorer_list_address_transactions`, `explorer_list_address_transfers`, `explorer_list_token_holders`, `explorer_search`, `query_explorer`
 - Neo N3 only: `get_application_log`, `wait_for_transaction`, `get_unclaimed_gas`, `get_nep17_transfers`, `get_nep11_balances`, `get_nep11_transfers`, `get_contract_status`, `list_famous_contracts`, `estimate_transfer_fees`, `estimate_invoke_fees`, `explorer_list_address_assets`, `query_explorer_find`
 - Neo X only: `query_explorer_graphql`
 
@@ -41,10 +41,13 @@ Each write tool requires:
 - `idempotencyKey`: 8-128 letters, numbers, periods, underscores, colons, or hyphens
 - `network`: explicitly `mainnet` or `testnet`
 - operation-specific public inputs
-- an MCP client that declares form elicitation support
+- an MCP 2026-07-28 client that supports `input_required` multi-round trips
 - user acceptance with the exact returned 64-hex intent fingerprint
 
 Write tools are marked destructive and idempotent. They never accept WIFs, private keys, passwords, or `confirm` fields. The signer is loaded from `NEO_SIGNER_WIF_FILE`.
+The server signs the expiring `requestState` with
+`NEO_MCP_REQUEST_STATE_KEY` and verifies it when the approved
+`inputResponse` re-enters the same tool.
 
 ### Write Examples
 

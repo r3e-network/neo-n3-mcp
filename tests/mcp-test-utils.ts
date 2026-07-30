@@ -3,8 +3,8 @@ import { once } from 'events';
 import { mkdtempSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
+import { Client } from '@modelcontextprotocol/client';
 
 interface StartMcpTestClientParams {
   serverPath: string;
@@ -18,6 +18,7 @@ interface StartMcpTestClientParams {
 
 const ownedWalletDirectories = new WeakMap<StdioClientTransport, string>();
 const MCP_TEST_CONNECT_TIMEOUT_MS = 90_000;
+const MCP_PROTOCOL_VERSION = '2026-07-28';
 
 /**
  * Signatures of a fault in the RPC transport rather than in the thing under test. `fetch failed`
@@ -119,7 +120,10 @@ export async function startMcpTestClient({
 }: StartMcpTestClientParams): Promise<{ client: Client; transport: StdioClientTransport }> {
   const ownsWalletDirectory = !env.WALLETS_DIR;
   const walletsDir = env.WALLETS_DIR || mkdtempSync(join(tmpdir(), 'neo-mcp-test-wallets-'));
-  const client = new Client(clientInfo, { capabilities });
+  const client = new Client(clientInfo, {
+    capabilities,
+    versionNegotiation: { mode: { pin: MCP_PROTOCOL_VERSION } },
+  });
   const transport = new StdioClientTransport({
     command: 'node',
     args: [serverPath],

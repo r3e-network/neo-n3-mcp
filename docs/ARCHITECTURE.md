@@ -145,7 +145,7 @@ All errors derive from `NeoMcpError` in `src/utils/errors.ts`, which carries a m
 - **ContractError**: A contract call or script execution failed.
 - **TransactionError**: A transaction could not be built, signed, or submitted.
 - **NetworkError**: An RPC endpoint or explorer API was unreachable or returned a transport failure.
-- **RateLimitError**: The session's request budget was exceeded.
+- **RateLimitError**: The client's request budget was exceeded.
 - **WalletError**: The configured server signer is missing or unusable.
 - **InternalError**: An unexpected server-side failure.
 
@@ -173,7 +173,9 @@ The Neo MCP implements several security measures to protect sensitive informatio
 
 - Every state-changing call requires an explicit network and an `idempotencyKey`, so a retry can never produce a second transaction.
 - The server computes a fingerprint over the canonical intent and only proceeds once the caller approves that exact fingerprint.
-- Over MCP, approval uses form elicitation; over REST, a separate approval endpoint with its own API key.
+- Over MCP, approval uses an `input_required` multi-round trip with signed,
+  expiring request state; over REST, a separate approval endpoint uses its own
+  API key.
 
 ### Input Validation
 
@@ -187,7 +189,9 @@ The Neo MCP implements several security measures to protect sensitive informatio
 
 - The HTTP Server sets appropriate CORS headers to prevent cross-origin attacks.
 - HTTP binds to `127.0.0.1` by default and is intended to sit behind a TLS-terminating reverse proxy.
-- Requests are rate limited per MCP session, so one session cannot starve another sharing the process.
+- HTTP requests are rate limited by a privacy-preserving client key derived at
+  the trusted proxy boundary; stateless per-request server instances for the
+  same client share one process-wide bucket.
 
 ## Extensibility
 

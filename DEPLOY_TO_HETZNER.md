@@ -51,8 +51,11 @@ MCP_HTTP_BEARER=<secret>
 
 变量名以 `resolveMcpHttpOptionsFromEnv()`（`src/mcp-http-server.ts`）为准，不是 `MCP_BEARER_SECRET`
 之类的别名。其余可选项都有默认值，未设置时按默认走：`MCP_HTTP_PATH`（`/mcp`）、
-`MCP_HTTP_ALLOWED_ORIGINS`、`MCP_HTTP_ALLOWED_HOSTS`、`MCP_HTTP_MAX_SESSIONS`（128）、
-`MCP_HTTP_SESSION_TTL_MS`（1800000）、`LOG_LEVEL`、`NEO_NETWORK`、
+`MCP_HTTP_ALLOWED_ORIGINS`、`MCP_HTTP_ALLOWED_HOSTS`、
+`MCP_HTTP_MAX_CONCURRENT_REQUESTS`（128）、`MCP_HTTP_MAX_SUBSCRIPTIONS`（128）、
+`MCP_HTTP_MAX_BODY_BYTES`（4194304）、`MCP_HTTP_BODY_TIMEOUT_MS`（30000）、
+`MCP_HTTP_HEADERS_TIMEOUT_MS`（30000）、`MCP_HTTP_REQUEST_TIMEOUT_MS`（300000）、
+`MCP_HTTP_KEEP_ALIVE_MS`（15000）、`LOG_LEVEL`、`NEO_NETWORK`、
 `MAX_REQUESTS_PER_MINUTE`、`MAX_REQUESTS_PER_HOUR`、`HTTP_MAX_BODY_BYTES`。
 
 `MCP_HTTP_HOST` 必须保持 `127.0.0.1`：TLS 与鉴权都在 nginx 之外没有第二层，直接暴露 3001 等于把
@@ -89,8 +92,8 @@ journalctl -u neo-mcp -n 50 --no-pager
 
 ## 4. nginx 与证书
 
-TLS 在 nginx 终止，upstream 指回 `127.0.0.1:3001`；`proxy_read_timeout` 需放宽到 300s，
-MCP 的 Streamable HTTP 会长时间挂住连接。
+TLS 在 nginx 终止，upstream 指回 `127.0.0.1:3001`；普通请求使用 `proxy_read_timeout 300s`，
+`subscriptions/listen` 需要禁用响应缓冲并允许长连接。
 
 ```bash
 sudo nginx -t

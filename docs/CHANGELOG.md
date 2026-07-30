@@ -5,6 +5,33 @@ All notable changes to the Neo MCP project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-07-30
+
+### Breaking Changes
+- Upgraded the server and clients to MCP `2026-07-28` and the split SDK v2
+  packages.
+- Removed initialization, session IDs, HTTP `GET`/`DELETE` lifecycle routes,
+  sticky-session assumptions, and every older-protocol compatibility path.
+- Replaced MCP form elicitation with signed `input_required` multi-round trips
+  for state-changing tools.
+- Added mandatory `NEO_MCP_REQUEST_STATE_KEY` validation when writes are
+  enabled.
+
+### Added
+- Stateless per-request HTTP serving with explicit request, subscription,
+  body-size, header, body, whole-request, and keepalive limits.
+- Strict MCP routing-header validation, cache hints, and fail-closed protocol
+  version enforcement.
+- `analyze_address`, bringing the read-only public tool surface to 33 tools.
+
+### Changed
+- Split dependencies across `@modelcontextprotocol/server`,
+  `@modelcontextprotocol/node`, and `@modelcontextprotocol/client`.
+- Made horizontal MCP HTTP replicas independent of sticky routing or shared
+  session storage.
+- Updated the Neo Explorer client to pin MCP `2026-07-28`, enforce strict
+  capabilities, honor tool-cache TTL hints, and refuse automatic write input.
+
 ## [3.1.0] - 2026-07-25
 
 ### Breaking Changes

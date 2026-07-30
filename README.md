@@ -7,12 +7,14 @@
 | Entrypoint | Command | Protocol |
 | --- | --- | --- |
 | MCP stdio | `npm start` | MCP over stdin/stdout, for local clients such as Claude Desktop and Cursor |
-| MCP Streamable HTTP | `npm run start:mcp-http` | MCP over HTTP, for remote MCP clients |
+| MCP HTTP | `npm run start:mcp-http` | MCP 2026-07-28 stateless HTTP, for remote MCP clients |
 | REST API | `npm run start:http` | Bespoke REST/JSON; not an MCP transport |
 
-The two HTTP servers are unrelated and configured separately. See [Remote MCP over Streamable HTTP](#remote-mcp-over-streamable-http) and [docs/remote-mcp-transport.md](./docs/remote-mcp-transport.md).
+The two HTTP servers are unrelated and configured separately. See [Remote MCP 2026 HTTP](#remote-mcp-2026-http) and [docs/remote-mcp-transport.md](./docs/remote-mcp-transport.md).
 
-Current version: `3.1.0`. Node.js `>=22` is required.
+Current version: `4.0.0`. Node.js `>=22` is required. Version 4 speaks only
+MCP `2026-07-28`; clients using the removed initialization/session protocol are
+rejected rather than downgraded.
 
 ## Quick Start
 
@@ -78,6 +80,7 @@ console.log({ blockCount, height: Math.max(0, blockCount - 1) });
 | `NEO_ENABLE_WRITES` | Register state-changing tools and HTTP routes | `false` |
 | `NEO_SIGNER_WIF_FILE` | Owner-only regular file containing the single server signer WIF | required for writes |
 | `NEO_WRITE_STATE_DIR` | Durable idempotency journal directory | `$WALLETS_DIR/.write-operations` |
+| `NEO_MCP_REQUEST_STATE_KEY` | Independent HMAC key for MCP multi-round-trip approval state | required for writes |
 | `HTTP_WRITE_APPROVAL_API_KEY` | Independent bearer token for HTTP write approval | required for writes |
 | `NEO_ENABLE_WALLET_ADMIN` | Enable HTTP wallet create/import administration | `false` |
 | `N3INDEX_API_BASE_URL` | Remote contract name lookup base URL | `https://api.n3index.dev` |
@@ -91,8 +94,13 @@ console.log({ blockCount, height: Math.max(0, blockCount - 1) });
 | `MCP_HTTP_PATH` | Remote MCP endpoint path | `/mcp` |
 | `MCP_HTTP_BEARER` | Bearer token for the remote MCP endpoint; required unless `MCP_HTTP_HOST` is loopback | unset |
 | `MCP_HTTP_ALLOWED_ORIGINS` | Comma-separated exact origins allowed to connect from a browser | empty |
-| `MCP_HTTP_MAX_SESSIONS` | Concurrent remote MCP session cap | `128` |
-| `MCP_HTTP_SESSION_TTL_MS` | Idle remote MCP session expiry | `1800000` (30 minutes) |
+| `MCP_HTTP_MAX_CONCURRENT_REQUESTS` | Concurrent in-flight MCP request cap | `128` |
+| `MCP_HTTP_MAX_SUBSCRIPTIONS` | Concurrent `subscriptions/listen` stream cap | `128` |
+| `MCP_HTTP_MAX_BODY_BYTES` | Maximum MCP POST body size | `4194304` (4 MiB) |
+| `MCP_HTTP_BODY_TIMEOUT_MS` | Deadline for receiving an MCP request body | `30000` |
+| `MCP_HTTP_HEADERS_TIMEOUT_MS` | Deadline for receiving MCP headers | `30000` |
+| `MCP_HTTP_REQUEST_TIMEOUT_MS` | Overall MCP HTTP request deadline | `300000` |
+| `MCP_HTTP_KEEP_ALIVE_MS` | SSE keepalive interval; `0` disables it | `15000` |
 | `WALLETS_DIR` | Directory for persisted encrypted wallet records | `./wallets` |
 | `RATE_LIMITING_ENABLED` | Enable request rate limiting | enabled outside test environments |
 | `MAX_REQUESTS_PER_MINUTE` | Per-client minute limit | `60` |
@@ -116,10 +124,16 @@ install -m 0600 /dev/stdin /run/secrets/neo-signer-wif
 export NEO_ENABLE_WRITES=true
 export NEO_SIGNER_WIF_FILE=/run/secrets/neo-signer-wif
 export NEO_WRITE_STATE_DIR=/var/lib/neo-mcp/write-operations
+export NEO_MCP_REQUEST_STATE_KEY="$(openssl rand -hex 32)"
 export HTTP_WRITE_APPROVAL_API_KEY="$(openssl rand -hex 32)"
 ```
 
-The MCP and HTTP request schemas never accept WIFs, private keys, or passwords. MCP writes require form elicitation and exact fingerprint approval. HTTP writes return a pending intent and require a separate approval request authenticated by `HTTP_WRITE_APPROVAL_API_KEY`.
+The MCP and HTTP request schemas never accept WIFs, private keys, or passwords.
+MCP writes use the `2026-07-28` `input_required` flow. The server signs the
+opaque `requestState`, binds it to `tools/call`, expires it after ten minutes,
+and executes only after the re-entered response accepts the exact intent
+fingerprint. HTTP writes return a pending intent and require a separate approval
+request authenticated by `HTTP_WRITE_APPROVAL_API_KEY`.
 
 ## HTTP API
 
@@ -183,9 +197,12 @@ curl -X POST http://127.0.0.1:3000/api/write-intents/INTENT_ID/approve \
 
 See [API.md](./docs/API.md) for the tool and route reference.
 
-## Remote MCP over Streamable HTTP
+## Remote MCP 2026 HTTP
 
-The Streamable HTTP transport serves the same MCP tools as the stdio entrypoint to remote MCP clients. It is a separate process from the REST API above, listens on its own port, and has its own configuration and bearer token.
+The stateless MCP 2026-07-28 HTTP transport serves the same read-only MCP tools
+as the stdio entrypoint to remote clients. It is a separate process from the
+REST API, listens on its own port, and has its own configuration and bearer
+token.
 
 ```bash
 npm ci
@@ -198,9 +215,8 @@ The server listens on `127.0.0.1:3001` by default and exposes:
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `POST` | `MCP_HTTP_PATH` (default `/mcp`) | JSON-RPC messages: `initialize`, `tools/list`, `tools/call` |
-| `GET` | `MCP_HTTP_PATH` | Server-Sent Events stream for server-initiated messages |
-| `DELETE` | `MCP_HTTP_PATH` | Terminates the session named by `Mcp-Session-Id` |
+| `POST` | `MCP_HTTP_PATH` (default `/mcp`) | Stateless MCP `2026-07-28` requests such as `server/discover`, `tools/list`, and `tools/call` |
+| `OPTIONS` | `MCP_HTTP_PATH` | CORS preflight |
 | `GET` | `/healthz` | Unauthenticated liveness probe |
 
 A non-loopback `MCP_HTTP_HOST` requires `MCP_HTTP_BEARER` and rejects a token shorter than 32 bytes, mirroring the `HTTP_API_KEY` rule for the REST entrypoint. When a token is configured, clients send `Authorization: Bearer <token>` on every request to `MCP_HTTP_PATH`; `/healthz` stays unauthenticated so probes can reach it.
@@ -208,18 +224,28 @@ A non-loopback `MCP_HTTP_HOST` requires `MCP_HTTP_BEARER` and rejects a token sh
 Connect with the MCP TypeScript SDK:
 
 ```js
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import {
+  Client,
+  StreamableHTTPClientTransport,
+} from '@modelcontextprotocol/client';
 
 const transport = new StreamableHTTPClientTransport(new URL('http://127.0.0.1:3001/mcp'), {
-  requestInit: { headers: { Authorization: `Bearer ${process.env.MCP_HTTP_BEARER}` } },
+  authProvider: { token: async () => process.env.MCP_HTTP_BEARER },
 });
-const client = new Client({ name: 'my-client', version: '1.0.0' }, { capabilities: {} });
+const client = new Client(
+  { name: 'my-client', version: '2.0.0' },
+  {
+    capabilities: {},
+    versionNegotiation: { mode: { pin: '2026-07-28' } },
+  },
+);
 await client.connect(transport);
 const { tools } = await client.listTools();
 ```
 
-Like the REST listener, this listener serves plaintext HTTP and does not terminate TLS. Remote clients must reach it through a TLS-terminating reverse proxy. Sessions are held in memory, so a multi-replica deployment needs sticky routing on the `Mcp-Session-Id` header.
+Like the REST listener, this listener serves plaintext HTTP and does not
+terminate TLS. Remote clients must reach it through a TLS-terminating reverse
+proxy. Requests are stateless, so replicas do not need sticky routing.
 
 See [remote-mcp-transport.md](./docs/remote-mcp-transport.md) for the full configuration reference, an end-to-end local run against the Neo Explorer agent, production deployment guidance, and troubleshooting.
 
@@ -277,9 +303,9 @@ See [DOCKER.md](./docs/DOCKER.md) for image, volume, and helper-script details.
 
 ## MCP Tools and Resources
 
-The default MCP surface exposes 32 read-only tools. Every tool that both chains implement takes a required `chain` discriminator, `"n3"` or `"neox"`, with no silent default; single-chain tools reject the chain they do not serve. The `network` parameter is always `"mainnet"` or `"testnet"`; the registry rewrites it for Neo X internally, so callers never spell out a chain-qualified network name.
+The default MCP surface exposes 33 read-only tools. Every tool that both chains implement takes a required `chain` discriminator, `"n3"` or `"neox"`, with no silent default; single-chain tools reject the chain they do not serve. The `network` parameter is always `"mainnet"` or `"testnet"`; the registry rewrites it for Neo X internally, so callers never spell out a chain-qualified network name.
 
-- Server: `get_network_mode`, `get_wallet`
+- Server and analysis: `get_network_mode`, `get_wallet`, `analyze_address`
 - Chain, both chains: `get_chain_info`, `get_block_height`, `get_block`, `get_transaction`, `get_transaction_status`, `get_balance`
 - Contracts, both chains: `call_contract`, `get_contract_info`, `simulate_call`
 - Construct, both chains: `build_transfer`, `build_contract_call`
@@ -289,7 +315,14 @@ The default MCP surface exposes 32 read-only tools. Every tool that both chains 
 
 `call_contract` is strictly read-only: `invokefunction` on Neo N3, `eth_call` on Neo X. The `build_*` tools return UNSIGNED transaction proposals for a wallet to review and sign; no tool on this surface holds a key, signs, or broadcasts.
 
-A locally launched stdio server with `NEO_ENABLE_WRITES=true` and a `NEO_SIGNER_WIF_FILE` registers four additional Neo N3 tools that sign with that owner-supplied key: `transfer_assets`, `invoke_contract_write`, `claim_gas`, `deploy_contract`. They require an `idempotencyKey`, an explicit `network`, an MCP client with form elicitation, and acceptance of the exact returned intent fingerprint. The MCP HTTP transport is read-only by design and ignores the setting.
+A locally launched stdio server with `NEO_ENABLE_WRITES=true`,
+`NEO_SIGNER_WIF_FILE`, and `NEO_MCP_REQUEST_STATE_KEY` registers four
+additional Neo N3 tools that sign with that owner-supplied key:
+`transfer_assets`, `invoke_contract_write`, `claim_gas`, `deploy_contract`.
+They require an `idempotencyKey`, an explicit `network`, a modern client that
+can fulfil an embedded form request, and acceptance of the exact returned
+intent fingerprint through `input_required`. The MCP HTTP transport is
+read-only by design and ignores the setting.
 
 The curated contract list is intentionally empty until each entry has a current network hash and a verified on-chain manifest. Generic contract tools accept a script hash, Neo address, exact N3Index name, or a name learned from a live manifest.
 
@@ -314,7 +347,9 @@ Resources:
 - Keep `NEO_ENABLE_WRITES=false` on any remotely reachable MCP listener; the remote transport exists to serve read-only queries.
 - Keep the signer WIF only in the owner-only `NEO_SIGNER_WIF_FILE`; never send it through MCP or HTTP.
 - Persist `WALLETS_DIR` on controlled storage with restrictive permissions.
-- State-changing MCP tools require an explicit `network`, a stable idempotency key, and exact form-elicited approval.
+- State-changing MCP tools require an explicit `network`, a stable idempotency
+  key, and an exact `input_required` approval whose request state passes HMAC,
+  expiry, method-binding, intent, network, operation, and fingerprint checks.
 - Remote plaintext HTTP RPC endpoints are rejected unless `NEO_ALLOW_INSECURE_RPC=true`; prefer HTTPS.
 - Signed transactions are rejected when their combined system and network fees exceed `NEO_MAX_TRANSACTION_FEE_GAS`.
 - Rate limiting is enabled by default outside test-like environments.
@@ -370,7 +405,8 @@ GitHub Actions tests Node.js 22 and 24. Published GitHub releases can publish th
 - HTTP `401`: send `Authorization: Bearer <HTTP_API_KEY>` on all routes except `/live` and `/health`.
 - HTTP `413`: reduce the request size or increase `HTTP_MAX_BODY_BYTES` to a positive integer.
 - Remote MCP `401`: send `Authorization: Bearer <MCP_HTTP_BEARER>`; `/healthz` is the only unauthenticated route.
-- Remote MCP `404` after a successful `initialize`: the session expired, was evicted, or a proxy stripped the `Mcp-Session-Id` header. See [remote-mcp-transport.md](./docs/remote-mcp-transport.md#troubleshooting).
+- Remote MCP `-32022`: the client did not pin `2026-07-28`, or attempted the removed legacy initialization flow. Upgrade to `@modelcontextprotocol/client` v2.
+- Remote MCP `-32020`: the request's `Mcp-Method`, `Mcp-Name`, or protocol-version headers disagree with its body. Use the v2 SDK instead of hand-building the envelope.
 - RPC errors: verify the selected RPC URL is reachable and supports the requested Neo RPC method.
 
 ## License

@@ -132,6 +132,7 @@ describe('Config Validation', () => {
     process.env.NEO_ENABLE_WRITES = 'true';
     delete process.env.NEO_SIGNER_WIF_FILE;
     delete process.env.NEO_WRITE_STATE_DIR;
+    delete process.env.NEO_MCP_REQUEST_STATE_KEY;
 
     jest.isolateModules(() => {
       const { validateConfig } = require('../src/config');
@@ -142,6 +143,7 @@ describe('Config Validation', () => {
   it('allows MCP-only writes without an HTTP approval key', () => {
     process.env.NEO_ENABLE_WRITES = 'true';
     process.env.NEO_SIGNER_WIF_FILE = '/run/secrets/neo-signer-wif';
+    process.env.NEO_MCP_REQUEST_STATE_KEY = 'mcp-request-state-key-that-is-at-least-32-bytes';
     delete process.env.HTTP_WRITE_APPROVAL_API_KEY;
 
     jest.isolateModules(() => {
@@ -150,10 +152,33 @@ describe('Config Validation', () => {
     });
   });
 
+  it('requires an independent request-state signing key when writes are enabled', () => {
+    process.env.NEO_ENABLE_WRITES = 'true';
+    process.env.NEO_SIGNER_WIF_FILE = '/run/secrets/neo-signer-wif';
+    delete process.env.NEO_MCP_REQUEST_STATE_KEY;
+
+    jest.isolateModules(() => {
+      const { validateConfig } = require('../src/config');
+      expect(() => validateConfig()).toThrow(/NEO_MCP_REQUEST_STATE_KEY/);
+    });
+  });
+
+  it('rejects a short request-state signing key', () => {
+    process.env.NEO_ENABLE_WRITES = 'true';
+    process.env.NEO_SIGNER_WIF_FILE = '/run/secrets/neo-signer-wif';
+    process.env.NEO_MCP_REQUEST_STATE_KEY = 'too-short';
+
+    jest.isolateModules(() => {
+      const { validateConfig } = require('../src/config');
+      expect(() => validateConfig()).toThrow(/NEO_MCP_REQUEST_STATE_KEY/);
+    });
+  });
+
   it('rejects reuse of the ordinary HTTP key for write approval', () => {
     const sharedKey = 'shared-http-key-that-is-at-least-32-bytes';
     process.env.NEO_ENABLE_WRITES = 'true';
     process.env.NEO_SIGNER_WIF_FILE = '/run/secrets/neo-signer-wif';
+    process.env.NEO_MCP_REQUEST_STATE_KEY = 'independent-request-state-key-at-least-32-bytes';
     process.env.HTTP_API_KEY = sharedKey;
     process.env.HTTP_WRITE_APPROVAL_API_KEY = sharedKey;
 

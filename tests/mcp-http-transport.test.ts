@@ -1,47 +1,42 @@
 /**
- * Integration tests for the MCP Streamable HTTP transport.
- *
- * These run a real McpHttpServer on an ephemeral port and drive it with the real
- * SDK client transport (StreamableHTTPClientTransport) exactly the way
- * Neo-Explorer-UI/api/lib/mcpClient.js does. Nothing about the protocol is
- * mocked; raw fetch is used only where an exact HTTP status must be asserted.
+ * Protocol-level tests for the MCP 2026-07-28 modern-only HTTP surface.
  */
 
-import * as fs from 'fs';
 import * as net from 'net';
-import * as os from 'os';
-import * as path from 'path';
-
-import * as neonJs from '@cityofzion/neon-js';
-
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import { LATEST_PROTOCOL_VERSION } from '@modelcontextprotocol/sdk/types.js';
 
 import {
+  Client,
+  StreamableHTTPClientTransport,
+} from '@modelcontextprotocol/client';
+
+import {
+  MCP_PROTOCOL_VERSION,
   McpHttpServer,
   McpHttpServerOptions,
   resolveMcpHttpOptionsFromEnv,
   withWritesDisabled,
 } from '../src/mcp-http-server';
-import { NeoMcpServer } from '../src/index';
 import { config } from '../src/config';
-import { rateLimiter } from '../src/utils/rate-limiter';
 
 jest.setTimeout(30_000);
 
-// 44 bytes: satisfies the minimum-entropy rule for non-loopback listeners too.
 const BEARER = 'test-bearer-token-000102030405060708090a0b0c';
-const ACCEPT_BOTH = 'application/json, text/event-stream';
-
-const startedServers: McpHttpServer[] = [];
-const openClients: Array<{ client: Client; transport: StreamableHTTPClientTransport }> = [];
+const ACCEPT = 'application/json, text/event-stream';
+const WRITE_TOOL_NAMES = [
+  'claim_gas',
+  'deploy_contract',
+  'invoke_contract_write',
+  'transfer_assets',
+];
 
 interface StartedServer {
   server: McpHttpServer;
   port: number;
   url: string;
 }
+
+const startedServers: McpHttpServer[] = [];
+const openClients: Array<{ client: Client; transport: StreamableHTTPClientTransport }> = [];
 
 async function startServer(options: McpHttpServerOptions = {}): Promise<StartedServer> {
   const server = new McpHttpServer({
@@ -55,66 +50,63 @@ async function startServer(options: McpHttpServerOptions = {}): Promise<StartedS
   return { server, port, url: `http://127.0.0.1:${port}${server.endpointPath}` };
 }
 
-async function connectClient(
+async function connectModernClient(
   started: StartedServer,
-  token: string | undefined = BEARER
+  token: string | undefined = BEARER,
 ): Promise<{ client: Client; transport: StreamableHTTPClientTransport }> {
-  const requestInit = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+  const requestInit = token
+    ? { headers: { Authorization: `Bearer ${token}` } }
+    : undefined;
   const transport = new StreamableHTTPClientTransport(new URL(started.url), { requestInit });
-  const client = new Client({ name: 'neo-explorer-agent', version: '1.0.0' }, { capabilities: {} });
-  const entry = { client, transport };
-  openClients.push(entry);
+  const client = new Client(
+    { name: 'neo-mcp-modern-test', version: '1.0.0' },
+    {
+      capabilities: {},
+      versionNegotiation: { mode: { pin: MCP_PROTOCOL_VERSION } },
+    },
+  );
+  openClients.push({ client, transport });
   await client.connect(transport);
-  return entry;
+  return { client, transport };
 }
 
-function initializeBody(id: number | string = 1): string {
-  return JSON.stringify({
+function modernMeta() {
+  return {
+    'io.modelcontextprotocol/protocolVersion': MCP_PROTOCOL_VERSION,
+    'io.modelcontextprotocol/clientInfo': {
+      name: 'raw-modern-test',
+      version: '1.0.0',
+    },
+    'io.modelcontextprotocol/clientCapabilities': {},
+  };
+}
+
+function discoverBody(id: number | string = 1) {
+  return {
     jsonrpc: '2.0',
     id,
-    method: 'initialize',
-    params: {
-      protocolVersion: LATEST_PROTOCOL_VERSION,
-      capabilities: {},
-      clientInfo: { name: 'raw-http-client', version: '1.0.0' },
-    },
-  });
+    method: 'server/discover',
+    params: { _meta: modernMeta() },
+  };
 }
 
-/** POSTs a raw initialize request and drains the response so no socket lingers. */
-async function rawInitialize(
+async function rawModernRequest(
   started: StartedServer,
-  headers: Record<string, string> = {}
+  body: unknown = discoverBody(),
+  headers: Record<string, string> = {},
 ): Promise<Response> {
-  const response = await fetch(started.url, {
+  return fetch(started.url, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      Accept: ACCEPT_BOTH,
       Authorization: `Bearer ${BEARER}`,
+      'Content-Type': 'application/json',
+      Accept: ACCEPT,
+      'MCP-Protocol-Version': MCP_PROTOCOL_VERSION,
+      'Mcp-Method': 'server/discover',
       ...headers,
     },
-    body: initializeBody(),
+    body: JSON.stringify(body),
   });
-  await response.body?.cancel();
-  return response;
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function waitForCondition(
-  predicate: () => boolean,
-  timeoutMs = 5_000,
-  intervalMs = 25
-): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  do {
-    if (predicate()) return;
-    await sleep(intervalMs);
-  } while (Date.now() < deadline);
-  expect(predicate()).toBe(true);
 }
 
 afterEach(async () => {
@@ -124,7 +116,7 @@ afterEach(async () => {
     try {
       await entry.client.close();
     } catch {
-      // The server may already have closed the session; nothing to clean up.
+      // The server may already be stopped.
     }
   }
   while (startedServers.length > 0) {
@@ -134,720 +126,390 @@ afterEach(async () => {
   }
 });
 
-describe('MCP Streamable HTTP transport', () => {
-  describe('protocol round trip', () => {
-    test('initializes, lists tools, and calls a tool over HTTP', async () => {
+describe('MCP 2026-07-28 stateless HTTP transport', () => {
+  describe('modern protocol', () => {
+    test('discovers, lists, and calls tools without creating a session', async () => {
       const started = await startServer();
-      const { client, transport } = await connectClient(started);
+      const { client, transport } = await connectModernClient(started);
 
-      expect(transport.sessionId).toEqual(expect.any(String));
-      expect(started.server.sessionCount).toBe(1);
-
-      const listed = await client.listTools(undefined, { timeout: 15_000 });
-      expect(Array.isArray(listed.tools)).toBe(true);
-      expect(listed.tools.length).toBeGreaterThan(0);
-      expect(listed.tools.map((tool) => tool.name)).toContain('get_network_mode');
-
-      const result = await client.callTool(
-        { name: 'get_network_mode', arguments: {} },
-        undefined,
-        { timeout: 15_000 }
-      );
-      const content = result.content as Array<{ type: string; text: string }>;
-      expect(content[0].type).toBe('text');
-      const payload = JSON.parse(content[0].text) as {
-        mode: string;
-        availableNetworks: string[];
-        defaultNetwork: string;
-      };
-      expect(typeof payload.mode).toBe('string');
-      expect(Array.isArray(payload.availableNetworks)).toBe(true);
-      expect(payload.availableNetworks.length).toBeGreaterThan(0);
-    });
-
-    test('returns a well-formed tool error without breaking the session', async () => {
-      const started = await startServer();
-      const { client } = await connectClient(started);
-
-      const result = await client.callTool(
-        { name: 'get_balance', arguments: { chain: 'n3', address: 'not-a-neo-address' } },
-        undefined,
-        { timeout: 15_000 }
-      );
-
-      expect(result.isError).toBe(true);
-      const content = result.content as Array<{ type: string; text: string }>;
-      expect(content[0].text).toMatch(/address/i);
-
-      // The session survives a failed tool call.
-      const listed = await client.listTools(undefined, { timeout: 15_000 });
-      expect(listed.tools.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe('authentication', () => {
-    test('rejects a request with no Authorization header', async () => {
-      const started = await startServer();
-
-      const response = await fetch(started.url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: ACCEPT_BOTH },
-        body: initializeBody(),
-      });
-      const body = await response.json();
-
-      expect(response.status).toBe(401);
-      expect(response.headers.get('www-authenticate')).toMatch(/^Bearer/);
-      expect(body).toEqual({
-        jsonrpc: '2.0',
-        error: { code: -32000, message: 'Unauthorized' },
-        id: null,
-      });
-      expect(started.server.sessionCount).toBe(0);
-    });
-
-    test('rejects a request with the wrong bearer token', async () => {
-      const started = await startServer();
-
-      const response = await fetch(started.url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: ACCEPT_BOTH,
-          Authorization: 'Bearer test-bearer-token-ffffffffffffffffffffffff',
-        },
-        body: initializeBody(),
-      });
-      await response.body?.cancel();
-
-      expect(response.status).toBe(401);
-      expect(started.server.sessionCount).toBe(0);
-    });
-
-    test('accepts a request with the correct bearer token', async () => {
-      const started = await startServer();
-
-      const response = await rawInitialize(started);
-
-      expect(response.status).toBe(200);
-      expect(response.headers.get('mcp-session-id')).toEqual(expect.any(String));
-      expect(started.server.sessionCount).toBe(1);
-    });
-
-    test('requires a bearer token when binding a non-loopback host', () => {
-      expect(() => new McpHttpServer({ host: '0.0.0.0', port: 0 })).toThrow(/MCP_HTTP_BEARER is required/);
-      expect(() => new McpHttpServer({ host: '0.0.0.0', port: 0, bearerToken: 'short' }))
-        .toThrow(/at least 32 bytes/);
-    });
-  });
-
-  describe('session lifecycle', () => {
-    test('gives every client its own session id', async () => {
-      const started = await startServer();
-      const first = await connectClient(started);
-      const second = await connectClient(started);
-
-      expect(first.transport.sessionId).toEqual(expect.any(String));
-      expect(second.transport.sessionId).toEqual(expect.any(String));
-      expect(first.transport.sessionId).not.toBe(second.transport.sessionId);
-      expect(started.server.sessionCount).toBe(2);
-    });
-
-    test('terminateSession removes the session', async () => {
-      const started = await startServer();
-      const { client, transport } = await connectClient(started);
-      expect(started.server.sessionCount).toBe(1);
-
-      await transport.terminateSession();
-      await client.close();
-
-      expect(started.server.sessionCount).toBe(0);
-    });
-
-    test('rejects requests that carry an unknown session id', async () => {
-      const started = await startServer();
-      await connectClient(started);
-
-      const post = await fetch(started.url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: ACCEPT_BOTH,
-          Authorization: `Bearer ${BEARER}`,
-          'Mcp-Session-Id': '00000000-0000-4000-8000-000000000000',
-        },
-        body: JSON.stringify({ jsonrpc: '2.0', id: 7, method: 'tools/list', params: {} }),
-      });
-      const postBody = await post.json();
-
-      expect(post.status).toBe(404);
-      expect(postBody).toMatchObject({ error: { code: -32001, message: 'Session not found' } });
-
-      const remove = await fetch(started.url, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${BEARER}`,
-          'Mcp-Session-Id': '00000000-0000-4000-8000-000000000000',
-        },
-      });
-      await remove.body?.cancel();
-      expect(remove.status).toBe(404);
-
-      // The live session is untouched.
-      expect(started.server.sessionCount).toBe(1);
-    });
-
-    test('rejects a non-initialize POST that has no session id', async () => {
-      const started = await startServer();
-
-      const response = await fetch(started.url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: ACCEPT_BOTH,
-          Authorization: `Bearer ${BEARER}`,
-        },
-        body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'tools/list', params: {} }),
-      });
-      const body = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(body).toMatchObject({ error: { message: /Mcp-Session-Id/ } as never });
-      expect(started.server.sessionCount).toBe(0);
-    });
-  });
-
-  describe('per-session rate limiting', () => {
-    // The process-wide limiter is disabled under NODE_ENV=test; enable a tiny
-    // window so the per-session buckets are observable, then restore it.
-    beforeEach(() => {
-      rateLimiter.setEnabled(true);
-      rateLimiter.updateSettings(1, 60_000);
-    });
-
-    afterEach(() => {
-      rateLimiter.updateSettings(
-        config.rateLimiting.maxRequestsPerMinute,
-        60_000,
-        config.rateLimiting.maxRequestsPerHour,
-      );
-      rateLimiter.setEnabled(false);
-    });
-
-    test('one session exhausting its bucket never throttles another (inlined tool)', async () => {
-      const started = await startServer();
-      const a = await connectClient(started);
-      const b = await connectClient(started);
-      expect(started.server.sessionCount).toBe(2);
-
-      // get_network_mode is a registration-inlined tool that charges the limiter
-      // before returning config (no RPC). Session A spends its single token.
-      const a1 = await a.client.callTool(
-        { name: 'get_network_mode', arguments: {} },
-        undefined,
-        { timeout: 15_000 },
-      );
-      expect(a1.isError).not.toBe(true);
-
-      // Session A's next inlined-tool call exceeds ITS OWN bucket.
-      const a2 = await a.client.callTool(
-        { name: 'get_network_mode', arguments: {} },
-        undefined,
-        { timeout: 15_000 },
-      );
-      expect(a2.isError).toBe(true);
-      expect(a2.content).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            type: 'text',
-            text: expect.stringMatching(/rate limit exceeded/i),
-          }),
-        ]),
-      );
-
-      // Session B is a different connection; its bucket is untouched. Before the
-      // fix every session shared one 'mcp-client' bucket and this call would be
-      // throttled by session A's traffic.
-      const b1 = await b.client.callTool(
-        { name: 'get_network_mode', arguments: {} },
-        undefined,
-        { timeout: 15_000 },
-      );
-      expect(b1.isError).not.toBe(true);
-    });
-  });
-
-  describe('health endpoint', () => {
-    test('serves /healthz without authentication and reports live sessions', async () => {
-      const started = await startServer();
-
-      const empty = await fetch(`http://127.0.0.1:${started.port}/healthz`);
-      const emptyBody = await empty.json();
-      expect(empty.status).toBe(200);
-      expect(emptyBody).toEqual({
-        status: 'ok',
-        sessions: 0,
+      expect(client.getProtocolEra()).toBe('modern');
+      expect(client.getServerVersion()).toEqual(expect.objectContaining({
+        name: 'neo-mcp-server',
         version: expect.any(String),
+      }));
+      expect(transport.sessionId).toBeUndefined();
+
+      const listed = await client.listTools();
+      expect(listed.tools).toHaveLength(33);
+      expect(listed.tools.map((tool) => tool.name)).toContain('analyze_address');
+      expect(listed.ttlMs).toBe(300_000);
+      expect(listed.cacheScope).toBe('public');
+
+      const result = await client.callTool({
+        name: 'get_network_mode',
+        arguments: {},
       });
-
-      await connectClient(started);
-
-      const live = await fetch(`http://127.0.0.1:${started.port}/healthz`);
-      const liveBody = await live.json();
-      expect(live.status).toBe(200);
-      expect(liveBody.sessions).toBe(1);
-    });
-  });
-
-  describe('request validation', () => {
-    test('rejects an oversized body with 413', async () => {
-      const started = await startServer({ maxBodyBytes: 1024 });
-
-      const response = await fetch(started.url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: ACCEPT_BOTH,
-          Authorization: `Bearer ${BEARER}`,
-        },
-        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list', padding: 'x'.repeat(4096) }),
-      });
-      const body = await response.json();
-
-      expect(response.status).toBe(413);
-      expect(body).toMatchObject({ error: { message: 'Payload Too Large' } });
-      expect(started.server.sessionCount).toBe(0);
+      const content = result.content as Array<{ type: string; text: string }>;
+      expect(JSON.parse(content[0].text)).toEqual(expect.objectContaining({
+        mode: expect.any(String),
+        availableNetworks: expect.any(Array),
+        defaultNetwork: expect.any(String),
+      }));
+      expect(started.server.activeRequestCount).toBe(0);
     });
 
-    test('rejects malformed JSON with a 400 parse error', async () => {
+    test('server/discover exposes only 2026-07-28 with cache and identity metadata', async () => {
       const started = await startServer();
+      const response = await rawModernRequest(started);
+      const payload = await response.json() as any;
 
+      expect(response.status).toBe(200);
+      expect(response.headers.get('mcp-session-id')).toBeNull();
+      expect(payload.result).toEqual(expect.objectContaining({
+        supportedVersions: [MCP_PROTOCOL_VERSION],
+        resultType: 'complete',
+        ttlMs: 300_000,
+        cacheScope: 'public',
+      }));
+      expect(payload.result._meta['io.modelcontextprotocol/serverInfo']).toEqual(
+        expect.objectContaining({
+          name: 'neo-mcp-server',
+          description: expect.any(String),
+        }),
+      );
+    });
+
+    test('rejects the removed initialize handshake instead of downgrading', async () => {
+      const started = await startServer();
       const response = await fetch(started.url, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          Accept: ACCEPT_BOTH,
           Authorization: `Bearer ${BEARER}`,
+          'Content-Type': 'application/json',
+          Accept: ACCEPT,
         },
-        body: '{"jsonrpc":"2.0"',
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 7,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2025-11-25',
+            capabilities: {},
+            clientInfo: { name: 'legacy-client', version: '1.0.0' },
+          },
+        }),
       });
-      const body = await response.json();
+      const payload = await response.json() as any;
 
       expect(response.status).toBe(400);
-      expect(body).toEqual({
-        jsonrpc: '2.0',
-        error: { code: -32700, message: 'Parse error: Invalid JSON' },
-        id: null,
-      });
+      expect(payload.error).toEqual(expect.objectContaining({
+        code: -32022,
+        data: {
+          requested: '2025-11-25',
+          supported: [MCP_PROTOCOL_VERSION],
+        },
+      }));
+      expect(response.headers.get('mcp-session-id')).toBeNull();
     });
 
-    test('rejects unknown paths and unsupported methods', async () => {
+    test('rejects Mcp-Method/body mismatches at the protocol edge', async () => {
       const started = await startServer();
+      const response = await rawModernRequest(
+        started,
+        discoverBody(9),
+        { 'Mcp-Method': 'tools/list' },
+      );
+      const payload = await response.json() as any;
 
-      const unknownPath = await fetch(`http://127.0.0.1:${started.port}/nope`, {
-        headers: { Authorization: `Bearer ${BEARER}` },
-      });
-      await unknownPath.body?.cancel();
-      expect(unknownPath.status).toBe(404);
+      expect(response.status).toBe(400);
+      expect(payload.error.code).toBe(-32020);
+      expect(payload.error.message).toMatch(/headers and body disagree/i);
+    });
 
-      const badMethod = await fetch(started.url, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${BEARER}`, 'Content-Type': 'application/json' },
-        body: '{}',
+    test('rejects a legacy SDK client pinned to the old era', async () => {
+      const started = await startServer();
+      const transport = new StreamableHTTPClientTransport(new URL(started.url), {
+        requestInit: { headers: { Authorization: `Bearer ${BEARER}` } },
       });
-      await badMethod.body?.cancel();
-      expect(badMethod.status).toBe(405);
-      expect(badMethod.headers.get('allow')).toBe('GET, POST, DELETE, OPTIONS');
+      const client = new Client(
+        { name: 'legacy-test', version: '1.0.0' },
+        { capabilities: {}, versionNegotiation: { mode: 'legacy' } },
+      );
+      openClients.push({ client, transport });
+
+      await expect(client.connect(transport)).rejects.toThrow(/unsupported protocol version/i);
+    });
+
+    test('serves separate stateless calls concurrently', async () => {
+      const started = await startServer();
+      const first = await connectModernClient(started);
+      const second = await connectModernClient(started);
+
+      const [a, b] = await Promise.all([
+        first.client.callTool({ name: 'get_network_mode', arguments: {} }),
+        second.client.callTool({ name: 'get_network_mode', arguments: {} }),
+      ]);
+
+      expect(a.isError).not.toBe(true);
+      expect(b.isError).not.toBe(true);
+      expect(first.transport.sessionId).toBeUndefined();
+      expect(second.transport.sessionId).toBeUndefined();
+      expect(started.server.activeRequestCount).toBe(0);
     });
   });
 
-  describe('origin and host checks', () => {
-    test('allows a request without an Origin header', async () => {
+  describe('authentication and request security', () => {
+    test('rejects missing and incorrect bearer tokens', async () => {
       const started = await startServer();
-      const response = await rawInitialize(started);
-      expect(response.status).toBe(200);
+      const noToken = await fetch(started.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(discoverBody()),
+      });
+      expect(noToken.status).toBe(401);
+      expect(noToken.headers.get('www-authenticate')).toMatch(/^Bearer/);
+
+      const wrongToken = await rawModernRequest(
+        started,
+        discoverBody(),
+        { Authorization: 'Bearer definitely-wrong' },
+      );
+      expect(wrongToken.status).toBe(401);
     });
 
-    test('rejects a disallowed Origin with 403', async () => {
-      const started = await startServer({ allowedOrigins: ['https://explorer.example'] });
-
-      const response = await rawInitialize(started, { Origin: 'https://evil.example' });
-
-      expect(response.status).toBe(403);
-      expect(started.server.sessionCount).toBe(0);
+    test('requires a strong bearer on non-loopback listeners', () => {
+      expect(() => new McpHttpServer({ host: '0.0.0.0', port: 0 }))
+        .toThrow(/MCP_HTTP_BEARER is required/);
+      expect(() => new McpHttpServer({
+        host: '0.0.0.0',
+        port: 0,
+        bearerToken: 'short',
+      })).toThrow(/at least 32 bytes/);
     });
 
-    test('allows an allowlisted Origin and exposes Mcp-Session-Id to it', async () => {
-      const started = await startServer({ allowedOrigins: ['https://explorer.example'] });
+    test('enforces exact Origin and Host allowlists', async () => {
+      const started = await startServer({
+        allowedOrigins: ['https://explorer.example'],
+        allowedHosts: ['127.0.0.1'],
+      });
 
-      const response = await rawInitialize(started, { Origin: 'https://explorer.example' });
+      const allowed = await rawModernRequest(started, discoverBody(), {
+        Origin: 'https://explorer.example',
+        Host: '127.0.0.1',
+      });
+      expect(allowed.status).toBe(200);
+      expect(allowed.headers.get('access-control-allow-origin')).toBe(
+        'https://explorer.example',
+      );
 
-      expect(response.status).toBe(200);
-      expect(response.headers.get('access-control-allow-origin')).toBe('https://explorer.example');
-      expect(response.headers.get('access-control-expose-headers')).toBe('Mcp-Session-Id');
+      const deniedOrigin = await rawModernRequest(started, discoverBody(), {
+        Origin: 'https://evil.example',
+      });
+      expect(deniedOrigin.status).toBe(403);
+
+      const hostRestricted = await startServer({
+        allowedHosts: ['mcp.example'],
+      });
+      const deniedHost = await rawModernRequest(hostRestricted);
+      expect(deniedHost.status).toBe(403);
     });
 
-    test('answers CORS preflight with the headers the client needs', async () => {
+    test('advertises only modern POST headers in CORS preflight', async () => {
       const started = await startServer({ allowedOrigins: ['https://explorer.example'] });
-
       const response = await fetch(started.url, {
         method: 'OPTIONS',
         headers: {
           Origin: 'https://explorer.example',
           'Access-Control-Request-Method': 'POST',
-          'Access-Control-Request-Headers': 'authorization, content-type, mcp-session-id',
         },
       });
-      await response.body?.cancel();
 
       expect(response.status).toBe(204);
-      expect(response.headers.get('access-control-allow-origin')).toBe('https://explorer.example');
-      expect(response.headers.get('access-control-allow-methods')).toBe('GET, POST, DELETE, OPTIONS');
+      expect(response.headers.get('access-control-allow-methods')).toBe('POST, OPTIONS');
       const allowedHeaders = response.headers.get('access-control-allow-headers') ?? '';
-      for (const header of ['Authorization', 'Content-Type', 'Mcp-Session-Id', 'Mcp-Protocol-Version']) {
-        expect(allowedHeaders).toContain(header);
-      }
-      expect(response.headers.get('access-control-expose-headers')).toBe('Mcp-Session-Id');
-    });
-
-    test('rejects a Host header outside an explicit allowlist', async () => {
-      const started = await startServer({ allowedHosts: ['mcp.example'] });
-
-      const response = await rawInitialize(started);
-
-      expect(response.status).toBe(403);
-      expect(started.server.sessionCount).toBe(0);
+      expect(allowedHeaders).toContain('MCP-Protocol-Version');
+      expect(allowedHeaders).toContain('Mcp-Method');
+      expect(allowedHeaders).toContain('Mcp-Name');
+      expect(allowedHeaders).not.toContain('Mcp-Session-Id');
     });
   });
 
-  describe('session hygiene', () => {
-    test('refuses new sessions once the cap is reached', async () => {
-      const started = await startServer({ maxSessions: 1 });
-      await connectClient(started);
-      expect(started.server.sessionCount).toBe(1);
-
-      const response = await rawInitialize(started);
-
-      expect(response.status).toBe(503);
-      expect(started.server.sessionCount).toBe(1);
+  describe('HTTP hardening', () => {
+    test('allows only POST on the MCP path', async () => {
+      const started = await startServer();
+      for (const method of ['GET', 'DELETE', 'PUT']) {
+        const response = await fetch(started.url, {
+          method,
+          headers: { Authorization: `Bearer ${BEARER}` },
+        });
+        expect(response.status).toBe(405);
+        expect(response.headers.get('allow')).toBe('POST, OPTIONS');
+      }
     });
 
-    test('evicts sessions that idle past the TTL', async () => {
-      const started = await startServer({ sessionTtlMs: 1_000 });
-
-      const response = await rawInitialize(started);
-      expect(response.status).toBe(200);
-      expect(started.server.sessionCount).toBe(1);
-
-      await waitForCondition(() => started.server.sessionCount === 0);
-
-      // The evicted session id is no longer routable.
-      const sessionId = response.headers.get('mcp-session-id') as string;
-      const afterEviction = await fetch(started.url, {
+    test('rejects non-JSON content and malformed JSON', async () => {
+      const started = await startServer();
+      const nonJson = await fetch(started.url, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          Accept: ACCEPT_BOTH,
           Authorization: `Bearer ${BEARER}`,
-          'Mcp-Session-Id': sessionId,
+          'Content-Type': 'text/plain',
         },
-        body: JSON.stringify({ jsonrpc: '2.0', id: 9, method: 'tools/list', params: {} }),
+        body: '{}',
       });
-      await afterEviction.body?.cancel();
-      expect(afterEviction.status).toBe(404);
-    });
+      expect(nonJson.status).toBe(415);
 
-    test('a POST carrying a session id refreshes the idle timer and keeps it alive', async () => {
-      const started = await startServer({ sessionTtlMs: 1_000 });
-
-      const init = await rawInitialize(started);
-      expect(init.status).toBe(200);
-      const sessionId = init.headers.get('mcp-session-id') as string;
-      expect(started.server.sessionCount).toBe(1);
-
-      // Send traffic every ~100 ms across more than the TTL. Each POST must
-      // stamp lastSeenMs (mcp-http-server.ts) so the sweeper never evicts it.
-      // Delete that refresh and an active session is dropped mid-use.
-      for (let i = 0; i < 12; i++) {
-        await sleep(100);
-        const res = await fetch(started.url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: ACCEPT_BOTH,
-            Authorization: `Bearer ${BEARER}`,
-            'Mcp-Session-Id': sessionId,
-          },
-          body: JSON.stringify({ jsonrpc: '2.0', id: 100 + i, method: 'tools/list', params: {} }),
-        });
-        await res.body?.cancel();
-        expect(res.status).toBe(200);
-      }
-
-      expect(started.server.sessionCount).toBe(1);
-    });
-
-    test('a session with an open SSE stream is never evicted while streaming, then evicts after it closes', async () => {
-      const started = await startServer({ sessionTtlMs: 150 });
-
-      const init = await rawInitialize(started);
-      expect(init.status).toBe(200);
-      const sessionId = init.headers.get('mcp-session-id') as string;
-      expect(started.server.sessionCount).toBe(1);
-
-      // Open the standalone GET SSE stream the SDK client keeps open for the life
-      // of the session, sending no further traffic. Without the active-stream
-      // guard the sweeper treats this connected client as idle and evicts it.
-      const controller = new AbortController();
-      const sse = await fetch(started.url, {
-        method: 'GET',
+      const malformed = await fetch(started.url, {
+        method: 'POST',
         headers: {
-          Accept: 'text/event-stream',
           Authorization: `Bearer ${BEARER}`,
-          'Mcp-Session-Id': sessionId,
+          'Content-Type': 'application/json',
         },
-        signal: controller.signal,
+        body: '{bad-json',
       });
-      expect(sse.status).toBe(200);
-      const reader = sse.body!.getReader();
-      const pump = (async () => {
-        try {
-          for (;;) {
-            const { done } = await reader.read();
-            if (done) break;
-          }
-        } catch {
-          // Aborting the stream rejects the pending read; that is expected.
-        }
-      })();
-
-      // Idle well past 2x the TTL with no requests at all; the open stream keeps
-      // the session alive.
-      await sleep(600);
-      expect(started.server.sessionCount).toBe(1);
-
-      // Closing the stream restarts the idle clock; the session is then evicted.
-      controller.abort();
-      await pump.catch(() => undefined);
-      await waitForCondition(() => started.server.sessionCount === 0);
+      expect(malformed.status).toBe(400);
+      expect((await malformed.json() as any).error.code).toBe(-32700);
     });
 
-    test('a failed session construction never latches the capacity guard at 503', async () => {
-      let constructionShouldFail = true;
-      const started = await startServer({
-        maxSessions: 2,
-        createMcpServer: () => {
-          if (constructionShouldFail) {
-            // Mirrors a NeoMcpServer constructor throw (e.g. a wallets-directory
-            // fs fault) on the increment/construction path.
-            throw new Error('simulated wallets directory unavailable');
-          }
-          return new NeoMcpServer();
+    test('enforces the request-body byte cap', async () => {
+      const started = await startServer({ maxBodyBytes: 64 });
+      const response = await fetch(started.url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${BEARER}`,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ payload: 'x'.repeat(256) }),
       });
-
-      // Fire maxSessions failing initializes. Each must release the in-flight
-      // counter; if the increment sat outside the guarded region these would
-      // permanently pin pendingSessions at maxSessions.
-      for (let i = 0; i < 2; i++) {
-        const failed = await rawInitialize(started);
-        await failed.body?.cancel();
-        expect(failed.status).toBe(500);
-      }
-      expect(started.server.sessionCount).toBe(0);
-
-      // A subsequent valid initialize must still be accepted (not 503-forever).
-      constructionShouldFail = false;
-      const ok = await rawInitialize(started);
-      await ok.body?.cancel();
-      expect(ok.status).toBe(200);
-      expect(started.server.sessionCount).toBe(1);
+      expect(response.status).toBe(413);
     });
 
-    test('stop() closes every live session', async () => {
+    test('times out a partial request body', async () => {
+      const started = await startServer({ bodyTimeoutMs: 75 });
+      const responseText = await new Promise<string>((resolve, reject) => {
+        const socket = net.connect(started.port, '127.0.0.1');
+        let data = '';
+        const timer = setTimeout(() => {
+          socket.destroy();
+          reject(new Error('Timed out waiting for partial-body rejection'));
+        }, 2_000);
+        socket.on('connect', () => {
+          socket.write(
+            `POST /mcp HTTP/1.1\r\n`
+            + `Host: 127.0.0.1\r\n`
+            + `Authorization: Bearer ${BEARER}\r\n`
+            + `Content-Type: application/json\r\n`
+            + `Content-Length: 100\r\n\r\n{"`,
+          );
+        });
+        socket.on('data', (chunk) => {
+          data += chunk.toString('utf8');
+        });
+        socket.on('end', () => {
+          clearTimeout(timer);
+          resolve(data);
+        });
+        socket.on('error', (error) => {
+          clearTimeout(timer);
+          reject(error);
+        });
+      });
+
+      expect(responseText).toContain('408 Request Timeout');
+      expect(responseText).toContain('body was not received in time');
+      expect(started.server.activeRequestCount).toBe(0);
+    });
+
+    test('returns a modern protocol health contract', async () => {
       const started = await startServer();
-      await connectClient(started);
-      expect(started.server.sessionCount).toBe(1);
+      const response = await fetch(`http://127.0.0.1:${started.port}/healthz`);
+      const payload = await response.json();
 
-      await started.server.stop();
-
-      expect(started.server.sessionCount).toBe(0);
+      expect(response.status).toBe(200);
+      expect(payload).toEqual(expect.objectContaining({
+        status: 'ok',
+        protocolVersion: MCP_PROTOCOL_VERSION,
+        protocolEra: 'modern',
+        stateless: true,
+        activeRequests: 0,
+      }));
     });
   });
 
-  describe('connection safety', () => {
-    test('a finite request deadline closes a slow-body request instead of pinning the socket', async () => {
-      // A short request deadline. An unauthenticated POST that completes its
-      // headers but dribbles its body must be closed by the server. With
-      // requestTimeout disabled (=0) the socket would live forever (slowloris).
-      const started = await startServer({ requestTimeoutMs: 500, headersTimeoutMs: 500 });
-
-      const socket = net.connect(started.port, '127.0.0.1');
-      await new Promise<void>((resolve, reject) => {
-        socket.once('connect', () => resolve());
-        socket.once('error', reject);
-      });
-
-      // Complete headers announcing a large body, then send a single body byte
-      // and stall. The 401 path never reads the body, so only the request
-      // deadline can reclaim the socket.
-      socket.write(
-        'POST /mcp HTTP/1.1\r\n' +
-        'Host: 127.0.0.1\r\n' +
-        'Content-Type: application/json\r\n' +
-        'Content-Length: 100000\r\n' +
-        '\r\n' +
-        '{'
-      );
-
-      // Drain the inbound 401 so the socket can reach 'end'/'close'; a paused
-      // socket never emits 'close' even after the peer sends FIN.
-      socket.resume();
-      const closedInTime = await new Promise<boolean>((resolve) => {
-        const timer = setTimeout(() => resolve(false), 4000);
-        socket.once('close', () => {
-          clearTimeout(timer);
-          resolve(true);
-        });
-        socket.once('error', () => {
-          clearTimeout(timer);
-          resolve(true);
-        });
-      });
-      socket.destroy();
-
-      expect(closedInTime).toBe(true);
-    });
-  });
-
-  describe('non-custodial read-only surface', () => {
-    test('withWritesDisabled hard-disables writes for the construction and restores the prior value', () => {
+  describe('read-only boundary and configuration', () => {
+    test('withWritesDisabled restores configuration after synchronous construction', () => {
       const previous = config.writes.enabled;
       config.writes.enabled = true;
       try {
-        let seenDuringConstruction: boolean | undefined;
-        const result = withWritesDisabled(() => {
-          seenDuringConstruction = config.writes.enabled;
-          return 'built';
-        });
-
-        expect(seenDuringConstruction).toBe(false);
-        expect(result).toBe('built');
+        const observed = withWritesDisabled(() => config.writes.enabled);
+        expect(observed).toBe(false);
         expect(config.writes.enabled).toBe(true);
       } finally {
         config.writes.enabled = previous;
       }
     });
 
-    test('never exposes signing/broadcast tools over HTTP even with NEO_ENABLE_WRITES on', async () => {
-      const signerDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-http-signer-'));
-      const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-http-write-state-'));
-      const wifFile = path.join(signerDir, 'signer.wif');
-      fs.writeFileSync(wifFile, new neonJs.wallet.Account().WIF, { mode: 0o600 });
-      fs.chmodSync(wifFile, 0o600);
-
-      const prevEnabled = config.writes.enabled;
-      const prevSigner = config.writes.signerWifFile;
-      const prevStateDir = config.writes.stateDirectory;
-      // Turn writes fully on at the config level: with a valid signer and state
-      // dir, the raw NeoMcpServer constructor WOULD register the write tools.
-      // The read-only factory must keep them off the remote surface anyway.
+    test('remote modern surface never exposes signing or broadcast tools', async () => {
+      const previous = config.writes.enabled;
       config.writes.enabled = true;
-      config.writes.signerWifFile = wifFile;
-      config.writes.stateDirectory = stateDir;
-
       try {
-        const started = await startServer(); // default (production) read-only factory
-        const { client } = await connectClient(started);
-
-        const listed = await client.listTools(undefined, { timeout: 15_000 });
-        const toolNames = listed.tools.map((tool) => tool.name);
-
-        for (const writeTool of [
-          'transfer_assets',
-          'invoke_contract_write',
-          'claim_gas',
-          'deploy_contract',
-        ]) {
-          expect(toolNames).not.toContain(writeTool);
+        const started = await startServer();
+        const { client } = await connectModernClient(started);
+        const names = (await client.listTools()).tools.map((tool) => tool.name);
+        for (const name of WRITE_TOOL_NAMES) {
+          expect(names).not.toContain(name);
         }
-        // Read tools are still present, so this is not vacuously empty.
-        expect(toolNames).toContain('get_network_mode');
       } finally {
-        config.writes.enabled = prevEnabled;
-        config.writes.signerWifFile = prevSigner;
-        config.writes.stateDirectory = prevStateDir;
-        fs.rmSync(signerDir, { recursive: true, force: true });
-        fs.rmSync(stateDir, { recursive: true, force: true });
+        config.writes.enabled = previous;
       }
     });
-  });
 
-  describe('environment configuration', () => {
-    test('reads the documented environment variables', () => {
+    test('parses modern-only environment variables', () => {
       const options = resolveMcpHttpOptionsFromEnv({
         MCP_HTTP_PORT: '3999',
         MCP_HTTP_HOST: '0.0.0.0',
-        MCP_HTTP_PATH: '/mcp-remote',
+        MCP_HTTP_PATH: '/mcp-modern',
         MCP_HTTP_BEARER: BEARER,
         MCP_HTTP_ALLOWED_ORIGINS: 'https://a.example, https://b.example',
         MCP_HTTP_ALLOWED_HOSTS: 'mcp.example, mcp.internal',
-        MCP_HTTP_MAX_SESSIONS: '7',
-        MCP_HTTP_SESSION_TTL_MS: '60000',
+        MCP_HTTP_MAX_CONCURRENT_REQUESTS: '17',
+        MCP_HTTP_MAX_SUBSCRIPTIONS: '9',
+        MCP_HTTP_MAX_BODY_BYTES: '8192',
+        MCP_HTTP_KEEP_ALIVE_MS: '0',
       });
 
-      expect(options).toEqual({
+      expect(options).toEqual(expect.objectContaining({
         port: 3999,
         host: '0.0.0.0',
-        path: '/mcp-remote',
-        bearerToken: BEARER,
-        allowedOrigins: ['https://a.example', 'https://b.example'],
-        allowedHosts: ['mcp.example', 'mcp.internal'],
-        maxSessions: 7,
-        sessionTtlMs: 60_000,
-      });
+        path: '/mcp-modern',
+        maxConcurrentRequests: 17,
+        maxSubscriptions: 9,
+        maxBodyBytes: 8192,
+        keepAliveMs: 0,
+      }));
+      expect(options.allowedOrigins).toEqual(['https://a.example', 'https://b.example']);
+      expect(options.allowedHosts).toEqual(['mcp.example', 'mcp.internal']);
     });
 
-    test('the Host allowlist wired from the environment actually enforces at the entry path', async () => {
-      // Guards against the allowlist being reachable only via the constructor:
-      // build options the way the shipped entrypoint does, then confirm the
-      // resulting server rejects an off-allowlist Host.
-      const options = resolveMcpHttpOptionsFromEnv({
-        MCP_HTTP_ALLOWED_HOSTS: 'mcp.example',
-        MCP_HTTP_BEARER: BEARER,
-      });
-      // Bind an ephemeral port for the test; every other option comes from the
-      // env resolver exactly as the shipped entrypoint builds it.
-      const started = await startServer({ ...options, port: 0 });
-
-      const response = await rawInitialize(started);
-      await response.body?.cancel();
-
-      expect(response.status).toBe(403);
-      expect(started.server.sessionCount).toBe(0);
+    test('rejects invalid modern server options', () => {
+      expect(() => resolveMcpHttpOptionsFromEnv({ MCP_HTTP_PORT: 'nope' }))
+        .toThrow(/MCP_HTTP_PORT/);
+      expect(() => resolveMcpHttpOptionsFromEnv({
+        MCP_HTTP_MAX_CONCURRENT_REQUESTS: '0',
+      })).toThrow(/MCP_HTTP_MAX_CONCURRENT_REQUESTS/);
+      expect(() => resolveMcpHttpOptionsFromEnv({
+        MCP_HTTP_MAX_SUBSCRIPTIONS: '-1',
+      })).toThrow(/MCP_HTTP_MAX_SUBSCRIPTIONS/);
+      expect(() => resolveMcpHttpOptionsFromEnv({
+        MCP_HTTP_KEEP_ALIVE_MS: '-1',
+      })).toThrow(/MCP_HTTP_KEEP_ALIVE_MS/);
+      expect(() => new McpHttpServer({ path: '/healthz' }))
+        .toThrow(/reserved/);
     });
 
-    test('falls back to the documented defaults', () => {
-      const options = resolveMcpHttpOptionsFromEnv({});
-
-      expect(options).toMatchObject({
-        port: 3001,
-        host: '127.0.0.1',
-        path: '/mcp',
-        bearerToken: undefined,
-        allowedOrigins: [],
-        allowedHosts: [],
-        maxSessions: 128,
-        sessionTtlMs: 1_800_000,
-      });
-    });
-
-    test('rejects invalid numeric environment values', () => {
-      expect(() => resolveMcpHttpOptionsFromEnv({ MCP_HTTP_PORT: 'nope' })).toThrow(/MCP_HTTP_PORT/);
-      expect(() => resolveMcpHttpOptionsFromEnv({ MCP_HTTP_MAX_SESSIONS: '0' }))
-        .toThrow(/MCP_HTTP_MAX_SESSIONS/);
-      expect(() => resolveMcpHttpOptionsFromEnv({ MCP_HTTP_SESSION_TTL_MS: '-1' }))
-        .toThrow(/MCP_HTTP_SESSION_TTL_MS/);
+    test('does not allow the same listener to start twice', async () => {
+      const started = await startServer();
+      await expect(started.server.start()).rejects.toThrow(/already started/);
     });
   });
 });

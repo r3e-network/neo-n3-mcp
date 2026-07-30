@@ -1,13 +1,13 @@
-import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { ResourceTemplate } from "@modelcontextprotocol/server";
 import { NetworkMode, config } from '../src/config';
 import { setupResourceHandlers } from '../src/handlers/resource-handler';
 import { rateLimiter } from '../src/utils/rate-limiter';
 
-/** Register the resource handlers for a session `scope` and return its status handler. */
+/** Register the resource handlers for a client `scope` and return its status handler. */
 function statusHandlerFor(scope: object) {
   const registrations: any[][] = [];
   const server = {
-    resource: jest.fn((...args: any[]) => registrations.push(args)),
+    registerResource: jest.fn((...args: any[]) => registrations.push(args)),
   } as any;
   const getNeoService = jest.fn(async () => ({
     getBlockchainInfo: jest.fn(async () => ({ height: 1, network: 'mainnet' })),
@@ -26,7 +26,7 @@ describe('setupResourceHandlers', () => {
   test('registers fixed status resources and the block template in both mode', async () => {
     const registrations: any[][] = [];
     const server = {
-      resource: jest.fn((...args: any[]) => {
+      registerResource: jest.fn((...args: any[]) => {
         registrations.push(args);
       })
     } as any;
@@ -41,7 +41,7 @@ describe('setupResourceHandlers', () => {
       getNeoService
     });
 
-    expect(server.resource).toHaveBeenCalledTimes(4);
+    expect(server.registerResource).toHaveBeenCalledTimes(4);
     expect(registrations[0][0]).toBe('neo-network-status');
     expect(registrations[0][1]).toBe('neo://network/status');
     expect(registrations[1][0]).toBe('neo-mainnet-status');
@@ -83,7 +83,7 @@ describe('setupResourceHandlers', () => {
   test('omits mainnet status when running in testnet-only mode', () => {
     const registrations: any[][] = [];
     const server = {
-      resource: jest.fn((...args: any[]) => {
+      registerResource: jest.fn((...args: any[]) => {
         registrations.push(args);
       })
     } as any;
@@ -106,7 +106,7 @@ describe('setupResourceHandlers', () => {
       const registrations: any[][] = [];
       const getBlock = jest.fn();
       const server = {
-        resource: jest.fn((...args: any[]) => registrations.push(args)),
+        registerResource: jest.fn((...args: any[]) => registrations.push(args)),
       } as any;
 
       setupResourceHandlers(server, {
@@ -125,7 +125,7 @@ describe('setupResourceHandlers', () => {
     }
   );
 
-  test('charges a distinct rate-limit bucket per session scope for resource reads', async () => {
+  test('charges a distinct rate-limit bucket per client scope for resource reads', async () => {
     const keys: string[] = [];
     const checkLimit = jest
       .spyOn(rateLimiter, 'checkLimit')
@@ -134,21 +134,21 @@ describe('setupResourceHandlers', () => {
         return true;
       });
 
-    const sessionA = {};
-    const sessionB = {};
-    const statusA = statusHandlerFor(sessionA);
-    const statusB = statusHandlerFor(sessionB);
+    const clientA = {};
+    const clientB = {};
+    const statusA = statusHandlerFor(clientA);
+    const statusB = statusHandlerFor(clientB);
 
     await statusA(new URL('neo://network/status'));
     await statusA(new URL('neo://network/status'));
     await statusB(new URL('neo://network/status'));
 
     expect(keys).toHaveLength(3);
-    // Same session (same scope instance) => one stable bucket.
+    // Same client (same scope instance) => one stable bucket.
     expect(keys[0]).toBe(keys[1]);
-    // Distinct sessions => distinct buckets: no shared process-wide bucket.
+    // Distinct clients => distinct buckets: no shared process-wide bucket.
     expect(keys[2]).not.toBe(keys[0]);
-    // The bucket is no longer the constant that made every session collide.
+    // The bucket is no longer the constant that made every client collide.
     expect(keys[0]).not.toBe('mcp-client');
 
     checkLimit.mockRestore();
@@ -162,13 +162,13 @@ describe('setupResourceHandlers', () => {
       const statusA = statusHandlerFor({});
       const statusB = statusHandlerFor({});
 
-      // Session A spends its single token on a resource read.
+      // Client A spends its single token on a resource read.
       await expect(statusA(new URL('neo://network/status'))).resolves.toBeDefined();
 
-      // Session A's next read exceeds its own bucket, before it touches RPC.
+      // Client A's next read exceeds its own bucket, before it touches RPC.
       await expect(statusA(new URL('neo://network/status'))).rejects.toThrow('Rate limit exceeded');
 
-      // Session B is a different connection; its bucket is untouched.
+      // Client B has a distinct bucket, so its allowance is untouched.
       await expect(statusB(new URL('neo://network/status'))).resolves.toBeDefined();
     } finally {
       rateLimiter.updateSettings(

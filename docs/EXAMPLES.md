@@ -64,7 +64,9 @@ The result is an UNSIGNED proposal. A wallet reviews it, signs it, and broadcast
 
 ## Controlled MCP Write
 
-Enable writes with an owner-only signer file and durable journal. The MCP client must advertise form elicitation support.
+Enable writes with an owner-only signer file, durable journal, and independent
+`NEO_MCP_REQUEST_STATE_KEY`. The MCP client must support `input_required`
+multi-round trips and present the exact intent fingerprint to the user.
 
 ```javascript
 const result = await client.callTool({

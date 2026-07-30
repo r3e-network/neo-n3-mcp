@@ -177,6 +177,7 @@ export const config = {
     enabled: readBooleanEnv('NEO_ENABLE_WRITES') ?? false,
     signerWifFile: readEnv('NEO_SIGNER_WIF_FILE'),
     stateDirectory: readEnv('NEO_WRITE_STATE_DIR') || path.join(walletsDirectory, '.write-operations'),
+    requestStateKey: readEnv('NEO_MCP_REQUEST_STATE_KEY'),
     httpApprovalApiKey: readEnv('HTTP_WRITE_APPROVAL_API_KEY'),
   },
   n3index: {
@@ -287,6 +288,14 @@ export function validateConfig(): void {
     throw new Error('NEO_SIGNER_WIF_FILE is required when NEO_ENABLE_WRITES=true.');
   }
 
+  const requestStateKey = readEnv('NEO_MCP_REQUEST_STATE_KEY');
+  if (writesEnabled && !requestStateKey) {
+    throw new Error('NEO_MCP_REQUEST_STATE_KEY is required when NEO_ENABLE_WRITES=true.');
+  }
+  if (requestStateKey && Buffer.byteLength(requestStateKey, 'utf8') < 32) {
+    throw new Error('Invalid NEO_MCP_REQUEST_STATE_KEY. Must contain at least 32 bytes.');
+  }
+
   const writeApprovalApiKey = readEnv('HTTP_WRITE_APPROVAL_API_KEY');
   if (writeApprovalApiKey && Buffer.byteLength(writeApprovalApiKey, 'utf8') < 32) {
     throw new Error('Invalid HTTP_WRITE_APPROVAL_API_KEY. Must contain at least 32 bytes.');
@@ -355,6 +364,14 @@ export function validateConfig(): void {
   const apiKey = readEnv('HTTP_API_KEY');
   if (apiKey && writeApprovalApiKey === apiKey) {
     throw new Error('HTTP_WRITE_APPROVAL_API_KEY must differ from HTTP_API_KEY.');
+  }
+  if (
+    requestStateKey
+    && (requestStateKey === apiKey || requestStateKey === writeApprovalApiKey)
+  ) {
+    throw new Error(
+      'NEO_MCP_REQUEST_STATE_KEY must differ from HTTP_API_KEY and HTTP_WRITE_APPROVAL_API_KEY.'
+    );
   }
   if (apiKey && Buffer.byteLength(apiKey, 'utf8') < 32) {
     throw new Error('Invalid HTTP_API_KEY. Must contain at least 32 bytes.');

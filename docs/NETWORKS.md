@@ -79,7 +79,7 @@ NEO_NETWORK=testnet
 NEO_NETWORK=both
 ```
 
-`NEO_NETWORK` selects the Neo N3 node mode. When it is `both`, both Neo N3 services are initialized and read-only tool calls without an explicit `network` parameter default to mainnet. The optional signing tools on a local stdio server never use that default: `transfer_assets`, `claim_gas`, `deploy_contract`, and `invoke_contract_write` require an explicit `network` plus acceptance of the exact intent fingerprint.
+`NEO_NETWORK` selects the Neo N3 node mode. When it is `both`, both Neo N3 services are initialized and read-only tool calls without an explicit `network` parameter default to mainnet. The optional signing tools on a local stdio server never use that default: `transfer_assets`, `claim_gas`, `deploy_contract`, and `invoke_contract_write` require an explicit `network` plus acceptance of the exact intent fingerprint through the MCP 2026-07-28 `input_required` flow.
 
 Neo X testnet availability is controlled separately by `NEOX_TESTNET_ENABLED`.
 
