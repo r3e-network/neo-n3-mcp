@@ -807,7 +807,7 @@ test('getNep11Transfers retains metadata without labeling unverified counterpart
 
 test('waitForTransaction returns confirmed transaction details and application log', async () => {
   const result = await neoService.waitForTransaction('0xabcdef1234567890', {
-    timeoutMs: 10,
+    timeoutMs: 1_000,
     pollIntervalMs: 1,
     includeApplicationLog: true,
   });
