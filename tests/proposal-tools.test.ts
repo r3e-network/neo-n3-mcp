@@ -113,7 +113,12 @@ describe('n3_build_transfer', () => {
     const customHash = '0x' + 'ab'.repeat(20);
     const testInvoke = jest.fn()
       .mockResolvedValueOnce({ state: 'HALT', stack: [{ type: 'Integer', value: '4' }] }) // decimals
-      .mockResolvedValueOnce({ state: 'HALT', gasconsumed: '1', exception: null, stack: [] }); // simulation
+      .mockResolvedValueOnce({
+        state: 'HALT',
+        gasconsumed: '1',
+        exception: null,
+        stack: [{ type: 'Boolean', value: true }],
+      }); // simulation
     const neoService = { testInvoke } as unknown as NeoService;
 
     const res = await handleN3BuildTransfer(
@@ -161,6 +166,24 @@ describe('n3_build_transfer', () => {
         neoService,
       ),
     ).rejects.toThrow(/simulation failed/i);
+  });
+
+  test('does not return a signable proposal when a HALT transfer returns false', async () => {
+    const neoService = mockNeoService({
+      testInvoke: jest.fn().mockResolvedValue({
+        state: 'HALT',
+        gasconsumed: '215925',
+        exception: null,
+        stack: [{ type: 'Boolean', value: false }],
+      }),
+    });
+
+    await expect(
+      handleN3BuildTransfer(
+        { network: 'testnet', from: FROM_ADDR, to: TO_ADDR, asset: 'GAS', amount: '0.00000001' },
+        neoService,
+      ),
+    ).rejects.toThrow(/transfer returned false/i);
   });
 });
 

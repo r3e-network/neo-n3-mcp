@@ -62,6 +62,17 @@ function shapeSimulation(result: ContractInvocationResult): N3Simulation {
   };
 }
 
+function simulationBooleanResultIsTrue(simulation: N3Simulation): boolean {
+  const first = Array.isArray(simulation.stack) ? simulation.stack[0] : null;
+  if (!first || typeof first !== 'object') return false;
+  const entry = first as { type?: unknown; value?: unknown };
+  if (String(entry.type || '').toLowerCase() !== 'boolean') return false;
+  return entry.value === true
+    || String(entry.value || '').toLowerCase() === 'true'
+    || entry.value === 1
+    || entry.value === '1';
+}
+
 /** Normalize caller-supplied RPC signers (account may be an N3 address or 0x hash). */
 function normalizeRpcSigners(raw: unknown): Array<{ account: string; scopes: string }> | undefined {
   if (raw === undefined || raw === null) return undefined;
@@ -120,6 +131,9 @@ async function attachSimulation(
     throw new ValidationError(
       `Transaction simulation failed${simulation.exception ? `: ${simulation.exception}` : '.'}`
     );
+  }
+  if (proposal.operation === 'transfer' && !simulationBooleanResultIsTrue(simulation)) {
+    throw new ValidationError('Transaction simulation failed: transfer returned false.');
   }
   return { ...proposal, simulation };
 }
