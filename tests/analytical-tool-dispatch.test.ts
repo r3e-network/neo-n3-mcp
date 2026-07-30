@@ -9,6 +9,7 @@ const emptyNeoServices = new Map<NeoNetwork, NeoService>();
 const emptyContractServices = new Map<NeoNetwork, ContractService>();
 
 const VALID_N3_ADDRESS = 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr';
+const VALID_N3_TARGET = 'NSkSDp2FjS4G3ngP5Rryi77qa6yWFuR8LK';
 const VALID_N3_TOKEN_HASH = '0xd2a4cff31913016155e38e474a2c06d08be276cf';
 const VALID_EVM_ADDRESS = '0x1111111111111111111111111111111111111111';
 
@@ -102,6 +103,51 @@ describe('callTool analytical dispatch', () => {
     expect(response.result).toEqual({
       data: { address: VALID_N3_ADDRESS, engine_version: 'n3-address-intelligence/v2' },
     });
+  });
+
+  test('query_indexer routes bounded address connection evidence without a model-authored path', async () => {
+    const fetchMock = jest.fn().mockResolvedValue(
+      jsonResponse({
+        data: {
+          source: { address: VALID_N3_ADDRESS },
+          target: { address: VALID_N3_TARGET },
+          status: 'indirect',
+          evidence: [],
+          engine_version: 'n3-address-connection/v1',
+          sample: { exhaustive: false },
+        },
+      }),
+    );
+    global.fetch = fetchMock as any;
+
+    const response = await callTool(
+      'query_indexer',
+      {
+        method: 'analyze_address_connection',
+        network: 'testnet',
+        params: {
+          address: VALID_N3_ADDRESS,
+          target: VALID_N3_TARGET,
+          sample: 80,
+          limit: 6,
+        },
+      },
+      emptyNeoServices,
+      emptyContractServices,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url] = fetchMock.mock.calls[0];
+    expect(url).toBe(
+      `https://api.n3index.dev/testnet/accounts/${VALID_N3_ADDRESS}/connection`
+      + `?target=${VALID_N3_TARGET}&sample=80&limit=6`,
+    );
+    expect(response.result).toEqual(expect.objectContaining({
+      data: expect.objectContaining({
+        status: 'indirect',
+        engine_version: 'n3-address-connection/v1',
+      }),
+    }));
   });
 
   test('query_indexer routes deterministic transaction analysis to the selected N3 network', async () => {

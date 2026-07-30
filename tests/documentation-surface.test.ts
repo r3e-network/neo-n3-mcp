@@ -22,8 +22,9 @@ describe('documentation surface', () => {
     expect(websiteApiDoc).toContain('id="chains"');
     expect(websiteApiDoc).toContain('"chain": "n3"');
     expect(websiteApiDoc).toContain('build_contract_call');
-    expect(websiteApiDoc).toContain('none of the 43 default tools holds a private key');
+    expect(websiteApiDoc).toContain('none of the 44 default tools holds a private key');
     expect(websiteApiDoc).toContain('analyze_address');
+    expect(websiteApiDoc).toContain('analyze_address_connection');
     expect(websiteApiDoc).toContain('analyze_transaction');
 
     const toolsTableStart = websiteApiDoc.indexOf('id="tools"');

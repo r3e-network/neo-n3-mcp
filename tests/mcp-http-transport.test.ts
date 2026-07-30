@@ -140,7 +140,7 @@ describe('MCP 2026-07-28 stateless HTTP transport', () => {
       expect(transport.sessionId).toBeUndefined();
 
       const listed = await client.listTools();
-      expect(listed.tools).toHaveLength(43);
+      expect(listed.tools).toHaveLength(44);
       expect(listed.tools.map((tool) => tool.name)).toContain('analyze_address');
       expect(listed.tools.map((tool) => tool.name)).toContain('analyze_transaction');
       expect(listed.ttlMs).toBe(300_000);

@@ -951,6 +951,41 @@ const SPECS: PublicToolSpec[] = [
     },
   },
   {
+    name: 'analyze_address_connection',
+    description:
+      'PRIMARY Neo N3 tool for explaining how two addresses are connected. Returns '
+      + 'network-scoped, bounded evidence for direct transfers, co-signed transactions, '
+      + 'and one-intermediary shared-counterparty paths, with endpoint/intermediary identity '
+      + 'provenance and explicit non-exhaustive sample boundaries. Connections never prove '
+      + 'common ownership.',
+    inputSchema: {
+      source: z.string().describe('Source canonical Base58 Neo N3 account address'),
+      target: z.string().describe('Target canonical Base58 Neo N3 account address'),
+      sample: z.number().int().min(20).max(200).optional().describe(
+        'Recent transfer rows sampled per direction and address (20-200, default 100)',
+      ),
+      limit: z.number().int().min(1).max(12).optional().describe(
+        'Maximum connection evidence paths to return (1-12, default 8)',
+      ),
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'query_indexer',
+        mapArgs: (args) => ({
+          method: 'analyze_address_connection',
+          params: {
+            address: args.source,
+            target: args.target,
+            ...pick(args, ['sample', 'limit']),
+          },
+          ...n3Args(pick(args, ['network'])),
+        }),
+      },
+    },
+  },
+  {
     name: 'analyze_transaction',
     description:
       'PRIMARY Neo N3 transaction-explanation tool. Use this first for transaction meaning, '

@@ -67,6 +67,7 @@ const EXPECTED_PUBLIC_TOOLS = [
   // explorer / indexer reads
   'explorer_get_address',
   'analyze_address',
+  'analyze_address_connection',
   'analyze_transaction',
   'explorer_list_address_transactions',
   'explorer_list_address_transfers',
@@ -84,7 +85,7 @@ describe('public tool surface', () => {
   });
 
   it('keeps the expanded high-level surface bounded', () => {
-    expect(publicToolNames().length).toBeLessThanOrEqual(43);
+    expect(publicToolNames().length).toBeLessThanOrEqual(44);
   });
 
   it('never exposes key-custody tools', () => {
@@ -391,6 +392,28 @@ describe('explorer routing', () => {
     expect(route.args).toEqual({
       method: 'analyze_address',
       params: { address: 'N1', sample: 40, limit: 8 },
+      network: 'testnet',
+    });
+    expect(route.requiresServices).toBe(false);
+  });
+
+  it('maps address-to-address analysis without exposing an arbitrary URL', () => {
+    const route = resolveRoute('analyze_address_connection', {
+      source: 'NSource',
+      target: 'NTarget',
+      sample: 80,
+      limit: 6,
+      network: 'testnet',
+    });
+    expect(route.internalName).toBe('query_indexer');
+    expect(route.args).toEqual({
+      method: 'analyze_address_connection',
+      params: {
+        address: 'NSource',
+        target: 'NTarget',
+        sample: 80,
+        limit: 6,
+      },
       network: 'testnet',
     });
     expect(route.requiresServices).toBe(false);

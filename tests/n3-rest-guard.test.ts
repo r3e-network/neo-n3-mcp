@@ -23,6 +23,7 @@ import { ValidationError } from '../src/utils/errors';
 
 // A real, checksum-valid Neo N3 base58 mainnet address (34 chars).
 const VALID_ADDRESS = 'NaMLm1hwCaQitxmLboJGo2XJkG8PSYvuyr';
+const VALID_TARGET_ADDRESS = 'NSkSDp2FjS4G3ngP5Rryi77qa6yWFuR8LK';
 // An intentionally invalid-checksum address (well-formed shape, bad checksum).
 const INVALID_ADDRESS = 'NdzDrZQcdA4V3wRaL6h6JXS8s3i8dJzY5M';
 // A real contract/token script hash (GAS): 0x + 40 hex.
@@ -89,6 +90,36 @@ describe('assertAllowedN3Endpoint — endpoint allowlist', () => {
     }
     expect(message).toContain('get_address_summary');
     expect(message).toContain('Permitted endpoints');
+  });
+});
+
+describe('address connection endpoint', () => {
+  it('builds only the fixed path and allowlisted bounded query parameters', () => {
+    const request = buildN3EndpointRequest(desc('analyze_address_connection'), {
+      address: VALID_ADDRESS,
+      target: VALID_TARGET_ADDRESS,
+      sample: 80,
+      limit: 6,
+    });
+    expect(request).toEqual({
+      path: `accounts/${VALID_ADDRESS}/connection`,
+      params: {
+        target: VALID_TARGET_ADDRESS,
+        sample: 80,
+        limit: 6,
+      },
+    });
+  });
+
+  it('requires the target and rejects undeclared graph traversal controls', () => {
+    expect(() => buildN3EndpointRequest(desc('analyze_address_connection'), {
+      address: VALID_ADDRESS,
+    })).toThrow(/Missing required query parameter "target"/);
+    expect(() => buildN3EndpointRequest(desc('analyze_address_connection'), {
+      address: VALID_ADDRESS,
+      target: VALID_TARGET_ADDRESS,
+      depth: 99,
+    })).toThrow(/Unknown parameter "depth"/);
   });
 });
 
@@ -345,13 +376,14 @@ describe('N3_REST_CATALOG — invariants', () => {
   });
 
   it('reports the expected verified endpoint count', () => {
-    expect(N3_REST_CATALOG.size).toBe(27);
+    expect(N3_REST_CATALOG.size).toBe(28);
   });
 
   it('exposes exactly the vetted semantic endpoint keys', () => {
     expect([...N3_REST_CATALOG.keys()].sort()).toEqual(
       [
         'analyze_address',
+        'analyze_address_connection',
         'analyze_transaction',
         'analytics_daily',
         'get_address_summary',

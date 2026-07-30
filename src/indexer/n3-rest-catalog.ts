@@ -240,6 +240,19 @@ const ENTRIES: Record<string, CatalogEntry> = {
       + 'contract interactions, behavior signals, confidence, and sample boundaries.',
     queryParams: { sample: { type: 'int' }, limit: { type: 'int' } },
   },
+  analyze_address_connection: {
+    pathTemplate: 'accounts/{address}/connection',
+    pathParam: ADDRESS_PARAM,
+    category: 'address',
+    summary:
+      'Bounded evidence connecting two accounts through direct transfers, co-signed '
+      + 'transactions, or shared counterparties. A negative result is not exhaustive.',
+    queryParams: {
+      target: { type: 'string', required: true },
+      sample: { type: 'int' },
+      limit: { type: 'int' },
+    },
+  },
   list_address_balances: {
     pathTemplate: 'accounts/{address}/balances',
     pathParam: ADDRESS_PARAM,
