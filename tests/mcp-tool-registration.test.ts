@@ -228,6 +228,15 @@ describe('Modern MCP tool registration', () => {
     );
   });
 
+  test('advertises optional Neo N3 state-root evidence on get_block', async () => {
+    const response = await listTools(client!);
+    const getBlock = response.tools.find(tool => tool.name === 'get_block');
+
+    expect(getBlock).toBeDefined();
+    expect(getBlock?.inputSchema.properties).toHaveProperty('includeStateRoot');
+    expect(getBlock?.inputSchema.required).not.toContain('includeStateRoot');
+  });
+
   test('does not advertise unsupported estimate_invoke_fees signers', async () => {
     const response = await listTools(client!);
     const estimateInvokeFees = response.tools.find(tool => tool.name === 'estimate_invoke_fees');

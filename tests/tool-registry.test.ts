@@ -236,9 +236,23 @@ describe('node read routing', () => {
     expect(route.args.params).toEqual({ address: '0xdead' });
   });
 
-  it('passes Neo N3 block lookups through unchanged', () => {
-    const route = resolveRoute('get_block', { chain: 'n3', hashOrHeight: 42, network: 'testnet' });
-    expect(route.args).toEqual({ hashOrHeight: 42, network: 'testnet' });
+  it('passes optional state-root evidence through only on Neo N3', () => {
+    const route = resolveRoute('get_block', {
+      chain: 'n3',
+      hashOrHeight: 42,
+      includeStateRoot: true,
+      network: 'testnet',
+    });
+    expect(route.args).toEqual({
+      hashOrHeight: 42,
+      includeStateRoot: true,
+      network: 'testnet',
+    });
+    expect(() => resolveRoute('get_block', {
+      chain: 'neox',
+      hashOrHeight: 42,
+      includeStateRoot: true,
+    })).toThrow(/Neo N3/i);
   });
 
   it('feeds the Neo X node block handler the alias it reads', () => {

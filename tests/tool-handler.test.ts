@@ -161,6 +161,17 @@ const createMockNeoService = (): jest.Mocked<NeoService> => ({
   getBlockchainInfo: jest.fn().mockResolvedValue(mockBlockchainInfo),
   getBlockCount: jest.fn().mockResolvedValue(12345),
   getBlock: jest.fn().mockResolvedValue({ hash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef', index: 12344 }),
+  getStateRootValidation: jest.fn().mockResolvedValue({
+    blockHeight: 12344,
+    root: {
+      index: 12344,
+      roothash: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    },
+    localRootIndex: 12346,
+    validatedRootIndex: 12345,
+    validated: true,
+    network: NeoNetwork.MAINNET,
+  }),
   getTransaction: jest.fn().mockResolvedValue({ hash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef', sender: 'NMock' }),
   getBalance: jest.fn().mockResolvedValue(mockBalance),
   transferAssets: jest.fn().mockResolvedValue(mockTransferResult),
@@ -417,6 +428,52 @@ describe('Tool Handlers', () => {
       const result = await callTool('get_block', input, mockNeoServices, mockContractServices);
       
       expect(result).toHaveProperty('result');
+    });
+
+    test('optionally includes state-root validation evidence', async () => {
+      const neoService = mockNeoServices.get(NeoNetwork.MAINNET) as any;
+      const result = await callTool(
+        'get_block',
+        { network: 'mainnet', hashOrHeight: 12344, includeStateRoot: true },
+        mockNeoServices,
+        mockContractServices,
+      );
+
+      expect(neoService.getStateRootValidation).toHaveBeenCalledWith(12344);
+      expect(result.result.stateRootValidation).toMatchObject({
+        blockHeight: 12344,
+        validatedRootIndex: 12345,
+        validated: true,
+      });
+    });
+
+    test('resolves a hash lookup to the returned block index before reading its state root', async () => {
+      const neoService = mockNeoServices.get(NeoNetwork.MAINNET) as any;
+      const result = await callTool(
+        'get_block',
+        {
+          network: 'mainnet',
+          hashOrHeight: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+          includeStateRoot: true,
+        },
+        mockNeoServices,
+        mockContractServices,
+      );
+
+      expect(result).toHaveProperty('result');
+      expect(neoService.getStateRootValidation).toHaveBeenCalledWith(12344);
+    });
+
+    test('does not add state-root RPCs to ordinary block lookups', async () => {
+      const neoService = mockNeoServices.get(NeoNetwork.MAINNET) as any;
+      await callTool(
+        'get_block',
+        { network: 'mainnet', hashOrHeight: 12344 },
+        mockNeoServices,
+        mockContractServices,
+      );
+
+      expect(neoService.getStateRootValidation).not.toHaveBeenCalled();
     });
 
     test.each([-1, 1.5, Number.MAX_SAFE_INTEGER + 1])(

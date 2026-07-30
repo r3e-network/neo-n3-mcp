@@ -332,6 +332,12 @@ The curated contract list is intentionally empty until each entry has a current 
 
 `get_block_height` returns both `blockCount` and `height`, where `height` is `max(0, blockCount - 1)`.
 
+For Neo N3 block analysis, pass `includeStateRoot: true` to `get_block` to
+receive the exact StateService root plus local and StateValidator-validated
+height boundaries. The returned `validated` flag is true only when the requested
+root is at or below the validated boundary. Neo X rejects this N3-only option,
+and ordinary block lookups do not incur the extra RPC calls.
+
 Resources:
 
 - `neo://network/status`

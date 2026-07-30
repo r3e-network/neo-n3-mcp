@@ -99,7 +99,32 @@ async function handleGetBlock(input: Record<string, unknown>, neoService: NeoSer
       throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'hashOrHeight must be a string or number');
     }
     const block = await neoService.getBlock(blockReference);
-    return createSuccessResponse(block);
+    if (input.includeStateRoot === undefined || input.includeStateRoot === false) {
+      return createSuccessResponse(block);
+    }
+    if (input.includeStateRoot !== true) {
+      throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'includeStateRoot must be a boolean');
+    }
+
+    const returnedIndex = block.index;
+    if (
+      typeof blockReference === 'string'
+      && typeof returnedIndex !== 'number'
+      && typeof returnedIndex !== 'string'
+    ) {
+      throw new ProtocolError(
+        ProtocolErrorCode.InvalidParams,
+        'Block response does not contain a valid index for state-root lookup',
+      );
+    }
+    const blockHeight = typeof blockReference === 'number'
+      ? blockReference
+      : validateInteger(returnedIndex as string | number);
+    const stateRootValidation = await neoService.getStateRootValidation(blockHeight);
+    return createSuccessResponse({
+      ...block,
+      stateRootValidation,
+    });
   } catch (error) {
     return handleError(error);
   }

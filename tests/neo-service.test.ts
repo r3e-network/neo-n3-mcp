@@ -471,6 +471,109 @@ describe('NeoService', () => {
     expect(block).toHaveProperty('index', mockBlock.index);
   });
 
+  test('getStateRootValidation returns exact root evidence and validator boundary', async () => {
+    const mockRpcClient = (neoService as any).rpcClient;
+    const stateRoot = {
+      version: 0,
+      index: 12344,
+      roothash: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      witnesses: [],
+    };
+    mockRpcClient.execute = jest.fn().mockImplementation((query) => {
+      if (query.method === 'getstateroot') return Promise.resolve(stateRoot);
+      if (query.method === 'getstateheight') {
+        return Promise.resolve({ localrootindex: 12346, validatedrootindex: 12345 });
+      }
+      return Promise.resolve(null);
+    });
+
+    await expect(neoService.getStateRootValidation(12344)).resolves.toEqual({
+      blockHeight: 12344,
+      root: stateRoot,
+      localRootIndex: 12346,
+      validatedRootIndex: 12345,
+      validated: true,
+      network: NeoNetwork.MAINNET,
+    });
+    expect(mockRpcClient.execute).toHaveBeenCalledWith({
+      method: 'getstateroot',
+      params: [12344],
+    });
+    expect(mockRpcClient.execute).toHaveBeenCalledWith({
+      method: 'getstateheight',
+      params: [],
+    });
+  });
+
+  test('getStateRootValidation does not mark a root ahead of StateValidator as validated', async () => {
+    const mockRpcClient = (neoService as any).rpcClient;
+    mockRpcClient.execute = jest.fn().mockImplementation((query) => {
+      if (query.method === 'getstateroot') {
+        return Promise.resolve({
+          index: 12346,
+          roothash: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+        });
+      }
+      if (query.method === 'getstateheight') {
+        return Promise.resolve({ localrootindex: 12346, validatedrootindex: 12345 });
+      }
+      return Promise.resolve(null);
+    });
+
+    await expect(neoService.getStateRootValidation(12346)).resolves.toMatchObject({
+      blockHeight: 12346,
+      validatedRootIndex: 12345,
+      validated: false,
+    });
+  });
+
+  test.each([
+    [
+      'a null validation boundary',
+      {
+        root: {
+          index: 12344,
+          roothash: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        },
+        height: { localrootindex: 12346, validatedrootindex: null },
+      },
+    ],
+    [
+      'a root for a different block',
+      {
+        root: {
+          index: 12343,
+          roothash: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        },
+        height: { localrootindex: 12346, validatedrootindex: 12345 },
+      },
+    ],
+    [
+      'a malformed root hash',
+      {
+        root: { index: 12344, roothash: 'not-a-state-root' },
+        height: { localrootindex: 12346, validatedrootindex: 12345 },
+      },
+    ],
+  ])('getStateRootValidation rejects %s', async (_case, evidence) => {
+    const mockRpcClient = (neoService as any).rpcClient;
+    mockRpcClient.execute = jest.fn().mockImplementation((query) => (
+      Promise.resolve(query.method === 'getstateroot' ? evidence.root : evidence.height)
+    ));
+
+    await expect(neoService.getStateRootValidation(12344))
+      .rejects.toThrow(/failed to validate state root/i);
+  });
+
+  test.each([-1, 1.5, Number.MAX_SAFE_INTEGER + 1])(
+    'getStateRootValidation rejects invalid block height %p before RPC',
+    async (height) => {
+      const mockRpcClient = (neoService as any).rpcClient;
+      await expect(neoService.getStateRootValidation(height)).rejects.toThrow(/block height/i);
+      expect(mockRpcClient.execute).not.toHaveBeenCalled();
+    },
+  );
+
   test('getTransaction returns transaction details', async () => {
     const tx = await neoService.getTransaction('0xabcdef1234567890');
     expect(tx).toHaveProperty('hash', mockTransaction.hash);

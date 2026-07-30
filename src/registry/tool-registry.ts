@@ -232,6 +232,9 @@ const SPECS: PublicToolSpec[] = [
       includeTransactions: z.boolean().optional().describe(
         'Neo X only: include full transaction objects in the block',
       ),
+      includeStateRoot: z.boolean().optional().describe(
+        'Neo N3 only: include the StateService root, StateValidator boundary, and validated status',
+      ),
       ...networkField,
     },
     chains: CHAINS,
@@ -239,14 +242,19 @@ const SPECS: PublicToolSpec[] = [
       n3: {
         internalName: 'get_block',
         requiresServices: true,
-        mapArgs: (args) => n3Args(pick(args, ['hashOrHeight', 'network'])),
+        mapArgs: (args) => n3Args(pick(args, ['hashOrHeight', 'includeStateRoot', 'network'])),
       },
       neox: {
         internalName: 'x_node_get_block',
-        mapArgs: (args) => passNetwork(
-          rename(pick(args, ['hashOrHeight', 'includeTransactions', 'network']),
-            'hashOrHeight', 'blockHashOrHeight'),
-        ),
+        mapArgs: (args) => {
+          if (args.includeStateRoot === true) {
+            throw new ValidationError('get_block includeStateRoot is supported only on Neo N3');
+          }
+          return passNetwork(
+            rename(pick(args, ['hashOrHeight', 'includeTransactions', 'network']),
+              'hashOrHeight', 'blockHashOrHeight'),
+          );
+        },
       },
     },
   },

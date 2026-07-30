@@ -27,6 +27,12 @@ The default server exposes 33 read-only tools:
 
 `call_contract` is strictly read-only: `invokefunction` on Neo N3, `eth_call` on Neo X. Its schema has no signer, private-key, or confirmation fields.
 
+On Neo N3, `get_block` accepts optional `includeStateRoot: true`. The response
+then includes `stateRootValidation` with the exact StateService root, the local
+root height, the StateValidator-validated height, and a `validated` boolean.
+The server rejects mismatched heights or malformed root evidence. The option is
+rejected on Neo X, and omitted calls retain the ordinary single block RPC.
+
 `build_transfer` and `build_contract_call` return UNSIGNED proposals — a NeoLine dapi payload on Neo N3, an unsigned EVM transaction on Neo X. They never sign or broadcast, so key custody stays with the user's wallet.
 
 The MCP HTTP transport is read-only by design and ignores `NEO_ENABLE_WRITES`. On a locally launched stdio server, `NEO_ENABLE_WRITES=true` adds four annotated Neo N3 tools:

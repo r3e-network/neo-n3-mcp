@@ -241,6 +241,85 @@ export class NeoService {
     }
   }
 
+  /**
+   * Read the StateService root for one block together with the current
+   * StateValidator boundary. The two independent RPCs run concurrently so an
+   * evidence-rich block lookup costs one upstream round-trip window.
+   */
+  async getStateRootValidation(blockHeight: number): Promise<Record<string, unknown>> {
+    if (!Number.isSafeInteger(blockHeight) || blockHeight < 0) {
+      throw new ValidationError('Block height must be a non-negative safe integer');
+    }
+
+    try {
+      const [root, stateHeight] = await Promise.all([
+        this.withRpcDeadline(
+          () => this.rpcClient.execute(new neonJs.rpc.Query({
+            method: 'getstateroot',
+            params: [blockHeight],
+          }))
+        ),
+        this.withRpcDeadline(
+          () => this.rpcClient.execute(new neonJs.rpc.Query({
+            method: 'getstateheight',
+            params: [],
+          }))
+        ),
+      ]);
+
+      const heightResult = stateHeight as Record<string, unknown> | null;
+      if (!root || typeof root !== 'object' || Array.isArray(root)) {
+        throw new Error('getstateroot returned an invalid result');
+      }
+      const rootResult = root as Record<string, unknown>;
+      const parseIndex = (value: unknown, field: string): number => {
+        if (
+          (typeof value !== 'number' && typeof value !== 'string')
+          || (typeof value === 'string' && !/^\d+$/.test(value))
+        ) {
+          throw new Error(`${field} is not a non-negative integer`);
+        }
+        const parsed = Number(value);
+        if (!Number.isSafeInteger(parsed) || parsed < 0) {
+          throw new Error(`${field} is not a non-negative safe integer`);
+        }
+        return parsed;
+      };
+
+      const rootIndex = parseIndex(rootResult.index, 'getstateroot index');
+      const validatedRootIndex = parseIndex(
+        heightResult?.validatedrootindex,
+        'getstateheight validatedrootindex',
+      );
+      const localRootIndex = parseIndex(
+        heightResult?.localrootindex,
+        'getstateheight localrootindex',
+      );
+      if (rootIndex !== blockHeight) {
+        throw new Error(`getstateroot returned index ${rootIndex} for requested block ${blockHeight}`);
+      }
+      if (
+        typeof rootResult.roothash !== 'string'
+        || !/^0x[0-9a-f]{64}$/i.test(rootResult.roothash)
+      ) {
+        throw new Error('getstateroot returned an invalid roothash');
+      }
+
+      return {
+        blockHeight,
+        root: rootResult,
+        localRootIndex,
+        validatedRootIndex,
+        validated: blockHeight <= validatedRootIndex,
+        network: this.network,
+      };
+    } catch (error) {
+      if (error instanceof ValidationError) throw error;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to validate state root at block ${blockHeight}: ${errorMessage}`);
+    }
+  }
+
 
   private enrichKnownParty(reference: string | null | undefined): { address?: string; scriptHash?: string; displayName?: string; name?: string; logo?: string; kind?: KnownAccountMetadata['kind']; knownAccount?: KnownAccountMetadata } | null {
     const scriptHash = normalizeScriptHash(reference) ?? tryGetScriptHashFromAddress(reference);
