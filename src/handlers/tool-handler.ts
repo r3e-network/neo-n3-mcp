@@ -88,6 +88,24 @@ async function handleGetBlockCount(input: Record<string, unknown>, neoService: N
   }
 }
 
+function addBlockTimeIso(block: Record<string, unknown>): Record<string, unknown> {
+  const rawTime = block.time;
+  if (
+    (typeof rawTime !== 'number' && typeof rawTime !== 'string')
+    || (typeof rawTime === 'string' && !/^\d+$/.test(rawTime))
+  ) {
+    return block;
+  }
+  const timestampMs = Number(rawTime);
+  if (!Number.isSafeInteger(timestampMs) || timestampMs < 0 || timestampMs > 8_640_000_000_000_000) {
+    return block;
+  }
+  return {
+    ...block,
+    timeIso: new Date(timestampMs).toISOString(),
+  };
+}
+
 async function handleGetBlock(input: Record<string, unknown>, neoService: NeoService): Promise<unknown> {
   try {
     let blockReference: string | number;
@@ -98,7 +116,7 @@ async function handleGetBlock(input: Record<string, unknown>, neoService: NeoSer
     } else {
       throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'hashOrHeight must be a string or number');
     }
-    const block = await neoService.getBlock(blockReference);
+    const block = addBlockTimeIso(await neoService.getBlock(blockReference));
     if (input.includeStateRoot === undefined || input.includeStateRoot === false) {
       return createSuccessResponse(block);
     }

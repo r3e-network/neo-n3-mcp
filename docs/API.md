@@ -31,7 +31,9 @@ On Neo N3, `get_block` accepts optional `includeStateRoot: true`. The response
 then includes `stateRootValidation` with the exact StateService root, the local
 root height, the StateValidator-validated height, and a `validated` boolean.
 The server rejects mismatched heights or malformed root evidence. The option is
-rejected on Neo X, and omitted calls retain the ordinary single block RPC.
+rejected on Neo X, and omitted calls retain the ordinary single block RPC. Neo
+N3 block responses also include `timeIso`, deterministically derived from the
+node's millisecond `time` value so clients do not need to reinterpret it.
 
 `build_transfer` and `build_contract_call` return UNSIGNED proposals — a NeoLine dapi payload on Neo N3, an unsigned EVM transaction on Neo X. They never sign or broadcast, so key custody stays with the user's wallet.
 

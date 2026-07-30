@@ -336,7 +336,9 @@ For Neo N3 block analysis, pass `includeStateRoot: true` to `get_block` to
 receive the exact StateService root plus local and StateValidator-validated
 height boundaries. The returned `validated` flag is true only when the requested
 root is at or below the validated boundary. Neo X rejects this N3-only option,
-and ordinary block lookups do not incur the extra RPC calls.
+and ordinary block lookups do not incur the extra RPC calls. Neo N3 block
+responses also include a deterministic ISO-8601 `timeIso` alongside the node's
+millisecond `time` value.
 
 Resources:
 

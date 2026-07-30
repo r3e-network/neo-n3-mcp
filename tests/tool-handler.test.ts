@@ -160,7 +160,11 @@ const mockWallet = {
 const createMockNeoService = (): jest.Mocked<NeoService> => ({
   getBlockchainInfo: jest.fn().mockResolvedValue(mockBlockchainInfo),
   getBlockCount: jest.fn().mockResolvedValue(12345),
-  getBlock: jest.fn().mockResolvedValue({ hash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef', index: 12344 }),
+  getBlock: jest.fn().mockResolvedValue({
+    hash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+    index: 12344,
+    time: 1781958290521,
+  }),
   getStateRootValidation: jest.fn().mockResolvedValue({
     blockHeight: 12344,
     root: {
@@ -444,6 +448,21 @@ describe('Tool Handlers', () => {
         blockHeight: 12344,
         validatedRootIndex: 12345,
         validated: true,
+      });
+      expect(result.result.timeIso).toBe('2026-06-20T12:24:50.521Z');
+    });
+
+    test('adds a deterministic ISO timestamp to ordinary Neo N3 block lookups', async () => {
+      const result = await callTool(
+        'get_block',
+        { network: 'mainnet', hashOrHeight: 12344 },
+        mockNeoServices,
+        mockContractServices,
+      );
+
+      expect(result.result).toMatchObject({
+        time: 1781958290521,
+        timeIso: '2026-06-20T12:24:50.521Z',
       });
     });
 
