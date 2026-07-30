@@ -1,5 +1,4 @@
 import { spawnSync } from 'child_process';
-import { createHash } from 'crypto';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -241,17 +240,20 @@ describe('CI workflow', () => {
     expect(workflow).toContain('needs: release-gate');
   });
 
-  test('uses explicit npm channels and keeps prereleases away from latest', () => {
+  test('uses explicit OIDC npm channels and keeps prereleases away from latest', () => {
     const workflow = fs.readFileSync(workflowPath, 'utf8');
+    const publish = getJobBlock(workflow, 'publish');
+    const promote = getJobBlock(workflow, 'promote-release');
 
     expect(workflow).toContain('NPM_DIST_TAG=next');
     expect(workflow).toContain('NPM_DIST_TAG=latest');
-    expect(workflow).toContain(
-      'npm publish "$PACKAGE_TARBALL" --access public --provenance --tag "$NPM_STAGING_TAG"'
+    expect(publish).toContain(
+      'npm publish "$PACKAGE_TARBALL" --access public --tag "$NPM_DIST_TAG"'
     );
-    expect(getJobBlock(workflow, 'promote-release')).toContain(
-      'npm dist-tag add "${PACKAGE_NAME}@${PACKAGE_VERSION}" "$NPM_DIST_TAG"'
-    );
+    expect(publish).toContain('id-token: write');
+    expect(publish).toContain('npm install --global npm@latest');
+    expect(publish).not.toContain('NODE_AUTH_TOKEN');
+    expect(promote).not.toContain('npm dist-tag');
   });
 
   test.each([
@@ -266,10 +268,7 @@ describe('CI workflow', () => {
     expect(result.output).toContain(`version=${version}`);
     expect(result.output).toContain(`is-prerelease=${prerelease}`);
     expect(result.output).toContain(`npm-dist-tag=${npmTag}`);
-    const stagingHash = createHash('sha256').update(version as string).digest('hex');
-    expect(result.output).toContain(
-      `npm-staging-tag=release-${stagingHash}`
-    );
+    expect(result.output).not.toContain('npm-staging-tag');
   });
 
   test.each([
@@ -300,18 +299,15 @@ describe('CI workflow', () => {
     expect(result.stderr).toContain(errorText);
   });
 
-  test('derives distinct npm candidate tags from distinct exact versions', () => {
+  test('does not derive temporary npm candidate channels', () => {
     const workflow = fs.readFileSync(workflowPath, 'utf8');
-    const versions = ['1.0.0-rc.1', '1.0.0-rc-1', '1.0.0-RC.1', '1.0.0-rc.1'];
-    const tags = versions.map((version) => {
-      const result = runReleaseGate(workflow, version, `v${version}`, true);
-      expect(result.status).toBe(0);
-      return result.output.match(/^npm-staging-tag=(.+)$/m)?.[1];
-    });
+    const releaseGate = getJobBlock(workflow, 'release-gate');
+    const publish = getJobBlock(workflow, 'publish');
+    const promote = getJobBlock(workflow, 'promote-release');
 
-    expect(tags[0]).not.toBe(tags[1]);
-    expect(tags[0]).not.toBe(tags[2]);
-    expect(tags[0]).toBe(tags[3]);
+    expect(releaseGate).not.toContain('npm-staging-tag');
+    expect(publish).not.toContain('NPM_STAGING_TAG');
+    expect(promote).not.toContain('candidate tag');
   });
 
   test('rejects package versions that cannot be represented as Docker tags', () => {
@@ -350,14 +346,17 @@ describe('CI workflow', () => {
     expect(publish).toContain('REMOTE_INTEGRITY');
   });
 
-  test('publishes retry-safe candidates before promoting any floating channels', () => {
+  test('publishes retry-safe artifacts before promoting Docker channels', () => {
     const workflow = fs.readFileSync(workflowPath, 'utf8');
     const publish = getJobBlock(workflow, 'publish');
     const dockerPublish = getJobBlock(workflow, 'docker-publish');
     const promote = getJobBlock(workflow, 'promote-release');
 
-    expect(publish).toContain('NPM_STAGING_TAG: ${{ needs.release-gate.outputs.npm-staging-tag }}');
-    expect(publish).toContain('--tag "$NPM_STAGING_TAG"');
+    expect(publish).toContain('NPM_DIST_TAG: ${{ needs.release-gate.outputs.npm-dist-tag }}');
+    expect(publish).toContain('needs: [release-gate, docker-publish]');
+    expect(publish).toContain('--tag "$NPM_DIST_TAG"');
+    expect(publish).toContain('PUBLISHED_VERSION');
+    expect(publish).not.toContain('npm dist-tag');
     expect(dockerPublish).toContain('IMAGE_VERSION: ${{ needs.release-gate.outputs.version }}');
     expect(dockerPublish).not.toContain('type=raw,value=latest');
     expect(dockerPublish).not.toContain('pattern={{major}}');
@@ -365,16 +364,11 @@ describe('CI workflow', () => {
     expect(promote).toContain('group: neo-mcp-release-promotion');
     expect(promote).toContain('cancel-in-progress: false');
     expect(promote).toContain('Ensure promotion does not move backward');
-    expect(promote).toContain('npm dist-tag add');
     expect(promote).toContain('docker buildx imagetools create');
     expect(promote).toContain('docker image inspect --format');
     expect(promote).toContain('org.opencontainers.image.version');
-    const dockerPromotionIndex = promote.indexOf('- name: Promote stable Docker aliases');
-    const npmPromotionIndex = promote.indexOf('- name: Promote npm channel');
-    const cleanupIndex = promote.indexOf('- name: Remove npm candidate tag');
-
-    expect(dockerPromotionIndex).toBeLessThan(npmPromotionIndex);
-    expect(npmPromotionIndex).toBeLessThan(cleanupIndex);
+    expect(promote).not.toContain('Promote npm channel');
+    expect(promote).not.toContain('Remove npm candidate tag');
   });
 
   test('captures, publishes, and promotes the immutable container digest', () => {

@@ -5,6 +5,14 @@ All notable changes to the Neo MCP project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.2] - 2026-07-30
+
+### Changed
+- Replaced long-lived npm publish tokens and candidate dist-tags with npm
+  Trusted Publishing over GitHub Actions OIDC.
+- Upgraded release automation to Node.js 24, npm 11+, and the current major
+  versions of GitHub and Docker actions.
+
 ## [4.0.1] - 2026-07-30
 
 ### Fixed

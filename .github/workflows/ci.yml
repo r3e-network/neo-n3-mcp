@@ -21,9 +21,9 @@ jobs:
         node-version: [22.x, 24.x]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - name: Set up Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
@@ -43,9 +43,9 @@ jobs:
     needs: test
     steps:
       - name: Checkout repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22.x
           cache: npm
@@ -74,7 +74,7 @@ jobs:
           }
           NODE
       - name: Upload package artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: npm-package-artifact
           path: release-artifact
@@ -86,9 +86,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22.x
           cache: npm
@@ -105,9 +105,9 @@ jobs:
     needs: [test, build, security]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
       - name: Validate Compose files
         env:
           HTTP_API_KEY: ci-only-api-key-0000000000000000
@@ -149,16 +149,15 @@ jobs:
     outputs:
       is-prerelease: ${{ steps.release.outputs.is-prerelease }}
       npm-dist-tag: ${{ steps.release.outputs.npm-dist-tag }}
-      npm-staging-tag: ${{ steps.release.outputs.npm-staging-tag }}
       package-name: ${{ steps.release.outputs.package-name }}
       version: ${{ steps.release.outputs.version }}
       version-major: ${{ steps.release.outputs.version-major }}
       version-major-minor: ${{ steps.release.outputs.version-major-minor }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22.x
           cache: npm
@@ -215,9 +214,6 @@ jobs:
 
           PACKAGE_NAME="$(node -p "require('./package.json').name")"
           VERSION_MAJOR_MINOR="${VERSION_MAJOR}.${VERSION_MINOR}"
-          NPM_STAGING_HASH="$(node -e 'const { createHash } = require("crypto"); process.stdout.write(createHash("sha256").update(process.argv[1]).digest("hex"));' "$PACKAGE_VERSION")"
-          NPM_STAGING_TAG="release-${NPM_STAGING_HASH}"
-
           {
             echo "package-name=$PACKAGE_NAME"
             echo "version=$PACKAGE_VERSION"
@@ -225,13 +221,12 @@ jobs:
             echo "version-major-minor=$VERSION_MAJOR_MINOR"
             echo "is-prerelease=$VERSION_IS_PRERELEASE"
             echo "npm-dist-tag=$NPM_DIST_TAG"
-            echo "npm-staging-tag=$NPM_STAGING_TAG"
           } >> "$GITHUB_OUTPUT"
 
   publish:
-    name: Publish npm candidate
+    name: Publish npm package
     runs-on: ubuntu-latest
-    needs: release-gate
+    needs: [release-gate, docker-publish]
     if: github.event_name == 'release'
     concurrency:
       group: neo-mcp-npm-${{ needs.release-gate.outputs.version }}
@@ -241,19 +236,21 @@ jobs:
       id-token: write
     steps:
       - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: 22.x
+          node-version: 24.x
           registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - name: Upgrade npm for trusted publishing
+        run: npm install --global npm@latest
       - name: Download package artifact
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
         with:
           name: npm-package-artifact
           path: release-artifact
-      - name: Publish or verify package candidate
+      - name: Publish or verify package
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_STAGING_TAG: ${{ needs.release-gate.outputs.npm-staging-tag }}
+          NPM_DIST_TAG: ${{ needs.release-gate.outputs.npm-dist-tag }}
           PACKAGE_NAME: ${{ needs.release-gate.outputs.package-name }}
           PACKAGE_VERSION: ${{ needs.release-gate.outputs.version }}
         run: |
@@ -288,9 +285,14 @@ jobs:
               echo "Published package integrity does not match the validated artifact." >&2
               exit 1
             fi
-            npm dist-tag add "${PACKAGE_NAME}@${PACKAGE_VERSION}" "$NPM_STAGING_TAG"
           else
-            npm publish "$PACKAGE_TARBALL" --access public --provenance --tag "$NPM_STAGING_TAG"
+            npm publish "$PACKAGE_TARBALL" --access public --tag "$NPM_DIST_TAG"
+          fi
+
+          PUBLISHED_VERSION="$(npm view --silent "$PACKAGE_NAME" "dist-tags.${NPM_DIST_TAG}")"
+          if [[ "$PUBLISHED_VERSION" != "$PACKAGE_VERSION" ]]; then
+            echo "npm ${NPM_DIST_TAG} does not point to ${PACKAGE_NAME}@${PACKAGE_VERSION}." >&2
+            exit 1
           fi
 
   docker-publish:
@@ -310,11 +312,11 @@ jobs:
       IMAGE_VERSION: ${{ needs.release-gate.outputs.version }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
       - name: Log in to Docker Hub
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
@@ -350,7 +352,7 @@ jobs:
           fi
       - name: Build versioned image
         if: steps.image.outputs.exists != 'true'
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
           file: docker/Dockerfile
@@ -419,7 +421,7 @@ jobs:
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
           printf '%s@%s\n' "$IMAGE_REPOSITORY" "$digest" > container-image-digest.txt
       - name: Upload immutable image digest
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: container-image-digest
           path: container-image-digest.txt
@@ -437,7 +439,6 @@ jobs:
     env:
       IMAGE_REPOSITORY: ${{ secrets.DOCKER_USERNAME }}/neo-mcp
       NPM_DIST_TAG: ${{ needs.release-gate.outputs.npm-dist-tag }}
-      NPM_STAGING_TAG: ${{ needs.release-gate.outputs.npm-staging-tag }}
       PACKAGE_NAME: ${{ needs.release-gate.outputs.package-name }}
       PACKAGE_VERSION: ${{ needs.release-gate.outputs.version }}
       IMAGE_DIGEST: ${{ needs.docker-publish.outputs.image-digest }}
@@ -446,30 +447,20 @@ jobs:
       VERSION_MAJOR_MINOR: ${{ needs.release-gate.outputs.version-major-minor }}
     steps:
       - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: 22.x
+          node-version: 24.x
           registry-url: https://registry.npmjs.org
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
       - name: Log in to Docker Hub
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Ensure promotion does not move backward
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
-          if ! staged_version="$(npm view --silent "$PACKAGE_NAME" "dist-tags.${NPM_STAGING_TAG}")"; then
-            echo "Unable to query the npm candidate channel." >&2
-            exit 1
-          fi
-          if [[ "$staged_version" != "$PACKAGE_VERSION" ]]; then
-            echo "npm candidate tag does not point to ${PACKAGE_NAME}@${PACKAGE_VERSION}." >&2
-            exit 1
-          fi
           docker buildx imagetools inspect "${IMAGE_REPOSITORY}:${PACKAGE_VERSION}" >/dev/null
 
           if [[ ! "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
@@ -567,11 +558,3 @@ jobs:
             --tag "${IMAGE_REPOSITORY}:${VERSION_MAJOR_MINOR}" \
             --tag "${IMAGE_REPOSITORY}:${VERSION_MAJOR}" \
             "${IMAGE_REPOSITORY}@${IMAGE_DIGEST}"
-      - name: Promote npm channel
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm dist-tag add "${PACKAGE_NAME}@${PACKAGE_VERSION}" "$NPM_DIST_TAG"
-      - name: Remove npm candidate tag
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm dist-tag rm "$PACKAGE_NAME" "$NPM_STAGING_TAG"

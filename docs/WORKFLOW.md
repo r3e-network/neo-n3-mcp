@@ -73,23 +73,33 @@ The workflow uses Docker Buildx setup, but it does not declare a multi-platform 
 
 ### Release Gate
 
-For a published GitHub release, `release-gate` waits for all validation jobs. It requires the release tag, after an optional leading `v`, to equal `package.json`, requires GitHub's prerelease flag to match the SemVer version, and rejects versions that cannot be represented exactly as Docker tags. It derives a collision-resistant per-version npm candidate tag, the final npm channel, and stable Docker aliases.
+For a published GitHub release, `release-gate` waits for all validation jobs. It requires the release tag, after an optional leading `v`, to equal `package.json`, requires GitHub's prerelease flag to match the SemVer version, and rejects versions that cannot be represented exactly as Docker tags. It derives the final npm channel and stable Docker aliases.
 
 ### Candidate Publication
 
-The npm job downloads the validated tarball and publishes it under a per-version candidate tag. On retry, it accepts an existing version only when the registry integrity equals the tarball; otherwise it fails without overwriting anything.
+The Docker job publishes only the full version tag. A new image is built with release revision/version labels, run under the production resource and filesystem restrictions, and required to become healthy before that exact local image is pushed. On retry, an existing image is pulled, its labels are verified, and that exact remote image is health-tested.
+
+Only after that versioned container candidate is healthy and available, the npm
+job downloads the validated tarball and publishes it directly to `latest`, or
+`next` for a prerelease, using npm Trusted Publishing over GitHub Actions OIDC.
+It runs on Node.js 24 with npm 11 or newer. On retry, it accepts an existing
+version only when the registry integrity equals the tarball and the expected
+dist-tag already points to that version.
 
 ```bash
-npm publish "$PACKAGE_TARBALL" --access public --provenance --tag "$NPM_STAGING_TAG"
+npm publish "$PACKAGE_TARBALL" --access public --tag "$NPM_DIST_TAG"
 ```
 
-It requires `NPM_TOKEN` through `NODE_AUTH_TOKEN`.
-
-The Docker job publishes only the full version tag. A new image is built with release revision/version labels, run under the production resource and filesystem restrictions, and required to become healthy before that exact local image is pushed. On retry, an existing image is pulled, its labels are verified, and that exact remote image is health-tested.
+The npm package must trust `r3e-network/neo-mcp` and workflow `ci.yml` for the
+`npm publish` action. No long-lived npm token is used.
 
 ### Channel Promotion
 
-`promote-release` waits for both candidate jobs and serializes all channel movement. It verifies both candidates, rejects a version older than the current npm channel, and then promotes stable Docker aliases plus npm `latest`, or npm `next` for a prerelease. Prereleases never update a floating Docker tag. The per-version npm candidate tag is removed after promotion.
+`promote-release` waits for npm publication and the versioned Docker candidate,
+serializes channel movement, verifies both registries, and refuses to promote an
+older version. npm already points to the release channel after its OIDC-backed
+publish. Stable releases then promote Docker aliases; prereleases never update a
+floating Docker tag.
 
 Required secrets:
 

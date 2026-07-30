@@ -102,10 +102,16 @@ The convenience scripts `npm run version:patch`, `version:minor`, and `version:m
 
 On a published GitHub release, successful validation can publish:
 
-- the npm package using `NPM_TOKEN`
+- the npm package using Trusted Publishing over GitHub Actions OIDC
 - Docker images using `DOCKER_USERNAME` and `DOCKER_PASSWORD`
 
-A shared release gate requires the tag, after an optional leading `v`, to match `package.json`. The workflow publishes retry-safe versioned candidates from the validated npm tarball and a health-tested container image. Only after both candidates succeed does a serialized, monotonic promotion move floating channels. Stable versions use npm `latest` and full, minor, major, and `latest` Docker tags. SemVer prereleases require a GitHub prerelease and use npm `next` plus only the full prerelease Docker tag.
+A shared release gate requires the tag, after an optional leading `v`, to match
+`package.json`. The workflow publishes the validated npm tarball directly to its
+final channel through OIDC and publishes a health-tested versioned container
+candidate. Only after both succeed does a serialized, monotonic promotion move
+floating Docker channels. Stable versions use npm `latest` and full, minor,
+major, and `latest` Docker tags. SemVer prereleases require a GitHub prerelease
+and use npm `next` plus only the full prerelease Docker tag.
 
 The repository does not define an automated production deployment, monitoring target, or rollback workflow. Operators must deploy and observe the published artifact in their own environment.
 
@@ -138,7 +144,9 @@ Then update the changelog, review `package.json` and `package-lock.json`, rebuil
 ## Failure and Recovery
 
 - Verification failure: fix the cause and rerun the preparation script; do not bypass deterministic tests or audits.
-- npm publish failure: verify the tag, package version, registry status, and `NPM_TOKEN`.
+- npm publish failure: verify the tag, package version, registry status, OIDC
+  permission, and the npm Trusted Publisher binding to `r3e-network/neo-mcp`
+  workflow `ci.yml`.
 - Docker publish failure: verify Docker Hub credentials, repository access, and the image-build job.
 - Partial release: do not reuse a published version. Correct the issue and prepare a new patch version.
 - Deployment rollback: redeploy the prior known-good npm or image version in the operator-managed environment.

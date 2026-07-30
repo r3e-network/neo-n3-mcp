@@ -61,14 +61,23 @@ Live public-RPC checks and stress tests are explicit local commands; they are no
 
 On a published GitHub release, successful validation can publish:
 
-- npm using `NPM_TOKEN`
+- npm using Trusted Publishing over GitHub Actions OIDC
 - Docker images using `DOCKER_USERNAME` and `DOCKER_PASSWORD`
 
 Before either publication, a shared release gate requires the Git tag, after an optional leading `v`, to equal the version in `package.json`. The GitHub prerelease flag must also agree with whether that package version contains a SemVer prerelease suffix. Build metadata (`+...`) and versions that exceed Docker's tag format are rejected.
 
 The build job uploads one validated npm tarball. Publication jobs reuse that tarball and health-test the exact versioned container image before pushing it. Retries accept an existing npm package only when its registry integrity matches the tarball, and accept an existing image only when its revision and version labels match the release.
 
-Versioned candidates publish first. A serialized promotion job runs only after both registries succeed, refuses to move a channel to an older SemVer version, then advances the user-facing aliases. Stable releases use npm `latest` and Docker tags for the full version, major/minor version, major version, and `latest`. Prereleases use npm `next` and only the explicit full prerelease Docker tag, such as `2.1.0-rc.1`; they never update floating stable tags. The workflow does not deploy to a production host, configure a GitHub production environment, notify a deployment system, or perform rollback.
+The versioned Docker candidate is built, health-tested, and published first.
+Only after it is available does the npm package publish directly to `latest`,
+or `next` for a prerelease, using the repository's OIDC identity. A serialized
+promotion job then refuses to move Docker aliases to an older SemVer version
+before advancing them. Stable releases use Docker tags for the full version,
+major/minor version, major version, and `latest`. Prereleases use only the
+explicit full prerelease Docker tag, such as `2.1.0-rc.1`; they never update
+floating stable tags. The workflow does not deploy to a production host,
+configure a GitHub production environment, notify a deployment system, or
+perform rollback.
 
 ## Post-Release Verification
 
@@ -83,7 +92,9 @@ Versioned candidates publish first. A serialized promotion job runs only after b
 - Preparation rejects the tree: commit or otherwise resolve local changes, then rerun from a clean state.
 - Unit/build/MCP failure: reproduce with `npm run verify`.
 - Audit failure: inspect both `npm audit --audit-level=high` and `npm audit --omit=dev --audit-level=high`.
-- npm publish failure: check the package version, registry state, and `NPM_TOKEN`.
+- npm publish failure: check the package version, registry state, Trusted
+  Publisher binding (`r3e-network/neo-mcp`, `ci.yml`, `npm publish`), and OIDC
+  permissions.
 - Docker publish failure: check image-build output and Docker Hub credentials.
 
 ## References
