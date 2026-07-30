@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API Reference - Neo MCP Server</title>
-    <meta name="description" content="Reference for the 32 chain-parameterized Neo MCP tools, four resources, generic contract flow, and authenticated HTTP API.">
+    <meta name="description" content="Reference for the 42 non-custodial Neo MCP tools, four resources, generic contract flow, and authenticated HTTP API.">
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,7 +49,7 @@
     <main class="page-container">
         <header class="docs-header">
             <h1 class="docs-title">API reference</h1>
-            <p class="docs-lead">The server registers 32 MCP tools across Neo N3 and Neo X, three fixed resources, one parameterized resource, and an optional authenticated HTTP transport.</p>
+            <p class="docs-lead">The server registers 42 non-custodial MCP tools across Neo N3 and Neo X, three fixed resources, one parameterized resource, and an optional authenticated HTTP transport.</p>
         </header>
 
         <nav class="jump-links" aria-label="API sections">
@@ -100,6 +100,9 @@
                     <tbody>
                         <tr><td>Meta</td><td><code>get_network_mode</code></td><td>&mdash;</td><td>Return configured mode, available networks, and default network.</td></tr>
                         <tr><td>Meta</td><td><code>get_wallet</code></td><td>&mdash;</td><td>Return sanitized local wallet metadata; never keys, WIFs, or mnemonics.</td></tr>
+                        <tr><td>Data</td><td><code>inspect_neo_value</code></td><td>&mdash;</td><td>Classify Neo addresses, hashes, keys, NNS/NeoFS identifiers, and common encodings.</td></tr>
+                        <tr><td>Data</td><td><code>convert_neo_data</code></td><td>&mdash;</td><td>Convert UTF-8, hex, base64, VM integers, N3 addresses, and script hashes.</td></tr>
+                        <tr><td>Ecosystem</td><td><code>get_neo_service_info</code></td><td>&mdash;</td><td>Network-correct NNS, NeoFS, Oracle, and official bridge metadata and boundaries.</td></tr>
                         <tr><td>Chain</td><td><code>get_chain_info</code></td><td>n3, neox</td><td>Height plus network identity (N3 validators, or the Neo X EVM chain id).</td></tr>
                         <tr><td>Chain</td><td><code>get_block_height</code></td><td>n3, neox</td><td>Current block height and block count.</td></tr>
                         <tr><td>Chain</td><td><code>get_block</code></td><td>n3, neox</td><td>Fetch a block by height/number or hash.</td></tr>
@@ -112,6 +115,10 @@
                         <tr><td>Accounts</td><td><code>get_nep17_transfers</code></td><td>n3</td><td>NEP-17 transfer history from live RPC.</td></tr>
                         <tr><td>Accounts</td><td><code>get_nep11_balances</code></td><td>n3</td><td>NEP-11 (NFT) balances from live RPC.</td></tr>
                         <tr><td>Accounts</td><td><code>get_nep11_transfers</code></td><td>n3</td><td>NEP-11 (NFT) transfer history from live RPC.</td></tr>
+                        <tr><td>VM</td><td><code>decode_neo_script</code></td><td>n3</td><td>Deterministic NeoVM opcode, operand, offset, syscall, and category decoding.</td></tr>
+                        <tr><td>Ecosystem</td><td><code>query_nns</code></td><td>n3</td><td>Network-correct NNS availability, price, owner, properties, expiration, and records.</td></tr>
+                        <tr><td>Ecosystem</td><td><code>query_neofs</code></td><td>n3</td><td>Bounded NeoFS network/container/account reads and canonical object links.</td></tr>
+                        <tr><td>Ecosystem</td><td><code>get_oracle_info</code></td><td>n3</td><td>Native Oracle response price and contract-callback request boundary.</td></tr>
                         <tr><td>Contracts</td><td><code>call_contract</code></td><td>n3, neox</td><td>Read-only call: <code>invokefunction</code> on Neo N3, <code>eth_call</code> on Neo X.</td></tr>
                         <tr><td>Contracts</td><td><code>get_contract_info</code></td><td>n3, neox</td><td>Manifest/ABI and known-name resolution on Neo N3; verified source on Neo X.</td></tr>
                         <tr><td>Contracts</td><td><code>get_contract_status</code></td><td>n3</td><td>Resolve a reference and check current on-chain deployment status.</td></tr>
@@ -121,6 +128,8 @@
                         <tr><td>Construct</td><td><code>simulate_call</code></td><td>n3, neox</td><td>Read-only preview: N3 test-invoke state and gasConsumed, or an EVM call result.</td></tr>
                         <tr><td>Construct</td><td><code>build_transfer</code></td><td>n3, neox</td><td>UNSIGNED transfer proposal: NeoLine dapi payload, or an unsigned EVM transaction.</td></tr>
                         <tr><td>Construct</td><td><code>build_contract_call</code></td><td>n3, neox</td><td>UNSIGNED invocation proposal for wallet-side signing.</td></tr>
+                        <tr><td>Construct</td><td><code>build_vote</code></td><td>n3</td><td>UNSIGNED native NEO vote/unvote proposal, returned only after a true simulation result.</td></tr>
+                        <tr><td>Construct</td><td><code>build_nns_operation</code></td><td>n3</td><td>UNSIGNED network-correct NNS register, renew, record, delete, or transfer proposal.</td></tr>
                         <tr><td>Explorer</td><td><code>explorer_get_address</code></td><td>n3, neox</td><td>Indexed account summary: balances, type, tags, first-seen.</td></tr>
                         <tr><td>Explorer</td><td><code>explorer_list_address_transactions</code></td><td>n3, neox</td><td>Transactions involving an address, newest first.</td></tr>
                         <tr><td>Explorer</td><td><code>explorer_list_address_transfers</code></td><td>n3, neox</td><td>Token transfers: NEP-17 on Neo N3, ERC-20/721/1155 on Neo X.</td></tr>
@@ -133,7 +142,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="callout" style="margin-top: 1rem;"><strong>Non-custodial by construction:</strong> the MCP surface is read-only. None of the 32 registered tools holds a private key, signs, or broadcasts. The <code>build_*</code> tools return UNSIGNED proposals that a wallet reviews and signs; key custody and broadcast stay with the user. Wallet creation and import are never exposed over MCP.</div>
+            <div class="callout" style="margin-top: 1rem;"><strong>Non-custodial by construction:</strong> none of the 42 default tools holds a private key, signs, or broadcasts. The <code>build_*</code> tools return UNSIGNED, successfully simulated proposals that a wallet reviews and signs; key custody and broadcast stay with the user. Wallet creation and import are never exposed over MCP.</div>
             <h3>Optional local signing tools</h3>
             <p>A locally launched stdio server with <code>NEO_ENABLE_WRITES=true</code> and a <code>NEO_SIGNER_WIF_FILE</code> registers four additional tools that sign with that owner-supplied key. They are annotated destructive and idempotent, require an <code>idempotencyKey</code> and an explicit <code>network</code>, and require the caller to accept the exact returned intent fingerprint. They never accept WIFs, private keys, or passwords as arguments.</p>
             <p>The remote MCP HTTP transport rejects this configuration and stays read-only regardless of the setting, so a hosted server never signs on a user's behalf.</p>

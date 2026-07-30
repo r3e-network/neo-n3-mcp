@@ -5,6 +5,17 @@ All notable changes to the Neo MCP project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Added deterministic Neo value inspection, encoding conversion, and NeoVM
+  script disassembly tools.
+- Added network-correct NNS reads and unsigned writes, native Oracle price
+  reads, bounded NeoFS reads, and official Neo X bridge integration metadata.
+- Added a dedicated unsigned native NEO vote/unvote constructor with exact
+  simulation and Boolean-success enforcement.
+- Expanded the default non-custodial public surface from 33 to 42 tools.
+
 ## [4.0.2] - 2026-07-30
 
 ### Changed

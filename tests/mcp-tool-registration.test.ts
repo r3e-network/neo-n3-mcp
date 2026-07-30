@@ -16,8 +16,12 @@ import { TEST_WIF } from './test-wallet';
 const READ_ONLY_TOOL_NAMES = [
   'analyze_address',
   'build_contract_call',
+  'build_nns_operation',
   'build_transfer',
+  'build_vote',
   'call_contract',
+  'convert_neo_data',
+  'decode_neo_script',
   'estimate_invoke_fees',
   'estimate_transfer_fees',
   'explorer_get_address',
@@ -33,18 +37,23 @@ const READ_ONLY_TOOL_NAMES = [
   'get_chain_info',
   'get_contract_info',
   'get_contract_status',
+  'get_neo_service_info',
   'get_nep11_balances',
   'get_nep11_transfers',
   'get_nep17_transfers',
   'get_network_mode',
+  'get_oracle_info',
   'get_transaction',
   'get_transaction_status',
   'get_unclaimed_gas',
   'get_wallet',
+  'inspect_neo_value',
   'list_famous_contracts',
   'query_explorer',
   'query_explorer_find',
   'query_explorer_graphql',
+  'query_neofs',
+  'query_nns',
   'simulate_call',
   'wait_for_transaction',
 ];
@@ -91,7 +100,9 @@ const WRITE_ENABLED_TOOL_NAMES = [...READ_ONLY_TOOL_NAMES, ...WRITE_TOOL_NAMES].
  */
 const NON_CUSTODIAL_CONSTRUCTION_TOOL_NAMES = [
   'build_contract_call',
+  'build_nns_operation',
   'build_transfer',
+  'build_vote',
   'simulate_call',
 ];
 

@@ -183,6 +183,61 @@ const SPECS: PublicToolSpec[] = [
       },
     },
   },
+  {
+    name: 'inspect_neo_value',
+    description:
+      'Deterministically classify a Neo-related value as an N3/Neo X address, script hash, '
+      + 'transaction hash, public key, NNS name, NeoFS URI, integer, hex, base64, JSON, or UTF-8.',
+    inputSchema: {
+      value: z.string().min(1).max(65_536).describe('Value to classify without changing it'),
+    },
+    chains: [],
+    routes: {
+      meta: {
+        internalName: 'inspect_neo_value',
+        mapArgs: (args) => pick(args, ['value']),
+      },
+    },
+  },
+  {
+    name: 'convert_neo_data',
+    description:
+      'Convert UTF-8, hex, base64, and NeoVM signed little-endian integers, or convert a '
+      + 'checksum-valid Neo N3 address to/from its UInt160 script hash.',
+    inputSchema: {
+      value: z.string().min(1).max(65_536).describe('Source value'),
+      inputFormat: z.enum([
+        'auto', 'utf8', 'hex', 'base64', 'integer', 'neo_address', 'script_hash',
+      ]).optional().describe('Source encoding or semantic type (default auto)'),
+      outputFormat: z.enum([
+        'utf8', 'hex', 'base64', 'integer', 'neo_address', 'script_hash',
+      ]).describe('Required output encoding or semantic type'),
+    },
+    chains: [],
+    routes: {
+      meta: {
+        internalName: 'convert_neo_data',
+        mapArgs: (args) => pick(args, ['value', 'inputFormat', 'outputFormat']),
+      },
+    },
+  },
+  {
+    name: 'get_neo_service_info',
+    description:
+      'Get verified integration metadata and safe operation boundaries for NNS, NeoFS, the '
+      + 'Neo N3 Oracle, or the official Neo N3/Neo X bridge.',
+    inputSchema: {
+      service: z.enum(['nns', 'neofs', 'oracle', 'bridge']).describe('Neo ecosystem service'),
+      ...networkField,
+    },
+    chains: [],
+    routes: {
+      meta: {
+        internalName: 'get_neo_service_info',
+        mapArgs: (args) => passNetwork(pick(args, ['service', 'network'])),
+      },
+    },
+  },
 
   // ---------- node reads (multi-chain) ----------
   {
@@ -463,6 +518,82 @@ const SPECS: PublicToolSpec[] = [
     },
   },
   {
+    name: 'decode_neo_script',
+    description:
+      'Neo N3: tokenize a NeoVM script into opcodes, operands, offsets, syscall names, '
+      + 'instruction categories, and concise deterministic explanations.',
+    inputSchema: {
+      script: z.string().min(1).max(131_072).describe('NeoVM script as hex or canonical base64'),
+      inputFormat: z.enum(['auto', 'hex', 'base64']).optional().describe(
+        'Script encoding (default auto)',
+      ),
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'decode_neo_script',
+        mapArgs: (args) => pick(args, ['script', 'inputFormat']),
+      },
+    },
+  },
+  {
+    name: 'query_nns',
+    description:
+      'Neo N3: query a .neo name against the network-correct NameService contract, including '
+      + 'availability, price, owner, properties, expiration, and one DNS-style record.',
+    inputSchema: {
+      domain: z.string().min(3).max(255).describe('Fully-qualified .neo domain'),
+      recordType: z.enum(['A', 'CNAME', 'TXT', 'AAAA']).optional().describe(
+        'Record to resolve (default TXT, which commonly stores an N3 address)',
+      ),
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'query_nns',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(pick(args, ['domain', 'recordType', 'network'])),
+      },
+    },
+  },
+  {
+    name: 'query_neofs',
+    description:
+      'NeoFS: query network information, fixed-gateway container metadata, an N3 account '
+      + 'storage balance, or generate canonical NeoFS object links. Read-only and bounded.',
+    inputSchema: {
+      operation: z.enum([
+        'network_info', 'container', 'account_balance', 'object_link',
+      ]).describe('NeoFS read operation'),
+      containerId: z.string().optional().describe('NeoFS container id'),
+      objectId: z.string().optional().describe('NeoFS object id'),
+      address: z.string().optional().describe('Neo N3 account for accounting balance'),
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'query_neofs',
+        mapArgs: (args) => pick(args, ['operation', 'containerId', 'objectId', 'address']),
+      },
+    },
+  },
+  {
+    name: 'get_oracle_info',
+    description:
+      'Neo N3: read the native Oracle contract response price and explain the asynchronous '
+      + 'contract-callback request boundary for the selected network.',
+    inputSchema: { ...networkField },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'get_oracle_info',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(pick(args, ['network'])),
+      },
+    },
+  },
+  {
     name: 'get_nep17_transfers',
     description: 'Neo N3: get NEP-17 token transfer history for an address, from live RPC.',
     inputSchema: {
@@ -711,6 +842,59 @@ const SPECS: PublicToolSpec[] = [
         internalName: 'x_build_contract_call',
         mapArgs: (args) => neoxNetwork(
           pick(args, ['from', 'to', 'data', 'functionSignature', 'args', 'valueWei', 'network']),
+        ),
+      },
+    },
+  },
+  {
+    name: 'build_vote',
+    description:
+      'Neo N3: construct and simulate an UNSIGNED NEO governance vote or unvote proposal for '
+      + 'the connected wallet. The proposal is returned only when vote() returns true.',
+    inputSchema: {
+      from: z.string().describe('Connected Neo N3 voter address'),
+      candidate: z.string().optional().describe(
+        'Compressed candidate public key (02/03 + 64 hex); omit to remove the current vote',
+      ),
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'n3_build_vote',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(pick(args, ['from', 'candidate', 'network'])),
+      },
+    },
+  },
+  {
+    name: 'build_nns_operation',
+    description:
+      'Neo N3: construct and simulate an UNSIGNED NNS register, renew, record update/delete, '
+      + 'or domain transfer proposal against the network-correct NameService contract.',
+    inputSchema: {
+      from: z.string().describe('Connected Neo N3 signer address'),
+      action: z.enum([
+        'register', 'renew', 'set_record', 'delete_record', 'transfer',
+      ]).describe('NNS state-changing operation'),
+      domain: z.string().min(3).max(255).describe('Fully-qualified .neo domain'),
+      years: z.number().int().min(1).max(10).optional().describe('Renewal years (default 1)'),
+      recordType: z.enum(['A', 'CNAME', 'TXT', 'AAAA']).optional().describe(
+        'Required for set_record/delete_record',
+      ),
+      data: z.string().max(1024).optional().describe('Required record value for set_record'),
+      to: z.string().optional().describe('Recipient Neo N3 address for transfer'),
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'n3_build_nns_operation',
+        requiresServices: true,
+        mapArgs: (args) => n3Args(
+          pick(args, [
+            'from', 'action', 'domain', 'years', 'recordType', 'data', 'to', 'network',
+          ]),
         ),
       },
     },

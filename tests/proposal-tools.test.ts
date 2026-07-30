@@ -183,7 +183,7 @@ describe('n3_build_transfer', () => {
         { network: 'testnet', from: FROM_ADDR, to: TO_ADDR, asset: 'GAS', amount: '0.00000001' },
         neoService,
       ),
-    ).rejects.toThrow(/transfer returned false/i);
+    ).rejects.toThrow(/transfer did not return true/i);
   });
 });
 

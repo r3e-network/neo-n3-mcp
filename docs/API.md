@@ -15,12 +15,14 @@ The registry rewrites `network` per route, so callers never spell out chain-qual
 
 ## MCP Surface
 
-The default server exposes 33 read-only tools:
+The default server exposes 42 non-custodial tools:
 
-- Server: `get_network_mode`, `get_wallet` (no `chain` parameter)
+- Server and data utilities: `get_network_mode`, `get_wallet`, `inspect_neo_value`, `convert_neo_data`, `get_neo_service_info`
 - Chain, both chains: `get_chain_info`, `get_block_height`, `get_block`, `get_transaction`, `get_transaction_status`, `get_balance`
 - Contracts, both chains: `call_contract`, `get_contract_info`, `simulate_call`
 - Construct, both chains: `build_transfer`, `build_contract_call`
+- Neo ecosystem reads: `decode_neo_script`, `query_nns`, `query_neofs`, `get_oracle_info`
+- Dedicated Neo N3 construct: `build_vote`, `build_nns_operation`
 - Explorer, both chains: `explorer_get_address`, `analyze_address`, `explorer_list_address_transactions`, `explorer_list_address_transfers`, `explorer_list_token_holders`, `explorer_search`, `query_explorer`
 - Neo N3 only: `get_application_log`, `wait_for_transaction`, `get_unclaimed_gas`, `get_nep17_transfers`, `get_nep11_balances`, `get_nep11_transfers`, `get_contract_status`, `list_famous_contracts`, `estimate_transfer_fees`, `estimate_invoke_fees`, `explorer_list_address_assets`, `query_explorer_find`
 - Neo X only: `query_explorer_graphql`
@@ -35,7 +37,7 @@ rejected on Neo X, and omitted calls retain the ordinary single block RPC. Neo
 N3 block responses also include `timeIso`, deterministically derived from the
 node's millisecond `time` value so clients do not need to reinterpret it.
 
-`build_transfer` and `build_contract_call` return UNSIGNED proposals — a NeoLine dapi payload on Neo N3, an unsigned EVM transaction on Neo X. They never sign or broadcast, so key custody stays with the user's wallet.
+Every `build_*` tool returns an UNSIGNED proposal after simulating the exact payload. `build_transfer` and `build_contract_call` support both chains; `build_vote` pins the native NEO contract; `build_nns_operation` pins the network-correct NameService contract and supported argument order. They never sign or broadcast, so key custody stays with the user's wallet.
 
 The MCP HTTP transport is read-only by design and ignores `NEO_ENABLE_WRITES`. On a locally launched stdio server, `NEO_ENABLE_WRITES=true` adds four annotated Neo N3 tools:
 

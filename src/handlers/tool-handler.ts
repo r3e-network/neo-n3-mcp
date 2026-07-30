@@ -40,6 +40,13 @@ import {
 } from './proposal-tools';
 import { NEOX_NODE_TOOLS, dispatchNeoxNodeTool } from './neox-node-tools';
 import { handleN3TransactionStatus } from './n3-transaction-status';
+import { NEO_DATA_TOOLS, dispatchNeoDataTool } from './neo-data-tools';
+import {
+  ECOSYSTEM_META_TOOLS,
+  ECOSYSTEM_N3_TOOLS,
+  dispatchEcosystemMetaTool,
+  dispatchEcosystemN3Tool,
+} from './ecosystem-tools';
 
 // --- Individual Tool Handlers ---
 
@@ -896,6 +903,22 @@ export async function callTool(name: string, input: Record<string, unknown>, neo
     throw new ProtocolError(ProtocolErrorCode.InvalidParams, 'Invalid input parameters. Expected an object.');
   }
 
+  if (NEO_DATA_TOOLS.has(name)) {
+    try {
+      return await dispatchNeoDataTool(name, input);
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  if (ECOSYSTEM_META_TOOLS.has(name)) {
+    try {
+      return await dispatchEcosystemMetaTool(name, input);
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
   // Analytical indexer (neo3fura) and Neo X (Blockscout) reads go straight to
   // their HTTP clients and never touch the NeoService/ContractService RPC layer.
   if (N3_INDEXER_TOOLS.has(name) || NEOX_TOOLS.has(name)) {
@@ -955,6 +978,14 @@ export async function callTool(name: string, input: Record<string, unknown>, neo
   if (N3_PROPOSAL_TOOLS.has(name)) {
     try {
       return await dispatchN3ProposalTool(name, input, neoService);
+    } catch (error) {
+      return handleError(error);
+    }
+  }
+
+  if (ECOSYSTEM_N3_TOOLS.has(name)) {
+    try {
+      return await dispatchEcosystemN3Tool(name, input, neoService);
     } catch (error) {
       return handleError(error);
     }

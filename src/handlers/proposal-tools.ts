@@ -39,9 +39,11 @@ import {
   N3InvokeProposal,
   N3Simulation,
   N3Network,
+  NEO_NATIVE_SCRIPT_HASH,
 } from '../utils/transaction-proposal';
 import { encodeFunctionCall } from '../utils/evm-abi';
 import type { ContractInvocationResult } from '../services/neo-service';
+import { NNS_SCRIPT_HASHES } from './ecosystem-tools';
 
 // --- shared helpers --------------------------------------------------------
 
@@ -117,7 +119,8 @@ async function fetchTokenDecimals(neoService: NeoService, scriptHash: string): P
 
 async function attachSimulation(
   neoService: NeoService,
-  proposal: N3InvokeProposal
+  proposal: N3InvokeProposal,
+  options: { requireBooleanTrue?: boolean } = {},
 ): Promise<N3InvokeProposal> {
   const request = simulationRequestFor(proposal);
   const result = await neoService.testInvoke(
@@ -132,8 +135,13 @@ async function attachSimulation(
       `Transaction simulation failed${simulation.exception ? `: ${simulation.exception}` : '.'}`
     );
   }
-  if (proposal.operation === 'transfer' && !simulationBooleanResultIsTrue(simulation)) {
-    throw new ValidationError('Transaction simulation failed: transfer returned false.');
+  if (
+    (proposal.operation === 'transfer' || options.requireBooleanTrue === true)
+    && !simulationBooleanResultIsTrue(simulation)
+  ) {
+    throw new ValidationError(
+      `Transaction simulation failed: ${proposal.operation} did not return true.`,
+    );
   }
   return { ...proposal, simulation };
 }
@@ -214,6 +222,147 @@ export async function handleN3BuildInvoke(
     ...(signers ? { signers } : {}),
   });
   const withSimulation = await attachSimulation(neoService, proposal);
+  return createSuccessResponse(withSimulation) as Record<string, unknown>;
+}
+
+const NNS_DOMAIN_RE =
+  /^(?=.{3,255}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+neo$/;
+const NNS_RECORD_TYPES = Object.freeze({
+  A: 1,
+  CNAME: 5,
+  TXT: 16,
+  AAAA: 28,
+});
+
+function normalizeNnsDomain(value: unknown): string {
+  const domain = requireString(value, 'domain').toLowerCase().replace(/\.$/, '');
+  if (!NNS_DOMAIN_RE.test(domain)) {
+    throw new ValidationError(
+      'domain must be a valid .neo name using lowercase-compatible DNS label characters',
+    );
+  }
+  return domain;
+}
+
+export async function handleN3BuildVote(
+  input: Record<string, unknown>,
+  neoService: NeoService,
+): Promise<Record<string, unknown>> {
+  const network = resolveN3Network(input);
+  const from = requireString(input.from, 'from');
+  const candidate = input.candidate === undefined || input.candidate === null
+    ? null
+    : requireString(input.candidate, 'candidate').toLowerCase();
+  if (candidate !== null && !/^(?:02|03)[0-9a-f]{64}$/.test(candidate)) {
+    throw new ValidationError('candidate must be a compressed 33-byte public key, or omitted to unvote');
+  }
+
+  const proposal = buildN3InvokeProposal({
+    network,
+    scriptHash: NEO_NATIVE_SCRIPT_HASH,
+    operation: 'vote',
+    args: [
+      { type: 'Hash160', value: from },
+      candidate === null
+        ? { type: 'Any', value: null }
+        : { type: 'PublicKey', value: candidate },
+    ],
+    from,
+  });
+  proposal.summary = candidate === null
+    ? `Remove the Neo N3 governance vote for ${from} on ${network}.`
+    : `Vote from ${from} for candidate ${candidate} on Neo N3 ${network}.`;
+  const withSimulation = await attachSimulation(neoService, proposal, {
+    requireBooleanTrue: true,
+  });
+  return createSuccessResponse(withSimulation) as Record<string, unknown>;
+}
+
+function nnsRecordType(value: unknown): { name: keyof typeof NNS_RECORD_TYPES; value: number } {
+  const name = requireString(value, 'recordType').toUpperCase() as keyof typeof NNS_RECORD_TYPES;
+  const type = NNS_RECORD_TYPES[name];
+  if (type === undefined) throw new ValidationError('recordType must be A, CNAME, TXT, or AAAA');
+  return { name, value: type };
+}
+
+export async function handleN3BuildNnsOperation(
+  input: Record<string, unknown>,
+  neoService: NeoService,
+): Promise<Record<string, unknown>> {
+  const network = resolveN3Network(input);
+  const from = requireString(input.from, 'from');
+  const domain = normalizeNnsDomain(input.domain);
+  const action = requireString(input.action, 'action').toLowerCase();
+  const scriptHash = NNS_SCRIPT_HASHES[network];
+
+  let operation: string;
+  let args: unknown[];
+  let summary: string;
+  let to: string | undefined;
+  let requireBooleanTrue = false;
+
+  if (action === 'register') {
+    operation = 'register';
+    args = [
+      { type: 'String', value: domain },
+      { type: 'Hash160', value: from },
+    ];
+    summary = `Register ${domain} to ${from} on Neo N3 ${network}.`;
+    requireBooleanTrue = true;
+  } else if (action === 'renew') {
+    const years = input.years === undefined ? 1 : Number(input.years);
+    if (!Number.isSafeInteger(years) || years < 1 || years > 10) {
+      throw new ValidationError('years must be an integer from 1 through 10');
+    }
+    operation = 'renew';
+    args = [
+      { type: 'String', value: domain },
+      { type: 'Integer', value: String(years) },
+    ];
+    summary = `Renew ${domain} for ${years} year${years === 1 ? '' : 's'} on Neo N3 ${network}.`;
+  } else if (action === 'set_record' || action === 'delete_record') {
+    const record = nnsRecordType(input.recordType);
+    operation = action === 'set_record' ? 'setRecord' : 'deleteRecord';
+    args = [
+      { type: 'String', value: domain },
+      { type: 'Integer', value: String(record.value) },
+    ];
+    if (action === 'set_record') {
+      const data = requireString(input.data, 'data');
+      if (record.name === 'TXT' && data.length > 255) {
+        throw new ValidationError('NNS TXT record data must not exceed 255 characters');
+      }
+      args.push({ type: 'String', value: data });
+      summary = `Set the ${record.name} record for ${domain} to ${data} on Neo N3 ${network}.`;
+    } else {
+      summary = `Delete the ${record.name} record for ${domain} on Neo N3 ${network}.`;
+    }
+  } else if (action === 'transfer') {
+    to = requireString(input.to, 'to');
+    operation = 'transfer';
+    args = [
+      { type: 'Hash160', value: to },
+      { type: 'ByteArray', value: Buffer.from(domain, 'utf8').toString('base64') },
+      { type: 'Any', value: null },
+    ];
+    summary = `Transfer the NNS domain ${domain} from ${from} to ${to} on Neo N3 ${network}.`;
+    requireBooleanTrue = true;
+  } else {
+    throw new ValidationError(
+      'action must be register, renew, set_record, delete_record, or transfer',
+    );
+  }
+
+  const proposal = buildN3InvokeProposal({
+    network,
+    scriptHash,
+    operation,
+    args,
+    from,
+  });
+  proposal.summary = summary;
+  if (to) proposal.to = to;
+  const withSimulation = await attachSimulation(neoService, proposal, { requireBooleanTrue });
   return createSuccessResponse(withSimulation) as Record<string, unknown>;
 }
 
@@ -400,6 +549,8 @@ export const N3_PROPOSAL_TOOLS: ReadonlySet<string> = new Set([
   'n3_test_invoke',
   'n3_build_transfer',
   'n3_build_invoke',
+  'n3_build_vote',
+  'n3_build_nns_operation',
 ]);
 
 /** Construct/simulate tools that use the read-only EVM RPC client (Neo X). */
@@ -422,6 +573,10 @@ export async function dispatchN3ProposalTool(
       return handleN3BuildTransfer(input, neoService);
     case 'n3_build_invoke':
       return handleN3BuildInvoke(input, neoService);
+    case 'n3_build_vote':
+      return handleN3BuildVote(input, neoService);
+    case 'n3_build_nns_operation':
+      return handleN3BuildNnsOperation(input, neoService);
     default:
       throw new ValidationError(`Unknown Neo N3 proposal tool: ${name}`);
   }

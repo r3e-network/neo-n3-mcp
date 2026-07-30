@@ -31,6 +31,9 @@ const EXPECTED_PUBLIC_TOOLS = [
   // meta
   'get_network_mode',
   'get_wallet',
+  'inspect_neo_value',
+  'convert_neo_data',
+  'get_neo_service_info',
   // node reads (multi-chain)
   'get_chain_info',
   'get_block_height',
@@ -44,6 +47,10 @@ const EXPECTED_PUBLIC_TOOLS = [
   'get_application_log',
   'wait_for_transaction',
   'get_unclaimed_gas',
+  'decode_neo_script',
+  'query_nns',
+  'query_neofs',
+  'get_oracle_info',
   'get_nep17_transfers',
   'get_nep11_balances',
   'get_nep11_transfers',
@@ -55,6 +62,8 @@ const EXPECTED_PUBLIC_TOOLS = [
   'simulate_call',
   'build_transfer',
   'build_contract_call',
+  'build_vote',
+  'build_nns_operation',
   // explorer / indexer reads
   'explorer_get_address',
   'analyze_address',
@@ -73,8 +82,8 @@ describe('public tool surface', () => {
     expect(publicToolNames()).toEqual(EXPECTED_PUBLIC_TOOLS);
   });
 
-  it('keeps the surface at or below 33 tools (down from 54 chain-prefixed tools)', () => {
-    expect(publicToolNames().length).toBeLessThanOrEqual(33);
+  it('keeps the expanded high-level surface bounded', () => {
+    expect(publicToolNames().length).toBeLessThanOrEqual(42);
   });
 
   it('never exposes key-custody tools', () => {
@@ -148,6 +157,10 @@ describe('chain discriminator', () => {
       'get_application_log',
       'wait_for_transaction',
       'get_unclaimed_gas',
+      'decode_neo_script',
+      'query_nns',
+      'query_neofs',
+      'get_oracle_info',
       'get_nep17_transfers',
       'get_nep11_balances',
       'get_nep11_transfers',
@@ -155,6 +168,8 @@ describe('chain discriminator', () => {
       'list_famous_contracts',
       'estimate_transfer_fees',
       'estimate_invoke_fees',
+      'build_vote',
+      'build_nns_operation',
       'explorer_list_address_assets',
       'analyze_address',
       'query_explorer_find',
@@ -165,7 +180,13 @@ describe('chain discriminator', () => {
     }
     expect(supportedChains('query_explorer_graphql')).toEqual(['neox']);
     expect(Object.keys(PUBLIC_TOOLS.query_explorer_graphql.inputSchema)).not.toContain('chain');
-    for (const name of ['get_network_mode', 'get_wallet']) {
+    for (const name of [
+      'get_network_mode',
+      'get_wallet',
+      'inspect_neo_value',
+      'convert_neo_data',
+      'get_neo_service_info',
+    ]) {
       expect(supportedChains(name)).toEqual([]);
     }
   });
