@@ -220,8 +220,9 @@ const ENTRIES: Record<string, CatalogEntry> = {
     pathParam: TXID_PARAM,
     category: 'transaction',
     summary:
-      'Deterministic transaction analysis with exact GAS fees, evidence-backed participant '
-      + 'identities, signers, VM status, decimals-safe token amounts, and bounded events.',
+      'Deterministic transaction analysis with stable evidence IDs, exact GAS fees, grouped '
+      + 'fund flows, evidence-backed participant identities, conservative VM failure '
+      + 'classification, code-based findings, and bounded events.',
   },
 
   // ── By account {address} ──────────────────────────────────────────────────

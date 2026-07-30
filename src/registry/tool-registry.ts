@@ -990,9 +990,10 @@ const SPECS: PublicToolSpec[] = [
     description:
       'PRIMARY Neo N3 transaction-explanation tool. Use this first for transaction meaning, '
       + 'fees, asset flows, signers, VM outcome, or contract events. Returns deterministic '
-      + 'indexed facts with evidence-backed participant identities, exact decimal strings, '
-      + 'and explicit decimals-known flags so the model must not perform token scaling or '
-      + 'arithmetic itself.',
+      + 'indexed facts with stable evidence IDs, evidence-backed participant identities, '
+      + 'exact decimal strings, grouped fund flows, conservative failure classification, '
+      + 'and code-based findings. Preserve returned values and cite evidence IDs; do not '
+      + 'perform token scaling or arithmetic, or claim opcode/storage trace depth not present.',
     inputSchema: {
       txid: z.string().describe('Neo N3 transaction hash (0x + 64 hex characters)'),
       ...networkField,

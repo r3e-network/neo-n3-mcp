@@ -317,6 +317,20 @@ The default MCP surface exposes 44 non-custodial tools. Every tool that both cha
 
 `call_contract` is strictly read-only: `invokefunction` on Neo N3, `eth_call` on Neo X. The `build_*` tools run the exact read-only simulation and return UNSIGNED transaction proposals for a wallet to review and sign; no default-surface tool holds a key, signs, or broadcasts. `build_vote` pins the native NEO contract, while `build_nns_operation` pins the network-correct NameService contract and operation arguments.
 
+### Explorer AI roadmap
+
+The canonical cross-repository plan is maintained in the
+[neo3fura AI Plan and Roadmap](https://github.com/r3e-network/neo3fura#neo-explorer-ai-plan-and-roadmap).
+Neo MCP is the typed orchestration boundary: it exposes deterministic Explorer
+evidence and unsigned, simulated proposals to the assistant while keeping
+wallet review, signing, and broadcasting outside the hosted MCP service.
+
+`analyze_transaction` is the primary Neo N3 investigation tool. Its v2 response
+adds stable evidence IDs, bounded counts, exact grouped fund flows,
+conservative failure classification, and code-based findings. Clients should
+cite those IDs, preserve exact decimal strings, and disclose when detailed
+opcode or storage traces are unavailable.
+
 A locally launched stdio server with `NEO_ENABLE_WRITES=true`,
 `NEO_SIGNER_WIF_FILE`, and `NEO_MCP_REQUEST_STATE_KEY` registers four
 additional Neo N3 tools that sign with that owner-supplied key:
