@@ -929,7 +929,7 @@ const SPECS: PublicToolSpec[] = [
       + 'relationships, co-signers, contract interactions, behavior signals, confidence, and '
       + 'explicit sample boundaries; observed behavior never proves a real-world owner.',
     inputSchema: {
-      address: z.string().describe('Neo N3 address or 0x script hash'),
+      address: z.string().describe('Canonical Base58 Neo N3 account address'),
       sample: z.number().int().min(20).max(200).optional().describe(
         'Recent transfer rows sampled per direction (20-200, default 100)',
       ),
@@ -945,6 +945,30 @@ const SPECS: PublicToolSpec[] = [
         mapArgs: (args) => ({
           method: 'analyze_address',
           params: pick(args, ['address', 'sample', 'limit']),
+          ...n3Args(pick(args, ['network'])),
+        }),
+      },
+    },
+  },
+  {
+    name: 'analyze_transaction',
+    description:
+      'PRIMARY Neo N3 transaction-explanation tool. Use this first for transaction meaning, '
+      + 'fees, asset flows, signers, VM outcome, or contract events. Returns deterministic '
+      + 'indexed facts with evidence-backed participant identities, exact decimal strings, '
+      + 'and explicit decimals-known flags so the model must not perform token scaling or '
+      + 'arithmetic itself.',
+    inputSchema: {
+      txid: z.string().describe('Neo N3 transaction hash (0x + 64 hex characters)'),
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'query_indexer',
+        mapArgs: (args) => ({
+          method: 'analyze_transaction',
+          params: pick(args, ['txid']),
           ...n3Args(pick(args, ['network'])),
         }),
       },

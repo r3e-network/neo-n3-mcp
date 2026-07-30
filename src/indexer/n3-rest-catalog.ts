@@ -215,6 +215,14 @@ const ENTRIES: Record<string, CatalogEntry> = {
     category: 'transaction',
     summary: 'A single transaction (signers, witnesses, system/network fees) by its hash.',
   },
+  analyze_transaction: {
+    pathTemplate: 'transactions/{txid}/analysis',
+    pathParam: TXID_PARAM,
+    category: 'transaction',
+    summary:
+      'Deterministic transaction analysis with exact GAS fees, evidence-backed participant '
+      + 'identities, signers, VM status, decimals-safe token amounts, and bounded events.',
+  },
 
   // ── By account {address} ──────────────────────────────────────────────────
   get_address_summary: {

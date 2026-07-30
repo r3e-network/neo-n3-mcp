@@ -79,7 +79,7 @@ describe('callTool analytical dispatch', () => {
 
   test('query_indexer routes bounded address intelligence to the selected N3 network', async () => {
     const fetchMock = jest.fn().mockResolvedValue(
-      jsonResponse({ data: { address: VALID_N3_ADDRESS, engine_version: 'n3-address-intelligence/v1' } }),
+      jsonResponse({ data: { address: VALID_N3_ADDRESS, engine_version: 'n3-address-intelligence/v2' } }),
     );
     global.fetch = fetchMock as any;
 
@@ -100,7 +100,44 @@ describe('callTool analytical dispatch', () => {
       `https://api.n3index.dev/testnet/accounts/${VALID_N3_ADDRESS}/intelligence?sample=100&limit=12`,
     );
     expect(response.result).toEqual({
-      data: { address: VALID_N3_ADDRESS, engine_version: 'n3-address-intelligence/v1' },
+      data: { address: VALID_N3_ADDRESS, engine_version: 'n3-address-intelligence/v2' },
+    });
+  });
+
+  test('query_indexer routes deterministic transaction analysis to the selected N3 network', async () => {
+    const txid = `0x${'ab'.repeat(32)}`;
+    const fetchMock = jest.fn().mockResolvedValue(
+      jsonResponse({
+        data: {
+          txid,
+          engine_version: 'n3-transaction-analysis/v1',
+          transfers: [{ amount_raw: '7086000000', amount: '70.86', decimals_known: true }],
+        },
+      }),
+    );
+    global.fetch = fetchMock as any;
+
+    const response = await callTool(
+      'query_indexer',
+      {
+        method: 'analyze_transaction',
+        network: 'testnet',
+        params: { txid },
+      },
+      emptyNeoServices,
+      emptyContractServices,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      `https://api.n3index.dev/testnet/transactions/${txid}/analysis`,
+    );
+    expect(response.result).toEqual({
+      data: {
+        txid,
+        engine_version: 'n3-transaction-analysis/v1',
+        transfers: [{ amount_raw: '7086000000', amount: '70.86', decimals_known: true }],
+      },
     });
   });
 

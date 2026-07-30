@@ -14,7 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   reads, bounded NeoFS reads, and official Neo X bridge integration metadata.
 - Added a dedicated unsigned native NEO vote/unvote constructor with exact
   simulation and Boolean-success enforcement.
-- Expanded the default non-custodial public surface from 33 to 42 tools.
+- Added deterministic transaction analysis with exact fee arithmetic,
+  decimals-aware transfer amounts, signers, VM outcome, and contract events.
+- Expanded the default non-custodial public surface from 33 to 43 tools.
 
 ## [4.0.2] - 2026-07-30
 
