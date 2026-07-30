@@ -263,7 +263,11 @@ jobs:
             echo "Expected exactly one package tarball, found ${#package_files[@]}." >&2
             exit 1
           fi
-          PACKAGE_TARBALL="${package_files[0]}"
+          PACKAGE_TARBALL="./${package_files[0]}"
+          if [[ ! -f "$PACKAGE_TARBALL" ]]; then
+            echo "Package tarball is not a local file: ${PACKAGE_TARBALL}" >&2
+            exit 1
+          fi
           LOCAL_INTEGRITY="$(node -p "require('./release-artifact/pack.json')[0].integrity")"
           set +e
           remote_lookup="$(npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" dist.integrity 2>&1)"
