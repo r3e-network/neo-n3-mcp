@@ -115,7 +115,13 @@ async function attachSimulation(
     request.params,
     request.signers
   );
-  return { ...proposal, simulation: shapeSimulation(result) };
+  const simulation = shapeSimulation(result);
+  if (simulation.state.toUpperCase() !== 'HALT' || simulation.exception) {
+    throw new ValidationError(
+      `Transaction simulation failed${simulation.exception ? `: ${simulation.exception}` : '.'}`
+    );
+  }
+  return { ...proposal, simulation };
 }
 
 // --- Neo N3: simulate ------------------------------------------------------
@@ -219,6 +225,56 @@ function buildEvmCallObject(input: {
   return call;
 }
 
+interface EvmSimulationPreview {
+  network: NeoxEvmNetwork;
+  gasEstimate: string | null;
+  gasPrice: string;
+  callResult?: string;
+  revertReason?: string;
+}
+
+interface EvmRpcOutcome {
+  value?: string;
+  error?: string;
+}
+
+async function settleEvmRpc(
+  operation: Promise<string>,
+  fallbackError: string
+): Promise<EvmRpcOutcome> {
+  try {
+    return { value: await operation };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : fallbackError };
+  }
+}
+
+async function simulateEvmCall(
+  network: NeoxEvmNetwork,
+  call: Record<string, string>
+): Promise<EvmSimulationPreview> {
+  const [callOutcome, gasOutcome, gasPrice] = await Promise.all([
+    settleEvmRpc(
+      callEvmRpc<string>(network, 'eth_call', [call, 'latest']),
+      'eth_call reverted'
+    ),
+    settleEvmRpc(
+      callEvmRpc<string>(network, 'eth_estimateGas', [call]),
+      'eth_estimateGas reverted'
+    ),
+    callEvmRpc<string>(network, 'eth_gasPrice', []),
+  ]);
+
+  const revertReason = callOutcome.error || gasOutcome.error;
+  return {
+    network,
+    gasEstimate: gasOutcome.value ?? null,
+    gasPrice,
+    ...(callOutcome.value !== undefined ? { callResult: callOutcome.value } : {}),
+    ...(revertReason ? { revertReason } : {}),
+  };
+}
+
 export async function handleXSimulateCall(
   input: Record<string, unknown>
 ): Promise<Record<string, unknown>> {
@@ -231,33 +287,7 @@ export async function handleXSimulateCall(
     : undefined;
 
   const call = buildEvmCallObject({ from, to, data, value });
-
-  let callResult: string | undefined;
-  let revertReason: string | undefined;
-  try {
-    callResult = await callEvmRpc<string>(network, 'eth_call', [call, 'latest']);
-  } catch (error) {
-    revertReason = error instanceof Error ? error.message : 'eth_call reverted';
-  }
-
-  let gasEstimate: string | null = null;
-  try {
-    gasEstimate = await callEvmRpc<string>(network, 'eth_estimateGas', [call]);
-  } catch (error) {
-    if (!revertReason) {
-      revertReason = error instanceof Error ? error.message : 'eth_estimateGas reverted';
-    }
-  }
-
-  const gasPrice = await callEvmRpc<string>(network, 'eth_gasPrice', []);
-
-  return createSuccessResponse({
-    network,
-    gasEstimate,
-    gasPrice,
-    ...(callResult !== undefined ? { callResult } : {}),
-    ...(revertReason !== undefined ? { revertReason } : {}),
-  }) as Record<string, unknown>;
+  return createSuccessResponse(await simulateEvmCall(network, call)) as Record<string, unknown>;
 }
 
 // --- Neo X (EVM): construct ------------------------------------------------
@@ -271,8 +301,12 @@ export async function handleXBuildTransfer(
   const value = validateEvmAmount(requireString(input.amountWei, 'amountWei'));
 
   const call = buildEvmCallObject({ from, to, value });
-  const gas = await callEvmRpc<string>(network, 'eth_estimateGas', [call]);
-  const gasPrice = await callEvmRpc<string>(network, 'eth_gasPrice', []);
+  const simulation = await simulateEvmCall(network, call);
+  if (simulation.revertReason || !simulation.gasEstimate) {
+    throw new ValidationError(
+      `Transaction simulation failed${simulation.revertReason ? `: ${simulation.revertReason}` : '.'}`
+    );
+  }
   const chainId = neoxChainId(network);
 
   const proposal = buildEvmTxProposal({
@@ -282,11 +316,11 @@ export async function handleXBuildTransfer(
     valueWei: value,
     data: '0x',
     chainId,
-    gas,
-    gasPrice,
+    gas: simulation.gasEstimate,
+    gasPrice: simulation.gasPrice,
     summary: `Transfer ${value} wei from ${from} to ${to} on Neo X ${network}.`,
   });
-  return createSuccessResponse(proposal) as Record<string, unknown>;
+  return createSuccessResponse({ ...proposal, simulation }) as Record<string, unknown>;
 }
 
 export async function handleXBuildContractCall(
@@ -317,8 +351,12 @@ export async function handleXBuildContractCall(
     : '0';
 
   const call = buildEvmCallObject({ from, to, data: calldata, value });
-  const gas = await callEvmRpc<string>(network, 'eth_estimateGas', [call]);
-  const gasPrice = await callEvmRpc<string>(network, 'eth_gasPrice', []);
+  const simulation = await simulateEvmCall(network, call);
+  if (simulation.revertReason || !simulation.gasEstimate) {
+    throw new ValidationError(
+      `Transaction simulation failed${simulation.revertReason ? `: ${simulation.revertReason}` : '.'}`
+    );
+  }
   const chainId = neoxChainId(network);
 
   const proposal = buildEvmTxProposal({
@@ -328,13 +366,17 @@ export async function handleXBuildContractCall(
     valueWei: value,
     data: calldata,
     chainId,
-    gas,
-    gasPrice,
+    gas: simulation.gasEstimate,
+    gasPrice: simulation.gasPrice,
     summary: encodedFrom
       ? `Call ${encodedFrom} on ${to} (Neo X ${network}), from ${from}.`
       : `Call ${to} with ${calldata.length / 2 - 1} bytes of calldata (Neo X ${network}), from ${from}.`,
   });
-  return createSuccessResponse({ ...proposal, encodedCalldata: calldata }) as Record<string, unknown>;
+  return createSuccessResponse({
+    ...proposal,
+    simulation,
+    encodedCalldata: calldata,
+  }) as Record<string, unknown>;
 }
 
 // --- dispatch --------------------------------------------------------------

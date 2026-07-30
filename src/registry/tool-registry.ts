@@ -645,7 +645,8 @@ const SPECS: PublicToolSpec[] = [
     name: 'build_transfer',
     description:
       'CONSTRUCT an UNSIGNED transfer proposal: a NeoLine dapi invoke payload on Neo N3, or an '
-      + 'unsigned EVM value transfer on Neo X. The user signs it in their own wallet.',
+      + 'unsigned EVM value transfer on Neo X. It runs the exact read-only simulation first and '
+      + 'returns a proposal only when that simulation succeeds. The user signs it in their own wallet.',
     inputSchema: {
       ...chainField(CHAINS),
       from: z.string().describe('Sender address (Neo N3 base58, or Neo X 0x)'),
@@ -677,7 +678,8 @@ const SPECS: PublicToolSpec[] = [
     name: 'build_contract_call',
     description:
       'CONSTRUCT an UNSIGNED contract-invocation proposal: a NeoLine dapi invoke payload on '
-      + 'Neo N3, or an unsigned EVM transaction on Neo X. The user signs it in their own wallet.',
+      + 'Neo N3, or an unsigned EVM transaction on Neo X. It runs the exact read-only simulation '
+      + 'first and returns a proposal only when that simulation succeeds. The user signs it in their own wallet.',
     inputSchema: {
       ...chainField(CHAINS),
       from: z.string().describe('Signer address (Neo N3 base58, or Neo X 0x)'),

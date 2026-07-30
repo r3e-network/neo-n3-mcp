@@ -144,6 +144,24 @@ describe('n3_build_transfer', () => {
       ),
     ).rejects.toBeInstanceOf(ValidationError);
   });
+
+  test('does not return a signable proposal when the exact transfer simulation faults', async () => {
+    const neoService = mockNeoService({
+      testInvoke: jest.fn().mockResolvedValue({
+        state: 'FAULT',
+        gasconsumed: '123',
+        exception: 'Insufficient balance',
+        stack: [],
+      }),
+    });
+
+    await expect(
+      handleN3BuildTransfer(
+        { network: 'mainnet', from: FROM_ADDR, to: TO_ADDR, asset: 'GAS', amount: '1' },
+        neoService,
+      ),
+    ).rejects.toThrow(/simulation failed/i);
+  });
 });
 
 describe('n3_build_invoke', () => {
@@ -210,6 +228,7 @@ describe('n3_test_invoke', () => {
 describe('x_build_transfer', () => {
   test('builds an eth_tx proposal with mocked gas/gasPrice and never calls a send method', async () => {
     const spy = stubEvmRpc({
+      eth_call: '0x',
       eth_estimateGas: '0x5208',
       eth_gasPrice: '0x3b9aca00',
     });
@@ -236,6 +255,12 @@ describe('x_build_transfer', () => {
         gas: '0x5208',
         gasPrice: '0x3b9aca00',
       },
+      simulation: {
+        network: 'neox-mainnet',
+        callResult: '0x',
+        gasEstimate: '0x5208',
+        gasPrice: '0x3b9aca00',
+      },
     });
     // No nonce and no signature fields.
     expect(proposal.tx).not.toHaveProperty('nonce');
@@ -248,7 +273,7 @@ describe('x_build_transfer', () => {
   });
 
   test('rejects an invalid sender address', async () => {
-    const spy = stubEvmRpc({ eth_estimateGas: '0x5208', eth_gasPrice: '0x1' });
+    const spy = stubEvmRpc({ eth_call: '0x', eth_estimateGas: '0x5208', eth_gasPrice: '0x1' });
     await expect(
       handleXBuildTransfer({ network: 'neox-mainnet', from: '0xdead', to: EVM_TO, amountWei: '1' }),
     ).rejects.toBeInstanceOf(ValidationError);
@@ -256,16 +281,35 @@ describe('x_build_transfer', () => {
   });
 
   test('rejects a negative amount', async () => {
-    stubEvmRpc({ eth_estimateGas: '0x5208', eth_gasPrice: '0x1' });
+    stubEvmRpc({ eth_call: '0x', eth_estimateGas: '0x5208', eth_gasPrice: '0x1' });
     await expect(
       handleXBuildTransfer({ network: 'neox-mainnet', from: EVM_FROM, to: EVM_TO, amountWei: '-5' }),
     ).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  test('does not return a signable proposal when eth_call reports a revert', async () => {
+    jest.spyOn(evmRpc, 'callEvmRpc').mockImplementation(async (_network, method) => {
+      if (method === 'eth_call') throw new Error('execution reverted');
+      if (method === 'eth_estimateGas') return '0x5208' as never;
+      if (method === 'eth_gasPrice') return '0x1' as never;
+      throw new Error(`unexpected ${method}`);
+    });
+
+    await expect(
+      handleXBuildTransfer({
+        network: 'neox-mainnet',
+        from: EVM_FROM,
+        to: EVM_TO,
+        amountWei: '1',
+      }),
+    ).rejects.toThrow(/simulation failed/i);
   });
 });
 
 describe('x_build_contract_call', () => {
   test('ABI-encodes functionSignature + args and builds an eth_tx proposal', async () => {
     const spy = stubEvmRpc({
+      eth_call: '0x01',
       eth_estimateGas: '0xc350',
       eth_gasPrice: '0x3b9aca00',
     });
@@ -286,6 +330,12 @@ describe('x_build_contract_call', () => {
     expect(proposal.tx.data).toBe(expectedCalldata);
     expect(proposal.tx.chainId).toBe('0xba9304'); // 12227332
     expect(proposal.tx.gas).toBe('0xc350');
+    expect(proposal.simulation).toEqual({
+      network: 'neox-testnet',
+      callResult: '0x01',
+      gasEstimate: '0xc350',
+      gasPrice: '0x3b9aca00',
+    });
 
     const estimateCall = spy.mock.calls.find((c) => c[1] === 'eth_estimateGas');
     expect((estimateCall?.[2] as any[])[0].data).toBe(expectedCalldata);
@@ -293,7 +343,7 @@ describe('x_build_contract_call', () => {
   });
 
   test('accepts pre-encoded calldata', async () => {
-    stubEvmRpc({ eth_estimateGas: '0x1', eth_gasPrice: '0x1' });
+    stubEvmRpc({ eth_call: '0x', eth_estimateGas: '0x1', eth_gasPrice: '0x1' });
     const res = await handleXBuildContractCall({
       network: 'neox-mainnet',
       from: EVM_FROM,
@@ -304,7 +354,7 @@ describe('x_build_contract_call', () => {
   });
 
   test('rejects when neither data nor functionSignature is provided', async () => {
-    stubEvmRpc({ eth_estimateGas: '0x1', eth_gasPrice: '0x1' });
+    stubEvmRpc({ eth_call: '0x', eth_estimateGas: '0x1', eth_gasPrice: '0x1' });
     await expect(
       handleXBuildContractCall({ network: 'neox-mainnet', from: EVM_FROM, to: EVM_TO }),
     ).rejects.toBeInstanceOf(ValidationError);
