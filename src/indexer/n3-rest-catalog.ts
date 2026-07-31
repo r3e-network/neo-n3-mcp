@@ -307,6 +307,14 @@ const ENTRIES: Record<string, CatalogEntry> = {
       + 'manifest permissions and trusts, NEF call tokens, update state, declared source '
       + 'metadata, and conservative code-based findings.',
   },
+  analyze_contract_upgrades: {
+    pathTemplate: 'contracts/{hash}/upgrades',
+    pathParam: HASH_PARAM,
+    category: 'contract',
+    summary:
+      'Immutable contract-version artifacts, historical coverage, and deterministic ABI '
+      + 'compatibility changes. Storage compatibility is reported as unknown, never inferred.',
+  },
   inspect_contract_code: {
     pathTemplate: 'contracts/{hash}/opcodes',
     pathParam: HASH_PARAM,

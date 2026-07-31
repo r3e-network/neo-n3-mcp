@@ -1063,6 +1063,30 @@ const SPECS: PublicToolSpec[] = [
     },
   },
   {
+    name: 'analyze_contract_upgrades',
+    description:
+      'Neo N3 contract-upgrade history companion to analyze_contract. Compares immutable indexed '
+      + 'manifest and NEF artifacts by update counter, reports exact history coverage, artifact '
+      + 'hashes, and structural ABI method/event/standard changes with stable evidence IDs. '
+      + 'Missing versions remain explicit. Storage compatibility cannot be proven from ABI or NEF '
+      + 'artifacts and is always reported as not_determined.',
+    inputSchema: {
+      contractHash: z.string().describe('Neo N3 contract script hash (0x + 40 hex characters)'),
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'query_indexer',
+        mapArgs: (args) => ({
+          method: 'analyze_contract_upgrades',
+          params: { hash: args.contractHash },
+          ...n3Args(pick(args, ['network'])),
+        }),
+      },
+    },
+  },
+  {
     name: 'explorer_list_address_transactions',
     description: 'Explorer analytics: list transactions involving an address, newest first.',
     inputSchema: {

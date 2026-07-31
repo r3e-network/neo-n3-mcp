@@ -273,6 +273,55 @@ describe('callTool analytical dispatch', () => {
     });
   });
 
+  test('query_indexer routes contract upgrade analysis without hiding partial history', async () => {
+    const hash = `0x${'ab'.repeat(20)}`;
+    const fetchMock = jest.fn().mockResolvedValue(
+      jsonResponse({
+        data: {
+          contract_hash: hash,
+          engine_version: 'n3-contract-upgrades/v1',
+          coverage: {
+            status: 'partial',
+            expected_versions: 3,
+            captured_versions: 1,
+            missing_counters: [0, 1],
+          },
+          transitions: [],
+        },
+      }),
+    );
+    global.fetch = fetchMock as any;
+
+    const response = await callTool(
+      'query_indexer',
+      {
+        method: 'analyze_contract_upgrades',
+        network: 'testnet',
+        params: { hash },
+      },
+      emptyNeoServices,
+      emptyContractServices,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      `https://api.n3index.dev/testnet/contracts/${hash}/upgrades`,
+    );
+    expect(response.result).toEqual({
+      data: {
+        contract_hash: hash,
+        engine_version: 'n3-contract-upgrades/v1',
+        coverage: {
+          status: 'partial',
+          expected_versions: 3,
+          captured_versions: 1,
+          missing_counters: [0, 1],
+        },
+        transitions: [],
+      },
+    });
+  });
+
   test('query_indexer surfaces a 404 as an empty/not-found result (result: null), not an error', async () => {
     const fetchMock = jest.fn().mockResolvedValue(jsonResponse(null, { status: 404 }));
     global.fetch = fetchMock as any;

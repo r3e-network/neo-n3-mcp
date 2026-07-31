@@ -71,6 +71,7 @@ const EXPECTED_PUBLIC_TOOLS = [
   'analyze_transaction',
   'analyze_contract',
   'inspect_contract_code',
+  'analyze_contract_upgrades',
   'explorer_list_address_transactions',
   'explorer_list_address_transfers',
   'explorer_list_address_assets',
@@ -87,7 +88,7 @@ describe('public tool surface', () => {
   });
 
   it('keeps the expanded high-level surface bounded', () => {
-    expect(publicToolNames().length).toBeLessThanOrEqual(46);
+    expect(publicToolNames().length).toBeLessThanOrEqual(47);
   });
 
   it('never exposes key-custody tools', () => {
