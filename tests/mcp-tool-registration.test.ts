@@ -50,6 +50,7 @@ const READ_ONLY_TOOL_NAMES = [
   'get_transaction_status',
   'get_unclaimed_gas',
   'get_wallet',
+  'inspect_contract_code',
   'inspect_neo_value',
   'list_famous_contracts',
   'query_explorer',

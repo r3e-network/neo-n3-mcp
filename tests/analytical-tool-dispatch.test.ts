@@ -232,6 +232,47 @@ describe('callTool analytical dispatch', () => {
     });
   });
 
+  test('query_indexer routes paginated contract code inspection to the selected N3 network', async () => {
+    const hash = `0x${'ab'.repeat(20)}`;
+    const fetchMock = jest.fn().mockResolvedValue(
+      jsonResponse({
+        data: {
+          contract_hash: hash,
+          engine_version: 'n3-contract-opcodes/v1',
+          code: { parse_status: 'complete', instruction_count: 301 },
+          instructions: [{ evidence_id: 'opcode:100', offset: 100, opcode: 'RET' }],
+        },
+        paging: { limit: 50, offset: 100, count: 1, total: 301 },
+      }),
+    );
+    global.fetch = fetchMock as any;
+
+    const response = await callTool(
+      'query_indexer',
+      {
+        method: 'inspect_contract_code',
+        network: 'testnet',
+        params: { hash, limit: 50, offset: 100 },
+      },
+      emptyNeoServices,
+      emptyContractServices,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      `https://api.n3index.dev/testnet/contracts/${hash}/opcodes?limit=50&offset=100`,
+    );
+    expect(response.result).toEqual({
+      data: {
+        contract_hash: hash,
+        engine_version: 'n3-contract-opcodes/v1',
+        code: { parse_status: 'complete', instruction_count: 301 },
+        instructions: [{ evidence_id: 'opcode:100', offset: 100, opcode: 'RET' }],
+      },
+      paging: { limit: 50, offset: 100, count: 1, total: 301 },
+    });
+  });
+
   test('query_indexer surfaces a 404 as an empty/not-found result (result: null), not an error', async () => {
     const fetchMock = jest.fn().mockResolvedValue(jsonResponse(null, { status: 404 }));
     global.fetch = fetchMock as any;

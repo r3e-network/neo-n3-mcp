@@ -1035,6 +1035,34 @@ const SPECS: PublicToolSpec[] = [
     },
   },
   {
+    name: 'inspect_contract_code',
+    description:
+      'Neo N3 contract-code inspection companion to analyze_contract. Returns paginated '
+      + 'deterministic NeoVM opcode annotations, ABI method ownership, bounded operands, '
+      + 'resolved syscall names, and static control-flow targets with stable evidence IDs. '
+      + 'This is static disassembly, not a runtime trace, verified source, decompilation, '
+      + 'simulation, or proof of a vulnerability.',
+    inputSchema: {
+      contractHash: z.string().describe('Neo N3 contract script hash (0x + 40 hex characters)'),
+      ...paginationFields,
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'query_indexer',
+        mapArgs: (args) => ({
+          method: 'inspect_contract_code',
+          params: {
+            hash: args.contractHash,
+            ...rename(pick(args, ['limit', 'skip']), 'skip', 'offset'),
+          },
+          ...n3Args(pick(args, ['network'])),
+        }),
+      },
+    },
+  },
+  {
     name: 'explorer_list_address_transactions',
     description: 'Explorer analytics: list transactions involving an address, newest first.',
     inputSchema: {

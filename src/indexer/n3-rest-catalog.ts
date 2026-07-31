@@ -307,6 +307,15 @@ const ENTRIES: Record<string, CatalogEntry> = {
       + 'manifest permissions and trusts, NEF call tokens, update state, declared source '
       + 'metadata, and conservative code-based findings.',
   },
+  inspect_contract_code: {
+    pathTemplate: 'contracts/{hash}/opcodes',
+    pathParam: HASH_PARAM,
+    category: 'contract',
+    summary:
+      'Paginated deterministic NeoVM disassembly with stable opcode evidence IDs, ABI method '
+      + 'ownership, bounded operands, syscall names, and static control-flow targets.',
+    queryParams: pagination(),
+  },
   list_contract_calls: {
     pathTemplate: 'contracts/{hash}/calls',
     pathParam: HASH_PARAM,

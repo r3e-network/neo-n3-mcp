@@ -303,7 +303,7 @@ See [DOCKER.md](./docs/DOCKER.md) for image, volume, and helper-script details.
 
 ## MCP Tools and Resources
 
-The default MCP surface exposes 45 non-custodial tools. Every tool that both chains implement takes a required `chain` discriminator, `"n3"` or `"neox"`, with no silent default; single-chain tools reject the chain they do not serve. The `network` parameter is always `"mainnet"` or `"testnet"`; the registry rewrites it for Neo X internally, so callers never spell out a chain-qualified network name.
+The default MCP surface exposes 46 non-custodial tools. Every tool that both chains implement takes a required `chain` discriminator, `"n3"` or `"neox"`, with no silent default; single-chain tools reject the chain they do not serve. The `network` parameter is always `"mainnet"` or `"testnet"`; the registry rewrites it for Neo X internally, so callers never spell out a chain-qualified network name.
 
 - Server and data utilities: `get_network_mode`, `get_wallet`, `inspect_neo_value`, `convert_neo_data`, `get_neo_service_info`
 - Chain, both chains: `get_chain_info`, `get_block_height`, `get_block`, `get_transaction`, `get_transaction_status`, `get_balance`
@@ -311,7 +311,7 @@ The default MCP surface exposes 45 non-custodial tools. Every tool that both cha
 - Construct, both chains: `build_transfer`, `build_contract_call`
 - Neo ecosystem reads: `decode_neo_script`, `query_nns`, `query_neofs`, `get_oracle_info`
 - Dedicated Neo N3 construct: `build_vote`, `build_nns_operation`
-- Explorer and intelligence: `explorer_get_address`, `analyze_address`, `analyze_address_connection`, `analyze_transaction`, `analyze_contract`, `explorer_list_address_transactions`, `explorer_list_address_transfers`, `explorer_list_token_holders`, `explorer_search`, `query_explorer`
+- Explorer and intelligence: `explorer_get_address`, `analyze_address`, `analyze_address_connection`, `analyze_transaction`, `analyze_contract`, `inspect_contract_code`, `explorer_list_address_transactions`, `explorer_list_address_transfers`, `explorer_list_token_holders`, `explorer_search`, `query_explorer`
 - Neo N3 only: `get_application_log`, `wait_for_transaction`, `get_unclaimed_gas`, `get_nep17_transfers`, `get_nep11_balances`, `get_nep11_transfers`, `get_contract_status`, `list_famous_contracts`, `estimate_transfer_fees`, `estimate_invoke_fees`, `explorer_list_address_assets`, `query_explorer_find`
 - Neo X only: `query_explorer_graphql`
 
@@ -337,6 +337,11 @@ token, compiler, update, and source-verification facts with stable evidence
 IDs. Clients must keep declared source URLs, `safe=false` ABI methods,
 deterministic static findings, verified source, simulation, and vulnerability
 claims distinct.
+
+`inspect_contract_code` is the paginated code-inspection companion. It returns
+bounded NeoVM operands, resolved syscall names, ABI method ownership, and
+static control-flow targets with stable opcode evidence IDs. It is deterministic
+disassembly, not a runtime trace, verified source, decompilation, or simulation.
 
 A locally launched stdio server with `NEO_ENABLE_WRITES=true`,
 `NEO_SIGNER_WIF_FILE`, and `NEO_MCP_REQUEST_STATE_KEY` registers four

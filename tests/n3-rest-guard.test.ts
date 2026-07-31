@@ -376,7 +376,7 @@ describe('N3_REST_CATALOG — invariants', () => {
   });
 
   it('reports the expected verified endpoint count', () => {
-    expect(N3_REST_CATALOG.size).toBe(29);
+    expect(N3_REST_CATALOG.size).toBe(30);
   });
 
   it('exposes exactly the vetted semantic endpoint keys', () => {
@@ -392,6 +392,7 @@ describe('N3_REST_CATALOG — invariants', () => {
         'get_contract',
         'get_token',
         'get_transaction',
+        'inspect_contract_code',
         'list_address_balances',
         'list_address_transactions',
         'list_address_transfers',
