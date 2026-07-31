@@ -72,6 +72,7 @@ const EXPECTED_PUBLIC_TOOLS = [
   'analyze_contract',
   'inspect_contract_code',
   'analyze_contract_upgrades',
+  'get_contract_source_verification',
   'explorer_list_address_transactions',
   'explorer_list_address_transfers',
   'explorer_list_address_assets',
@@ -88,7 +89,7 @@ describe('public tool surface', () => {
   });
 
   it('keeps the expanded high-level surface bounded', () => {
-    expect(publicToolNames().length).toBeLessThanOrEqual(47);
+    expect(publicToolNames().length).toBeLessThanOrEqual(48);
   });
 
   it('never exposes key-custody tools', () => {
@@ -452,6 +453,21 @@ describe('explorer routing', () => {
     expect(route.internalName).toBe('query_indexer');
     expect(route.args).toEqual({
       method: 'analyze_contract',
+      params: { hash: contractHash },
+      network: 'testnet',
+    });
+    expect(route.requiresServices).toBe(false);
+  });
+
+  it('maps reproducible source verification to the exact network-scoped registry', () => {
+    const contractHash = `0x${'1'.repeat(40)}`;
+    const route = resolveRoute('get_contract_source_verification', {
+      contractHash,
+      network: 'testnet',
+    });
+    expect(route.internalName).toBe('query_indexer');
+    expect(route.args).toEqual({
+      method: 'get_contract_source_verification',
       params: { hash: contractHash },
       network: 'testnet',
     });

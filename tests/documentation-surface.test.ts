@@ -22,12 +22,13 @@ describe('documentation surface', () => {
     expect(websiteApiDoc).toContain('id="chains"');
     expect(websiteApiDoc).toContain('"chain": "n3"');
     expect(websiteApiDoc).toContain('build_contract_call');
-    expect(websiteApiDoc).toContain('none of the 47 default tools holds a private key');
+    expect(websiteApiDoc).toContain('none of the 48 default tools holds a private key');
     expect(websiteApiDoc).toContain('analyze_address');
     expect(websiteApiDoc).toContain('analyze_address_connection');
     expect(websiteApiDoc).toContain('analyze_transaction');
     expect(websiteApiDoc).toContain('analyze_contract');
     expect(websiteApiDoc).toContain('analyze_contract_upgrades');
+    expect(websiteApiDoc).toContain('get_contract_source_verification');
     expect(websiteApiDoc).toContain('inspect_contract_code');
 
     const toolsTableStart = websiteApiDoc.indexOf('id="tools"');

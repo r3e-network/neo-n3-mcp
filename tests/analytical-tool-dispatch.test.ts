@@ -322,6 +322,57 @@ describe('callTool analytical dispatch', () => {
     });
   });
 
+  test('query_indexer routes reproducible source evidence to the selected N3 network', async () => {
+    const hash = `0x${'ab'.repeat(20)}`;
+    const fetchMock = jest.fn().mockResolvedValue(
+      jsonResponse({
+        data: {
+          network: 'testnet',
+          contract_hash: hash,
+          status: 'verified',
+          current_update_counter: 2,
+          current_verification: {
+            evidence_id: 'source-verification:2:123456789abc',
+            update_counter: 2,
+            source_bundle_sha256: '12'.repeat(32),
+          },
+          engine_version: 'n3-contract-source-verification/v1',
+        },
+      }),
+    );
+    global.fetch = fetchMock as any;
+
+    const response = await callTool(
+      'query_indexer',
+      {
+        method: 'get_contract_source_verification',
+        network: 'testnet',
+        params: { hash },
+      },
+      emptyNeoServices,
+      emptyContractServices,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      `https://api.n3index.dev/testnet/contracts/${hash}/source-verification`,
+    );
+    expect(response.result).toEqual({
+      data: {
+        network: 'testnet',
+        contract_hash: hash,
+        status: 'verified',
+        current_update_counter: 2,
+        current_verification: {
+          evidence_id: 'source-verification:2:123456789abc',
+          update_counter: 2,
+          source_bundle_sha256: '12'.repeat(32),
+        },
+        engine_version: 'n3-contract-source-verification/v1',
+      },
+    });
+  });
+
   test('query_indexer surfaces a 404 as an empty/not-found result (result: null), not an error', async () => {
     const fetchMock = jest.fn().mockResolvedValue(jsonResponse(null, { status: 404 }));
     global.fetch = fetchMock as any;

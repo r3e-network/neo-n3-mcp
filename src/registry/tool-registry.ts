@@ -1087,6 +1087,29 @@ const SPECS: PublicToolSpec[] = [
     },
   },
   {
+    name: 'get_contract_source_verification',
+    description:
+      'Read-only Neo N3 reproducible source-verification evidence for a contract. Returns '
+      + 'network- and update-counter-scoped source bundle, compiler settings, manifest, NEF, '
+      + 'binary, and script hashes produced by exact artifact matching. A historical verified '
+      + 'version never verifies newer current code. Verification is not a security audit.',
+    inputSchema: {
+      contractHash: z.string().describe('Neo N3 contract script hash (0x + 40 hex characters)'),
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'query_indexer',
+        mapArgs: (args) => ({
+          method: 'get_contract_source_verification',
+          params: { hash: args.contractHash },
+          ...n3Args(pick(args, ['network'])),
+        }),
+      },
+    },
+  },
+  {
     name: 'explorer_list_address_transactions',
     description: 'Explorer analytics: list transactions involving an address, newest first.',
     inputSchema: {

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API Reference - Neo MCP Server</title>
-    <meta name="description" content="Reference for the 46 non-custodial Neo MCP tools, four resources, generic contract flow, and authenticated HTTP API.">
+    <meta name="description" content="Reference for the 48 non-custodial Neo MCP tools, four resources, generic contract flow, and authenticated HTTP API.">
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,7 +49,7 @@
     <main class="page-container">
         <header class="docs-header">
             <h1 class="docs-title">API reference</h1>
-            <p class="docs-lead">The server registers 46 non-custodial MCP tools across Neo N3 and Neo X, three fixed resources, one parameterized resource, and an optional authenticated HTTP transport.</p>
+            <p class="docs-lead">The server registers 48 non-custodial MCP tools across Neo N3 and Neo X, three fixed resources, one parameterized resource, and an optional authenticated HTTP transport.</p>
         </header>
 
         <nav class="jump-links" aria-label="API sections">
@@ -136,6 +136,7 @@
                         <tr><td>Explorer</td><td><code>analyze_transaction</code></td><td>n3</td><td>Deterministic status, exact GAS fees, signers, decimal-safe transfers, and bounded contract events.</td></tr>
                         <tr><td>Explorer</td><td><code>analyze_contract</code></td><td>n3</td><td>Network-scoped ABI, Manifest permissions and trusts, NEF tokens, update state, source-verification status, and deterministic static evidence.</td></tr>
                         <tr><td>Explorer</td><td><code>analyze_contract_upgrades</code></td><td>n3</td><td>Immutable version artifacts, exact historical coverage, and structural ABI compatibility changes without inferring storage compatibility.</td></tr>
+                        <tr><td>Explorer</td><td><code>get_contract_source_verification</code></td><td>n3</td><td>Immutable source bundle, compiler recipe, and exact artifact hashes scoped to one network and update counter.</td></tr>
                         <tr><td>Explorer</td><td><code>inspect_contract_code</code></td><td>n3</td><td>Paginated NeoVM opcode annotations, ABI method ownership, bounded operands, syscalls, and static control-flow targets.</td></tr>
                         <tr><td>Explorer</td><td><code>explorer_list_address_transactions</code></td><td>n3, neox</td><td>Transactions involving an address, newest first.</td></tr>
                         <tr><td>Explorer</td><td><code>explorer_list_address_transfers</code></td><td>n3, neox</td><td>Token transfers: NEP-17 on Neo N3, ERC-20/721/1155 on Neo X.</td></tr>
@@ -148,7 +149,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="callout" style="margin-top: 1rem;"><strong>Non-custodial by construction:</strong> none of the 47 default tools holds a private key, signs, or broadcasts. The <code>build_*</code> tools return UNSIGNED, successfully simulated proposals that a wallet reviews and signs; key custody and broadcast stay with the user. Wallet creation and import are never exposed over MCP.</div>
+            <div class="callout" style="margin-top: 1rem;"><strong>Non-custodial by construction:</strong> none of the 48 default tools holds a private key, signs, or broadcasts. The <code>build_*</code> tools return UNSIGNED, successfully simulated proposals that a wallet reviews and signs; key custody and broadcast stay with the user. Wallet creation and import are never exposed over MCP.</div>
             <h3>Optional local signing tools</h3>
             <p>A locally launched stdio server with <code>NEO_ENABLE_WRITES=true</code> and a <code>NEO_SIGNER_WIF_FILE</code> registers four additional tools that sign with that owner-supplied key. They are annotated destructive and idempotent, require an <code>idempotencyKey</code> and an explicit <code>network</code>, and require the caller to accept the exact returned intent fingerprint. They never accept WIFs, private keys, or passwords as arguments.</p>
             <p>The remote MCP HTTP transport rejects this configuration and stays read-only regardless of the setting, so a hosted server never signs on a user's behalf.</p>

@@ -40,6 +40,7 @@ const READ_ONLY_TOOL_NAMES = [
   'get_block_height',
   'get_chain_info',
   'get_contract_info',
+  'get_contract_source_verification',
   'get_contract_status',
   'get_neo_service_info',
   'get_nep11_balances',

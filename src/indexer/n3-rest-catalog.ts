@@ -315,6 +315,15 @@ const ENTRIES: Record<string, CatalogEntry> = {
       'Immutable contract-version artifacts, historical coverage, and deterministic ABI '
       + 'compatibility changes. Storage compatibility is reported as unknown, never inferred.',
   },
+  get_contract_source_verification: {
+    pathTemplate: 'contracts/{hash}/source-verification',
+    pathParam: HASH_PARAM,
+    category: 'contract',
+    summary:
+      'Reproducible source records for immutable contract versions, including exact source '
+      + 'bundle, compiler settings, manifest, NEF, binary, and script hashes. Historical '
+      + 'verification never verifies a newer current version.',
+  },
   inspect_contract_code: {
     pathTemplate: 'contracts/{hash}/opcodes',
     pathParam: HASH_PARAM,
