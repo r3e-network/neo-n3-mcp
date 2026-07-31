@@ -54,6 +54,7 @@ const READ_ONLY_TOOL_NAMES = [
   'get_wallet',
   'inspect_contract_code',
   'inspect_neo_value',
+  'investigate_transactions',
   'list_famous_contracts',
   'query_explorer',
   'query_explorer_find',

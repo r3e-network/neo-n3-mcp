@@ -50,6 +50,7 @@ const IGNORED_INPUT_KEYS: ReadonlySet<string> = new Set(['network', 'endpoint', 
 
 /** Max length for a free-text query value after sanitization. Response is capped anyway. */
 const MAX_QUERY_STRING_LENGTH = 256;
+const MAX_INVESTIGATION_TRANSACTIONS = 12;
 
 /** Pagination caps enforced on the numeric query params (matches the upstream REST caps). */
 const LIMIT_CAP = 100;
@@ -273,6 +274,25 @@ function validateQueryValue(key: string, spec: QueryParamSpec, value: unknown): 
     }
     const parsed = validateInteger(value);
     return clampInteger(key, parsed);
+  }
+  if (spec.type === 'txids') {
+    const rawValues = Array.isArray(value) ? value : [value];
+    const hashes: string[] = [];
+    for (const rawValue of rawValues) {
+      if (typeof rawValue !== 'string') {
+        throw new ValidationError(`Query parameter "${key}" must contain transaction hashes`);
+      }
+      hashes.push(...rawValue.split(',').map((hash) => hash.trim()).filter(Boolean));
+    }
+    if (hashes.length < 1 || hashes.length > MAX_INVESTIGATION_TRANSACTIONS) {
+      throw new ValidationError(
+        `Query parameter "${key}" must contain 1..${MAX_INVESTIGATION_TRANSACTIONS} transaction hashes`,
+      );
+    }
+    return [...new Set(hashes.map((hash) => {
+      const normalizedPrefix = /^0x/i.test(hash) ? `0x${hash.slice(2)}` : hash;
+      return validateHash(normalizedPrefix).toLowerCase();
+    }))].sort().join(',');
   }
   // spec.type === 'string'
   if (typeof value !== 'string') {

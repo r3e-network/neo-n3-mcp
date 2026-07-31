@@ -43,7 +43,8 @@ export type N3PathParamType =
 /** How the guard validates a query-string value. */
 export type QueryParamType =
   | 'int' // validateInteger, then clamped to the per-key cap (limit<=100, offset<=10000)
-  | 'string'; // sanitizeString, 1..N chars, non-empty
+  | 'string' // sanitizeString, 1..N chars, non-empty
+  | 'txids'; // one to twelve canonical transaction hashes, emitted as a comma-separated set
 
 export interface PathParamSpec {
   /** Input key AND `{key}` placeholder in the template (e.g. 'address', 'hash', 'txid', 'blockRef'). */
@@ -223,6 +224,15 @@ const ENTRIES: Record<string, CatalogEntry> = {
       'Deterministic transaction analysis with stable evidence IDs, exact GAS fees, grouped '
       + 'fund flows, evidence-backed participant identities, conservative VM failure '
       + 'classification, code-based findings, and bounded events.',
+  },
+  investigate_transactions: {
+    pathTemplate: 'investigations/transactions',
+    category: 'transaction',
+    summary:
+      'Bounded multi-transaction investigation with a stable evidence-set ID, chronological '
+      + 'timeline, observed asset-transfer relationships, exact amounts, and explicit sampling '
+      + 'boundaries.',
+    queryParams: { txids: { type: 'txids', required: true } },
   },
 
   // ── By account {address} ──────────────────────────────────────────────────

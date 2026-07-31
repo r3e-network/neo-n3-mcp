@@ -187,6 +187,46 @@ describe('callTool analytical dispatch', () => {
     });
   });
 
+  test('query_indexer routes a canonical multi-transaction investigation set', async () => {
+    const txA = `0x${'a'.repeat(64)}`;
+    const txB = `0x${'b'.repeat(64)}`;
+    const fetchMock = jest.fn().mockResolvedValue(
+      jsonResponse({
+        data: {
+          network: 'testnet',
+          investigation_id: 'investigation:abc',
+          requested_txids: [txA, txB],
+          engine_version: 'n3-transaction-investigation/v1',
+          timeline: [],
+          relationships: [],
+        },
+      }),
+    );
+    global.fetch = fetchMock as any;
+
+    const response = await callTool(
+      'query_indexer',
+      {
+        method: 'investigate_transactions',
+        network: 'testnet',
+        params: { txids: [txB, txA] },
+      },
+      emptyNeoServices,
+      emptyContractServices,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      `https://api.n3index.dev/testnet/investigations/transactions?txids=${txA}%2C${txB}`,
+    );
+    expect(response.result).toEqual(expect.objectContaining({
+      data: expect.objectContaining({
+        investigation_id: 'investigation:abc',
+        engine_version: 'n3-transaction-investigation/v1',
+      }),
+    }));
+  });
+
   test('query_indexer routes deterministic contract analysis to the selected N3 network', async () => {
     const hash = `0x${'ab'.repeat(20)}`;
     const fetchMock = jest.fn().mockResolvedValue(

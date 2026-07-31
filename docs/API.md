@@ -15,7 +15,7 @@ The registry rewrites `network` per route, so callers never spell out chain-qual
 
 ## MCP Surface
 
-The default server exposes 48 non-custodial tools:
+The default server exposes 49 non-custodial tools:
 
 - Server and data utilities: `get_network_mode`, `get_wallet`, `inspect_neo_value`, `convert_neo_data`, `get_neo_service_info`
 - Chain, both chains: `get_chain_info`, `get_block_height`, `get_block`, `get_transaction`, `get_transaction_status`, `get_balance`
@@ -23,11 +23,18 @@ The default server exposes 48 non-custodial tools:
 - Construct, both chains: `build_transfer`, `build_contract_call`
 - Neo ecosystem reads: `decode_neo_script`, `query_nns`, `query_neofs`, `get_oracle_info`
 - Dedicated Neo N3 construct: `build_vote`, `build_nns_operation`
-- Explorer and intelligence: `explorer_get_address`, `analyze_address`, `analyze_address_connection`, `analyze_transaction`, `analyze_contract`, `analyze_contract_upgrades`, `get_contract_source_verification`, `inspect_contract_code`, `explorer_list_address_transactions`, `explorer_list_address_transfers`, `explorer_list_token_holders`, `explorer_search`, `query_explorer`
+- Explorer and intelligence: `explorer_get_address`, `analyze_address`, `analyze_address_connection`, `analyze_transaction`, `investigate_transactions`, `analyze_contract`, `analyze_contract_upgrades`, `get_contract_source_verification`, `inspect_contract_code`, `explorer_list_address_transactions`, `explorer_list_address_transfers`, `explorer_list_token_holders`, `explorer_search`, `query_explorer`
 - Neo N3 only: `get_application_log`, `wait_for_transaction`, `get_unclaimed_gas`, `get_nep17_transfers`, `get_nep11_balances`, `get_nep11_transfers`, `get_contract_status`, `list_famous_contracts`, `estimate_transfer_fees`, `estimate_invoke_fees`, `explorer_list_address_assets`, `query_explorer_find`
 - Neo X only: `query_explorer_graphql`
 
 `call_contract` is strictly read-only: `invokefunction` on Neo N3, `eth_call` on Neo X. Its schema has no signer, private-key, or confirmation fields.
+
+`investigate_transactions` is Neo N3 only and accepts an explicit network plus
+one to twelve transaction hashes. It returns the deterministic
+`n3-transaction-investigation/v1` evidence set with an ordered timeline,
+complete transaction analyses, and observed asset relationships. The declared
+boundary is limited to the requested transactions; the tool does not infer
+shared ownership, causality, hidden calls, or activity outside that set.
 
 `analyze_contract` is Neo N3 only and requires an explicit `network` plus a
 contract script hash. It returns `n3-contract-analysis/v1` indexed ABI,

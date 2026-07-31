@@ -1011,6 +1011,33 @@ const SPECS: PublicToolSpec[] = [
     },
   },
   {
+    name: 'investigate_transactions',
+    description:
+      'Neo N3 multi-transaction investigation workbench. Returns a deterministic, bounded '
+      + 'evidence set for 1-12 transaction hashes on one explicit network, including a stable '
+      + 'investigation ID, chronological timeline, exact observed asset-transfer relationships, '
+      + 'source transaction references, confidence class, and sampling boundary. Use this to '
+      + 'compare or explain a known set of transactions. Do not infer shared ownership, causality, '
+      + 'hidden calls, or activity outside the requested set.',
+    inputSchema: {
+      txids: z.array(
+        z.string().regex(/^0x[0-9a-f]{64}$/i, 'Expected a Neo N3 transaction hash (0x + 64 hex characters)'),
+      ).min(1).max(12).describe('One to twelve Neo N3 transaction hashes'),
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'query_indexer',
+        mapArgs: (args) => ({
+          method: 'investigate_transactions',
+          params: { txids: args.txids },
+          ...n3Args(pick(args, ['network'])),
+        }),
+      },
+    },
+  },
+  {
     name: 'analyze_contract',
     description:
       'PRIMARY Neo N3 contract-intelligence tool. Use this first for contract purpose, ABI, '

@@ -69,6 +69,7 @@ const EXPECTED_PUBLIC_TOOLS = [
   'analyze_address',
   'analyze_address_connection',
   'analyze_transaction',
+  'investigate_transactions',
   'analyze_contract',
   'inspect_contract_code',
   'analyze_contract_upgrades',
@@ -89,7 +90,7 @@ describe('public tool surface', () => {
   });
 
   it('keeps the expanded high-level surface bounded', () => {
-    expect(publicToolNames().length).toBeLessThanOrEqual(48);
+    expect(publicToolNames().length).toBeLessThanOrEqual(49);
   });
 
   it('never exposes key-custody tools', () => {
@@ -375,6 +376,8 @@ describe('explorer routing', () => {
       .toBe('query_indexer');
     expect(resolveRoute('analyze_transaction', { txid: `0x${'1'.repeat(64)}` }).internalName)
       .toBe('query_indexer');
+    expect(resolveRoute('investigate_transactions', { txids: [`0x${'1'.repeat(64)}`] }).internalName)
+      .toBe('query_indexer');
     expect(resolveRoute('explorer_list_address_transactions', { chain: 'n3', address: 'N1' }).internalName)
       .toBe('n3_list_transactions_by_address');
     expect(resolveRoute('explorer_list_address_transactions', { chain: 'neox', address: '0x1' }).internalName)
@@ -439,6 +442,21 @@ describe('explorer routing', () => {
     expect(route.args).toEqual({
       method: 'analyze_transaction',
       params: { txid },
+      network: 'testnet',
+    });
+    expect(route.requiresServices).toBe(false);
+  });
+
+  it('maps a bounded multi-transaction investigation to one explicit N3 network', () => {
+    const txids = [`0x${'1'.repeat(64)}`, `0x${'2'.repeat(64)}`];
+    const route = resolveRoute('investigate_transactions', {
+      txids,
+      network: 'testnet',
+    });
+    expect(route.internalName).toBe('query_indexer');
+    expect(route.args).toEqual({
+      method: 'investigate_transactions',
+      params: { txids },
       network: 'testnet',
     });
     expect(route.requiresServices).toBe(false);
@@ -594,6 +612,7 @@ describe('route metadata', () => {
       ['analyze_contract', { contractHash: `0x${'1'.repeat(40)}` }],
       ['inspect_contract_code', { contractHash: `0x${'1'.repeat(40)}` }],
       ['analyze_transaction', { txid: `0x${'1'.repeat(64)}` }],
+      ['investigate_transactions', { txids: [`0x${'1'.repeat(64)}`] }],
       ['query_explorer', { chain: 'n3', endpoint: 'list_blocks' }],
       ['query_explorer_graphql', { query: '{}' }],
       ['get_chain_info', { chain: 'neox' }],

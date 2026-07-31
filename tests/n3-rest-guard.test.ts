@@ -215,7 +215,7 @@ describe('buildN3EndpointRequest — path construction (SSRF / traversal)', () =
       if (d.queryParams) {
         for (const [qk, qs] of Object.entries(d.queryParams)) {
           if (qs.required) {
-            input[qk] = qs.type === 'int' ? 1 : 'sample';
+            input[qk] = qs.type === 'int' ? 1 : qs.type === 'txids' ? VALID_HASH : 'sample';
           }
         }
       }
@@ -303,6 +303,27 @@ describe('buildN3EndpointRequest — query-param allowlist', () => {
     expect(out).toEqual({ path: 'governance/voters', params: { limit: 10, candidate } });
   });
 
+  it('canonicalizes a bounded transaction investigation set', () => {
+    const txA = `0x${'a'.repeat(64)}`;
+    const txB = `0x${'b'.repeat(64)}`;
+    const out = buildN3EndpointRequest(desc('investigate_transactions'), {
+      txids: [txB.toUpperCase(), txA, txA],
+    });
+    expect(out).toEqual({
+      path: 'investigations/transactions',
+      params: { txids: `${txA},${txB}` },
+    });
+  });
+
+  it('rejects malformed and over-limit transaction investigation sets', () => {
+    expect(() => buildN3EndpointRequest(desc('investigate_transactions'), {
+      txids: ['0x1234'],
+    })).toThrow(ValidationError);
+    expect(() => buildN3EndpointRequest(desc('investigate_transactions'), {
+      txids: Array.from({ length: 13 }, (_, index) => `0x${String(index).padStart(64, '0')}`),
+    })).toThrow(/1..12 transaction hashes/);
+  });
+
   it('omits absent optional pagination params', () => {
     const out = buildN3EndpointRequest(desc('list_blocks'), {});
     expect(out).toEqual({ path: 'blocks', params: {} });
@@ -376,7 +397,7 @@ describe('N3_REST_CATALOG — invariants', () => {
   });
 
   it('reports the expected verified endpoint count', () => {
-    expect(N3_REST_CATALOG.size).toBe(32);
+    expect(N3_REST_CATALOG.size).toBe(33);
   });
 
   it('exposes exactly the vetted semantic endpoint keys', () => {
@@ -387,6 +408,7 @@ describe('N3_REST_CATALOG — invariants', () => {
         'analyze_contract',
         'analyze_contract_upgrades',
         'analyze_transaction',
+        'investigate_transactions',
         'analytics_daily',
         'get_address_summary',
         'get_block',
