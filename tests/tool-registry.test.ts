@@ -69,6 +69,7 @@ const EXPECTED_PUBLIC_TOOLS = [
   'analyze_address',
   'analyze_address_connection',
   'analyze_transaction',
+  'analyze_contract',
   'explorer_list_address_transactions',
   'explorer_list_address_transfers',
   'explorer_list_address_assets',
@@ -85,7 +86,7 @@ describe('public tool surface', () => {
   });
 
   it('keeps the expanded high-level surface bounded', () => {
-    expect(publicToolNames().length).toBeLessThanOrEqual(44);
+    expect(publicToolNames().length).toBeLessThanOrEqual(45);
   });
 
   it('never exposes key-custody tools', () => {
@@ -174,6 +175,7 @@ describe('chain discriminator', () => {
       'build_nns_operation',
       'explorer_list_address_assets',
       'analyze_address',
+      'analyze_contract',
       'analyze_transaction',
       'query_explorer_find',
     ];
@@ -363,6 +365,8 @@ describe('explorer routing', () => {
       .toBe('x_get_address');
     expect(resolveRoute('analyze_address', { address: 'N1' }).internalName)
       .toBe('query_indexer');
+    expect(resolveRoute('analyze_contract', { contractHash: `0x${'1'.repeat(40)}` }).internalName)
+      .toBe('query_indexer');
     expect(resolveRoute('analyze_transaction', { txid: `0x${'1'.repeat(64)}` }).internalName)
       .toBe('query_indexer');
     expect(resolveRoute('explorer_list_address_transactions', { chain: 'n3', address: 'N1' }).internalName)
@@ -429,6 +433,21 @@ describe('explorer routing', () => {
     expect(route.args).toEqual({
       method: 'analyze_transaction',
       params: { txid },
+      network: 'testnet',
+    });
+    expect(route.requiresServices).toBe(false);
+  });
+
+  it('maps the dedicated contract analysis tool to exact indexed facts', () => {
+    const contractHash = `0x${'1'.repeat(40)}`;
+    const route = resolveRoute('analyze_contract', {
+      contractHash,
+      network: 'testnet',
+    });
+    expect(route.internalName).toBe('query_indexer');
+    expect(route.args).toEqual({
+      method: 'analyze_contract',
+      params: { hash: contractHash },
       network: 'testnet',
     });
     expect(route.requiresServices).toBe(false);
@@ -534,6 +553,7 @@ describe('route metadata', () => {
       ['explorer_get_address', { chain: 'n3', address: 'N1' }],
       ['explorer_get_address', { chain: 'neox', address: '0x1' }],
       ['analyze_address', { address: 'N1' }],
+      ['analyze_contract', { contractHash: `0x${'1'.repeat(40)}` }],
       ['analyze_transaction', { txid: `0x${'1'.repeat(64)}` }],
       ['query_explorer', { chain: 'n3', endpoint: 'list_blocks' }],
       ['query_explorer_graphql', { query: '{}' }],

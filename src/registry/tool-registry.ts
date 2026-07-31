@@ -1011,6 +1011,30 @@ const SPECS: PublicToolSpec[] = [
     },
   },
   {
+    name: 'analyze_contract',
+    description:
+      'PRIMARY Neo N3 contract-intelligence tool. Use this first for contract purpose, ABI, '
+      + 'permissions, trusts, update state, compiler metadata, or static risk signals. Returns '
+      + 'deterministic indexed facts with stable evidence IDs and conservative code-based '
+      + 'findings. A declared source URL, unsafe ABI method, or decompiled output is not proof '
+      + 'of verified source or a vulnerability; preserve that distinction and cite evidence IDs.',
+    inputSchema: {
+      contractHash: z.string().describe('Neo N3 contract script hash (0x + 40 hex characters)'),
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'query_indexer',
+        mapArgs: (args) => ({
+          method: 'analyze_contract',
+          params: { hash: args.contractHash },
+          ...n3Args(pick(args, ['network'])),
+        }),
+      },
+    },
+  },
+  {
     name: 'explorer_list_address_transactions',
     description: 'Explorer analytics: list transactions involving an address, newest first.',
     inputSchema: {

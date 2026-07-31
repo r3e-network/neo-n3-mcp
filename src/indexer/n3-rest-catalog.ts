@@ -298,6 +298,15 @@ const ENTRIES: Record<string, CatalogEntry> = {
     category: 'contract',
     summary: 'Contract manifest / metadata by script hash.',
   },
+  analyze_contract: {
+    pathTemplate: 'contracts/{hash}/analysis',
+    pathParam: HASH_PARAM,
+    category: 'contract',
+    summary:
+      'Deterministic contract analysis with stable evidence IDs for ABI methods, events, '
+      + 'manifest permissions and trusts, NEF call tokens, update state, declared source '
+      + 'metadata, and conservative code-based findings.',
+  },
   list_contract_calls: {
     pathTemplate: 'contracts/{hash}/calls',
     pathParam: HASH_PARAM,
