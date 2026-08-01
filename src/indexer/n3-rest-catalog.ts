@@ -182,7 +182,7 @@ const ENTRIES: Record<string, CatalogEntry> = {
     pathTemplate: 'consensus/health',
     category: 'summary',
     summary:
-      'Deterministic Neo dBFT consensus health: expected-primary misses, view-change streaks, actual producers, data freshness, and validator metadata provenance.',
+      'Deterministic Neo dBFT consensus health: expected-primary misses, view-change streaks, actual producers, data freshness, validator metadata provenance, and an evidence-bound narrative summary.',
     queryParams: {
       lookback: { type: 'int' },
       streak_threshold: { type: 'int' },
