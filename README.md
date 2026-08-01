@@ -135,6 +135,12 @@ and executes only after the re-entered response accepts the exact intent
 fingerprint. HTTP writes return a pending intent and require a separate approval
 request authenticated by `HTTP_WRITE_APPROVAL_API_KEY`.
 
+Account intelligence remains evidence-first: `analyze_account_graph` exposes
+the replayable, network-scoped transfer graph and curated metadata only. The
+backend's deterministic exchange-sweep and coordinated-signer detector queue
+is deliberately not exposed as public identity data; pending candidates require
+human review before they can become curated metadata.
+
 ## HTTP API
 
 This is a bespoke REST/JSON API, not an MCP transport. MCP clients cannot connect to it; they use the stdio entrypoint or the [remote MCP transport](#remote-mcp-over-streamable-http).
