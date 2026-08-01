@@ -68,6 +68,7 @@ const EXPECTED_PUBLIC_TOOLS = [
   'explorer_get_address',
   'analyze_address',
   'analyze_address_connection',
+  'analyze_account_graph',
   'analyze_transaction',
   'investigate_transactions',
   'analyze_contract',
@@ -90,7 +91,7 @@ describe('public tool surface', () => {
   });
 
   it('keeps the expanded high-level surface bounded', () => {
-    expect(publicToolNames().length).toBeLessThanOrEqual(49);
+    expect(publicToolNames().length).toBeLessThanOrEqual(50);
   });
 
   it('never exposes key-custody tools', () => {
@@ -370,6 +371,8 @@ describe('explorer routing', () => {
       .toBe('x_get_address');
     expect(resolveRoute('analyze_address', { address: 'N1' }).internalName)
       .toBe('query_indexer');
+    expect(resolveRoute('analyze_account_graph', { address: 'N1' }).internalName)
+      .toBe('query_indexer');
     expect(resolveRoute('analyze_contract', { contractHash: `0x${'1'.repeat(40)}` }).internalName)
       .toBe('query_indexer');
     expect(resolveRoute('inspect_contract_code', { contractHash: `0x${'1'.repeat(40)}` }).internalName)
@@ -427,6 +430,21 @@ describe('explorer routing', () => {
         sample: 80,
         limit: 6,
       },
+      network: 'testnet',
+    });
+    expect(route.requiresServices).toBe(false);
+  });
+
+  it('maps account graph analysis to the bounded graph catalog endpoint', () => {
+    const route = resolveRoute('analyze_account_graph', {
+      address: 'N1',
+      limit: 20,
+      network: 'testnet',
+    });
+    expect(route.internalName).toBe('query_indexer');
+    expect(route.args).toEqual({
+      method: 'analyze_account_graph',
+      params: { address: 'N1', limit: 20 },
       network: 'testnet',
     });
     expect(route.requiresServices).toBe(false);

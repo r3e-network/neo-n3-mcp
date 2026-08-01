@@ -251,6 +251,15 @@ const ENTRIES: Record<string, CatalogEntry> = {
       + 'contract interactions, behavior signals, confidence, and sample boundaries.',
     queryParams: { sample: { type: 'int' }, limit: { type: 'int' } },
   },
+  analyze_account_graph: {
+    pathTemplate: 'accounts/{address}/graph',
+    pathParam: ADDRESS_PARAM,
+    category: 'address',
+    summary:
+      'Versioned full-history observed transfer graph with ranked counterparties, exact per-asset '
+      + 'flows, curated identity metadata, and explicit materialization coverage boundaries.',
+    queryParams: { limit: { type: 'int' } },
+  },
   analyze_address_connection: {
     pathTemplate: 'accounts/{address}/connection',
     pathParam: ADDRESS_PARAM,

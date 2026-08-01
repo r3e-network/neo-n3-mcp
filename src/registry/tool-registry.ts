@@ -986,6 +986,33 @@ const SPECS: PublicToolSpec[] = [
     },
   },
   {
+    name: 'analyze_account_graph',
+    description:
+      'PRIMARY Neo N3 account-relationship graph tool. Returns ranked counterparties from the '
+      + 'offline, replayable transfer graph, exact per-contract/per-standard asset flows, curated '
+      + 'identity metadata, and explicit indexed/materialized coverage boundaries. Observed transfer '
+      + 'relationships do not prove common ownership or real-world identity; never treat a partial '
+      + 'coverage window or a truncated per-counterparty asset list as exhaustive history.',
+    inputSchema: {
+      address: z.string().describe('Canonical Base58 Neo N3 account address'),
+      limit: z.number().int().min(4).max(50).optional().describe(
+        'Maximum ranked counterparties to return (4-50, default 12)',
+      ),
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'query_indexer',
+        mapArgs: (args) => ({
+          method: 'analyze_account_graph',
+          params: pick(args, ['address', 'limit']),
+          ...n3Args(pick(args, ['network'])),
+        }),
+      },
+    },
+  },
+  {
     name: 'analyze_transaction',
     description:
       'PRIMARY Neo N3 transaction-explanation tool. Use this first for transaction meaning, '

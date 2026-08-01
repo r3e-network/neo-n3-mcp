@@ -14,6 +14,7 @@ import { TEST_WIF } from './test-wallet';
  * "expected 40, received 41". Update this list in the same commit that registers a tool.
  */
 const READ_ONLY_TOOL_NAMES = [
+  'analyze_account_graph',
   'analyze_address',
   'analyze_address_connection',
   'analyze_contract',
