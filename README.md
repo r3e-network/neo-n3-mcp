@@ -137,12 +137,13 @@ request authenticated by `HTTP_WRITE_APPROVAL_API_KEY`.
 
 Account intelligence remains evidence-first: `analyze_account_graph` exposes
 the replayable, network-scoped transfer graph and curated metadata only. The
-backend's deterministic exchange-sweep and coordinated-signer detector queue
-is deliberately not exposed as public identity data; pending candidates require
-human review before they can become curated metadata.
+backend's deterministic exchange-sweep, coordinated-signer,
+community-affinity, and graph-similarity detector queue is deliberately not
+exposed as public identity data; pending candidates require human review before
+they can become curated metadata.
 
 As of 2026-08-01, both production network detector timers have completed their
-first run successfully. The resulting pending queue is operational review
+detector rerun successfully. The resulting pending queue is operational review
 evidence only and is not returned by `analyze_account_graph`.
 
 ## HTTP API
