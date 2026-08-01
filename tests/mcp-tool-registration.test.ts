@@ -19,6 +19,7 @@ const READ_ONLY_TOOL_NAMES = [
   'analyze_address_connection',
   'analyze_contract',
   'analyze_contract_upgrades',
+  'analyze_consensus_health',
   'analyze_transaction',
   'build_contract_call',
   'build_nns_operation',

@@ -178,6 +178,19 @@ const ENTRIES: Record<string, CatalogEntry> = {
     summary:
       'Indexer health: whether it is ready, the last indexed block vs the chain tip, and the lag between them.',
   },
+  analyze_consensus_health: {
+    pathTemplate: 'consensus/health',
+    category: 'summary',
+    summary:
+      'Deterministic Neo dBFT consensus health: expected-primary misses, view-change streaks, actual producers, data freshness, and validator metadata provenance.',
+    queryParams: {
+      lookback: { type: 'int' },
+      streak_threshold: { type: 'int' },
+      duration_threshold_s: { type: 'int' },
+      max_data_age_s: { type: 'int' },
+      max_clock_skew_s: { type: 'int' },
+    },
+  },
 
   // ── Naming / metadata (answers "what is this thing called?") ──────────────
   list_nns_domains: {

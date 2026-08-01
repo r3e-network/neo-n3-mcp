@@ -134,6 +134,7 @@
                         <tr><td>Explorer</td><td><code>analyze_address</code></td><td>n3</td><td>Evidence-backed identity, relationships, co-signers, contract activity, behavioral signals, and sample limits.</td></tr>
                         <tr><td>Explorer</td><td><code>analyze_address_connection</code></td><td>n3</td><td>Direct, co-signed, and shared-counterparty evidence between two addresses with explicit non-exhaustive sample limits.</td></tr>
                         <tr><td>Explorer</td><td><code>analyze_account_graph</code></td><td>n3</td><td>Offline replayable transfer graph with exact per-asset flows, curated identity metadata, and explicit materialization coverage.</td></tr>
+                        <tr><td>Explorer</td><td><code>analyze_consensus_health</code></td><td>n3</td><td>Deterministic expected-primary misses, view-change streaks, fallback producers, validator names, and freshness boundaries.</td></tr>
                         <tr><td>Explorer</td><td><code>analyze_transaction</code></td><td>n3</td><td>Deterministic status, exact GAS fees, signers, decimal-safe transfers, and bounded contract events.</td></tr>
                         <tr><td>Explorer</td><td><code>investigate_transactions</code></td><td>n3</td><td>One to twelve transactions composed into an immutable timeline and observed relationship evidence set with explicit sampling limits.</td></tr>
                         <tr><td>Explorer</td><td><code>analyze_contract</code></td><td>n3</td><td>Network-scoped ABI, Manifest permissions and trusts, NEF tokens, update state, source-verification status, and deterministic static evidence.</td></tr>
@@ -151,7 +152,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="callout" style="margin-top: 1rem;"><strong>Non-custodial by construction:</strong> none of the 50 default tools holds a private key, signs, or broadcasts. The <code>build_*</code> tools return UNSIGNED, successfully simulated proposals that a wallet reviews and signs; key custody and broadcast stay with the user. Wallet creation and import are never exposed over MCP.</div>
+            <div class="callout" style="margin-top: 1rem;"><strong>Non-custodial by construction:</strong> none of the 51 default tools holds a private key, signs, or broadcasts. The <code>build_*</code> tools return UNSIGNED, successfully simulated proposals that a wallet reviews and signs; key custody and broadcast stay with the user. Wallet creation and import are never exposed over MCP.</div>
             <h3>Optional local signing tools</h3>
             <p>A locally launched stdio server with <code>NEO_ENABLE_WRITES=true</code> and a <code>NEO_SIGNER_WIF_FILE</code> registers four additional tools that sign with that owner-supplied key. They are annotated destructive and idempotent, require an <code>idempotencyKey</code> and an explicit <code>network</code>, and require the caller to accept the exact returned intent fingerprint. They never accept WIFs, private keys, or passwords as arguments.</p>
             <p>The remote MCP HTTP transport rejects this configuration and stays read-only regardless of the setting, so a hosted server never signs on a user's behalf.</p>

@@ -69,6 +69,7 @@ const EXPECTED_PUBLIC_TOOLS = [
   'analyze_address',
   'analyze_address_connection',
   'analyze_account_graph',
+  'analyze_consensus_health',
   'analyze_transaction',
   'investigate_transactions',
   'analyze_contract',
@@ -91,7 +92,7 @@ describe('public tool surface', () => {
   });
 
   it('keeps the expanded high-level surface bounded', () => {
-    expect(publicToolNames().length).toBeLessThanOrEqual(50);
+    expect(publicToolNames().length).toBeLessThanOrEqual(51);
   });
 
   it('never exposes key-custody tools', () => {
@@ -373,6 +374,8 @@ describe('explorer routing', () => {
       .toBe('query_indexer');
     expect(resolveRoute('analyze_account_graph', { address: 'N1' }).internalName)
       .toBe('query_indexer');
+    expect(resolveRoute('analyze_consensus_health', { network: 'testnet' }).internalName)
+      .toBe('query_indexer');
     expect(resolveRoute('analyze_contract', { contractHash: `0x${'1'.repeat(40)}` }).internalName)
       .toBe('query_indexer');
     expect(resolveRoute('inspect_contract_code', { contractHash: `0x${'1'.repeat(40)}` }).internalName)
@@ -445,6 +448,30 @@ describe('explorer routing', () => {
     expect(route.args).toEqual({
       method: 'analyze_account_graph',
       params: { address: 'N1', limit: 20 },
+      network: 'testnet',
+    });
+    expect(route.requiresServices).toBe(false);
+  });
+
+  it('maps consensus health analysis to the bounded network endpoint', () => {
+    const route = resolveRoute('analyze_consensus_health', {
+      lookback: 32,
+      streak_threshold: 5,
+      duration_threshold_s: 120,
+      max_data_age_s: 180,
+      max_clock_skew_s: 30,
+      network: 'testnet',
+    });
+    expect(route.internalName).toBe('query_indexer');
+    expect(route.args).toEqual({
+      method: 'analyze_consensus_health',
+      params: {
+        lookback: 32,
+        streak_threshold: 5,
+        duration_threshold_s: 120,
+        max_data_age_s: 180,
+        max_clock_skew_s: 30,
+      },
       network: 'testnet',
     });
     expect(route.requiresServices).toBe(false);

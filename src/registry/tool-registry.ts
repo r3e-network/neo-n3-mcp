@@ -1013,6 +1013,49 @@ const SPECS: PublicToolSpec[] = [
     },
   },
   {
+    name: 'analyze_consensus_health',
+    description:
+      'PRIMARY Neo N3 consensus diagnosis tool. Returns deterministic evidence for expected-primary '
+      + 'misses, view-change streaks, actual block producers, validator names, and block-data freshness '
+      + 'on one explicit network. Incomplete, non-contiguous, or stale windows return unknown; do not '
+      + 'infer a node failure beyond the returned evidence or treat a fallback producer as the missed primary.',
+    inputSchema: {
+      lookback: z.number().int().min(8).max(200).optional().describe(
+        'Number of recent contiguous blocks to inspect (8-200, default 160)',
+      ),
+      streak_threshold: z.number().int().min(1).max(100).optional().describe(
+        'Consecutive expected-primary misses needed to mark a node failing (1-100, default 5)',
+      ),
+      duration_threshold_s: z.number().int().min(1).max(3600).optional().describe(
+        'Seconds since the current miss streak began before marking a node failing (1-3600, default 120)',
+      ),
+      max_data_age_s: z.number().int().min(1).max(86400).optional().describe(
+        'Maximum accepted age of the latest indexed block data in seconds (1-86400, default 180)',
+      ),
+      max_clock_skew_s: z.number().int().min(0).max(3600).optional().describe(
+        'Allowed future timestamp skew for the freshness check in seconds (0-3600, default 30)',
+      ),
+      ...networkField,
+    },
+    chains: ['n3'],
+    routes: {
+      n3: {
+        internalName: 'query_indexer',
+        mapArgs: (args) => ({
+          method: 'analyze_consensus_health',
+          params: pick(args, [
+            'lookback',
+            'streak_threshold',
+            'duration_threshold_s',
+            'max_data_age_s',
+            'max_clock_skew_s',
+          ]),
+          ...n3Args(pick(args, ['network'])),
+        }),
+      },
+    },
+  },
+  {
     name: 'analyze_transaction',
     description:
       'PRIMARY Neo N3 transaction-explanation tool. Use this first for transaction meaning, '

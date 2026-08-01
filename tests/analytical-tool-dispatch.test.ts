@@ -106,6 +106,40 @@ describe('callTool analytical dispatch', () => {
     });
   });
 
+  test('query_indexer routes consensus health reads to the selected network', async () => {
+    const fetchMock = jest.fn().mockResolvedValue(
+      jsonResponse({ data: { network: 'testnet', status: 'healthy', engine_version: 'n3-consensus-health/v1' } }),
+    );
+    global.fetch = fetchMock as any;
+
+    const response = await callTool(
+      'query_indexer',
+      {
+        method: 'analyze_consensus_health',
+        network: 'testnet',
+        params: {
+          lookback: 32,
+          streak_threshold: 5,
+          duration_threshold_s: 120,
+          max_data_age_s: 180,
+          max_clock_skew_s: 30,
+        },
+      },
+      emptyNeoServices,
+      emptyContractServices,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe(
+      'https://api.n3index.dev/testnet/consensus/health?lookback=32&streak_threshold=5&duration_threshold_s=120&max_data_age_s=180&max_clock_skew_s=30',
+    );
+    expect(init.method).toBe('GET');
+    expect(response.result).toEqual({
+      data: { network: 'testnet', status: 'healthy', engine_version: 'n3-consensus-health/v1' },
+    });
+  });
+
   test('query_indexer routes bounded address intelligence to the selected N3 network', async () => {
     const fetchMock = jest.fn().mockResolvedValue(
       jsonResponse({ data: { address: VALID_N3_ADDRESS, engine_version: 'n3-address-intelligence/v2' } }),
