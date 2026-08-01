@@ -328,6 +328,12 @@ The default MCP surface exposes 51 non-custodial tools. Every tool that both cha
 
 `call_contract` is strictly read-only: `invokefunction` on Neo N3, `eth_call` on Neo X. The `build_*` tools run the exact read-only simulation and return UNSIGNED transaction proposals for a wallet to review and sign; no default-surface tool holds a key, signs, or broadcasts. `build_vote` pins the native NEO contract, while `build_nns_operation` pins the network-correct NameService contract and operation arguments.
 
+`query_neofs` requires an explicit `network` field. The selected N3 network is preserved as
+address context in the result, while the fixed NeoFS gateway remains global; this prevents
+the assistant from presenting a mainnet/testnet N3 context as a NeoFS gateway switch.
+Constructed N3 and Neo X proposals are returned with an unsigned-only boundary and are
+simulated before the Explorer exposes them to a wallet.
+
 ### Explorer AI roadmap
 
 The canonical cross-repository plan is maintained in the

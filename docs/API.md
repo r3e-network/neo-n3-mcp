@@ -67,7 +67,7 @@ rejected on Neo X, and omitted calls retain the ordinary single block RPC. Neo
 N3 block responses also include `timeIso`, deterministically derived from the
 node's millisecond `time` value so clients do not need to reinterpret it.
 
-Every `build_*` tool returns an UNSIGNED proposal after simulating the exact payload. `build_transfer` and `build_contract_call` support both chains; `build_vote` pins the native NEO contract; `build_nns_operation` pins the network-correct NameService contract and supported argument order. They never sign or broadcast, so key custody stays with the user's wallet.
+Every `build_*` tool returns an UNSIGNED proposal after simulating the exact payload. `build_transfer` and `build_contract_call` support both chains; `build_vote` pins the native NEO contract; `build_nns_operation` pins the network-correct NameService contract and supported argument order. They never sign or broadcast, so key custody stays with the user's wallet. `query_neofs` requires an explicit N3 `network` context and reports that the fixed NeoFS gateway is global rather than silently implying a network switch.
 
 The MCP HTTP transport is read-only by design and ignores `NEO_ENABLE_WRITES`. On a locally launched stdio server, `NEO_ENABLE_WRITES=true` adds four annotated Neo N3 tools:
 

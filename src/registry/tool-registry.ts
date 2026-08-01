@@ -561,8 +561,12 @@ const SPECS: PublicToolSpec[] = [
     name: 'query_neofs',
     description:
       'NeoFS: query network information, fixed-gateway container metadata, an N3 account '
-      + 'storage balance, or generate canonical NeoFS object links. Read-only and bounded.',
+      + 'storage balance, or generate canonical NeoFS object links. Requires an explicit N3 '
+      + 'network context; the context does not switch the global NeoFS gateway. Read-only and bounded.',
     inputSchema: {
+      network: z.enum(['mainnet', 'testnet']).describe(
+        'N3 network context for this request (required; NeoFS gateway remains global)',
+      ),
       operation: z.enum([
         'network_info', 'container', 'account_balance', 'object_link',
       ]).describe('NeoFS read operation'),
@@ -574,7 +578,7 @@ const SPECS: PublicToolSpec[] = [
     routes: {
       n3: {
         internalName: 'query_neofs',
-        mapArgs: (args) => pick(args, ['operation', 'containerId', 'objectId', 'address']),
+        mapArgs: (args) => pick(args, ['network', 'operation', 'containerId', 'objectId', 'address']),
       },
     },
   },

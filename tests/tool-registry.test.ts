@@ -203,6 +203,17 @@ describe('chain discriminator', () => {
     }
   });
 
+  it('requires an explicit N3 network context for NeoFS reads', () => {
+    expect(Object.keys(PUBLIC_TOOLS.query_neofs.inputSchema)).toContain('network');
+    expect(PUBLIC_TOOLS.query_neofs.inputSchema.network).toBeDefined();
+    expect(() => resolveRoute('query_neofs', {
+      network: 'testnet',
+      operation: 'object_link',
+      containerId: '3'.repeat(44),
+      objectId: '4'.repeat(44),
+    })).not.toThrow();
+  });
+
   it('requires chain (no silent default) on multi-chain tools', () => {
     expect(() => resolveRoute('get_block', {})).toThrow(ValidationError);
     expect(() => resolveRoute('get_block', { chain: '' })).toThrow(ValidationError);

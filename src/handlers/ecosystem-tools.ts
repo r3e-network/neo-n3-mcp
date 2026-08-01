@@ -55,6 +55,14 @@ function selectedNetwork(neoService: NeoService): 'mainnet' | 'testnet' {
   return neoService.getNetwork() === 'testnet' ? 'testnet' : 'mainnet';
 }
 
+function requestedNetwork(input: Record<string, unknown>): 'mainnet' | 'testnet' {
+  const network = typeof input.network === 'string' ? input.network.trim().toLowerCase() : '';
+  if (network !== 'mainnet' && network !== 'testnet') {
+    throw new ValidationError('network must be mainnet or testnet');
+  }
+  return network;
+}
+
 function nnsScriptHash(network: 'mainnet' | 'testnet'): string {
   return NNS_SCRIPT_HASHES[network];
 }
@@ -299,11 +307,14 @@ async function fetchFixedJson(path: string): Promise<unknown> {
 }
 
 async function queryNeoFs(input: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const n3Network = requestedNetwork(input);
   const operation = String(input.operation || '');
   if (operation === 'network_info') {
     return createSuccessResponse({
       operation,
+      n3Network,
       gateway: NEOFS_REST_GATEWAY,
+      networkBoundary: 'NeoFS gateway is global; n3Network is context only and does not select a different gateway.',
       data: await fetchFixedJson('/v1/network-info'),
     });
   }
@@ -312,7 +323,9 @@ async function queryNeoFs(input: Record<string, unknown>): Promise<Record<string
     if (!NEOFS_ID_RE.test(containerId)) throw new ValidationError('Invalid NeoFS container id');
     return createSuccessResponse({
       operation,
+      n3Network,
       gateway: NEOFS_REST_GATEWAY,
+      networkBoundary: 'NeoFS gateway is global; n3Network is context only and does not select a different gateway.',
       data: await fetchFixedJson(`/v1/containers/${encodeURIComponent(containerId)}`),
     });
   }
@@ -320,7 +333,9 @@ async function queryNeoFs(input: Record<string, unknown>): Promise<Record<string
     const address = validateAddress(requireString(input, 'address'));
     return createSuccessResponse({
       operation,
+      n3Network,
       gateway: NEOFS_REST_GATEWAY,
+      networkBoundary: 'NeoFS accounting is queried from the global gateway; the N3 network is retained as address context.',
       address,
       data: await fetchFixedJson(`/v1/accounting/balance/${encodeURIComponent(address)}`),
     });
@@ -332,10 +347,12 @@ async function queryNeoFs(input: Record<string, unknown>): Promise<Record<string
     if (!NEOFS_ID_RE.test(objectId)) throw new ValidationError('Invalid NeoFS object id');
     return createSuccessResponse({
       operation,
+      n3Network,
       containerId,
       objectId,
       uri: `neofs://${containerId}/${objectId}`,
       httpGatewayUrl: `https://http.fs.neo.org/${containerId}/${objectId}`,
+      networkBoundary: 'Object identifiers and links are NeoFS-global; n3Network is context only.',
       note: 'The generated links identify the object; object availability still depends on NeoFS nodes.',
     });
   }

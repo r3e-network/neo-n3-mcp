@@ -42,10 +42,13 @@ describe('Neo ecosystem tools', () => {
     const containerId = '3'.repeat(44);
     const objectId = '4'.repeat(44);
     const result = resultOf(await dispatchEcosystemMetaTool('query_neofs', {
+      network: 'testnet',
       operation: 'object_link',
       containerId,
       objectId,
     }));
+    expect(result.n3Network).toBe('testnet');
+    expect(result.networkBoundary).toMatch(/context only/i);
     expect(result.uri).toBe(`neofs://${containerId}/${objectId}`);
     expect(result.httpGatewayUrl).toContain(`${containerId}/${objectId}`);
   });
