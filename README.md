@@ -141,6 +141,10 @@ backend's deterministic exchange-sweep and coordinated-signer detector queue
 is deliberately not exposed as public identity data; pending candidates require
 human review before they can become curated metadata.
 
+As of 2026-08-01, both production network detector timers have completed their
+first run successfully. The resulting pending queue is operational review
+evidence only and is not returned by `analyze_account_graph`.
+
 ## HTTP API
 
 This is a bespoke REST/JSON API, not an MCP transport. MCP clients cannot connect to it; they use the stdio entrypoint or the [remote MCP transport](#remote-mcp-over-streamable-http).
